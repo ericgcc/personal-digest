@@ -14,7 +14,7 @@ Before writing:
     
 3. Identify meaningful relationships: reinforcement, contrast, qualification, shared patterns, complementary techniques or important tensions.
     
-4. Select the material that provides enough value to justify space in a five-minute briefing.
+4. Select the material that provides enough value to justify space in a short briefing.
     
 5. Choose the editorial structure that best reflects the evidence.
     
@@ -42,11 +42,13 @@ Recurring coverage is not automatically important. Repetition may represent dupl
 
 ## Length and density
 
-Aim for approximately five minutes of reading.
+Aim for a dense five-to-eight-minute briefing.
 
-Target roughly 850–1,050 words for the briefing body, excluding the final source catalog.
+Target roughly 700–1,200 words for the briefing body, excluding the final source catalog.
 
-Use approximately three to five thematic sections when the material supports them. Prefer a smaller number of developed insights over many shallow observations.
+Use two to five thematic sections depending on the structure genuinely supported by the material. Prefer a smaller number of developed insights over many shallow observations.
+
+Let information density determine length. Never create, split or expand a section merely to satisfy a target count or reading time.
 
 Every paragraph must contribute at least one of the following:
 
@@ -91,7 +93,7 @@ Each section should normally contain:
     
 - Two or three concise paragraphs developing the idea.
     
-- Inline numerical citations attached to the exact claims they support.
+- Inline numerical citations attached to the exact claims or synthesized inferences they support.
     
 - A short `SOURCES` line listing the principal source names and their linked numbers.
     
@@ -110,15 +112,26 @@ Render every inline citation as a clickable numerical link to the original artic
 
 `[7]`
 
-When several sources directly support the same sentence or idea, group their citations:
+When several sources directly support the same claim or jointly contribute to the same synthesized inference, group their citations:
 
 `[3] [7] [12]`
 
-Place citations immediately after the claim they support.
+Place citations immediately after the claim or inference they support.
 
-A citation means that the linked source directly supports the preceding claim. Do not add citations merely to make an interpretation appear more widely supported.
+When a synthesized claim is derived from several sources, cite the contributing sources together on that claim rather than only citing them separately in surrounding paragraphs.
 
-Clearly distinguish editorial inference from claims directly established by the sources.
+A citation may either:
+
+- Directly support a factual claim established by the source.
+    
+- Identify the sources from which a synthesized editorial inference is reasonably derived.
+    
+
+Use language that makes editorial inference clear when a conclusion goes beyond what any single source states directly.
+
+Never cite a source that does not materially contribute to the preceding claim or inference.
+
+Do not add citations merely to make an interpretation appear more widely supported.
 
 Do not write full article titles or raw URLs inside the narrative; retain the numerical citation.
 
@@ -189,6 +202,8 @@ Before returning the briefing, verify that:
     
 - Editorial inference is distinguishable from source-supported claims.
     
+- Multi-source synthesized claims cite the contributing sources together when appropriate.
+    
 - Every factual claim has the appropriate numerical citation.
     
 - Every citation links to the correct original source.
@@ -201,6 +216,8 @@ Before returning the briefing, verify that:
     
 - Repetition across sources is compressed rather than mistaken for importance.
     
-- The body fits approximately five minutes of reading.
+- The body remains dense enough for approximately five to eight minutes of reading.
+    
+- No section has been added merely to satisfy a target count or reading time.
     
 - No closing section appears after `Sources`.

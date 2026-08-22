@@ -10,8 +10,7 @@ sources:
     adapters:
       - medium
 ---
-# Medium Daily Digest
-
+# Custom instructions
 ## Core objective
 
 Treat the digest as a personal learning and signal filter, not as a summary of everything received.
@@ -30,7 +29,6 @@ Prioritize:
 Do not let AI news crowd out stronger practical engineering, data or learning content.
 
 Preserve room for exceptional material outside these areas—especially photography, learning, self-development, design or other serendipitous discoveries—but do not force its inclusion.
-
 ## Selectivity
 
 Prefer omission over completeness.
@@ -57,7 +55,6 @@ Skip from the narrative:
 - Material that does not contribute to a selected theme.
 
 Frequency does not equal relevance. Several newsletters repeating the same announcement should normally become one compressed signal, not a larger section.
-
 ## Optional editorial signals
 
 Use these as callouts only when genuinely warranted:

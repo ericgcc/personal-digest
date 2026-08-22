@@ -1,0 +1,14 @@
+version: 1
+
+defaults:
+  workflow: system/workflow.md
+  html_rendering: system/html-rendering.md
+  template: templates/readless-email-v1.html
+  ledger: state/Digest Processing Ledger.xlsx
+  catch_up_days: 14
+  delivery: gmail-self
+
+digests:
+  medium-daily:
+    config: digests/medium-daily.md
+    catch_up_days: 2

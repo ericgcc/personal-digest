@@ -255,6 +255,10 @@ List **every reviewed source**, including items not selected for the editorial b
 
 Preserve the permanent source numbering used throughout the digest.
 
+Group the catalog by **source identity by default**. Prefer newsletter/publication, then sender/editorial source, then recurring author identity. Use `Other sources` only when no meaningful identity exists. Do not group by topic or by whether an item was selected.
+
+Grouping is visual/navigation only: keep each source's permanent global number unchanged. Do not renumber within groups. Avoid repeating the group name on every row; include an author only when it adds information beyond the group heading.
+
 For every source include:
 
 - Its number.
@@ -308,6 +312,7 @@ Before returning the digest, verify that:
 - Every factual claim has the appropriate numerical citation, including email-only sources when relevant.
 - Citation numbers remain stable throughout.
 - Every reviewed source appears in the final catalog.
+- The final catalog is grouped by source identity without changing permanent source numbers.
 - Optional `Worth opening for` cues describe genuine additional value.
 - The editorial body fits approximately five to eight minutes of focused reading.
 - Nothing editorial appears after `Sources`.

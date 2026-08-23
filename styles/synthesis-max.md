@@ -117,7 +117,9 @@ List every reviewed article or newsletter item, including material not selected 
 
 Preserve the permanent numbering used throughout the briefing.
 
-Group entries by newsletter, publication or sender when useful.
+Group the catalog by **source identity by default**. Use the most useful stable identity available in this order: newsletter/publication, sender/editorial source, then recurring author identity. Use a neutral `Other sources` group only when no meaningful identity exists. Do not group by topic.
+
+Keep each source's permanent global number unchanged inside its group; grouping must never renumber citations. Within a group, do not repeat the group name on every row. Show an author only when it adds information beyond the group heading.
 
 For every source include:
 
@@ -161,6 +163,7 @@ Before returning the briefing, verify that:
 - Every linked citation points to the correct original source; non-linkable email-only citations remain stable and are not given fabricated destinations.
 - Citation numbers remain consistent from beginning to end.
 - All reviewed sources appear in the final catalog.
+- The final catalog is grouped by source identity without changing permanent source numbers.
 - The strongest material receives the most space.
 - Repetition across sources is compressed rather than mistaken for importance.
 - The body remains dense enough for approximately five to eight minutes of reading.

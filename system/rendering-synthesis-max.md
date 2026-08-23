@@ -48,7 +48,7 @@ At the end of each thread:
 - place the stable numerical citation pill immediately after each name; make it clickable only when that source has a valid locator;
 - let entries wrap naturally on narrow screens.
 
-The final `Sources` catalog uses the shared bibliographic row pattern: narrow numerical citation rail plus author/publication and original title. Link the citation/title only when a valid locator exists; otherwise render email-only provenance without a fabricated destination. Preserve any neutral status badges required by the style.
+The final `Sources` catalog uses the shared bibliographic row pattern, **grouped by source identity by default**. Render each newsletter/publication/sender group with one compact source-group heading, followed by its rows. Each row keeps the permanent global citation number in the narrow numerical rail plus the original title and, when useful, an author distinct from the group identity. Do not repeat the group identity on every row. Link the citation/title only when a valid locator exists; otherwise render email-only provenance without a fabricated destination. Preserve any neutral status badges required by the style. Grouping must never renumber sources.
 
 ## Callouts
 

@@ -41,7 +41,14 @@ Use the shared source-note treatment:
 - centered dots or clean wrapping between entries;
 - navigation/provenance only, not a bibliography.
 
-The final `Sources` catalog uses the shared bibliographic row treatment: citation rail, author/publication, original title, and any neutral status required by the style. Link only sources with a valid locator; email-only sources without one remain unlinked.
+The final `Sources` catalog uses the shared bibliographic row treatment, **grouped by source identity by default**. Give each newsletter/publication/sender one compact heading followed by its source rows. Keep the permanent global citation number in the rail; show the original title and an author only when it adds information beyond the group heading. Do not repeat the group identity on every row. Link only sources with a valid locator; email-only sources without one remain unlinked. Grouping is navigational only and must never renumber sources.
+
+Separator invariant for full selections:
+
+- Use **at most one horizontal separator between adjacent content blocks**.
+- When `Worth opening for:` is rendered with a bottom border, the following `SOURCE NOTES` block must **not** add its own top border.
+- When no preceding bordered component supplies that separation, `SOURCE NOTES` may use one subtle top rule.
+- Never stack a component's bottom border directly against another component's top border, even if both individual primitives normally support a rule.
 
 ## Discoveries
 
@@ -60,7 +67,7 @@ When authorized, place at most one callout inside a full selection, after the ex
 - **Desktop:** preserve the folio rail and vertical rule.
 - **Tablet:** retain a narrower folio rail when the body remains comfortably wide.
 - **Mobile:** remove the side rail and vertical rule. Stack the folio above the title/content so the prose uses the full available width.
-- Stack `TODAY'S EDIT` from its desktop label/copy composition into a full-width note on mobile; use a short horizontal blue accent rather than preserving the width-expensive vertical divider.
+- Stack `TODAY'S EDIT` from its desktop label/copy composition into a full-width note on mobile. The label itself must remain full-width and unbroken; render the short horizontal blue accent as a separate element rather than constraining the label cell to the accent width. Do not preserve the width-expensive vertical divider.
 - Keep Discoveries single-column at all widths.
 - Keep body copy comfortably readable; reflow before shrinking.
 

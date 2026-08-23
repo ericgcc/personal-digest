@@ -54,6 +54,7 @@ Shared rules:
 - Do not preserve a desktop multi-column arrangement when it leaves the main reading column uncomfortably narrow.
 - Compact indexes may use two columns on desktop/tablet and one column on mobile.
 - Source metadata, dates, and reading-time details may wrap or stack; never force them into tiny type simply to remain on one line.
+- Never create consecutive horizontal rules or visually doubled separators. When adjacent components both provide a boundary, keep only one separator; prefer removing the later component's top border when the previous component already has a bottom border.
 
 Each rendering profile defines any additional responsive transformations required by that style.
 
@@ -73,12 +74,15 @@ Each rendering profile defines any additional responsive transformations require
 - Use the configured digest name as the large serif headline.
 - Under it, write one sentence describing the recurring purpose of the digest, not the findings of only this run.
 
-### Reading-time capsule
+### Reading-time and time-saved capsule
 
 - Preserve the centered cream capsule and its typography.
-- When reliable source reading-time estimates exist, render `<source reading time> → <digest reading time> · Saved ~<difference>`.
-- Otherwise render only an honest estimate for the finished email, such as `About 5 min read`.
-- Never invent source time or time saved.
+- The normal form is **`<reviewed-source reading time> → <digest reading time> · ⚡ Saved ~<difference>`**. Treat this as the default required output, not an optional enhancement.
+- Compute the reviewed-source time from the substantive material actually read during this run, including reviewed items later omitted from the editorial body. Do not count duplicates skipped without rereading, promotional/admin material discarded without substantive reading, or inaccessible items.
+- Prefer a source's explicit reading-time estimate when it is available and trustworthy. Otherwise estimate from the full substantive text actually read using the shared reading-speed assumption defined by the workflow.
+- Estimate digest reading time from the finished editorial body, excluding the bibliographic source catalog and boilerplate footer.
+- Round for human readability; the displayed saved time is `max(reviewed-source time - digest time, 0)`.
+- Do not invent time for content that was not actually read. If the run genuinely lacks enough information to estimate reviewed-source time, use the fallback `About <digest time> read` and treat that as an exceptional degraded state.
 - Allow the capsule to wrap gracefully on mobile rather than reducing it to unreadable type.
 
 ## Shared link and citation primitives
@@ -186,4 +190,6 @@ Before sending:
 6. Confirm callouts appear only when authorized and in a location permitted by the active rendering profile.
 7. Confirm the selected style's source-provenance and ending rules are followed exactly.
 8. Confirm the dark footer and hidden run-key remain intact.
-9. Confirm every placeholder or temporary marker is gone except the intentional hidden run-key comment.
+9. Confirm no two horizontal rules/borders appear consecutively between adjacent content blocks; collapse any doubled separator to one subtle rule.
+10. Confirm the reading-time capsule uses the full source → digest → saved form whenever the run contains enough measured or estimable source text; do not silently downgrade to digest-only reading time.
+11. Confirm every placeholder or temporary marker is gone except the intentional hidden run-key comment.

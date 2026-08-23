@@ -1,4 +1,4 @@
-# Curated / Discovery
+# Curated Discovery
 
 A selective, idea-first editorial briefing built from the strongest material in the complete source set.
 

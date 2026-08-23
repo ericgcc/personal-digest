@@ -6,18 +6,19 @@ This is the shared execution contract for every configured digest.
 
 1. Read `system/registry.yaml` and locate the requested digest ID.
 2. Read its file in `digests/`.
-3. Resolve the named style from `styles/`, every adapter named by its source groups from `adapters/`, `system/html-rendering.md`, the shared HTML template, and the processing ledger.
+3. Resolve the named style from `styles/`, every adapter named by its source groups from `adapters/`, `system/html-rendering.md`, the style-specific rendering profile and template from `system/registry.yaml`, and the processing ledger.
 4. Treat the Markdown body of the digest file as its custom editorial instructions. Fixed style rules remain separate and apply to every digest that selects that style.
 
 ## Available summary styles
 
-| Style | Result |
-| --- | --- |
-| `concise` | One brief paragraph per newsletter. |
-| `detailed` | An individual summary with principal points for each newsletter. |
-| `synthesis-max` | One selective briefing unified around cross-source patterns. |
-| `learning-review` | Concepts, techniques, connections, and questions worth studying. |
-| `visual-discovery` | A discovery selection oriented toward photography, visual craft, and creativity. |
+| Style               | Result                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| `concise`           | One brief paragraph per newsletter.                                                  |
+| `detailed`          | An individual summary with principal points for each newsletter.                     |
+| `synthesis-max`     | One selective briefing unified around cross-source patterns.                         |
+| `curated-discovery` | One selective idea-first briefing built around the strongest individual discoveries. |
+
+The four canonical email-rendered styles are `concise`, `detailed`, `synthesis-max`, and `curated-discovery`. Additional style files may exist for experimentation, but they require an explicit rendering-profile/template mapping in `system/registry.yaml` before they can be delivered.
 
 Each style is defined by the correspondingly named Markdown file in `styles/`. A digest selects exactly one style in its frontmatter; the digest’s custom instructions then refine topic, tone, and selection without rewriting the shared style.
 
@@ -119,7 +120,7 @@ This allows the same Gmail message to participate legitimately in more than one 
 ## Produce and deliver
 
 - Apply the selected summary style and then the digest’s custom instructions.
-- Render the result with the shared template according to `system/html-rendering.md`.
+- Render the result according to `system/html-rendering.md`, then apply the selected style-specific rendering profile and matching template resolved from `system/registry.yaml`. Use `templates/email-theme.html` only as the shared visual-language reference, not as a universal layout.
 - Send the HTML email to the Gmail account owner (`me`). The subject is `<digest name> — <digest date>` unless the digest file overrides it.
 - Generate a deterministic run key from the digest ID and the sorted Gmail message IDs. Before sending, check both the ledger and Gmail Sent for that run key to prevent duplicate delivery.
 

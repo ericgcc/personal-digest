@@ -1,0 +1,74 @@
+# Detailed rendering
+
+Use with `styles/detailed.md` and `templates/detailed-email-v1.html`.
+
+**Visual personality: annotated reader.** The digest should feel like a structured reading notebook: each source remains independently identifiable, with a coherent summary followed by the most useful supporting notes.
+
+## Structure mapping
+
+1. Render the shared masthead and reading-time capsule.
+2. When topical grouping genuinely improves navigation, render `IN THIS DIGEST` as a compact index.
+3. Render each broad topic as a section header.
+4. Within the section, render every retained source as its own independent reading entry.
+5. Finish after the final source summary; do not add a final source catalog unless explicitly requested by the style/digest.
+
+## IN THIS DIGEST index
+
+Use only when the output contains useful topical grouping. Do not invent sections for the sake of the component.
+
+Each index row contains:
+
+- two-digit section number;
+- section name;
+- retained source count.
+
+The index must scale to many sections:
+
+- use a compact two-column arrangement on desktop/tablet when space permits;
+- use one compact column on mobile;
+- if the section count is unusually high, first verify that grouping is not unnecessarily granular. Visual compaction is the fallback, not an excuse for over-grouping.
+
+## Topic section headers
+
+Use a restrained numbered section opener that clearly acts as navigation rather than synthesis. Include the topic name and optional source count. Do not imply that sources inside the section agree with one another.
+
+## Source entry
+
+Each retained source should contain:
+
+- source/publication name as a small uppercase or sans-serif label;
+- optional honest per-source summary reading-time estimate if available;
+- directly linked article/item title in serif display type;
+- coherent explanatory paragraph(s) preserving the source's central idea and context;
+- `SOURCE NOTES` when the style output contains concise supporting points;
+- optional authorized callout;
+- optional secondary `OPEN ORIGINAL SOURCE` link/button as shown in the template.
+
+The linked title remains the primary source link. The secondary button is an affordance, not a substitute for the linked title.
+
+## SOURCE NOTES
+
+Render the style's two-to-five key details as an annotated-note list rather than conventional heavy bullets:
+
+- small numbered rail (`01`, `02`, ...);
+- thin rule / understated note structure;
+- substantive text to the right;
+- enough vertical spacing to scan clearly without turning each point into a card.
+
+If the style output uses prose instead of bullets because the source depends on a sequential argument, omit the note list entirely. Do not mechanically generate notes merely because the template demonstrates them.
+
+## Callouts
+
+The template may demonstrate the neutral callout primitive. Remove it unless the active digest instructions authorize it.
+
+When authorized, use at most one callout in a source entry, after the summary or notes and before the final source link/button. Use the shared component from `system/html-rendering.md`.
+
+## Responsive behavior
+
+- **Desktop:** source metadata may sit opposite the per-source read estimate; the index may use two columns.
+- **Tablet:** reduce padding while keeping the same reading structure.
+- **Mobile:** stack source metadata and reading time; stack section heading/count; render the index as one column.
+- Keep `SOURCE NOTES` with only a very narrow numerical rail; never retain a wide side column that squeezes prose.
+- Preserve body readability near `16px / 25–26px`.
+
+Detailed should remain comfortably readable even when the digest contains many source entries or many topic sections.

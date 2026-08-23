@@ -1,12 +1,26 @@
-version: 1
+version: 2
 
 defaults:
   workflow: system/workflow.md
   html_rendering: system/html-rendering.md
-  template: templates/readless-email-v1.html
+  visual_theme: templates/email-theme.html
   ledger: state/Digest Processing Ledger.xlsx
   catch_up_days: 14
   delivery: gmail-self
+
+rendering_profiles:
+  concise:
+    rules: system/rendering-concise.md
+    template: templates/concise-email-v1.html
+  detailed:
+    rules: system/rendering-detailed.md
+    template: templates/detailed-email-v1.html
+  synthesis-max:
+    rules: system/rendering-synthesis-max.md
+    template: templates/synthesis-max-email-v1.html
+  curated:
+    rules: system/rendering-curated-discovery.md
+    template: templates/curated-discovery-email-v1.html
 
 digests:
   medium-bi-daily:

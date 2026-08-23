@@ -1,9 +1,9 @@
 ---
-id: medium-daily
-name: Medium Daily Digest
+id: medium-bi-daily
+name: Medium Bi-Daily Digest
 enabled: true
 language: English
-style: synthesis-max
+style: curated-discovery
 sources:
   - gmail_labels:
       - Newsletters/Medium

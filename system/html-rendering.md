@@ -1,6 +1,6 @@
 # HTML email rendering
 
-Use `templates/readless-email-v1.html` as the canonical visual template for every digest unless `system/registry.yaml` explicitly selects another template.
+Use `templates/synthesis-max-email-v1.html` as the canonical visual template for every digest unless `system/registry.yaml` explicitly selects another template.
 
 The file is a complete, successfully rendered reference email—not a loose collection of snippets. Preserve its visual system and table hierarchy. Replace its example content with the current digest; do not redesign it on each run.
 

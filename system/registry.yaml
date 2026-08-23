@@ -9,6 +9,6 @@ defaults:
   delivery: gmail-self
 
 digests:
-  medium-daily:
-    config: digests/medium-daily.md
+  medium-bi-daily:
+    config: digests/medium-bi-daily.md
     catch_up_days: 2

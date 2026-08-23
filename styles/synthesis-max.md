@@ -1,6 +1,25 @@
 # Synthesis MAX
 
 One selective briefing: no separate article summaries. Merge the strongest material into an editorial synthesis organized around the relationships, patterns, tensions and ideas genuinely supported by the source set, with links back to every source.
+
+## Style interface
+
+| Dimension | Declaration |
+| --- | --- |
+| **Purpose** | Turn the strongest source material into one integrated briefing whose main value comes from meaningful relationships, patterns, tensions, and combined implications. |
+| **Composition unit** | A synthesized editorial insight or thematic thread. |
+| **Source relationship** | Cross-source synthesis is fundamental when supported; unrelated material must not be forced together, and a valuable source may stand largely alone when necessary. |
+| **Selection model** | Highly selective: include material that contributes enough information, explanatory power, practical significance, novelty, or relationship value to justify space. |
+| **Depth model** | Variable-high depth across a dense five-to-eight-minute body, normally 700–1,200 words excluding the catalog. |
+| **Organization model** | Big Picture opening → two to five numbered synthesized threads determined by the evidence. |
+| **Opening behavior** | Required `THE BIG PICTURE` opening that earns its place as the briefing’s first editorial synthesis. |
+| **Body behavior** | Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes. |
+| **Citation / provenance** | Permanent global numerical citations attached to supported claims/inferences plus thread-level source notes. |
+| **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering. |
+| **Ending behavior** | Stop immediately after the final source catalog. |
+| **Writing character** | Analytical, connective, authoritative but restrained, precise, and intellectually alive. |
+| **Optional extension points** | Zero or one digest-authorized callout inside a thread when the rendering profile supports it. |
+
 ## Synthesis mode
 
 Produce one integrated briefing, not a collection of article summaries.
@@ -29,6 +48,19 @@ Explicitly explain connections rather than placing adjacent article summaries un
 Prefer cross-source synthesis when meaningful, but do not force unrelated material together. A valuable source may stand largely on its own when it contains an important case study, explanation, technique or discovery with no honest counterpart in the source set.
 
 Recurring coverage is not automatically important. Repetition may represent duplication rather than signal.
+
+## Writing character
+
+Write with analytical authority and restraint. The prose should make relationships visible without sounding as though every relationship is a revelation.
+
+Start from the strongest concrete evidence, tension, or mechanism and let the synthesis emerge from it. Explain why sources belong together instead of relying on phrases such as “the broader pattern” or “the deeper lesson” to announce synthesis.
+
+A good thread should feel discovered rather than imposed: the reader can see how the contributing evidence leads to the editorial inference. Distinguish sharply between what sources establish and what the briefing infers from them.
+
+Vary the rhetorical shape of threads. Some may begin with a contradiction, others with a concrete fact, mechanism, consequence, or question. Avoid repeating a polished `thesis → evidence → grand implication` cadence across the briefing.
+
+Use memorable phrasing when it clarifies the relationship, but prefer precision to cleverness and proportion to profundity.
+
 ## Length and density
 
 Aim for a dense five-to-eight-minute briefing.
@@ -49,18 +81,13 @@ Every paragraph must contribute at least one of the following:
 
 Remove repetition aggressively. Do not restate a section’s thesis in its conclusion.
 ## Required structure
-### Opening orientation
-
-Begin with one short paragraph orienting the reader to the material that proved most significant.
-
-Describe the resulting editorial landscape, not the ingestion, filtering or summarization process.
 ### The Big Picture
 
-Write one compact editorial synthesis of approximately 80–130 words with inline numerical citations.
+Open the briefing with one compact editorial synthesis of approximately 80–130 words with inline numerical citations. It must earn its place rather than act as a table of contents.
 
-Express the most useful high-level reading of the selected material.
+If one well-supported overarching pattern, tension, or question exists, articulate it directly. If the strongest material instead forms several distinct threads, frame two or three of the most compelling ones and any honest relationship between them without forcing a single thesis.
 
-If one well-supported overarching pattern exists, articulate it. If the strongest material instead forms several distinct threads, describe those threads and any meaningful relationship or tension between them without forcing a single thesis.
+Do not write inventory prose such as “today's edition moves from X to Y and closes with Z.” Do not describe ingestion, filtering, ranking, or summarization. Put the most interesting analytical value early enough that the reader wants to continue into the threads.
 ### Thematic sections
 
 Use numbered sections:
@@ -169,3 +196,7 @@ Before returning the briefing, verify that:
 - The body remains dense enough for approximately five to eight minutes of reading.
 - No section has been added merely to satisfy a target count or reading time.
 - No closing section appears after `Sources`.
+- `THE BIG PICTURE` earns its place with genuine analytical value and is not a prose inventory of the sections.
+- Threads do not reuse the same rhetorical architecture or repeatedly announce “patterns” and “lessons” instead of demonstrating them.
+- Concrete evidence, mechanisms, tensions, or consequences support the synthesis before abstraction outruns the sources.
+- Memorable phrasing clarifies rather than manufacturing cleverness or profundity.

@@ -1,6 +1,25 @@
 # Detailed
 
 A structured per-source digest designed to preserve the important context, nuance and useful detail of each source while remaining substantially faster to read than the original material.
+
+## Style interface
+
+| Dimension | Declaration |
+| --- | --- |
+| **Purpose** | Preserve useful context, nuance, mechanisms, evidence, and caveats source by source while remaining much faster than the originals. |
+| **Composition unit** | One independent retained source or substantial subentry. |
+| **Source relationship** | Sources remain independent; topical proximity is navigation only, never synthesis. |
+| **Selection model** | Preserve reasonably broad substantive coverage while removing obvious noise and low-information material. |
+| **Depth model** | Variable-medium depth: typically 120–220 words and roughly 45–75 seconds per substantive source, expanding only when extra detail materially improves understanding. |
+| **Organization model** | Optional broad topical grouping derived from the actual source set; otherwise direct source-by-source presentation. |
+| **Opening behavior** | No editorial opening. An optional navigational index may appear only when topical grouping genuinely helps. |
+| **Body behavior** | Central idea first, then explanatory prose and two to five useful details when bullets improve clarity; sequential prose when they do not. |
+| **Citation / provenance** | Every source remains explicitly identified; link the original title only when a valid locator exists. |
+| **Source catalog** | None by default. |
+| **Ending behavior** | Stop after the final source summary. |
+| **Writing character** | Calm, explanatory, exact, patient, and quietly engaging. |
+| **Optional extension points** | Derived topical grouping/index and a digest-authorized callout when compatible with the rendering profile. |
+
 ## Summary mode
 Keep every source independent.
 
@@ -16,6 +35,16 @@ Summarize the source as a coherent whole rather than extracting a disconnected l
 Do not combine multiple sources into one argument or derive conclusions from their relationship. Source independence is part of this style.
 
 Any examples in these instructions are illustrative only. Never treat them as an exhaustive list, preferred taxonomy, required output, or signal to search for those specific topics.
+
+## Writing character
+
+Write with calm explanatory confidence. The reader should feel guided through the source by an excellent editor who understands the material and respects its complexity.
+
+Put the central value early, then develop mechanism, evidence, examples, caveats, or consequences in the order that makes the source easiest to understand. Prefer concrete explanation over textbook abstraction and preserve terminology only when it carries real precision.
+
+Patience does not mean verbosity. Do not restate the same claim in prose and bullets, and do not turn supporting notes into a mechanical checklist. Vary sentence and paragraph shape naturally according to the argument.
+
+The voice should be exact without becoming clinical, and engaging without becoming showy. Do not manufacture drama or generalize beyond what the individual source supports.
 
 ## Organization
 
@@ -156,3 +185,6 @@ Before returning the digest, verify that:
 - Examples in these instructions have not been treated as required topics or output categories.
 - Every available source link points to the correct original source, and email-only sources are not given fabricated links.
 - The result preserves useful context and nuance while remaining a per-source digest rather than a cross-source editorial synthesis.
+- The useful idea or mechanism appears early enough that the reader is rewarded before secondary detail.
+- Explanations feel edited and natural rather than textbook-like, mechanical, or over-sectioned.
+- Prose and supporting notes do not duplicate the same point in different formats.

@@ -4,6 +4,24 @@ A selective, idea-first editorial briefing built from the strongest material in 
 
 The fundamental unit is the **idea worth keeping**, not the newsletter, article, or topic. Review everything first, then decide what deserves the reader’s limited attention.
 
+## Style interface
+
+| Dimension | Declaration |
+| --- | --- |
+| **Purpose** | Create a selective personal briefing around the strongest ideas worth learning, keeping, applying, or exploring. |
+| **Composition unit** | An idea worth keeping; shorter worthwhile material may appear as a discovery. |
+| **Source relationship** | Treat ideas independently by default; combine sources only when doing so materially improves the selected idea. |
+| **Selection model** | Highly selective and value-first; omission is expected and strong outliers may outrank recurring topics. |
+| **Depth model** | Variable depth across roughly five to eight minutes: give rich ideas room, compress narrower discoveries, omit weak material. |
+| **Organization model** | Short editorial orientation → importance-ordered numbered selections → optional discoveries → complete source catalog. |
+| **Opening behavior** | Required short editorial orientation that either states a genuinely interesting observation or creates honest curiosity around the strongest material without forcing a thesis. |
+| **Body behavior** | Three to six full editorial selections when warranted, zero to four discoveries, variable depth, stable claim-level citations, and source notes. |
+| **Citation / provenance** | Permanent global numerical citations plus selection-level source lines/source notes. |
+| **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering. |
+| **Ending behavior** | Stop immediately after the final source catalog. |
+| **Writing character** | Curious, selective, idea-driven, lively, lucid, and lightly magazine-like without becoming ornate. |
+| **Optional extension points** | Featured treatment, Discoveries, `Worth opening for`, and digest-authorized callouts when genuinely warranted. |
+
 ## Core principle: Digest-first reading
 
 The digest is the primary reading experience.
@@ -89,6 +107,18 @@ Strong:
 
 The digest should contain statements worth keeping—not descriptions of content that exists elsewhere.
 
+## Writing character
+
+Write with curiosity, selectivity, and visible editorial judgment. The prose should feel like a smart magazine editor sharing something genuinely worth knowing, not a model converting articles into polished takeaways.
+
+Make the interesting part arrive early. When a concrete fact, mechanism, contradiction, example, or consequence provides the best entrance, begin there and only then widen into interpretation. Prefer `specific → implication` when it is stronger than `general principle → supporting facts`.
+
+Selections should have different rhetorical lives. Do not make every item follow the same thesis/explanation/takeaway pattern, and do not repeatedly announce insights with phrases such as “the deeper pattern,” “the reusable lesson,” or “what matters is.” Deliver the idea instead.
+
+Allow moments of wit, illumination, or productive agitation when the material earns them. Keep them subordinate to clarity and fidelity. The style may be lively and memorable, but never ornate, hype-driven, or artificially profound.
+
+Titles should sharpen the idea rather than perform cleverness. A reader should understand what is at stake and feel a reason to continue.
+
 ## Length and density
 
 Aim for approximately **five to eight minutes of focused reading**.
@@ -116,13 +146,14 @@ Begin with one short editorial paragraph under a neutral introductory label such
 
 `TODAY'S EDIT`
 
-Briefly characterize what survived selection and prepare the reader for the material ahead.
+The opening must earn its existence.
 
-The orientation may mention several unrelated subjects when the source set is heterogeneous.
+- **If a genuinely interesting observation, tension, or relationship emerges from the selected material, say it directly.**
+- **If no such observation exists, create curiosity around two or three of the strongest selections without inventing a connection between them.**
 
-Do not invent a unifying thesis when none exists.
+The orientation may therefore mention unrelated subjects when the source set is heterogeneous. That is better than forcing them into one thesis.
 
-Do not describe the ingestion, ranking, filtering, or summarization process.
+Do not turn the table of contents into prose such as “today's edition moves from X to Y and closes with Z.” Do not describe ingestion, ranking, filtering, or summarization. Do not tease value that the body then withholds.
 
 ### Main selections
 
@@ -316,5 +347,9 @@ Before returning the digest, verify that:
 - Optional `Worth opening for` cues describe genuine additional value.
 - The editorial body fits approximately five to eight minutes of focused reading.
 - Nothing editorial appears after `Sources`.
+- `TODAY'S EDIT` either states a genuinely interesting observation or creates honest curiosity without forcing unrelated material into one thesis.
+- Every paragraph advances the reader rather than merely restating the selection’s central claim.
+- Adjacent selections vary in rhetorical shape, sentence rhythm, and entry point instead of following a repeated LLM pattern.
+- Titles are sharp and informative without performing cleverness, and moments of wit, illumination, or agitation are earned rather than manufactured.
 
 The finished briefing should leave the reader with **ideas worth remembering**, while making the original sources optional paths for deeper exploration rather than required reading.

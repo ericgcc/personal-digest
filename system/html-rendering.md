@@ -13,7 +13,7 @@ Do not use one summary style's template as a universal fallback. Resolve the act
 | `detailed`          | `system/rendering-detailed.md`          | `templates/detailed-email-v1.html`          | **Annotated reader**                   |
 | `concise`           | `system/rendering-concise.md`           | `templates/concise-email-v1.html`           | **Briefing ledger / newspaper briefs** |
 
-The style file in `styles/` remains authoritative for what content exists and how it is organized editorially. The rendering profile explains how that structure maps into HTML. The reference template is a complete, successfully rendered example of that mapping.
+The shared `styles/editorial-base.md` establishes the prose quality floor, and the selected style defines the editorial structure and Writing character. The mandatory EDIT pass in `system/workflow.md` must be complete before this rendering contract is applied. The rendering profile explains how the already-edited structure maps into HTML. The reference template is a complete, successfully rendered example of that mapping.
 
 If a style has no rendering profile/template mapping, stop safely rather than silently substituting another style's layout.
 
@@ -161,19 +161,22 @@ Never add a source catalog merely because another style has one. Follow the sele
 
 Keep these responsibilities separate:
 
-1. **`styles/<style>.md` — editorial contract**
-   Defines what the summary style does: selection model, unit of summary, structure, depth, citation/source rules, and ending behavior.
+1. **`styles/editorial-base.md` — shared editorial quality floor**
+   Defines how excellent digest prose behaves across every style: clarity, specificity, rhythm, naturalness, intellectual honesty, economy, reader interest, rhetorical variety, and the editorial-pass standard. It does not impose one voice or layout.
 
-2. **`digests/<digest>.md` — digest configuration plus optional custom instructions**
+2. **`styles/<style>.md` — editorial implementation**
+   Implements `system/style-contract.md`: selection model, composition unit, source relationship, structure, depth, provenance, ending behavior, and a distinct Writing character layered on top of the editorial base.
+
+3. **`digests/<digest>.md` — digest configuration plus optional custom instructions**
    YAML frontmatter defines the digest configuration. Any Markdown body is optional and may refine topic priorities, selection preferences, tone, recurring purpose, and compatible callout vocabulary without replacing the selected style.
 
-3. **`system/rendering-<style>.md` — style-to-HTML mapping**
+4. **`system/rendering-<style>.md` — style-to-HTML mapping**
    Defines how the selected style's editorial structure maps to visual components and responsive behavior.
 
-4. **`templates/<style>-email-v1.html` — canonical reference implementation**
+5. **`templates/<style>-email-v1.html` — canonical reference implementation**
    Shows the complete expected composition. Replace example content; do not redesign the template on every run.
 
-5. **`templates/email-theme.html` — shared visual language**
+6. **`templates/email-theme.html` — shared visual language**
    Supplies reusable visual primitives and the family resemblance shared by every template.
 
 Never let rendering rules create editorial content that the style does not request, and never let digest-specific vocabulary leak into another digest or global template.
@@ -182,14 +185,15 @@ Never let rendering rules create editorial content that the style does not reque
 
 Before sending:
 
-1. Confirm the template and rendering profile match the selected summary style.
-2. Confirm no example text, dates, article links, source numbers, reading-time values, or placeholder labels remain from the reference template.
-3. Confirm the email preserves the shared visual language while retaining the selected style's distinct composition.
-4. Confirm desktop, tablet, and mobile layouts remain readable; mobile must not retain width-expensive desktop geometry that squeezes body text.
-5. Confirm every available source link/clickable citation points to the correct locator, and that email-only sources without a locator remain unlinked rather than receiving fabricated destinations.
-6. Confirm callouts appear only when authorized and in a location permitted by the active rendering profile.
-7. Confirm the selected style's source-provenance and ending rules are followed exactly.
-8. Confirm the dark footer and hidden run-key remain intact.
-9. Confirm no two horizontal rules/borders appear consecutively between adjacent content blocks; collapse any doubled separator to one subtle rule.
-10. Confirm the reading-time capsule uses the full source → digest → saved form whenever the run contains enough measured or estimable source text; do not silently downgrade to digest-only reading time.
-11. Confirm every placeholder or temporary marker is gone except the intentional hidden run-key comment.
+1. Confirm the editorial draft has completed the mandatory EDIT pass against `styles/editorial-base.md` and the selected style's Writing character.
+2. Confirm the template and rendering profile match the selected summary style.
+3. Confirm no example text, dates, article links, source numbers, reading-time values, or placeholder labels remain from the reference template.
+4. Confirm the email preserves the shared visual language while retaining the selected style's distinct composition.
+5. Confirm desktop, tablet, and mobile layouts remain readable; mobile must not retain width-expensive desktop geometry that squeezes body text.
+6. Confirm every available source link/clickable citation points to the correct locator, and that email-only sources without a locator remain unlinked rather than receiving fabricated destinations.
+7. Confirm callouts appear only when authorized and in a location permitted by the active rendering profile.
+8. Confirm the selected style's source-provenance and ending rules are followed exactly.
+9. Confirm the dark footer and hidden run-key remain intact.
+10. Confirm no two horizontal rules/borders appear consecutively between adjacent content blocks; collapse any doubled separator to one subtle rule.
+11. Confirm the reading-time capsule uses the full source → digest → saved form whenever the run contains enough measured or estimable source text; do not silently downgrade to digest-only reading time.
+12. Confirm every placeholder or temporary marker is gone except the intentional hidden run-key comment.

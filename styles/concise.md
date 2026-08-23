@@ -1,5 +1,24 @@
 # Concise
 A fast per-source digest designed for scanning. Keep each source separate and reduce it to the smallest useful summary without losing its central value.
+
+## Style interface
+
+| Dimension | Declaration |
+| --- | --- |
+| **Purpose** | Deliver the fastest useful scan of substantive retained sources. |
+| **Composition unit** | One independent source or retained item. |
+| **Source relationship** | Sources remain independent; do not synthesize them into a shared narrative. |
+| **Selection model** | Broad compression of substantive sources with obvious noise removed; prioritize the strongest one or two items inside multi-item sources. |
+| **Depth model** | Fixed-light depth: normally 40–80 words and roughly 10–20 seconds per retained source. |
+| **Organization model** | Repeat source/publication → title → compact paragraph; no thematic organization. |
+| **Opening behavior** | None. Begin directly with the first retained source. |
+| **Body behavior** | One concise paragraph per retained source containing its central value and only essential support. |
+| **Citation / provenance** | Source/publication identity plus original title; link the title only when a valid locator exists. |
+| **Source catalog** | None. |
+| **Ending behavior** | Stop immediately after the final source entry. |
+| **Writing character** | Fast, crisp, concrete, lucid, and restrained. |
+| **Optional extension points** | None in the current contract; callouts are not supported. |
+
 ## Summary mode
 Produce one compact entry for each reviewed source worth retaining.
 
@@ -10,6 +29,16 @@ For each source, identify the one idea, development, technique, argument or take
 Prefer signal over coverage. Do not attempt to preserve every topic contained in a source.
 
 If several sources cover the same story or idea, summarize each independently but avoid repeating unnecessary background. Do not merge them; source independence is part of this style.
+
+## Writing character
+
+Write with brisk editorial clarity. The reader should understand the useful part almost immediately.
+
+Lead with the source's strongest idea, fact, technique, consequence, or distinction rather than with setup about what the source contains. Keep the paragraph concrete and information-dense, but do not turn it into a slogan or headline fragment.
+
+Use natural sentence rhythm even at short length. A compact entry can contain one sharp sentence or a few sentences with different jobs; do not force every entry into the same `claim → explanation → why it matters` pattern.
+
+Clarity outranks cleverness. Avoid generic summary scaffolding and inflated implications. The tone should feel edited and confident, not hurried or mechanical.
 
 ## Length and density
 
@@ -77,3 +106,6 @@ Before returning the digest, verify that:
 - Repeated background has been removed.
 - Every available source link points to the correct original source, and email-only sources are not given fabricated links.
 - No unsupported editorial conclusions have been introduced.
+- The first sentence of each entry earns attention quickly instead of spending words describing the source.
+- Entries do not reuse the same summary scaffold or sentence rhythm mechanically.
+- The prose remains concrete and natural rather than slogan-like, inflated, or generic.

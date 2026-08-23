@@ -8,8 +8,10 @@ A digest is assembled from separate layers with different responsibilities:
 
 | Layer | Location | Responsibility |
 | --- | --- | --- |
-| Workflow | `system/workflow.md` | Shared execution, state, safety, routing, and precedence rules. |
-| Style | `styles/<style>.md` | The editorial axis: what kind of digest is produced. |
+| Workflow | `system/workflow.md` | Shared execution, state, safety, routing, precedence, and the SELECT → DRAFT → EDIT → RENDER pipeline. |
+| Style contract | `system/style-contract.md` | Interface every canonical style must implement; validates architectural completeness without imposing one output shape. |
+| Editorial base | `styles/editorial-base.md` | Shared prose quality floor: clarity, specificity, rhythm, naturalness, honesty, economy, reader interest, and editing standard. |
+| Style | `styles/<style>.md` | The editorial implementation: composition, source relationship, depth, structure, provenance, and distinct Writing character. |
 | Digest config | `digests/<digest-id>.md` | Which digest this is, what sources it uses, and optional preferences. |
 | Adapter | `adapters/<adapter>.md` | How a particular source type must be read. |
 | Rendering profile | `system/rendering-<style>.md` | How a style maps into HTML. |
@@ -19,6 +21,8 @@ A digest is assembled from separate layers with different responsibilities:
 | State database | `state/digest-state.db` | Shared SQLite state for runs, emails, and reviewed items across every digest. |
 
 A file under `digests/` is primarily a **configuration file**. Its Markdown body is optional. It does not need custom instructions to be valid.
+
+Every digest automatically inherits the shared editorial base through its selected canonical style. Custom instructions do not need to repeat universal writing-quality rules and cannot opt out of them.
 
 ## Canonical styles
 
@@ -111,6 +115,7 @@ Prefer material that teaches a reusable technique or explains an engineering tra
 
 Custom instructions must not redefine the selected style. In particular, do not use them to:
 
+- weaken the shared editorial-base quality floor or skip the mandatory EDIT pass;
 - turn `concise` or `detailed` into cross-source synthesis;
 - force `curated-discovery` to search for connections or themes merely because they exist;
 - remove a required `Sources` catalog from a style that requires one;
@@ -202,12 +207,34 @@ subject_template: "Engineering Notes — {date}"
 
 If no subject template is supplied, the workflow uses `<digest name> — <digest date>`.
 
+## 10. Add a new canonical style
+
+A new style is a new editorial implementation, not just a prompt variant.
+
+Before registering it, read `system/style-contract.md` and create `styles/<style>.md` with a complete `## Style interface`. Every style must explicitly declare its purpose, composition unit, source relationship, selection/depth/organization models, opening/body behavior, provenance, source catalog, ending behavior, Writing character, and optional extension points.
+
+Then add a dedicated `## Writing character` section and style-specific `## Quality control`. The style automatically inherits `styles/editorial-base.md`; do not copy the base wholesale or create a separate quality standard. Add only what makes this style's voice and editorial behavior distinct.
+
+A style may legitimately declare `Opening behavior: None`, `Source catalog: None`, or `Optional extension points: None`. The interface standardizes the questions, not the answers.
+
+Finally, wire the visual implementation:
+
+1. Create `system/rendering-<style>.md`.
+2. Create `templates/<style>-email-v1.html` using `templates/email-theme.html` as the visual language.
+3. Add `rendering_profiles.<style>` to `system/registry.yaml`.
+4. Verify that the rendering profile/template implement the style's actual structure rather than copying another style's composition.
+5. Run the style-contract validation before using it in a digest.
+
+A style that lacks any of these pieces is not runnable and should fail preflight before Gmail is touched.
+
 ## Preflight checklist
 
 Before enabling a new digest, verify:
 
 - [ ] filename, frontmatter `id`, and registry key are identical;
 - [ ] `style` is one of the canonical style IDs;
+- [ ] `system/registry.yaml` resolves both `defaults.style_contract` and `defaults.editorial_base`;
+- [ ] the selected style implements every required `## Style interface` dimension plus dedicated `## Writing character` and `## Quality control` sections;
 - [ ] the style has a matching style file, rendering profile, registry mapping, and non-empty template;
 - [ ] Gmail labels are correct;
 - [ ] every adapter exists and matches the source structure;

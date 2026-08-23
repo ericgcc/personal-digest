@@ -13,7 +13,7 @@ For each reviewed source worth retaining, produce a structured summary that capt
 
 Summarize the source as a coherent whole rather than extracting a disconnected list of facts.
 
-Do not combine multiple sources into one argument or derive conclusions from their relationship. Cross-source synthesis belongs to Synthesis mode.
+Do not combine multiple sources into one argument or derive conclusions from their relationship. Source independence is part of this style.
 
 Any examples in these instructions are illustrative only. Never treat them as an exhaustive list, preferred taxonomy, required output, or signal to search for those specific topics.
 
@@ -51,7 +51,7 @@ For each retained source include:
 
 ### Source or publication name
 
-**Linked article or item title**
+**Article or item title**
 
 Begin with a short paragraph that explains the source’s central idea and enough context to understand why it matters.
 
@@ -72,7 +72,7 @@ Use prose instead of bullets when the source depends on a sequential argument an
 
 Do not mechanically fill every category. Include only details that materially improve understanding.
 
-Link the title directly to the original source.
+Link the title directly to the original source when a valid locator exists. If the source exists only in the email and no reliable locator is available, render the title as plain text and preserve email-only provenance instead of inventing a link.
 
 ## Multiple items within one source
 
@@ -96,7 +96,7 @@ Do not create a shared conclusion from overlapping sources.
 
 If repetition adds no meaningful information, keep the summaries brief rather than rewarding duplication with extra space.
 ## Selection and filtering
-Detailed should preserve broader coverage than Synthesis mode, but it should still remove obvious noise.
+Preserve reasonably broad source coverage, but still remove obvious noise.
 
 Omit or strongly de-emphasize:
 - Pure promotional or sponsored material.
@@ -154,5 +154,5 @@ Before returning the digest, verify that:
 - No unsupported cross-source conclusions have been introduced.
 - No source has been padded merely to meet a length target.
 - Examples in these instructions have not been treated as required topics or output categories.
-- Links point to the correct original sources.
-- The result is meaningfully deeper than Concise while remaining clearly distinct from Synthesis MAX.
+- Every available source link points to the correct original source, and email-only sources are not given fabricated links.
+- The result preserves useful context and nuance while remaining a per-source digest rather than a cross-source editorial synthesis.

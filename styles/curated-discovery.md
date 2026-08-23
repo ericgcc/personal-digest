@@ -213,9 +213,11 @@ Use stable numerical citations throughout the digest.
 
 Assign each reviewed source one permanent number and reuse it everywhere.
 
-Render every inline citation as a clickable numerical link to the original source:
+Render every inline citation using the permanent source number:
 
 `[7]`
+
+When a valid source locator exists, make the numerical citation clickable. When the source is email-only and no reliable locator exists, keep the same visible numerical citation as a non-clickable reference. Never fabricate a destination merely to preserve clickability.
 
 When several sources directly support the same statement:
 
@@ -223,7 +225,7 @@ When several sources directly support the same statement:
 
 Place citations immediately after the specific claim they support.
 
-A citation means the linked source directly supports the preceding material.
+A citation means the referenced source directly supports the preceding material, whether or not that source has a usable hyperlink.
 
 Do not attach additional citations merely to make a statement appear better supported.
 
@@ -256,7 +258,7 @@ Preserve the permanent source numbering used throughout the digest.
 For every source include:
 
 - Its number.
-- The original article or item title as a clickable link.
+- The original article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
 - Author, newsletter, or publication when available.
 
 When useful, add a short neutral status such as:
@@ -264,6 +266,7 @@ When useful, add a short neutral status such as:
 - `Selected`
 - `Duplicate`
 - `Limited content`
+- `Email-only`
 - `Promotional content`
 - `Not selected`
 
@@ -302,7 +305,7 @@ Before returning the digest, verify that:
 - Unrelated material has not been forced into common themes.
 - Stronger material receives more depth than secondary material.
 - Article headlines have not been reused as substitutes for editorial titles.
-- Every factual claim has the appropriate numerical citation.
+- Every factual claim has the appropriate numerical citation, including email-only sources when relevant.
 - Citation numbers remain stable throughout.
 - Every reviewed source appears in the final catalog.
 - Optional `Worth opening for` cues describe genuine additional value.

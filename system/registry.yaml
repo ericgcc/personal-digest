@@ -1,4 +1,4 @@
-version: 2
+version: 3
 
 defaults:
   workflow: system/workflow.md
@@ -18,7 +18,7 @@ rendering_profiles:
   synthesis-max:
     rules: system/rendering-synthesis-max.md
     template: templates/synthesis-max-email-v1.html
-  curated:
+  curated-discovery:
     rules: system/rendering-curated-discovery.md
     template: templates/curated-discovery-email-v1.html
 

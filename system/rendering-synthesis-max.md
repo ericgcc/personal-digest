@@ -45,10 +45,10 @@ At the end of each thread:
 
 - use uppercase `SOURCE NOTES`;
 - list only the principal author/publication/sender names materially used in that thread;
-- place the stable numerical citation pill immediately after each name;
+- place the stable numerical citation pill immediately after each name; make it clickable only when that source has a valid locator;
 - let entries wrap naturally on narrow screens.
 
-The final `Sources` catalog uses the shared bibliographic row pattern: narrow numerical citation rail plus author/publication and linked original title. Preserve any neutral status badges required by the style.
+The final `Sources` catalog uses the shared bibliographic row pattern: narrow numerical citation rail plus author/publication and original title. Link the citation/title only when a valid locator exists; otherwise render email-only provenance without a fabricated destination. Preserve any neutral status badges required by the style.
 
 ## Callouts
 

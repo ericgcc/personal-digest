@@ -83,19 +83,28 @@ Each rendering profile defines any additional responsive transformations require
 
 ## Shared link and citation primitives
 
-The active summary style decides whether stable numerical citations are required. When they are required, use the shared clickable citation pill:
+The active summary style decides whether stable numerical citations are required. Resolve source locators using `system/workflow.md`; clickability is conditional on having a valid locator.
+
+When a valid locator exists, use the shared clickable citation pill:
 
 ```html
 <a class="citation" href="https://original-source.example/article">7</a>
 ```
 
+When an email-only source has no reliable locator, preserve the same source number with a non-clickable reference pill:
+
+```html
+<span class="citation" aria-label="Source 7, email-only">7</span>
+```
+
 - The visible content is only the stable source number.
 - Place it immediately after the supported claim.
-- Reuse the same number and URL everywhere the source appears.
+- Reuse the same number everywhere the source appears, and reuse the same validated URL everywhere when one exists.
 - Keep adjacent citation pills separated by a normal space.
 - Do not put brackets around the number; the pill supplies the visual boundary.
+- A missing locator never authorizes a fabricated or approximate link.
 
-For per-source styles that do not require numerical inline citations, link the article/item title directly as instructed by that style's rendering profile.
+For per-source styles that do not require numerical inline citations, link the article/item title when a valid locator exists. Otherwise render the title as normal editorial text and preserve email-only provenance without a fake link.
 
 ## Shared callout primitive
 
@@ -130,9 +139,9 @@ The active rendering profile defines where a callout may appear. If a style does
 
 Source presentation depends on the selected style:
 
-- `curated` and `synthesis-max` use stable numerical citations, section/item-level `SOURCE NOTES`, and a final bibliographic `Sources` catalog.
+- `curated-discovery` and `synthesis-max` use stable numerical citations, section/item-level `SOURCE NOTES`, and a final bibliographic `Sources` catalog. Citations and catalog titles are clickable only when a valid source locator exists.
 - `detailed` keeps each source independently identifiable inside its own entry and normally ends without a separate final catalog.
-- `concise` uses the source/publication label plus a directly linked article/item title and normally ends without a separate final catalog.
+- `concise` uses the source/publication label plus the article/item title, linked when possible, and normally ends without a separate final catalog.
 
 Never add a source catalog merely because another style has one. Follow the selected style file and rendering profile.
 
@@ -151,8 +160,8 @@ Keep these responsibilities separate:
 1. **`styles/<style>.md` — editorial contract**
    Defines what the summary style does: selection model, unit of summary, structure, depth, citation/source rules, and ending behavior.
 
-2. **`digests/<digest>.md` — digest-specific instructions**
-   Defines what this particular digest values: topic priorities, selection preferences, tone, recurring purpose, and any optional callout vocabulary.
+2. **`digests/<digest>.md` — digest configuration plus optional custom instructions**
+   YAML frontmatter defines the digest configuration. Any Markdown body is optional and may refine topic priorities, selection preferences, tone, recurring purpose, and compatible callout vocabulary without replacing the selected style.
 
 3. **`system/rendering-<style>.md` — style-to-HTML mapping**
    Defines how the selected style's editorial structure maps to visual components and responsive behavior.
@@ -173,7 +182,7 @@ Before sending:
 2. Confirm no example text, dates, article links, source numbers, reading-time values, or placeholder labels remain from the reference template.
 3. Confirm the email preserves the shared visual language while retaining the selected style's distinct composition.
 4. Confirm desktop, tablet, and mobile layouts remain readable; mobile must not retain width-expensive desktop geometry that squeezes body text.
-5. Confirm every source link and citation points to the correct original source.
+5. Confirm every available source link/clickable citation points to the correct locator, and that email-only sources without a locator remain unlinked rather than receiving fabricated destinations.
 6. Confirm callouts appear only when authorized and in a location permitted by the active rendering profile.
 7. Confirm the selected style's source-provenance and ending rules are followed exactly.
 8. Confirm the dark footer and hidden run-key remain intact.

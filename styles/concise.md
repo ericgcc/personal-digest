@@ -9,7 +9,7 @@ For each source, identify the one idea, development, technique, argument or take
 
 Prefer signal over coverage. Do not attempt to preserve every topic contained in a source.
 
-If several sources cover the same story or idea, summarize each independently but avoid repeating unnecessary background. Do not merge them; cross-source synthesis belongs to Synthesis mode.
+If several sources cover the same story or idea, summarize each independently but avoid repeating unnecessary background. Do not merge them; source independence is part of this style.
 
 ## Length and density
 
@@ -25,14 +25,14 @@ Every sentence should contribute information. Remove introductions, filler, tran
 
 For each retained source include:
 ### Source or publication name
-**Linked article or item title**
+**Article or item title**
 
 One concise paragraph containing:
 - The central idea or development.
 - The most important supporting detail when needed.
 - Why it matters, only when this is not already obvious from the summary.
 - 
-Link the title directly to the original source.
+Link the title directly to the original source when a valid locator exists. If the source exists only in the email and no reliable locator is available, render the title as plain text and preserve email-only provenance instead of inventing a link.
 
 Do not add bullet lists, thematic sections, editor’s notes or a final synthesis.
 ## Selection and filtering
@@ -75,5 +75,5 @@ Before returning the digest, verify that:
 - The highest-value idea appears early.
 - No entry has become a detailed article summary.
 - Repeated background has been removed.
-- Links point to the correct original sources.
+- Every available source link points to the correct original source, and email-only sources are not given fabricated links.
 - No unsupported editorial conclusions have been introduced.

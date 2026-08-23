@@ -72,7 +72,7 @@ Each section should normally contain:
 - A one-sentence subtitle stating its central insight.
 - Two or three concise paragraphs developing the idea.
 - Inline numerical citations attached to the exact claims or synthesized inferences they support.
-- A short `SOURCES` line listing the principal source names and their linked numbers.
+- A short `SOURCES` line listing the principal source names and their stable numbers, linked when a valid locator exists.
 
 Section titles must describe the synthesized idea, pattern, question or tension—not repeat an article title.
 
@@ -83,9 +83,11 @@ Use numerical citations instead of article names in the prose.
 
 Assign each reviewed source one stable number and reuse it everywhere.
 
-Render every inline citation as a clickable numerical link to the original article:
+Render every inline citation using the permanent source number:
 
 `[7]`
+
+When a valid source locator exists, make the numerical citation clickable. When the source is email-only and no reliable locator exists, keep the same visible numerical citation as a non-clickable reference. Never fabricate a destination merely to preserve clickability.
 
 When several sources directly support the same claim or jointly contribute to the same synthesized inference, group their citations:
 
@@ -120,7 +122,7 @@ Group entries by newsletter, publication or sender when useful.
 For every source include:
 
 - Its number.
-- The article title as a clickable link to the original source.
+- The article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
 - The author or publication when available.
 
 Optionally add a short neutral status label when relevant:
@@ -128,6 +130,7 @@ Optionally add a short neutral status label when relevant:
 - `Promotional content`
 - `Duplicate`
 - `Limited content`
+- `Email-only`
 - `Low signal`
 - `Not selected`
 
@@ -155,7 +158,7 @@ Before returning the briefing, verify that:
 - Editorial inference is distinguishable from source-supported claims.
 - Multi-source synthesized claims cite the contributing sources together when appropriate.
 - Every factual claim has the appropriate numerical citation.
-- Every citation links to the correct original source.
+- Every linked citation points to the correct original source; non-linkable email-only citations remain stable and are not given fabricated destinations.
 - Citation numbers remain consistent from beginning to end.
 - All reviewed sources appear in the final catalog.
 - The strongest material receives the most space.

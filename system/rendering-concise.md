@@ -15,12 +15,12 @@ Use with `styles/concise.md` and `templates/concise-email-v1.html`.
 On desktop, use the template's narrow source rail beside the reading content:
 
 - source/publication name in compact uppercase/sans-serif treatment;
-- directly linked article/item title in serif display type;
+- article/item title in serif display type, directly linked only when a valid source locator exists;
 - one compact paragraph, normally 40–80 words, containing the central value of the source.
 
 Separate entries with light horizontal rules and whitespace rather than cards.
 
-The linked title is the CTA. Do not add avatars, thumbnails, engagement metrics, `KEY POINTS`, read-original buttons, or other per-entry chrome.
+When a valid locator exists, the linked title is the CTA. For email-only sources without a reliable locator, render the title as plain text with subtle email-only provenance; do not fabricate a CTA. Do not add avatars, thumbnails, engagement metrics, `KEY POINTS`, read-original buttons, or other per-entry chrome.
 
 Do not add numerical citation pills unless the style itself is later changed to require them; the linked title supplies provenance for each independent entry.
 

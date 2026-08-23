@@ -38,13 +38,13 @@ Each retained source should contain:
 
 - source/publication name as a small uppercase or sans-serif label;
 - optional honest per-source summary reading-time estimate if available;
-- directly linked article/item title in serif display type;
+- article/item title in serif display type, directly linked only when a valid source locator exists;
 - coherent explanatory paragraph(s) preserving the source's central idea and context;
 - `SOURCE NOTES` when the style output contains concise supporting points;
 - optional authorized callout;
-- optional secondary `OPEN ORIGINAL SOURCE` link/button as shown in the template.
+- optional secondary `OPEN ORIGINAL SOURCE` link/button as shown in the template, only when a valid locator exists.
 
-The linked title remains the primary source link. The secondary button is an affordance, not a substitute for the linked title.
+When a source locator exists, the linked title remains the primary source link and the secondary button is only an affordance. For email-only sources without a reliable locator, render the title as plain text, omit the button, and preserve provenance without inventing a URL.
 
 ## SOURCE NOTES
 

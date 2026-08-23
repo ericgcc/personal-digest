@@ -4,7 +4,7 @@ Use this adapter for Medium Daily Digest emails and other Medium link collection
 
 ## Required reading method
 
-- Read the source email in Gmail and extract every candidate Medium article link.
+- Read the source email in the email and extract every candidate Medium article link.
 - Open articles one by one in the user’s existing local Google Chrome session, which is expected to be authenticated to Medium.
 - Read the actual article page in Chrome. Expand or scroll through the full article as needed, and record its canonical URL, title, author/publication, and whether full text was accessible.
 - This Chrome requirement is mandatory. Do not replace it with public web search, email snippets, search-result summaries, or an unauthenticated browser. The laptop dependency is accepted by design.

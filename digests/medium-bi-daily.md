@@ -4,6 +4,8 @@ name: Medium Bi-Daily Digest
 enabled: true
 language: English
 style: curated-discovery
+aliases:
+  - medium-daily
 sources:
   - gmail_labels:
       - Newsletters/Medium
@@ -39,7 +41,7 @@ Include material when it provides:
 - A meaningful engineering or architectural pattern.
 - A strong explanation of how something works.
 - A useful case study or failure analysis.
-- A non-obvious connection between several sources.
+- A non-obvious connection between several sources when combining them materially improves the selected idea.
 - A credible emerging trend with practical consequences.
 - An original article worth reading in full.
 
@@ -52,7 +54,7 @@ Skip from the narrative:
 - Minor announcements.
 - Low-signal AI hype.
 - Claims that are interesting only because they are recent.
-- Material that does not contribute to a selected theme.
+- Material that does not contribute to a selected idea, useful discovery, or genuinely stronger editorial connection.
 
 Frequency does not equal relevance. Several newsletters repeating the same announcement should normally become one compressed signal, not a larger section.
 ## Optional editorial signals
@@ -65,6 +67,6 @@ Use these as callouts only when genuinely warranted:
 - `✍️ WRITE` — a connection or thesis with potential for a thoughtful technical or professional post.
 - `📷 DISCOVER` — an exceptional photography, visual or serendipitous discovery.
 
-Integrate these signals inside the relevant thematic section. Do not create a generic signals appendix. Do not write full article titles or raw URLs inside the narrative unless discussing a `📖 READ` selection. Even then, retain the numerical citation.
+Integrate these signals inside the relevant editorial selection or discovery when the selected style/rendering profile supports the callout. Do not create a generic signals appendix. Do not write full article titles or raw URLs inside the narrative unless discussing a `📖 READ` selection. Even then, retain the numerical citation.
 
 Use no more than four or five signals in total. Quality matters more than coverage.

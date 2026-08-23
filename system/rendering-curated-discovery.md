@@ -34,14 +34,14 @@ Do not introduce thumbnails, avatars, engagement metrics, or article-card chrome
 
 ## SOURCE NOTES
 
-Use the same source-note language as the Synthesis template:
+Use the shared source-note treatment:
 
 - uppercase micro-label `SOURCE NOTES`;
-- author/publication names followed by their stable numerical citation pills;
+- author/publication names followed by their stable numerical citation pills, clickable only when a valid locator exists;
 - centered dots or clean wrapping between entries;
 - navigation/provenance only, not a bibliography.
 
-The final `Sources` catalog uses the shared bibliographic row treatment: citation rail, author/publication, linked original title, and any neutral status required by the style.
+The final `Sources` catalog uses the shared bibliographic row treatment: citation rail, author/publication, original title, and any neutral status required by the style. Link only sources with a valid locator; email-only sources without one remain unlinked.
 
 ## Discoveries
 

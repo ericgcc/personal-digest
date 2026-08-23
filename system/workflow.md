@@ -7,7 +7,7 @@ This is the shared execution contract for every configured digest. It defines ho
 1. Read `system/registry.yaml` and locate the requested digest ID.
 2. Read the referenced file in `digests/`.
 3. Parse its YAML frontmatter as structured digest configuration.
-4. Resolve the selected style from `styles/<style>.md`, every adapter named by its source groups from `adapters/`, `system/html-rendering.md`, the matching style-specific rendering profile and template from `system/registry.yaml`, and the processing ledger.
+4. Resolve the selected style from `styles/<style>.md`, every adapter named by its source groups from `adapters/`, `system/html-rendering.md`, the matching style-specific rendering profile and template from `system/registry.yaml`, the SQLite state contract, and the shared state database.
 5. Treat any Markdown after the frontmatter as **optional digest-specific custom instructions**. A valid digest file may contain only frontmatter and no custom instructions at all.
 6. Stop safely if `enabled: false` or if any required dependency cannot be resolved.
 
@@ -18,7 +18,7 @@ Before touching Gmail, validate that:
 - every declared adapter exists;
 - every source group declares at least one Gmail label and at least one adapter;
 - the rendering profile and template exist and match the selected style;
-- the configured ledger exists;
+- the configured SQLite state database and state contract exist, the database passes `PRAGMA integrity_check`, and its `PRAGMA user_version` matches the contract;
 - any `aliases` are distinct from the canonical digest ID.
 
 Do not infer spelling aliases for styles or digest IDs. Configuration names must match exactly.
@@ -76,7 +76,7 @@ Each style is defined by the correspondingly named Markdown file in `styles/`. A
 - Gmail is the shared source for all digests.
 - Use the rolling catch-up window from the registry, not a rigid “yesterday” filter. `catch_up_days` controls retrieval lookback; it is **not** an execution schedule.
 - Process eligible messages oldest first.
-- Exclude messages already processed for the current digest according to both Gmail labels and the ledger.
+- Exclude messages already processed for the current digest according to the SQLite state database and processed Gmail labels. Treat canonical and declared alias IDs as read identities; either persistent-state signal is sufficient to prevent duplicate processing, and any mismatch should be repaired when there is enough evidence to do so safely.
 - When the digest declares `aliases`, treat those legacy IDs as additional read-only processed-state identities during discovery and deduplication.
 
 Execution cadence is controlled by the caller or automation that invokes this workflow; it is not inferred from a digest name such as `daily`, `bi-daily`, or `weekly`.
@@ -118,7 +118,7 @@ When several adapters are declared:
 4. Use `link-newsletter` when the email primarily points to external content and its excerpts are insufficient for the selected style.
 5. Use a hybrid extraction when the email contains both meaningful original commentary and external articles required for the retained material.
 6. Do not process or register the same content twice.
-7. Record `inline-newsletter`, `link-newsletter`, or `hybrid` as the selected adapter in the processing ledger.
+7. Preserve `inline-newsletter`, `link-newsletter`, or `hybrid` as the selected adapter so it can be committed with the email row in the state database after successful delivery.
 
 ### Inline detection
 
@@ -159,7 +159,7 @@ Never fabricate provenance by linking to a publication homepage, sender domain, 
 
 When no usable locator exists:
 
-- keep the source fully represented in provenance and the ledger;
+- keep the source fully represented in provenance and the state database;
 - for styles with stable numerical citations, keep the source number but render it as a non-clickable citation/reference rather than a fake link;
 - for per-source styles, render the source title as plain text and identify it as an email-only source when useful;
 - in final source catalogs, list the title and provenance without a link and optionally mark it `Email-only`.
@@ -186,12 +186,28 @@ aliases:
 
 For state aliases:
 
-- read both canonical and legacy processed labels/ledger rows when deciding whether an email or item was already handled;
-- never write new runs, ledger rows, or processed labels under a legacy ID;
+- read both canonical and legacy processed labels/state-database rows when deciding whether an email or item was already handled;
+- never write new runs, state-database rows, or processed labels under a legacy ID;
 - generate all new run keys from the canonical digest ID;
 - retain aliases only as long as historical state under those IDs must remain recognized.
 
 This allows a digest ID to change without accidentally reprocessing old content.
+
+## SQLite state database
+
+The shared persistent state store is the SQLite database configured by `defaults.state_database` in `system/registry.yaml`. Its operational and schema contract is `system/state-database.md`. There is one state database for the whole Digest System, not one database per digest. `digest_id` is the namespace that keeps runs, emails, and items independent across digests.
+
+For every run:
+
+1. Fetch the database as a raw binary file to a local working path; never parse or edit SQLite as text.
+2. Open it using SQLite (the Python standard-library `sqlite3` module is acceptable) and apply the required pragmas from the state contract.
+3. Validate `PRAGMA integrity_check`, `PRAGMA foreign_key_check`, and `PRAGMA user_version` before relying on its state.
+4. Use parameterized SQL for all values and explicit transactions for all writes.
+5. Read processed state across the canonical digest ID plus any declared aliases, but write only the canonical digest ID.
+6. Do not use WAL mode for the persisted Drive database; the state file must remain self-contained with no required `-wal` or `-shm` sidecars.
+7. Serialize state writers. Multiple digests may share this database, but two digest executions must not replace it concurrently. Record the Drive file modification time when downloading it and verify it has not changed before replacement. If it changed, reload the newest copy and replay the transaction or stop safely rather than overwriting another run.
+
+The SQLite database is the primary operational state. Gmail processed labels are a secondary recovery and inspection signal; they must never cause a separate per-digest database or duplicate state store to be created.
 
 ## Read and normalize
 
@@ -209,16 +225,17 @@ This allows a digest ID to change without accidentally reprocessing old content.
 4. Render according to `system/html-rendering.md`, then the selected style-specific rendering profile and matching template from `system/registry.yaml`.
 5. Use `templates/email-theme.html` only as the shared visual-language reference, not as a universal layout.
 6. Send the HTML email to the Gmail account owner (`me`). The default subject is `<digest name> — <digest date>`; an optional `subject_template` in digest frontmatter may override it without changing the editorial style.
-7. Generate a deterministic run key from the canonical digest ID and the sorted admitted Gmail message IDs. Before sending, check both the ledger and Gmail Sent for that run key to prevent duplicate delivery.
+7. Generate a deterministic run key from the canonical digest ID and the sorted admitted Gmail message IDs. Before sending, check both the state database and Gmail Sent for that run key to prevent duplicate delivery.
 
 ## Commit state only after delivery
 
 After Gmail confirms delivery:
 
-1. Record the run, every admitted email, and every reviewed item in the ledger using the canonical digest ID.
-2. Apply `Digest/Processed/<digest-id>` to each successfully processed source email.
+1. Apply the run, every admitted email, and every reviewed item to a local working copy of the SQLite state database in one transaction, using the canonical digest ID.
+2. Commit the local transaction, run the database integrity checks required by `system/state-database.md`, close the connection, and replace the same Drive database file only if it has not changed since this run downloaded it. If it changed, re-fetch the latest database and safely replay the state transaction rather than overwriting newer state.
+3. Only after the updated database is safely persisted to Drive, apply `Digest/Processed/<digest-id>` to each successfully processed source email.
 
-If delivery or a required dependency fails, do not label messages or record them as processed. If the email was sent but state recording failed, a later run must detect the run key in Gmail Sent and repair the ledger and labels without sending again.
+If delivery or a required dependency fails, do not label messages or persist them as processed. If the email was sent but state persistence failed, a later run must detect the run key in Gmail Sent and repair the state database and labels without sending again. If database persistence succeeds but Gmail labeling fails, the database remains authoritative for deduplication and the missing labels should be repaired without reprocessing or resending.
 
 ## Failure behavior
 
@@ -226,4 +243,4 @@ If delivery or a required dependency fails, do not label messages or record them
 - Never silently substitute another style, rendering profile, or template when configuration is inconsistent.
 - Leave inaccessible items pending and state the reason in run notes.
 - If a custom instruction conflicts with the style or workflow, keep the compatible custom instructions, ignore only the conflicting clause, and note the conflict.
-- If the required browser session, Gmail, Drive, template, or ledger is unavailable, stop safely without committing processing state.
+- If the required browser session, Gmail, Drive, template, state contract, or SQLite state database is unavailable or invalid, stop safely without committing processing state.

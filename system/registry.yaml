@@ -1,10 +1,11 @@
-version: 3
+version: 4
 
 defaults:
   workflow: system/workflow.md
   html_rendering: system/html-rendering.md
   visual_theme: templates/email-theme.html
-  ledger: state/Digest Processing Ledger.xlsx
+  state_database: state/digest-state.db
+  state_contract: system/state-database.md
   catch_up_days: 14
   delivery: gmail-self
 

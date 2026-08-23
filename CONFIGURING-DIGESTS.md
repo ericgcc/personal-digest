@@ -16,7 +16,7 @@ A digest is assembled from separate layers with different responsibilities:
 | Template | `templates/<style>-email-v1.html` | Canonical HTML composition for that style. |
 | Theme | `templates/email-theme.html` | Shared visual primitives and family resemblance. |
 | Registry | `system/registry.yaml` | Connects digest IDs and styles to their files. |
-| Ledger | `state/Digest Processing Ledger.xlsx` | Persistent run, email, and item processing state. |
+| State database | `state/digest-state.db` | Shared SQLite state for runs, emails, and reviewed items across every digest. |
 
 A file under `digests/` is primarily a **configuration file**. Its Markdown body is optional. It does not need custom instructions to be valid.
 
@@ -176,11 +176,21 @@ aliases:
   - old-digest-id
 ```
 
-The workflow will read old labels and ledger rows as already processed, but every new run, label, and ledger row will use only the new canonical ID.
+The workflow will read old labels and state-database rows as already processed, but every new run, label, and database row will use only the new canonical ID.
 
 Do not rename a digest merely for cosmetic display changes. Change `name:` instead when the processing identity should remain the same.
 
-## 8. Optional fields
+## 8. Shared SQLite state
+
+All digests use the same `state/digest-state.db`. Do **not** create a database per newsletter or per digest. Rows are scoped by `digest_id`, so the same Gmail message or article may legitimately have independent processing state in two different digests.
+
+The schema and runtime rules live in `system/state-database.md`. A new digest requires no database migration: once its configuration is registered, new rows are written under its canonical `digest_id`. Digest aliases remain configuration-driven and are used only when reading historical state.
+
+Because the SQLite file is stored in Drive and persisted as one binary file, v1 assumes **one state writer at a time**. Multiple digests are fully supported, but their executions should be serialized rather than scheduled to commit simultaneously. This is a storage-concurrency rule, not a restriction on how many digests can exist.
+
+Do not enable SQLite WAL mode for the persisted state file; the runtime contract intentionally uses a self-contained database file so no `-wal` or `-shm` sidecars need to be synchronized.
+
+## 9. Optional fields
 
 `subject_template` may override the default email subject without changing the editorial style. Keep subject customization separate from editorial structure.
 
@@ -205,6 +215,7 @@ Before enabling a new digest, verify:
 - [ ] custom callouts are supported by the rendering profile;
 - [ ] `catch_up_days` is intentional;
 - [ ] any prior digest ID is listed in `aliases` after a rename;
+- [ ] its execution will not overlap another digest state write;
 - [ ] reference handling does not require fabricated URLs;
 - [ ] the intended execution cadence is configured outside this repository/system configuration;
 - [ ] the digest is set to `enabled: true` only when ready.

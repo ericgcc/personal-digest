@@ -11,6 +11,9 @@ sources:
       - Newsletters/Medium
     adapters:
       - medium
+    acquisition_filters:
+      exclude_topics:
+        - photography
 ---
 # Custom instructions
 
@@ -43,7 +46,7 @@ Strong recurring interests include:
 
 Also give genuine consideration to strong material about products, startups, side projects, business or monetization, personal development, reading and learning, personal finance, design, and other established interests.
 
-Preserve room for exceptional serendipity, including subjects outside these clusters, except photography, which belong to another digest. Don't even open photography-related content.
+Save room for serendipity, including subjects outside these clusters.
 
 ## Selection calibration
 
@@ -72,19 +75,6 @@ When several articles cover the same area, select the one with the strongest sub
 When several candidates have comparable value, prefer some diversity of usefulness rather than filling the edition with variations of the same technical theme.
 
 With a small source set, a shorter edition containing only genuinely strong material is preferable to lowering the selection threshold.
-
-Skip from the narrative:
-
-- Duplicates.
-- Promotions and sponsored content.
-- Job posts and welcome emails.
-- Generic advice.
-- Minor announcements.
-- Low-signal AI hype.
-- Claims that are interesting only because they are recent.
-- Material that does not contribute to a selected idea, useful discovery, or genuinely stronger editorial connection.
-
-Frequency does not equal relevance. Several articles repeating the same announcement should normally become one compressed signal, not a larger section.
 ## Optional editorial signals
 
 Use these only when genuinely warranted:
@@ -93,6 +83,5 @@ Use these only when genuinely warranted:
 - `🛠 PRACTICAL` — a concrete technique, workflow, checklist, or experiment worth applying.
 - `📖 READ` — a source whose full detail offers unusually high additional value.
 - `✍️ WRITE` — an idea or connection with potential for a thoughtful technical or professional post.
-- `📷 DISCOVER` — an exceptional photography, visual, or serendipitous discovery.
 
 Integrate signals inside the relevant selection or discovery. Do not create a signals appendix. Use no more than four or five in total.

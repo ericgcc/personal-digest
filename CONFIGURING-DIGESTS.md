@@ -70,7 +70,7 @@ Set `enabled: false` while building or testing a configuration that should not r
 
 ## 2. Choose source groups and adapters
 
-A source group declares Gmail labels plus the adapters allowed to process messages from those labels.
+A source group declares Gmail labels plus the adapters allowed to process messages from those labels. It may also declare structured `acquisition_filters` when an adapter explicitly supports filtering candidates before opening/reading them.
 
 Common adapters:
 
@@ -89,6 +89,23 @@ sources:
       - link-newsletter
 ```
 
+For adapters that explicitly support pre-open topic exclusion, use structured configuration rather than prose custom instructions. For example, the Medium adapter supports:
+
+```yaml
+sources:
+  - gmail_labels:
+      - Newsletters/Medium
+    adapters:
+      - medium
+    acquisition_filters:
+      exclude_topics:
+        - photography
+```
+
+`exclude_topics` is evaluated from metadata already visible during candidate discovery. A clear match can be skipped before Chrome is opened; an ambiguous candidate is still read normally. Pre-filtered candidates are not reviewed sources and do not appear in the source catalog or reading-time calculation.
+
+Only use filter keys documented by the adapter. Unsupported acquisition filters are a preflight error. Removing a filter later does not reopen source emails that were already committed as processed.
+
 Source-group order matters. If one Gmail message matches several groups, the first matching group owns it for that run.
 
 ## 3. Add custom instructions only when useful
@@ -99,7 +116,7 @@ Good custom instructions refine the digest **inside the selected style**. They m
 
 - topics or domains to prioritize;
 - practical vs. news-oriented preferences;
-- inclusion/exclusion rules;
+- editorial inclusion/exclusion rules applied after required source reading;
 - selectivity or signal thresholds;
 - tone and vocabulary;
 - useful tie-breakers when several items compete for space;
@@ -120,7 +137,7 @@ Custom instructions must not redefine the selected style. In particular, do not 
 - force `curated-discovery` to search for connections or themes merely because they exist;
 - remove a required `Sources` catalog from a style that requires one;
 - add a replacement top-level structure incompatible with the selected style;
-- change adapter reading methods, processed-state rules, or reference integrity;
+- change adapter reading methods, processed-state rules, reference integrity, or create pre-read exclusions; use supported structured `acquisition_filters` for the latter;
 - copy another digest's visual/editorial conventions into this one unless the selected rendering profile explicitly supports the same extension point.
 
 If one custom clause conflicts with the style, the workflow ignores that clause while preserving the rest of the custom instructions.
@@ -238,6 +255,7 @@ Before enabling a new digest, verify:
 - [ ] the style has a matching style file, rendering profile, registry mapping, and non-empty template;
 - [ ] Gmail labels are correct;
 - [ ] every adapter exists and matches the source structure;
+- [ ] every configured `acquisition_filters` key is explicitly supported by the selected adapter and has intentional values;
 - [ ] custom instructions refine rather than replace the style;
 - [ ] custom callouts are supported by the rendering profile;
 - [ ] `catch_up_days` is intentional;

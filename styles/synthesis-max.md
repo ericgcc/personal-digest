@@ -4,21 +4,22 @@ One selective briefing: no separate article summaries. Merge the strongest mater
 
 ## Style interface
 
-| Dimension                     | Declaration                                                                                                                                                          |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Purpose**                   | Turn the strongest source material into one integrated briefing whose main value comes from meaningful relationships, patterns, tensions, and combined implications. |
-| **Composition unit**          | A synthesized editorial insight or thematic thread.                                                                                                                  |
-| **Source relationship**       | Cross-source synthesis is fundamental when supported; unrelated material must not be forced together, and a valuable source may stand largely alone when necessary.  |
-| **Selection model**           | Highly selective: include material that contributes enough information, explanatory power, practical significance, novelty, or relationship value to justify space.  |
-| **Depth model**               | Variable-high depth across a dense five-to-eight-minute body, normally 700–1,200 words excluding the catalog.                                                        |
-| **Organization model**        | Big Picture opening → two to five numbered synthesized threads determined by the evidence.                                                                           |
-| **Opening behavior**          | Required `THE BIG PICTURE` opening that earns its place as the briefing’s first editorial synthesis.                                                                 |
-| **Body behavior**             | Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes.                                                                     |
-| **Citation / provenance**     | Permanent global numerical citations attached to supported claims/inferences plus thread-level source notes.                                                         |
-| **Source catalog**            | Required complete catalog of every reviewed source, grouped by source identity without renumbering.                                                                  |
-| **Ending behavior**           | Stop immediately after the final source catalog.                                                                                                                     |
-| **Writing character**         | Analytical, connective, authoritative but restrained, precise, and intellectually alive.                                                                             |
-| **Optional extension points** | Zero or one digest-authorized callout inside a thread when the rendering profile supports it.                                                                        |
+| Dimension | Declaration |
+| --- | --- |
+| **Purpose** | Turn the strongest source material into one integrated briefing whose main value comes from meaningful relationships, patterns, tensions, and combined implications. |
+| **Composition unit** | A synthesized editorial insight or thematic thread. |
+| **Source relationship** | Cross-source synthesis is fundamental when supported; unrelated material must not be forced together, and a valuable source may stand largely alone when necessary. |
+| **Selection model** | Highly selective: include material that contributes enough information, explanatory power, practical significance, novelty, or relationship value to justify space. |
+| **Depth model** | Variable-high depth across a dense five-to-eight-minute body, normally 700–1,200 words excluding the catalog. |
+| **Organization model** | Big Picture opening → two to five numbered synthesized threads determined by the evidence. |
+| **Progression model** | Each thread develops a clear analytical arc from evidence or tension → relationship between sources → supported implication, with contributing material ordered by the argument rather than by source. |
+| **Opening behavior** | Required `THE BIG PICTURE` opening that earns its place as the briefing’s first editorial synthesis. |
+| **Body behavior** | Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes. |
+| **Citation / provenance** | Permanent global numerical citations attached to supported claims/inferences plus thread-level source notes. |
+| **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering. |
+| **Ending behavior** | Stop immediately after the final source catalog. |
+| **Writing character** | Analytical, connective, authoritative but restrained, precise, and intellectually alive. |
+| **Optional extension points** | Zero or one digest-authorized callout inside a thread when the rendering profile supports it. |
 
 ## Synthesis mode
 
@@ -55,7 +56,7 @@ Write with analytical authority and restraint. The prose should make relationshi
 
 Start from the strongest concrete evidence, tension, or mechanism and let the synthesis emerge from it. Explain why sources belong together instead of relying on phrases such as “the broader pattern” or “the deeper lesson” to announce synthesis.
 
-A good thread should feel discovered rather than imposed: the reader can see how the contributing evidence leads to the editorial inference. Distinguish sharply between what sources establish and what the briefing infers from them.
+A good thread should feel discovered rather than imposed: the reader can see how the contributing evidence leads to the editorial inference. Frame the thread before drafting so its evidence, relationship, and implication form one readable progression rather than a sequence of source observations. Distinguish sharply between what sources establish and what the briefing infers from them.
 
 Vary the rhetorical shape of threads. Some may begin with a contradiction, others with a concrete fact, mechanism, consequence, or question. Avoid repeating a polished `thesis → evidence → grand implication` cadence across the briefing.
 

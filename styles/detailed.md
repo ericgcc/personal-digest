@@ -12,6 +12,7 @@ A structured per-source digest designed to preserve the important context, nuanc
 | **Selection model** | Preserve reasonably broad substantive coverage while removing obvious noise and low-information material. |
 | **Depth model** | Variable-medium depth: typically 120–220 words and roughly 45–75 seconds per substantive source, expanding only when extra detail materially improves understanding. |
 | **Organization model** | Optional broad topical grouping derived from the actual source set; otherwise direct source-by-source presentation. |
+| **Progression model** | Each source summary follows one coherent explanatory line: orient the reader, establish the central idea, then develop only the mechanisms, evidence, examples, or caveats that advance it. |
 | **Opening behavior** | No editorial opening. An optional navigational index may appear only when topical grouping genuinely helps. |
 | **Body behavior** | Central idea first, then explanatory prose and two to five useful details when bullets improve clarity; sequential prose when they do not. |
 | **Citation / provenance** | Every source remains explicitly identified; link the original title only when a valid locator exists. |
@@ -40,9 +41,9 @@ Any examples in these instructions are illustrative only. Never treat them as an
 
 Write with calm explanatory confidence. The reader should feel guided through the source by an excellent editor who understands the material and respects its complexity.
 
-Put the central value early, then develop mechanism, evidence, examples, caveats, or consequences in the order that makes the source easiest to understand. Prefer concrete explanation over textbook abstraction and preserve terminology only when it carries real precision.
+Put the central value early, then develop mechanism, evidence, examples, caveats, or consequences in the order that makes the source easiest to understand. Do not preserve source order when a different sequence would explain the idea better. Prefer concrete explanation over textbook abstraction and preserve terminology only when it carries real precision.
 
-Patience does not mean verbosity. Do not restate the same claim in prose and bullets, and do not turn supporting notes into a mechanical checklist. Vary sentence and paragraph shape naturally according to the argument.
+Patience does not mean verbosity. Do not restate the same claim in prose and bullets, and do not turn supporting notes into a mechanical checklist. If bullets would fragment an explanation that needs sequence or causality, use prose instead. Vary sentence and paragraph shape naturally according to the argument.
 
 The voice should be exact without becoming clinical, and engaging without becoming showy. Do not manufacture drama or generalize beyond what the individual source supports.
 

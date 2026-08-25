@@ -1,8 +1,9 @@
-version: 5
+version: 6
 
 defaults:
   workflow: system/workflow.md
   style_contract: system/style-contract.md
+  editorial_process: system/editorial-process.md
   editorial_base: styles/editorial-base.md
   html_rendering: system/html-rendering.md
   visual_theme: templates/email-theme.html

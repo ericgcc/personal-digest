@@ -8,7 +8,8 @@ A digest is assembled from separate layers with different responsibilities:
 
 | Layer | Location | Responsibility |
 | --- | --- | --- |
-| Workflow | `system/workflow.md` | Shared execution, state, safety, routing, precedence, and the SELECT → DRAFT → EDIT → RENDER pipeline. |
+| Workflow | `system/workflow.md` | Shared execution, state, safety, routing, precedence, and delivery. |
+| Editorial process | `system/editorial-process.md` | Shared autonomous production method: SELECT → FRAME → DRAFT → structural/clarity/voice/compression edits → FINAL POLISH. |
 | Style contract | `system/style-contract.md` | Interface every canonical style must implement; validates architectural completeness without imposing one output shape. |
 | Editorial base | `styles/editorial-base.md` | Shared prose quality floor: clarity, specificity, rhythm, naturalness, honesty, economy, reader interest, and editing standard. |
 | Style | `styles/<style>.md` | The editorial implementation: composition, source relationship, depth, structure, provenance, and distinct Writing character. |
@@ -22,7 +23,7 @@ A digest is assembled from separate layers with different responsibilities:
 
 A file under `digests/` is primarily a **configuration file**. Its Markdown body is optional. It does not need custom instructions to be valid.
 
-Every digest automatically inherits the shared editorial base through its selected canonical style. Custom instructions do not need to repeat universal writing-quality rules and cannot opt out of them.
+Every digest automatically uses the shared editorial process and inherits the shared editorial base through its selected canonical style. Custom instructions do not need to repeat universal writing-quality rules and cannot opt out of the process or quality floor.
 
 ## Canonical styles
 
@@ -132,7 +133,7 @@ Prefer material that teaches a reusable technique or explains an engineering tra
 
 Custom instructions must not redefine the selected style. In particular, do not use them to:
 
-- weaken the shared editorial-base quality floor or skip the mandatory EDIT pass;
+- weaken the shared editorial-base quality floor or skip/reorder mandatory stages in `system/editorial-process.md`;
 - turn `concise` or `detailed` into cross-source synthesis;
 - force `curated-discovery` to search for connections or themes merely because they exist;
 - remove a required `Sources` catalog from a style that requires one;
@@ -228,9 +229,9 @@ If no subject template is supplied, the workflow uses `<digest name> — <digest
 
 A new style is a new editorial implementation, not just a prompt variant.
 
-Before registering it, read `system/style-contract.md` and create `styles/<style>.md` with a complete `## Style interface`. Every style must explicitly declare its purpose, composition unit, source relationship, selection/depth/organization models, opening/body behavior, provenance, source catalog, ending behavior, Writing character, and optional extension points.
+Before registering it, read `system/style-contract.md` and create `styles/<style>.md` with a complete `## Style interface`. Every style must explicitly declare its purpose, composition unit, source relationship, selection/depth/organization models, **progression model**, opening/body behavior, provenance, source catalog, ending behavior, Writing character, and optional extension points.
 
-Then add a dedicated `## Writing character` section and style-specific `## Quality control`. The style automatically inherits `styles/editorial-base.md`; do not copy the base wholesale or create a separate quality standard. Add only what makes this style's voice and editorial behavior distinct.
+Then add a dedicated `## Writing character` section and style-specific `## Quality control`. The style automatically inherits `styles/editorial-base.md` and uses `system/editorial-process.md`; do not copy the base/process wholesale or create a separate competing production method. Add only what makes this style's voice and editorial behavior distinct.
 
 A style may legitimately declare `Opening behavior: None`, `Source catalog: None`, or `Optional extension points: None`. The interface standardizes the questions, not the answers.
 
@@ -250,8 +251,8 @@ Before enabling a new digest, verify:
 
 - [ ] filename, frontmatter `id`, and registry key are identical;
 - [ ] `style` is one of the canonical style IDs;
-- [ ] `system/registry.yaml` resolves both `defaults.style_contract` and `defaults.editorial_base`;
-- [ ] the selected style implements every required `## Style interface` dimension plus dedicated `## Writing character` and `## Quality control` sections;
+- [ ] `system/registry.yaml` resolves `defaults.style_contract`, `defaults.editorial_process`, and `defaults.editorial_base`;
+- [ ] the selected style implements every required `## Style interface` dimension, including `Progression model`, plus dedicated `## Writing character` and `## Quality control` sections;
 - [ ] the style has a matching style file, rendering profile, registry mapping, and non-empty template;
 - [ ] Gmail labels are correct;
 - [ ] every adapter exists and matches the source structure;

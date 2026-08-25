@@ -2,37 +2,39 @@
 
 A selective, idea-first editorial briefing built from the strongest material in the complete source set.
 
-The fundamental unit is the **idea worth keeping**, not the newsletter, article, or topic. Review everything first, then decide what deserves the reader’s limited attention.
+The fundamental unit is a **coherent editorial mini-essay built around one idea worth understanding**, not the newsletter, article, or topic. Review everything first, then decide what deserves the reader’s limited attention and what must be left out so the selected idea can be explained well.
 
 ## Style interface
 
 | Dimension | Declaration |
 | --- | --- |
 | **Purpose** | Create a selective personal briefing around the strongest ideas worth learning, keeping, applying, or exploring. |
-| **Composition unit** | An idea worth keeping; shorter worthwhile material may appear as a discovery. |
+| **Composition unit** | A coherent editorial mini-essay built around one idea worth understanding; shorter worthwhile material may appear as a discovery. |
 | **Source relationship** | Treat ideas independently by default; combine sources only when doing so materially improves the selected idea. |
 | **Selection model** | Highly selective and value-first; omission is expected and strong outliers may outrank recurring topics. |
 | **Depth model** | Variable depth across roughly five to eight minutes: give rich ideas room, compress narrower discoveries, omit weak material. |
 | **Organization model** | Short editorial orientation → importance-ordered numbered selections → optional discoveries → complete source catalog. |
+| **Progression model** | Each full selection follows one narrative spine from orientation or concrete entrance → explanation/development → useful consequence, qualification, or resolution. Discoveries remain compact but coherent. |
 | **Opening behavior** | Required short editorial orientation that either states a genuinely interesting observation or creates honest curiosity around the strongest material without forcing a thesis. |
-| **Body behavior** | Three to six full editorial selections when warranted, zero to four discoveries, variable depth, stable claim-level citations, and source notes. |
+| **Body behavior** | Three to six coherent editorial mini-essays when warranted, zero to four discoveries, variable depth, stable claim-level citations, and source notes. |
 | **Citation / provenance** | Permanent global numerical citations plus selection-level source lines/source notes. |
 | **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering. |
 | **Ending behavior** | Stop immediately after the final source catalog. |
 | **Writing character** | Curious, selective, idea-driven, lively, lucid, and lightly magazine-like without becoming ornate. |
 | **Optional extension points** | Featured treatment, Discoveries, `Worth opening for`, and digest-authorized callouts when genuinely warranted. |
 
+
 ## Core principle: Digest-first reading
 
 The digest is the primary reading experience.
 
-Deliver the substantive value directly: the reader should be able to **learn, reflect, highlight useful ideas, add notes, and retain the important substance without opening the original sources**.
+Deliver the substantive value directly: the reader should be able to **understand the selected idea, explain it in their own words, reflect on it, and retain its important substance without opening the original source**.
 
 Sources exist for optional depth, verification, examples, or further exploration—not to complete an intentionally incomplete summary.
 
 Never write teaser copy whose main purpose is to generate a click. If an idea is selected, explain the useful part now.
 
-Summarize **ideas, reasoning, mechanisms, evidence, examples, distinctions, frameworks, trade-offs, and implications** rather than merely describing what an article discusses.
+Explain the **one editorial idea selected from the source** using only the reasoning, mechanisms, evidence, examples, distinctions, trade-offs, or implications needed to make that idea understandable. Do not preserve every useful point merely because it exists in the source.
 
 Avoid phrases such as “the author explores…” or “this article discusses…” when the underlying idea can be stated directly.
 
@@ -46,7 +48,8 @@ Before writing:
 4. Merge duplicates and substantially overlapping coverage.
 5. Evaluate candidates by the amount of useful or interesting substance they contain.
 6. Select only the material that genuinely deserves inclusion.
-7. Decide the appropriate depth for each selected item before writing.
+7. For each full selection, use `system/editorial-process.md` to frame one central focus, reader promise, narrative spine, necessary support, and explicit branches to cut before drafting.
+8. Decide the appropriate depth only after that frame is coherent.
 
 Omission is expected. A source does not deserve space merely because it was reviewed.
 
@@ -76,7 +79,7 @@ Never force unrelated material into a common narrative or broad artificial theme
 
 Use variable depth.
 
-Give substantial space to ideas that contain enough reasoning, detail, or implications to justify it. Compress narrower but worthwhile material. Omit weak material entirely.
+Give substantial space to ideas that contain enough reasoning, detail, or implications to justify it. Compress narrower but worthwhile material. Omit weak material entirely. Within a selected article, omit secondary branches that would turn the piece into an inventory.
 
 Prefer a small number of substantive selections over a long list of shallow summaries.
 
@@ -87,33 +90,29 @@ A full editorial item should normally contain enough information to understand:
 - What reasoning, evidence, mechanism, or example makes it useful or interesting.
 - Important qualifications, limitations, trade-offs, or consequences when relevant.
 
-Preserve concrete details whenever they carry meaning.
+Preserve concrete details when they make the central idea clearer, more credible, or more useful. A detail may be correct and interesting yet still be omitted when it interrupts the narrative spine.
 
-Do not replace useful specifics with generic takeaways.
+Do not replace useful specifics with generic takeaways, but do not confuse specificity with completeness.
 
-## Highlightable substance
+## Understanding over extraction
 
-Every selected item should contain at least one idea substantial enough to be worth remembering, highlighting, annotating, or discussing.
+Do not write the digest as a collection of sentences designed to be highlighted independently. Highlight-worthy language may emerge naturally from excellent explanation, but it is not the unit of construction.
 
-Prefer declarative, information-rich prose that can stand on its own.
+For every full selection, optimize for this outcome:
 
-Weak:
+> After one reading, the reader can explain the central idea in their own words and say why it matters.
 
-> The article explains several ways to improve focus.
+A sentence may exist mainly to orient, connect, qualify, exemplify, or make the next sentence understandable. That is valuable editorial work even if the sentence would not stand alone as a quotation.
 
-Strong:
-
-> Attention becomes easier to protect when decisions about what deserves interruption are made before the interruption arrives.
-
-The digest should contain statements worth keeping—not descriptions of content that exists elsewhere.
+Prefer one idea understood well over several extracted takeaways compressed into the same space.
 
 ## Writing character
 
-Write with curiosity, selectivity, and visible editorial judgment. The prose should feel like a smart magazine editor sharing something genuinely worth knowing, not a model converting articles into polished takeaways.
+Write with curiosity, selectivity, and visible editorial judgment. The prose should feel like a smart magazine editor **telling the reader a small, coherent story about an idea**, not a model converting articles into polished takeaways.
 
-Make the interesting part arrive early. When a concrete fact, mechanism, contradiction, example, or consequence provides the best entrance, begin there and only then widen into interpretation. Prefer `specific → implication` when it is stronger than `general principle → supporting facts`.
+Make the interesting part arrive early, but orient the reader before relying on unfamiliar context. When a concrete fact, mechanism, contradiction, example, or consequence provides the best entrance, begin there and develop it into the larger idea. Prefer a readable progression over maximal information density.
 
-Selections should have different rhetorical lives. Do not make every item follow the same thesis/explanation/takeaway pattern, and do not repeatedly announce insights with phrases such as “the deeper pattern,” “the reusable lesson,” or “what matters is.” Deliver the idea instead.
+Selections should have different rhetorical lives, but each one must still have a clear internal spine. Do not make every item follow the same thesis/explanation/takeaway pattern, and do not repeatedly announce insights with phrases such as “the deeper pattern,” “the reusable lesson,” or “what matters is.” Deliver and develop the idea instead.
 
 Allow moments of wit, illumination, or productive agitation when the material earns them. Keep them subordinate to clarity and fidelity. The style may be lively and memorable, but never ornate, hype-driven, or artificially profound.
 
@@ -134,9 +133,9 @@ These are editorial ranges, not quotas.
 
 Never add weaker material merely to reach a target count or word count.
 
-Every paragraph must contribute new substance, explanation, evidence, context, qualification, or implication.
+Every paragraph must have a clear role in the selection’s progression: orient, develop, exemplify, qualify, test, or resolve the central idea.
 
-Remove repetition aggressively.
+Remove repetition and secondary branches aggressively, but never cut the connective logic that makes the section understandable.
 
 ## Required structure
 
@@ -163,7 +162,7 @@ Present the strongest material as numbered editorial items:
 
 `One-sentence deck stating the central idea.`
 
-Then explain the idea in one to three concise, substantive paragraphs according to its value and complexity.
+Then develop the idea as a short editorial mini-essay, usually in one to three substantive paragraphs according to its value and complexity. The paragraphs must form one readable progression rather than a sequence of extracted points.
 
 Titles must describe the **idea**, not reproduce the original article headline.
 
@@ -172,8 +171,9 @@ The deck should state or sharpen the central claim. It must not function as clic
 Each full item should:
 
 - Focus on one coherent idea, question, discovery, argument, or development.
-- Deliver meaningful substance directly.
-- Preserve relevant reasoning and specifics.
+- Follow one explicit narrative spine; each paragraph must have a reason to follow the previous one.
+- Deliver meaningful substance directly while providing enough context to understand it.
+- Preserve only the reasoning and specifics that advance that spine; omit secondary branches even when they are useful in isolation.
 - Use inline numerical citations immediately after supported claims.
 - End with a compact `SOURCES` line naming the principal contributing sources.
 
@@ -199,7 +199,7 @@ Use:
 
 **Short descriptive title**
 
-One compact, information-dense paragraph explaining the actual idea, mechanism, finding, technique, or implication, with its inline citation.
+One compact but coherent paragraph explaining the actual idea, mechanism, finding, technique, or implication, with its inline citation. Do not maximize density at the expense of comprehension.
 
 A reader should learn something useful from the discovery even if they never open its source.
 
@@ -224,7 +224,7 @@ Examples of legitimate reasons include:
 
 Do not use this as promotional copy.
 
-Do not add it when the source offers no meaningful value beyond what the digest already delivered.
+Do not add it when the source offers no meaningful value beyond what the digest already delivered. It is the right place to point to valuable secondary branches intentionally omitted to protect the coherence of the digest.
 
 ## Organization
 
@@ -333,8 +333,12 @@ Before returning the digest, verify that:
 - The briefing feels intentionally curated rather than comprehensive.
 - The digest itself contains the substantive value.
 - A reader can learn from the selected items without opening the sources.
-- Main selections contain reasoning and specifics rather than teaser summaries.
-- Discoveries contain complete, highlightable ideas.
+- Main selections read as coherent mini-essays rather than compressed inventories of source points.
+- After one reading, the reader can state the central idea of each full selection in their own words.
+- Each full selection has a clear `A → B → C` progression and every paragraph has a reason to follow the previous one.
+- Necessary context appears before dependent technical detail.
+- Supporting details advance the central focus; secondary branches have been cut rather than compressed into the piece.
+- Discoveries contain complete, understandable ideas.
 - Strong isolated ideas are allowed to stand alone.
 - Connections between sources exist only when they materially improve the selected idea.
 - Unrelated material has not been forced into common themes.
@@ -347,9 +351,10 @@ Before returning the digest, verify that:
 - Optional `Worth opening for` cues describe genuine additional value.
 - The editorial body fits approximately five to eight minutes of focused reading.
 - Nothing editorial appears after `Sources`.
+
 - `TODAY'S EDIT` either states a genuinely interesting observation or creates honest curiosity without forcing unrelated material into one thesis.
-- Every paragraph advances the reader rather than merely restating the selection’s central claim.
+- Every paragraph advances one intelligible line of thought rather than merely restating the selection’s central claim or stacking another related fact.
 - Adjacent selections vary in rhetorical shape, sentence rhythm, and entry point instead of following a repeated LLM pattern.
 - Titles are sharp and informative without performing cleverness, and moments of wit, illumination, or agitation are earned rather than manufactured.
 
-The finished briefing should leave the reader with **ideas worth remembering**, while making the original sources optional paths for deeper exploration rather than required reading.
+The finished briefing should leave the reader **understanding a small number of ideas well enough to remember, explain, or use them**, while making the original sources optional paths for deeper exploration rather than required reading.

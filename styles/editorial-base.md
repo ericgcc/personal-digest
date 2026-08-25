@@ -2,7 +2,7 @@
 
 This is the shared editorial quality floor inherited by every canonical digest style. It governs **how well the writing must work**, not the composition, source relationship, structure, or voice of any particular style.
 
-A selected style may add a distinct writing character, and digest custom instructions may refine that character further, but neither may weaken this base quality standard.
+A selected style may add a distinct writing character, and digest custom instructions may refine that character further, but neither may weaken this base quality standard. The production method that turns source material into finished prose lives in `system/editorial-process.md`.
 
 ## Supreme principles
 
@@ -10,41 +10,88 @@ A selected style may add a distinct writing character, and digest custom instruc
 
 **Every paragraph must give the reader a reason to read the next one.**
 
-The digest must not merely be correct, useful, and compressed. It should be a pleasure to read: clear enough to move quickly, substantial enough to reward attention, and alive enough that the reader wants to continue.
+**Understanding comes before compression.**
+
+The digest must not merely be correct, useful, and short. It should be a pleasure to read: clear enough to move quickly, coherent enough to follow without reconstructing missing steps, substantial enough to reward attention, and alive enough that the reader wants to continue.
 
 ## Quality floor
 
 All digest prose must protect these qualities:
 
 - **Clarity** — make the meaning easy to grasp without flattening important nuance.
-- **Specificity** — prefer concrete mechanisms, examples, evidence, numbers, distinctions, and consequences over generic abstraction.
+- **Coherence** — develop an intelligible line of thought. Sentences, examples, and paragraphs must have a reason to follow one another rather than merely sharing a topic.
+- **Specificity** — use concrete mechanisms, examples, evidence, numbers, distinctions, and consequences when they help the reader understand the central idea.
+- **Orientation** — supply the context a knowledgeable reader needs before depending on unfamiliar terminology, assumptions, or technical detail.
 - **Rhythm** — vary sentence length and paragraph movement so the prose does not feel mechanically generated.
 - **Naturalness** — write like an excellent human editor, not like documentation, an executive-summary generator, or a templated LLM response.
 - **Intellectual honesty** — preserve uncertainty, limitations, disagreement, and scale; never manufacture importance or certainty.
-- **Economy** — remove words, setup, transitions, and repetition that do not add meaning or reading pleasure.
-- **Reader interest** — surface the most interesting or useful part early and keep the prose progressing rather than circling the same point.
+- **Economy** — remove material that does not advance understanding, not merely words around material that should have been omitted.
+- **Reader interest** — reveal meaningful value early and keep the thought progressing rather than circling or inventorying related facts.
 
-Clarity comes first, but clarity alone is not enough.
+Clarity comes first, but clarity alone is not enough. A paragraph can be individually clear and still fail if the reader cannot see how its sentences belong together.
+
+## Coherence and narrative progression
+
+Good nonfiction gives the reader a path through the material. This does not require anecdotes, drama, or a conventional story arc; even a technical explanation needs **narrative movement**.
+
+For every substantive section:
+
+- Establish one governing focus before adding support.
+- Let each paragraph perform a distinct job in developing that focus.
+- Order facts, examples, mechanisms, and recommendations according to the reader's path to understanding, not the order in which they were extracted from the source.
+- Use a detail only when it advances the developing idea, supplies necessary context, tests it, qualifies it, or makes it concrete.
+- Do not stack related facts or recommendations merely because they came from the same article.
+- When the subject, abstraction level, or line of reasoning changes, orient the reader before continuing.
+
+A useful internal test is whether the section's progression can be described simply as `A → B → C`. If no clear progression exists, restructure the section rather than polishing isolated sentences.
+
+## Select before compressing
+
+Brevity should come primarily from **selection**, not from squeezing every useful point into fewer words.
+
+- Decide what the section is actually about and omit branches that do not serve that focus.
+- A correct, interesting detail may still be the wrong detail for this piece.
+- Prefer two well-chosen examples that make one idea clear over six compressed examples that blur together.
+- Do not preserve every mechanism, recommendation, caveat, or fact just because it is present in the source.
+- Leave valuable secondary depth in the original source when including it would damage coherence; if the selected style supports an optional depth cue, use that cue without importing style-specific components into other styles.
+
+A shorter piece that teaches one thing well is better than a denser piece that mentions five things the reader cannot reconstruct afterward.
+
+## Put value early without disorienting the reader
+
+Readers scan before they commit. Make the beginning of every section, paragraph, and source entry justify the attention that follows.
+
+Value early does **not** mean jumping immediately to the densest technical detail. Use the smallest amount of setup needed to make the value intelligible.
+
+A strong sequence is often:
+
+`orient → interest → explain`
+
+or, when context is already obvious:
+
+`specific observation → implication → explanation`
+
+Use informative headings, focused paragraphs, and concrete entrances. Do not bury the strongest mechanism or consequence under generic setup, but do not force the reader to infer missing premises merely to achieve compression.
+
+## Technical clarity
+
+Technical precision must improve understanding rather than perform expertise.
+
+- Introduce an unfamiliar term before relying on it when the surrounding context does not make it obvious.
+- Render literal code, operators, paths, commands, identifiers, and syntax as code where the output format supports it.
+- Prefer the literal technical meaning over vague metaphor. For example, say “compare the raw path string” rather than “check the spelling” when discussing path normalization.
+- When a tiny concrete example explains a mechanism better than another abstract sentence, use the example.
+- Omit implementation detail that is correct but distracts from the section's central line of thought.
 
 ## Wit, illumination, and agitation
 
 When the material genuinely supports it, look for opportunities to provide:
 
-- **Wit** — apt, economical phrasing or a light turn of language that makes an idea easier to remember. Wit is not joke-writing and must never obscure meaning.
-- **Illumination** — reveal a mechanism, distinction, pattern, implication, or connection in a way that lets the reader see the subject differently.
-- **Agitation** — create productive intellectual friction by surfacing a tension, counterintuitive result, trade-off, or challenged assumption that is actually present in the material.
+- **Wit** — apt, economical phrasing that makes an idea easier to remember without obscuring it.
+- **Illumination** — reveal a mechanism, distinction, pattern, implication, or connection so the reader sees the subject differently.
+- **Agitation** — create productive intellectual friction by surfacing a real tension, counterintuitive result, trade-off, or challenged assumption.
 
 These are possibilities, not quotas. Never manufacture cleverness, controversy, profundity, or surprise merely to sound editorial.
-
-## Put value early
-
-Readers scan before they commit. Make the beginning of every section, paragraph, and source entry justify the attention that follows.
-
-- Prefer concrete reality before abstract interpretation when that produces a stronger entrance.
-- State the useful or surprising thing before spending words on setup.
-- Use informative headings that help a scanning reader understand what is worth attention.
-- Keep paragraphs focused and comfortably short for screen reading unless the argument genuinely needs a longer unit.
-- Do not bury the strongest fact, mechanism, consequence, or idea at the end of a paragraph merely to create suspense.
 
 ## Deliver insights; do not announce them
 
@@ -59,19 +106,15 @@ Habitual scaffolding such as the following is a warning sign when the sentence c
 - “What really matters is...”
 - “The interesting thing is...”
 
-These phrases are not absolutely forbidden, but repeated use makes the prose feel templated. Prefer the actual claim, mechanism, evidence, or implication.
-
 Likewise, avoid content-description phrases such as “this article discusses” or “the author explores” when the underlying idea can be stated directly.
 
 ## Rhetorical variety
 
 Do not give every selection the same linguistic architecture.
 
-A section may open with a concrete fact, a contradiction, a consequence, a question, a mechanism, an observation, a short scene, or a direct claim when the source supports that choice. Do not mechanically repeat `claim → explanation → broader lesson → takeaway` across the digest.
+A section may open with a concrete fact, contradiction, consequence, question, mechanism, observation, short scene, or direct claim when the source supports that choice. Do not mechanically repeat `claim → explanation → broader lesson → takeaway` across the digest.
 
-Vary sentence length, paragraph shape, transitions, and openings naturally. The result should feel edited, not stamped from a template.
-
-Rhetorical variety must never become decorative variation. Choose the form that best reveals the substance.
+Rhetorical variety must never substitute for coherence. Choose the form that best carries the material's actual line of thought.
 
 ## Titles and headings
 
@@ -113,24 +156,16 @@ The selected style must declare its own **Writing character**. Digest custom ins
 
 Do not make every style sound alike in the name of consistency.
 
-## Mandatory editorial pass
+## Final quality standard
 
-A first draft is not finished prose.
+The staged editing sequence is defined in `system/editorial-process.md`. Before rendering, the finished prose must at minimum satisfy these outcomes:
 
-Before rendering, perform a distinct editorial pass against this base and the selected style's writing character. At minimum ask:
+- The reader can identify what each substantive section is actually about.
+- The reason each paragraph follows the previous one is intelligible.
+- Necessary context appears before dependent technical detail.
+- Supporting material advances the central focus rather than accumulating beside it.
+- The piece contains enough explanation to understand the selected idea without opening the source.
+- Compression has not removed the logic that makes facts meaningful.
+- The prose sounds natural in the selected style and remains faithful to the sources.
 
-- Does the strongest value appear early enough?
-- Can any abstract sentence become more concrete without losing accuracy?
-- Is any sentence trying to sound intelligent instead of being clear?
-- Does any paragraph describe an insight instead of delivering it?
-- Have the same rhetorical pattern or transition phrases been reused?
-- Are titles informative and faithful rather than merely clever?
-- Does each paragraph move the reader somewhere new?
-- Have caveats or uncertainty been erased for rhetorical force?
-- Can any word, sentence, or paragraph be removed without losing substance or reading pleasure?
-- Does the prose scan comfortably on a screen?
-- Would an intelligent, curious reader want to continue?
-
-**Read the finished draft as a reader, not as its author. If it is correct but dull, edit it again.**
-
-Editorial revision may tighten, reorder, retitle, demote, or remove material that fails to earn its space, but it must never introduce unsupported facts, alter source meaning, or add unreviewed material.
+If the prose is correct but incoherent, dense without being understandable, or dull because it reads like extracted notes, it is not finished.

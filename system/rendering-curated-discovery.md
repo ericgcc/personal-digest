@@ -54,7 +54,7 @@ Separator invariant for full selections:
 
 Render `Discoveries` as a compact editorial department, not a collection of cards.
 
-Each discovery contains a short serif title plus one information-dense paragraph with its citation pill(s). Separate entries with subtle rules. Omit `SOURCE NOTES` for an individual discovery when the inline citation already makes provenance unambiguous.
+Each discovery contains a short serif title plus one compact, coherent paragraph with its citation pill(s). Separate entries with subtle rules. Omit `SOURCE NOTES` for an individual discovery when the inline citation already makes provenance unambiguous.
 
 ## Callouts
 

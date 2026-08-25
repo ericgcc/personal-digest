@@ -16,6 +16,7 @@ Every canonical `styles/<style>.md` file must contain a `## Style interface` sec
 | **Selection model** | How broad or selective coverage should be and what earns inclusion. |
 | **Depth model** | How depth is allocated and the expected density/reading-time behavior. |
 | **Organization model** | What determines ordering, grouping, sections, or lack of grouping. |
+| **Progression model** | How a substantive unit develops from beginning to end so it reads as a coherent piece rather than accumulated notes. |
 | **Opening behavior** | Whether an editorial opening exists and what it must accomplish; `None` is valid. |
 | **Body behavior** | The required editorial shape of the main content. |
 | **Citation / provenance** | How claims and source identity remain attributable. |
@@ -24,7 +25,7 @@ Every canonical `styles/<style>.md` file must contain a `## Style interface` sec
 | **Writing character** | The distinctive voice/temperament layered on top of `styles/editorial-base.md`. |
 | **Optional extension points** | Which optional components/customizations the style permits; `None` is valid. |
 
-A style must also contain a dedicated `## Writing character` section that develops the interface declaration into concrete prose guidance, plus a `## Quality control` section appropriate to that style.
+A style must also contain a dedicated `## Writing character` section that develops the interface declaration into concrete prose guidance, plus a `## Quality control` section appropriate to that style. The style must cooperate with `system/editorial-process.md`; it may specialize the scale or shape of framing/progression but may not bypass the shared sequence.
 
 The interface is a concise architectural declaration; the rest of the style file is the implementation. They must not contradict one another. If they do, the style is invalid and execution must stop safely rather than guessing which definition wins.
 
@@ -49,11 +50,11 @@ The contract standardizes the questions, not the answers.
 
 ## Shared editorial inheritance
 
-Every canonical style automatically inherits `styles/editorial-base.md` as its quality floor.
+Every canonical style automatically inherits `styles/editorial-base.md` as its quality floor and `system/editorial-process.md` as its production method.
 
-A style's `Writing character` may make the prose more brisk, patient, analytical, curious, lively, restrained, or otherwise distinctive, but it may not weaken the base requirements for clarity, specificity, naturalness, intellectual honesty, economy, reader interest, rhetorical variety, or the mandatory editorial pass.
+A style's `Writing character` may make the prose more brisk, patient, analytical, curious, lively, restrained, or otherwise distinctive, but it may not weaken the base requirements for clarity, coherence, reader orientation, specificity, naturalness, intellectual honesty, economy, reader interest, or rhetorical variety.
 
-Digest custom instructions may refine the style further but cannot opt out of either the editorial base or the style's declared interface.
+A style may define a lightweight progression for short entries or a richer narrative spine for longer pieces, but every substantive unit must remain intelligible as a sequence rather than a stack of extracted points. Digest custom instructions may refine the style further but cannot opt out of either the editorial base, the editorial process, or the style's declared interface.
 
 ## Integration requirements for a new canonical style
 
@@ -61,7 +62,7 @@ A new style is runnable only when all of the following are true:
 
 1. `styles/<style>.md` exists and implements this interface.
 2. Its interface and detailed instructions are internally consistent.
-3. It inherits the shared editorial base rather than copying or replacing it.
+3. It inherits the shared editorial base and editorial process rather than copying, replacing, or bypassing them.
 4. `system/registry.yaml` contains a matching `rendering_profiles.<style>` entry.
 5. The referenced `system/rendering-<style>.md` exists.
 6. The referenced `templates/<style>-email-v1.html` exists.

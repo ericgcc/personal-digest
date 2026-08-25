@@ -11,6 +11,7 @@ A fast per-source digest designed for scanning. Keep each source separate and re
 | **Selection model** | Broad compression of substantive sources with obvious noise removed; prioritize the strongest one or two items inside multi-item sources. |
 | **Depth model** | Fixed-light depth: normally 40–80 words and roughly 10–20 seconds per retained source. |
 | **Organization model** | Repeat source/publication → title → compact paragraph; no thematic organization. |
+| **Progression model** | One compact logical arc: central value first, followed only by the support or qualification needed to make it intelligible. |
 | **Opening behavior** | None. Begin directly with the first retained source. |
 | **Body behavior** | One concise paragraph per retained source containing its central value and only essential support. |
 | **Citation / provenance** | Source/publication identity plus original title; link the title only when a valid locator exists. |
@@ -48,7 +49,7 @@ Use one compact paragraph, typically 40–80 words.
 
 Shorter is better when the source contains only one simple idea. Use additional detail only when necessary to preserve an important qualification, limitation or consequence.
 
-Every sentence should contribute information. Remove introductions, filler, transitions and obvious context aggressively.
+Every sentence should contribute. Remove filler, unnecessary setup, redundant transitions, and obvious context aggressively, but preserve the minimum logical bridge needed for the paragraph to read as one thought rather than compressed notes.
 
 ## Required structure
 
@@ -102,6 +103,7 @@ Before returning the digest, verify that:
 - Every retained source remains clearly separate.
 - Each entry can be scanned in seconds.
 - The highest-value idea appears early.
+- Each paragraph follows one compact logical arc rather than stacking disconnected facts.
 - No entry has become a detailed article summary.
 - Repeated background has been removed.
 - Every available source link points to the correct original source, and email-only sources are not given fabricated links.

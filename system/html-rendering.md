@@ -13,7 +13,7 @@ Do not use one summary style's template as a universal fallback. Resolve the act
 | `detailed`          | `system/rendering-detailed.md`          | `templates/detailed-email-v1.html`          | **Annotated reader**                   |
 | `concise`           | `system/rendering-concise.md`           | `templates/concise-email-v1.html`           | **Briefing ledger / newspaper briefs** |
 
-The shared `styles/editorial-base.md` establishes the prose quality floor, and the selected style defines the editorial structure and Writing character. The mandatory EDIT pass in `system/workflow.md` must be complete before this rendering contract is applied. The rendering profile explains how the already-edited structure maps into HTML. The reference template is a complete, successfully rendered example of that mapping.
+The shared `styles/editorial-base.md` establishes the prose quality floor, `system/editorial-process.md` defines the staged production/editing method, and the selected style defines the editorial structure and Writing character. `FINAL POLISH` in the editorial process must be complete before this rendering contract is applied. The rendering profile explains how the approved final structure maps into HTML. The reference template is a complete, successfully rendered example of that mapping.
 
 If a style has no rendering profile/template mapping, stop safely rather than silently substituting another style's layout.
 
@@ -161,22 +161,25 @@ Never add a source catalog merely because another style has one. Follow the sele
 
 Keep these responsibilities separate:
 
-1. **`styles/editorial-base.md` — shared editorial quality floor**
-   Defines how excellent digest prose behaves across every style: clarity, specificity, rhythm, naturalness, intellectual honesty, economy, reader interest, rhetorical variety, and the editorial-pass standard. It does not impose one voice or layout.
+1. **`system/editorial-process.md` — shared editorial production method**
+   Defines the autonomous `SELECT → FRAME → DRAFT → structural/clarity/voice/compression edits → FINAL POLISH` sequence. It governs how prose becomes publication-ready before HTML exists.
 
-2. **`styles/<style>.md` — editorial implementation**
+2. **`styles/editorial-base.md` — shared editorial quality floor**
+   Defines how excellent digest prose behaves across every style: clarity, coherence, orientation, specificity, rhythm, naturalness, intellectual honesty, economy, and reader interest. It does not impose one voice or layout.
+
+3. **`styles/<style>.md` — editorial implementation**
    Implements `system/style-contract.md`: selection model, composition unit, source relationship, structure, depth, provenance, ending behavior, and a distinct Writing character layered on top of the editorial base.
 
-3. **`digests/<digest>.md` — digest configuration plus optional custom instructions**
+4. **`digests/<digest>.md` — digest configuration plus optional custom instructions**
    YAML frontmatter defines the digest configuration. Any Markdown body is optional and may refine topic priorities, selection preferences, tone, recurring purpose, and compatible callout vocabulary without replacing the selected style.
 
-4. **`system/rendering-<style>.md` — style-to-HTML mapping**
+5. **`system/rendering-<style>.md` — style-to-HTML mapping**
    Defines how the selected style's editorial structure maps to visual components and responsive behavior.
 
-5. **`templates/<style>-email-v1.html` — canonical reference implementation**
-   Shows the complete expected composition. Replace example content; do not redesign the template on every run.
+6. **`templates/<style>-email-v1.html` — canonical reference implementation**
+   Shows the complete expected **visual composition**. Replace example content; example prose is placeholder content, not a writing model and must not override the editorial process/base/style. Do not redesign the template on every run.
 
-6. **`templates/email-theme.html` — shared visual language**
+7. **`templates/email-theme.html` — shared visual language**
    Supplies reusable visual primitives and the family resemblance shared by every template.
 
 Never let rendering rules create editorial content that the style does not request, and never let digest-specific vocabulary leak into another digest or global template.
@@ -185,7 +188,7 @@ Never let rendering rules create editorial content that the style does not reque
 
 Before sending:
 
-1. Confirm the editorial draft has completed the mandatory EDIT pass against `styles/editorial-base.md` and the selected style's Writing character.
+1. Confirm the editorial body has completed every stage through `FINAL POLISH` in `system/editorial-process.md` and satisfies `styles/editorial-base.md` plus the selected style's Writing character.
 2. Confirm the template and rendering profile match the selected summary style.
 3. Confirm no example text, dates, article links, source numbers, reading-time values, or placeholder labels remain from the reference template.
 4. Confirm the email preserves the shared visual language while retaining the selected style's distinct composition.

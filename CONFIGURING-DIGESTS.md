@@ -91,7 +91,7 @@ sources:
       - link-newsletter
 ```
 
-For adapters that explicitly support pre-open topic exclusion, use structured configuration rather than prose custom instructions. For example, the Medium adapter supports:
+For adapters that explicitly support pre-open topic inclusion or exclusion, use structured configuration rather than prose custom instructions. For example, the Medium adapter supports:
 
 ```yaml
 sources:
@@ -104,7 +104,20 @@ sources:
         - photography
 ```
 
-`exclude_topics` is evaluated from metadata already visible during candidate discovery. A clear match can be skipped before Chrome is opened; an ambiguous candidate is still read normally. Pre-filtered candidates are not reviewed sources and do not appear in the source catalog or reading-time calculation.
+A domain-specific digest can instead admit only matching candidates:
+
+```yaml
+sources:
+  - gmail_labels:
+      - Newsletters/Medium
+    adapters:
+      - medium
+    acquisition_filters:
+      include_topics:
+        - photography
+```
+
+These filters are evaluated from metadata already visible during candidate discovery. With `exclude_topics`, a high-confidence match can be skipped before Chrome is opened. With `include_topics`, a high-confidence non-match can be skipped. Ambiguous candidates are still read normally. Pre-filtered candidates are not reviewed sources and do not appear in the source catalog or reading-time calculation.
 
 Only use filter keys documented by the adapter. Unsupported acquisition filters are a preflight error. Removing a filter later does not reopen source emails that were already committed as processed.
 
@@ -272,3 +285,4 @@ Before enabling a new digest, verify:
 When a style has a source catalog, status colors are semantic and shared: `Selected` is green; neutral states such as `Not selected`, `Duplicate`, `Limited content`, `Email-only`, `Promotional content`, and `Low signal` are gray. `Worth reading` is a special yellow catalog status supported only by `curated-discovery`; it marks an **unselected** original the editor still actively recommends if the reader has extra time. It is not a section and is not a synonym for a Discovery.
 
 Canonical HTML templates are structural specimens with placeholders. Their component counts and placeholder lengths are never editorial defaults. The style and editorial process determine how many items and paragraphs are produced.
+

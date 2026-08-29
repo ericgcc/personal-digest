@@ -33,3 +33,7 @@ digests:
   tech-bi-daily:
     config: digests/tech-bi-daily.md
     catch_up_days: 3
+  photography-weekly:
+    config: digests/photography-weekly.md
+    catch_up_days: 7
+

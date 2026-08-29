@@ -9,9 +9,10 @@ A digest is assembled from separate layers with different responsibilities:
 | Layer | Location | Responsibility |
 | --- | --- | --- |
 | Workflow | `system/workflow.md` | Shared execution, state, safety, routing, precedence, and delivery. |
-| Editorial process | `system/editorial-process.md` | Shared autonomous production method: SELECT → FRAME → DRAFT → structural/clarity/voice/compression edits → FINAL POLISH. |
+| Editorial process | `system/editorial-process.md` | Shared autonomous production method: SELECT → ANALYZE → FRAME → DRAFT → structural/clarity/voice-and-naturalness/compression edits → FINAL POLISH. |
 | Style contract | `system/style-contract.md` | Interface every canonical style must implement; validates architectural completeness without imposing one output shape. |
 | Editorial base | `styles/editorial-base.md` | Shared prose quality floor: clarity, specificity, rhythm, naturalness, honesty, economy, reader interest, and editing standard. |
+| Writing references | `system/writing-*.md` | Shared reasoning, source-fidelity, editorial-prose, naturalness, and style-application guidance used by the editorial process; these refine craft without redefining the selected style. |
 | Style | `styles/<style>.md` | The editorial implementation: composition, source relationship, depth, structure, provenance, and distinct Writing character. |
 | Digest config | `digests/<digest-id>.md` | Which digest this is, what sources it uses, and optional preferences. |
 | Adapter | `adapters/<adapter>.md` | How a particular source type must be read. |
@@ -23,7 +24,7 @@ A digest is assembled from separate layers with different responsibilities:
 
 A file under `digests/` is primarily a **configuration file**. Its Markdown body is optional. It does not need custom instructions to be valid.
 
-Every digest automatically uses the shared editorial process and inherits the shared editorial base through its selected canonical style. Custom instructions do not need to repeat universal writing-quality rules and cannot opt out of the process or quality floor.
+Every digest automatically uses the shared editorial process, its writing references, and the shared editorial base through its selected canonical style. Custom instructions do not need to repeat universal writing-quality or naturalness rules and cannot opt out of the process or quality floor.
 
 ## Canonical styles
 

@@ -155,14 +155,17 @@ For every source include:
 - The article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
 - The author or publication when available.
 
-Optionally add a short neutral status label when relevant:
+Optionally add a short status label when relevant:
 
+- `Selected`
 - `Promotional content`
 - `Duplicate`
 - `Limited content`
 - `Email-only`
 - `Low signal`
 - `Not selected`
+
+`Worth reading` is not part of this style's source-catalog vocabulary. Do not use it here.
 
 Do not explain why each unselected source was omitted.
 The catalog exists for transparency and navigation; it is not another summary section.

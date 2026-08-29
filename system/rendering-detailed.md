@@ -63,6 +63,11 @@ The template may demonstrate the neutral callout primitive. Remove it unless the
 
 When authorized, use at most one callout in a source entry, after the summary or notes and before the final source link/button. Use the shared component from `system/html-rendering.md`.
 
+
+## Template independence
+
+The HTML template is a structural specimen. Placeholder topic/source/note components demonstrate markup only. Do not infer a fixed number of topics, sources, notes, or paragraphs from the template; render only the structure justified by the finished editorial output.
+
 ## Responsive behavior
 
 - **Desktop:** source metadata may sit opposite the per-source read estimate; the index may use two columns.

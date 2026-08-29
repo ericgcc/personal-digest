@@ -123,6 +123,8 @@ CREATE UNIQUE INDEX uq_items_digest_canonical_url
 
 The database must also set `PRAGMA user_version = 1`.
 
+`items.review_status` stores the final editorial outcome for the reviewed item. Keep existing historical values readable. New runs should use a stable lower-snake-case outcome appropriate to the active style, for example `selected`, `not_selected`, `duplicate`, `limited_content`, `email_only`, or `promotional_content`. The special value `worth_reading` is permitted only for `curated-discovery`, only when the source was **not** selected into the editorial body, and corresponds to that style's yellow source-catalog recommendation. It is not a Discovery classification.
+
 ## State lookup
 
 Build a read-identity list containing the canonical digest ID followed by any declared aliases.

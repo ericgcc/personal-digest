@@ -18,13 +18,13 @@ Use with `styles/curated-discovery.md` and `templates/curated-discovery-email-v1
 
 On desktop, use the template's editorial folio rail: the two-digit number sits in the margin beside the title, deck, and prose. The rail is a visual hierarchy device, not a separate content column.
 
-Each full selection may contain:
+Each full selection may contain, with depth determined independently by editorial need rather than visual symmetry:
 
 - optional `FEATURED IDEA` label;
 - two-digit folio;
 - descriptive editorial title;
 - one-sentence deck;
-- one to three substantive paragraphs as warranted by the style;
+- as many substantive paragraphs as the finished editorial frame genuinely requires;
 - inline citation pills;
 - optional authorized callout;
 - optional `Worth opening for:` depth cue when the style output includes one;
@@ -43,6 +43,8 @@ Use the shared source-note treatment:
 
 The final `Sources` catalog uses the shared bibliographic row treatment, **grouped by source identity by default**. Give each newsletter/publication/sender one compact heading followed by its source rows. Keep the permanent global citation number in the rail; show the original title and an author only when it adds information beyond the group heading. Do not repeat the group identity on every row. Link only sources with a valid locator; email-only sources without one remain unlinked. Grouping is navigational only and must never renumber sources.
 
+Render source-status badges using the shared semantics from `system/html-rendering.md`: `Selected` in green, `Worth reading` in yellow, and every neutral status in gray. `Worth reading` is exclusive to this style and appears only inside `Sources` on an unselected source; it never creates a separate section and never labels a Discovery.
+
 Separator invariant for full selections:
 
 - Use **at most one horizontal separator between adjacent content blocks**.
@@ -58,9 +60,14 @@ Each discovery contains a short serif title plus one compact, coherent paragraph
 
 ## Callouts
 
-The template contains an example callout so the renderer knows the component exists. Remove it unless the active digest instructions authorize a callout.
+The template contains only structural placeholders. Any demonstrated callout is a component specimen, not a requirement; remove it unless the active digest instructions authorize a callout.
 
 When authorized, place at most one callout inside a full selection, after the explanatory prose and before `Worth opening for` / `SOURCE NOTES`. Use the shared neutral callout component from `system/html-rendering.md`.
+
+
+## Template independence
+
+The HTML template is a structural specimen. Its placeholder selection, discovery, and source rows exist only to demonstrate markup. Do not copy their count or length. Repeat, omit, and size components from the finished editorial output. A featured selection may be substantially longer than neighboring selections; a simple selection may be substantially shorter.
 
 ## Responsive behavior
 

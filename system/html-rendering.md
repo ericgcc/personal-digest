@@ -13,7 +13,7 @@ Do not use one summary style's template as a universal fallback. Resolve the act
 | `detailed`          | `system/rendering-detailed.md`          | `templates/detailed-email-v1.html`          | **Annotated reader**                   |
 | `concise`           | `system/rendering-concise.md`           | `templates/concise-email-v1.html`           | **Briefing ledger / newspaper briefs** |
 
-The shared `styles/editorial-base.md` establishes the prose quality floor, `system/editorial-process.md` defines the staged production/editing method, and the selected style defines the editorial structure and Writing character. `FINAL POLISH` in the editorial process must be complete before this rendering contract is applied. The rendering profile explains how the approved final structure maps into HTML. The reference template is a complete, successfully rendered example of that mapping.
+The shared `styles/editorial-base.md` establishes the prose quality floor, `system/editorial-process.md` defines the staged production/editing method, and the selected style defines the editorial structure and Writing character. `FINAL POLISH` in the editorial process must be complete before this rendering contract is applied. The rendering profile explains how the approved final structure maps into HTML. The reference template is a **structural visual specimen**: its placeholder components demonstrate hierarchy and email-safe markup, not content volume, item count, paragraph count, or editorial cadence.
 
 If a style has no rendering profile/template mapping, stop safely rather than silently substituting another style's layout.
 
@@ -110,6 +110,17 @@ When an email-only source has no reliable locator, preserve the same source numb
 
 For per-source styles that do not require numerical inline citations, link the article/item title when a valid locator exists. Otherwise render the title as normal editorial text and preserve email-only provenance without a fake link.
 
+
+## Shared source-status badges
+
+When a style renders source statuses, use one shared semantic color system:
+
+- **`Selected`** — pale green badge with dark green text. It means the source materially contributed to the digest body.
+- **`Worth reading`** — pale yellow badge with dark amber text. This status is authorized **only by `curated-discovery`** and only for an unselected source whose original the editor actively recommends if the reader has extra time. It is never a section, never a Discovery label, and must not appear in other styles.
+- **All other statuses** — neutral light-gray badge with muted slate text (`Not selected`, `Duplicate`, `Limited content`, `Email-only`, `Promotional content`, `Low signal`, or other style-authorized neutral states).
+
+Use email-safe inline styles or matching classes from the active template. Status color communicates editorial state only; do not introduce icons or stars.
+
 ## Shared callout primitive
 
 The light-blue inset component is a reusable **callout**, independent of any digest's editorial vocabulary.
@@ -176,8 +187,8 @@ Keep these responsibilities separate:
 5. **`system/rendering-<style>.md` — style-to-HTML mapping**
    Defines how the selected style's editorial structure maps to visual components and responsive behavior.
 
-6. **`templates/<style>-email-v1.html` — canonical reference implementation**
-   Shows the complete expected **visual composition**. Replace example content; example prose is placeholder content, not a writing model and must not override the editorial process/base/style. Do not redesign the template on every run.
+6. **`templates/<style>-email-v1.html` — canonical structural reference implementation**
+   Shows the expected **visual composition and component markup using explicit placeholders**. Placeholder instances are not a quota: never infer how many selections, threads, topics, discoveries, source rows, paragraphs, or words to produce from the template. Repeat or omit components only according to the selected style's editorial output. Do not redesign the template on every run.
 
 7. **`templates/email-theme.html` — shared visual language**
    Supplies reusable visual primitives and the family resemblance shared by every template.

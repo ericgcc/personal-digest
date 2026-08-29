@@ -48,13 +48,18 @@ At the end of each thread:
 - place the stable numerical citation pill immediately after each name; make it clickable only when that source has a valid locator;
 - let entries wrap naturally on narrow screens.
 
-The final `Sources` catalog uses the shared bibliographic row pattern, **grouped by source identity by default**. Render each newsletter/publication/sender group with one compact source-group heading, followed by its rows. Each row keeps the permanent global citation number in the narrow numerical rail plus the original title and, when useful, an author distinct from the group identity. Do not repeat the group identity on every row. Link the citation/title only when a valid locator exists; otherwise render email-only provenance without a fabricated destination. Preserve any neutral status badges required by the style. Grouping must never renumber sources.
+The final `Sources` catalog uses the shared bibliographic row pattern, **grouped by source identity by default**. Render each newsletter/publication/sender group with one compact source-group heading, followed by its rows. Each row keeps the permanent global citation number in the narrow numerical rail plus the original title and, when useful, an author distinct from the group identity. Do not repeat the group identity on every row. Link the citation/title only when a valid locator exists; otherwise render email-only provenance without a fabricated destination. Render `Selected` in the shared green status treatment and all other style-authorized statuses in neutral gray. `Worth reading` is not valid in this style. Grouping must never renumber sources.
 
 ## Callouts
 
 Remove the template's example callout unless the active digest instructions authorize one.
 
 When authorized, use at most one callout inside a thread, after the synthesis prose and before `SOURCE NOTES`. Use the shared neutral callout primitive from `system/html-rendering.md`.
+
+
+## Template independence
+
+The HTML template is a structural specimen. Its placeholder Big Picture, thread, and source rows demonstrate markup only. Never infer thread count, paragraph count, or section length from the template; render exactly the editorial structure produced by the style.
 
 ## Responsive behavior
 

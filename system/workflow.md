@@ -253,7 +253,7 @@ All diagnostic questions in the editorial process are **internal editorial check
 
 Selection quality and writing quality remain separate judgments. A beautifully written weak item is still a weak selection. A valuable source does not require every useful point inside it to appear in the digest; select within retained sources so each substantive unit has one coherent focus.
 
-Preserve stable source numbering/provenance throughout the process. Editorial revision may narrow, reorder, retitle, demote, or remove material, but it must never introduce unreviewed material, unsupported claims, or source relationships the selected style does not permit.
+Preserve stable source numbering/provenance throughout the process. Editorial revision may narrow, reorder, retitle, demote, or remove material, but it must never introduce unreviewed material, unsupported claims, or source relationships the selected style does not permit. Preserve each reviewed item's final editorial outcome for state commit. When `curated-discovery` uses its catalog-only `Worth reading` recommendation, record that outcome distinctly from `Selected` and ordinary omission; no other style may invent that status.
 
 Rendering may begin only after `FINAL POLISH` passes the quality gates in `system/editorial-process.md`, `styles/editorial-base.md`, and the selected style.
 
@@ -272,7 +272,7 @@ Do not use HTML rendering as an opportunity to rewrite weak editorial prose. Ren
 
 After Gmail confirms delivery:
 
-1. Apply the run, every admitted email, and every reviewed item to a local working copy of the SQLite state database in one transaction, using the canonical digest ID.
+1. Apply the run, every admitted email, and every reviewed item to a local working copy of the SQLite state database in one transaction, using the canonical digest ID. Store each item's final editorial outcome in `items.review_status`; `worth_reading` is valid only when the active style is `curated-discovery` and the source was not selected into the editorial body.
 2. Commit the local transaction, run the database integrity checks required by `system/state-database.md`, close the connection, and replace the same Drive database file only if it has not changed since this run downloaded it. If it changed, re-fetch the latest database and safely replay the state transaction rather than overwriting newer state.
 3. Only after the updated database is safely persisted to Drive, apply `Digest/Processed/<digest-id>` to each successfully processed source email.
 

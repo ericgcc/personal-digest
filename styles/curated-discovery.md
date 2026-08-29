@@ -10,13 +10,13 @@ The fundamental unit is a **coherent editorial mini-essay built around one idea 
 | --- | --- |
 | **Purpose** | Create a selective personal briefing around the strongest ideas worth learning, keeping, applying, or exploring. |
 | **Composition unit** | A coherent editorial mini-essay built around one idea worth understanding; shorter worthwhile material may appear as a discovery. |
-| **Source relationship** | Treat ideas independently by default; combine sources only when doing so materially improves the selected idea. |
+| **Source relationship** | Preserve strong source theses independently by default; combine sources only when the relationship materially improves understanding and the valuable thesis of each source remains appropriately represented. |
 | **Selection model** | Highly selective and value-first; omission is expected and strong outliers may outrank recurring topics. |
-| **Depth model** | Variable depth across roughly five to eight minutes: give rich ideas room, compress narrower discoveries, omit weak material. |
+| **Depth model** | Elastic, value-driven depth: usually five to eight minutes, shorter on light days and up to roughly ten minutes when unusually strong material warrants the extra time. Allocate depth independently per idea. |
 | **Organization model** | Short editorial orientation → importance-ordered numbered selections → optional discoveries → complete source catalog. |
 | **Progression model** | Each full selection follows one narrative spine from orientation or concrete entrance → explanation/development → useful consequence, qualification, or resolution. Discoveries remain compact but coherent. |
 | **Opening behavior** | Required short editorial orientation that either states a genuinely interesting observation or creates honest curiosity around the strongest material without forcing a thesis. |
-| **Body behavior** | Three to six coherent editorial mini-essays when warranted, zero to four discoveries, variable depth, stable claim-level citations, and source notes. |
+| **Body behavior** | A value-determined number of coherent editorial mini-essays plus optional discoveries, with independently allocated depth, stable claim-level citations, and source notes. Stop on marginal value rather than a fixed slot count. |
 | **Citation / provenance** | Permanent global numerical citations plus selection-level source lines/source notes. |
 | **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering. |
 | **Ending behavior** | Stop immediately after the final source catalog. |
@@ -46,10 +46,11 @@ Before writing:
 2. Review the complete source set before selecting anything.
 3. Extract candidate ideas, arguments, techniques, explanations, examples, case studies, discoveries, or developments.
 4. Merge duplicates and substantially overlapping coverage.
-5. Evaluate candidates by the amount of useful or interesting substance they contain.
-6. Select only the material that genuinely deserves inclusion.
-7. For each full selection, use `system/editorial-process.md` to frame one central focus, reader promise, narrative spine, necessary support, and explicit branches to cut before drafting.
-8. Decide the appropriate depth only after that frame is coherent.
+5. For each promising source, state internally the source's strongest thesis or reader promise and **why it was worth opening**. Treat a provocative headline as a hypothesis, not ground truth: confirm the thesis from the article itself.
+6. Evaluate candidates by the amount of useful or interesting substance they contain and by expected value to this reader.
+7. Select only the material that genuinely deserves inclusion. Continue adding material while the next item's expected value clearly justifies the additional reading time; stop when the marginal item would noticeably dilute the edition.
+8. For each full selection, use `system/editorial-process.md` to frame one central focus, reader promise, narrative spine, necessary support, source-thesis check, and explicit branches to cut before drafting.
+9. Decide the appropriate depth only after that frame is coherent.
 
 Omission is expected. A source does not deserve space merely because it was reviewed.
 
@@ -61,25 +62,28 @@ Do not penalize valuable outliers simply because they differ from the dominant m
 
 ## Relationship between sources
 
-Treat selected ideas independently by default.
+Treat selected sources and ideas independently by default. **Start from the strongest thesis worth preserving, not from a topic that several articles happen to share.**
 
-When several sources genuinely reinforce, extend, qualify, contradict, or illuminate the same idea, they may be combined into one stronger editorial item.
+When several sources genuinely reinforce, extend, qualify, contradict, or complete the same idea, they may be combined into one stronger editorial item. Mere topical compatibility is not enough.
 
 **Do not search for connections merely because they exist. Combine sources only when doing so materially improves the selected idea.**
+
+Before combining sources, state each source's valuable thesis in one sentence. After framing the combined selection, verify that those theses remain recognizable and that the reader still receives the value that made each source worth opening. If one source has become merely an incidental example, technical aside, or supporting fact and its strongest thesis has disappeared, keep it separate unless losing that thesis is clearly justified by a substantially stronger editorial result.
 
 When combining sources:
 
 - Preserve what each one uniquely contributes.
 - Explain the relationship rather than stacking separate summaries.
 - Cite each contribution where it is actually used.
+- Prefer one primary thesis with genuinely complementary support over a broad topic assembled from multiple partial theses.
 
-Never force unrelated material into a common narrative or broad artificial theme.
+Never force unrelated material into a common narrative or broad artificial theme. Curated Discovery should remain recognizably source-thesis-preserving; cross-source synthesis is an occasional tool, not the default editorial operation.
 
 ## Editorial depth
 
 Use variable depth.
 
-Give substantial space to ideas that contain enough reasoning, detail, or implications to justify it. Compress narrower but worthwhile material. Omit weak material entirely. Within a selected article, omit secondary branches that would turn the piece into an inventory.
+Give substantial space to ideas that contain enough reasoning, detail, or implications to justify it. Compress narrower but worthwhile material. Omit weak material entirely. Within a selected article, omit secondary branches that would turn the piece into an inventory. **Allocate depth independently:** a simple idea may need one compact paragraph while a richer idea may need several. Do not equalize sections for visual symmetry.
 
 Prefer a small number of substantive selections over a long list of shallow summaries.
 
@@ -120,18 +124,11 @@ Titles should sharpen the idea rather than perform cleverness. A reader should u
 
 ## Length and density
 
-Aim for approximately **five to eight minutes of focused reading**.
+Use an **elastic reading budget** driven by editorial value. Most editions should land around **five to eight minutes**, but a genuinely rich source set may stretch to roughly **ten minutes**. A light day may be shorter.
 
-Target roughly **700–1,200 words** for the editorial body, excluding the final source catalog.
+Do not target a fixed number of full selections, discoveries, paragraphs, or words. The recurring `4 full selections + 3 discoveries + 5 minutes` shape is not a template.
 
-Normally include:
-
-- **3–6 full editorial selections**
-- **0–4 shorter discoveries**
-
-These are editorial ranges, not quotas.
-
-Never add weaker material merely to reach a target count or word count.
+Never add weaker material merely to reach a duration or count, and never compress strong additional material merely to force the edition back to five minutes. Include the next item when its expected value clearly justifies the reader's additional time; stop when the marginal item would dilute the briefing.
 
 Every paragraph must have a clear role in the selection’s progression: orient, develop, exemplify, qualify, test, or resolve the central idea.
 
@@ -162,7 +159,7 @@ Present the strongest material as numbered editorial items:
 
 `One-sentence deck stating the central idea.`
 
-Then develop the idea as a short editorial mini-essay, usually in one to three substantive paragraphs according to its value and complexity. The paragraphs must form one readable progression rather than a sequence of extracted points.
+Then develop the idea as a short editorial mini-essay using **as much or as little space as the idea actually needs**. The paragraphs must form one readable progression rather than a sequence of extracted points. Do not infer paragraph count or length from neighboring selections or the HTML reference template.
 
 Titles must describe the **idea**, not reproduce the original article headline.
 
@@ -181,9 +178,9 @@ Order selections by editorial importance, not chronology or input order.
 
 ### Featured treatment
 
-When one selection is clearly stronger, richer, or more consequential than the others, it may receive a `FEATURED` label and slightly greater depth.
+When one selection is clearly stronger, richer, or more consequential than the others, it may receive a `FEATURED` label and **materially greater depth when that additional space improves understanding**. Featured is editorial judgment, not a decorative slot.
 
-Do not manufacture a featured item merely to satisfy the layout.
+Do not manufacture a featured item merely to satisfy the layout, and do not compress a genuinely rich featured idea to match the length of adjacent selections.
 
 If no selection clearly deserves special prominence, present the main selections with equal visual hierarchy.
 
@@ -296,14 +293,17 @@ For every source include:
 - The original article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
 - Author, newsletter, or publication when available.
 
-When useful, add a short neutral status such as:
+Use a source status when it adds useful editorial information:
 
-- `Selected`
+- `Selected` — the source materially contributed to a full selection or Discovery.
+- `Worth reading` — **Curated Discovery only**: the source was not selected for the editorial body, but after reading it the editor would still actively recommend spending additional time on the original. This is a catalog status, not a new section and not another name for a Discovery. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
 - `Duplicate`
 - `Limited content`
 - `Email-only`
 - `Promotional content`
 - `Not selected`
+
+`Selected` and `Worth reading` are mutually exclusive. A Discovery is already `Selected`; do not label it `Worth reading` merely because its original also contains useful depth. Use `Worth opening for` inside a selected item when the original offers meaningful additional depth.
 
 Do not summarize unselected sources.
 
@@ -340,16 +340,20 @@ Before returning the digest, verify that:
 - Supporting details advance the central focus; secondary branches have been cut rather than compressed into the piece.
 - Discoveries contain complete, understandable ideas.
 - Strong isolated ideas are allowed to stand alone.
+- The strongest thesis or reader promise of each source-centered selection remains recognizable; topical grouping has not erased why a source was worth opening.
+- Sources were combined only after a source-thesis check; topical similarity alone did not justify combination.
 - Connections between sources exist only when they materially improve the selected idea.
 - Unrelated material has not been forced into common themes.
-- Stronger material receives more depth than secondary material.
+- Stronger or more complex material receives the depth it needs independently; sections have not been equalized for visual symmetry.
 - Article headlines have not been reused as substitutes for editorial titles.
 - Every factual claim has the appropriate numerical citation, including email-only sources when relevant.
 - Citation numbers remain stable throughout.
 - Every reviewed source appears in the final catalog.
 - The final catalog is grouped by source identity without changing permanent source numbers.
 - Optional `Worth opening for` cues describe genuine additional value.
-- The editorial body fits approximately five to eight minutes of focused reading.
+- The editorial body uses an elastic reading budget: usually five to eight minutes, shorter when little qualifies, and up to roughly ten when genuinely strong material warrants it.
+- The edition stopped on marginal value rather than a fixed item count, paragraph count, or five-minute target.
+- `Worth reading`, when used, appears only as a highly selective source-catalog status for unselected originals that truly merit extra reading time.
 - Nothing editorial appears after `Sources`.
 
 - `TODAY'S EDIT` either states a genuinely interesting observation or creates honest curiosity without forcing unrelated material into one thesis.

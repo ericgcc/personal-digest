@@ -25,6 +25,8 @@ Do not confuse digest-first reading with exhaustive inclusion. A retained articl
 
 Before drafting, decide what will be omitted. Brevity should come from leaving out secondary branches, not from compressing every branch into one dense paragraph.
 
+For source-centered styles, identify the source's own central thesis or reader promise before reframing it. Record internally **why this source was worth opening** and what valuable idea a reader would reasonably expect to understand from it. A new editorial frame must not accidentally erase the strongest reason the source deserved attention. Synthesized styles may transform individual theses into a larger argument when that transformation is their declared purpose, but they must preserve each source's actual contribution faithfully.
+
 ## 2. FRAME — decide the story before writing it
 
 Frame every substantive output unit before drafting prose. The scale of the frame depends on the style: a Concise entry may need only two logical moves, while a Curated Discovery selection or Synthesis MAX thread may need a fuller arc.
@@ -37,8 +39,9 @@ For each unit, determine internally:
 - **Necessary orientation** — What context or term must be introduced before later detail can make sense?
 - **Support** — Which few examples, mechanisms, facts, numbers, or recommendations genuinely advance the spine?
 - **Branches to cut** — Which correct or interesting details belong to the source but not to this editorial story?
+- **Source-thesis check** — For source-centered units, is the source's strongest thesis/promise still recognizable in this frame, or did reframing turn it into a stray example?
 
-For synthesized styles, the frame must also state why the contributing sources belong together and what each uniquely contributes.
+For synthesized styles, the frame must also state why the contributing sources belong together and what each uniquely contributes. For styles where source independence is the default, topical similarity alone is never enough to combine sources: if one source's valuable thesis disappears inside another source's framing, keep them separate unless the combination creates a clearly stronger understanding that justifies the loss.
 
 If a coherent frame cannot be stated, narrow the focus, demote the item, turn it into a shorter discovery when the style permits, or remove it. Do not solve a framing problem with more prose.
 
@@ -54,6 +57,7 @@ Draft from the reader's path to understanding, not from extraction notes or sour
 - Use examples and details where they clarify the story; omit them where they only increase density.
 - Do not turn a bullet list of extracted points into sentences separated by periods.
 - Do not draft directly into HTML and do not let template geometry determine the prose.
+- Where the selected style permits variable depth, allocate space independently to each unit. Do not pad a simple idea or compress a complex one merely to make adjacent sections visually symmetrical.
 
 The draft is not the deliverable.
 
@@ -124,6 +128,7 @@ Verify:
 - Citations support the exact claims they follow.
 - No unsupported claim, manufactured synthesis, or exaggerated conclusion was introduced during editing.
 - The output satisfies the selected style's structure and quality checks.
+- Template placeholders, example component counts, or neighboring section lengths have not dictated the number of items, paragraphs, or words.
 
 Then ask internally: **Could an intelligent reader explain the main idea of each full selection in their own words after reading it once?** If not, the selection needs another structural or clarity pass.
 

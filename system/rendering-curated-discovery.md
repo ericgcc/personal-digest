@@ -64,7 +64,6 @@ The template contains only structural placeholders. Any demonstrated callout is 
 
 When authorized, place at most one callout inside a full selection, after the explanatory prose and before `Worth opening for` / `SOURCE NOTES`. Use the shared neutral callout component from `system/html-rendering.md`.
 
-
 ## Template independence
 
 The HTML template is a structural specimen. Its placeholder selection, discovery, and source rows exist only to demonstrate markup. Do not copy their count or length. Repeat, omit, and size components from the finished editorial output. A featured selection may be substantially longer than neighboring selections; a simple selection may be substantially shorter.

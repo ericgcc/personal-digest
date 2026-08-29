@@ -2,7 +2,7 @@
 
 This is the shared editorial quality floor inherited by every canonical digest style. It governs **how well the writing must work**, not the composition, source relationship, structure, or voice of any particular style.
 
-A selected style may add a distinct writing character, and digest custom instructions may refine that character further, but neither may weaken this base quality standard. The production method that turns source material into finished prose lives in `system/editorial-process.md`.
+A selected style may add a distinct writing character, and digest custom instructions may refine that character further, but neither may weaken this base quality standard. The production method that turns source material into finished prose lives in `system/editorial-process.md`. Shared craft references live in `system/writing-reasoning-and-source-fidelity.md`, `system/writing-editorial-prose.md`, `system/writing-naturalness.md`, and `system/writing-style-application.md`; they supply techniques, while the selected style determines how those techniques may be used.
 
 ## Supreme principles
 
@@ -20,10 +20,10 @@ All digest prose must protect these qualities:
 
 - **Clarity** — make the meaning easy to grasp without flattening important nuance.
 - **Coherence** — develop an intelligible line of thought. Sentences, examples, and paragraphs must have a reason to follow one another rather than merely sharing a topic.
-- **Specificity** — use concrete mechanisms, examples, evidence, numbers, distinctions, and consequences when they help the reader understand the central idea.
+- **Specificity** — use concrete mechanisms, examples, evidence, numbers, distinctions, and consequences when they help the reader understand the central idea. Prefer showing why something matters through specifics before declaring its importance.
 - **Orientation** — supply the context a knowledgeable reader needs before depending on unfamiliar terminology, assumptions, or technical detail.
 - **Rhythm** — vary sentence length and paragraph movement so the prose does not feel mechanically generated.
-- **Naturalness** — write like an excellent human editor, not like documentation, an executive-summary generator, or a templated LLM response.
+- **Naturalness** — write like an excellent human editor, not like documentation, an executive-summary generator, or a templated LLM response. Naturalness must come from specific, explainable editorial choices—not fabricated personality, arbitrary irregularity, or detector-oriented tricks.
 - **Intellectual honesty** — preserve uncertainty, limitations, disagreement, and scale; never manufacture importance or certainty.
 - **Economy** — remove material that does not advance understanding, not merely words around material that should have been omitted.
 - **Reader interest** — reveal meaningful value early and keep the thought progressing rather than circling or inventorying related facts.
@@ -106,7 +106,7 @@ Habitual scaffolding such as the following is a warning sign when the sentence c
 - “What really matters is...”
 - “The interesting thing is...”
 
-Likewise, avoid content-description phrases such as “this article discusses” or “the author explores” when the underlying idea can be stated directly.
+Likewise, avoid content-description phrases such as “this article discusses” or “the author explores” when the underlying idea can be stated directly. Prefer ordinary exact verbs—including `is`, `has`, `uses`, `causes`, `changes`, or `depends on`—when they state the relationship more clearly than inflated alternatives such as “serves as,” “represents,” or vague language about being “associated with” something.
 
 ## Rhetorical variety
 
@@ -115,6 +115,8 @@ Do not give every selection the same linguistic architecture.
 A section may open with a concrete fact, contradiction, consequence, question, mechanism, observation, short scene, or direct claim when the source supports that choice. Do not mechanically repeat `claim → explanation → broader lesson → takeaway` across the digest.
 
 Rhetorical variety must never substitute for coherence. Choose the form that best carries the material's actual line of thought.
+
+Judge repeated rhetorical devices by **pattern density**, not by isolated occurrence. Contrastive framing, rhetorical questions, triplets, em dashes, fragments, and explicit transitions are all legitimate tools; they become problems when they recur as default machinery rather than because the material earns them.
 
 ## Titles and headings
 
@@ -148,6 +150,20 @@ Editorial confidence is not the same as grandiosity.
 
 A restrained sentence that is true and interesting is better than a profound-sounding sentence that outruns the source.
 
+## Naturalness is an outcome, not a disguise
+
+Do not optimize prose to evade AI detectors or to imitate accidental human messiness. Detector scores and isolated stylistic tells are unreliable; the deeper editorial failures matter more.
+
+Use `system/writing-naturalness.md` as a diagnostic pass. In particular:
+
+- Restore source-grounded specificity when generic significance language has smoothed it away.
+- State concrete relationships instead of attaching superficial “highlighting/underscoring” analysis.
+- Remove vague authority, false consensus, ritual hedging, and unsupported broader implications.
+- Let section and paragraph shape vary because the material varies, not because randomness looks human.
+- Never invent anecdotes, sensory detail, personal experience, quotations, mistakes, emotions, or biographical “fingerprints.”
+
+The strongest sign of editorial authorship is **explainable judgment**: why an idea was selected, why two sources were combined or kept apart, why a detail was included, what was omitted, and where the prose moves from source-supported fact to editorial inference.
+
 ## Voice boundary
 
 This file defines quality, not one universal voice.
@@ -167,5 +183,8 @@ The staged editing sequence is defined in `system/editorial-process.md`. Before 
 - The piece contains enough explanation to understand the selected idea without opening the source.
 - Compression has not removed the logic that makes facts meaningful.
 - The prose sounds natural in the selected style and remains faithful to the sources.
+- Specific facts and mechanisms carry significance instead of generic importance language.
+- Repeated rhetorical or structural patterns have been checked across the whole digest, not only within individual sections.
+- The editor could explain the important selection, omission, source-relationship, and inference choices behind the finished piece.
 
 If the prose is correct but incoherent, dense without being understandable, or dull because it reads like extracted notes, it is not finished.

@@ -28,7 +28,6 @@ Do not add numerical citation pills unless the style itself is later changed to 
 
 Concise does not support callouts in its current editorial contract. Do not force the shared callout component into this layout. If a future change to `styles/concise.md` explicitly introduces callouts, update this rendering profile and template together.
 
-
 ## Template independence
 
 The HTML template is a structural specimen. Its placeholder source entry demonstrates markup only. Repeat the entry for every retained source; do not infer a fixed item count from the template.

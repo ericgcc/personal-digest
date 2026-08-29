@@ -1,6 +1,6 @@
 # Editorial Process
 
-This is the shared production method for turning reviewed source material into finished digest prose. It governs **how editorial work is performed**. `styles/editorial-base.md` defines the quality standard; the selected style defines the editorial product and voice.
+This is the shared production method for turning reviewed source material into finished digest prose. It governs **how editorial work is performed**. `styles/editorial-base.md` defines the quality standard; the selected style defines the editorial product and voice. The writing reference guides supply reusable reasoning, prose, and naturalness techniques, but never override the selected style's source relationship or composition unit.
 
 The process runs autonomously. Diagnostic questions in this file are instructions for the editor to answer internally from the reviewed material and current configuration. **Do not stop to ask the user how to frame, select, organize, or rewrite the digest.** Ask the user nothing during a normal run unless a higher-level workflow dependency genuinely requires user action.
 
@@ -8,7 +8,7 @@ The process runs autonomously. Diagnostic questions in this file are instruction
 
 Execute these stages in order:
 
-`SELECT → FRAME → DRAFT → STRUCTURAL EDIT → CLARITY EDIT → VOICE EDIT → COMPRESSION EDIT → FINAL POLISH`
+`SELECT → ANALYZE → FRAME → DRAFT → STRUCTURAL EDIT → CLARITY EDIT → VOICE & NATURALNESS EDIT → COMPRESSION EDIT → FINAL POLISH`
 
 Do not collapse the stages into one pass. In particular, do not optimize sentence polish or brevity before the structure is sound.
 
@@ -27,7 +27,27 @@ Before drafting, decide what will be omitted. Brevity should come from leaving o
 
 For source-centered styles, identify the source's own central thesis or reader promise before reframing it. Record internally **why this source was worth opening** and what valuable idea a reader would reasonably expect to understand from it. A new editorial frame must not accidentally erase the strongest reason the source deserved attention. Synthesized styles may transform individual theses into a larger argument when that transformation is their declared purpose, but they must preserve each source's actual contribution faithfully.
 
-## 2. FRAME — decide the story before writing it
+## 2. ANALYZE — let the idea emerge from the material
+
+Apply `system/writing-reasoning-and-source-fidelity.md` at the intensity allowed by the selected style **before fixing the frame**.
+
+For every promising source or candidate idea, establish internally:
+
+- the source's actual central claim or reader promise;
+- the strongest evidence, mechanism, example, or distinction that carries that claim;
+- any qualification, anomaly, trade-off, or unresolved point that would change a simple reading;
+- what the source is responding to, revising, assuming, or making newly visible when that context matters;
+- the smallest defensible implication worth carrying forward.
+
+Treat evidence as a way to **test and develop** an idea, not merely support a conclusion chosen in advance. Generate plausible implications and be willing to reformulate the question when the material does not fit the first explanation.
+
+For source-independent styles, analysis stops at a better understanding of the individual source. Do not infer a shared conclusion from overlap.
+
+For styles that permit source combination, classify any proposed relationship precisely—reinforcement, extension, qualification, contradiction, complementarity, shared cause/consequence, or independence. “Both are about X” is not a relationship. Test what each source uniquely contributes and whether a caveat, anomaly, or alternative grouping materially weakens the proposed synthesis.
+
+The output of this stage is a **working editorial understanding**, not polished prose and not a thesis that must be defended at all costs.
+
+## 3. FRAME — decide the story before writing it
 
 Frame every substantive output unit before drafting prose. The scale of the frame depends on the style: a Concise entry may need only two logical moves, while a Curated Discovery selection or Synthesis MAX thread may need a fuller arc.
 
@@ -41,15 +61,15 @@ For each unit, determine internally:
 - **Branches to cut** — Which correct or interesting details belong to the source but not to this editorial story?
 - **Source-thesis check** — For source-centered units, is the source's strongest thesis/promise still recognizable in this frame, or did reframing turn it into a stray example?
 
-For synthesized styles, the frame must also state why the contributing sources belong together and what each uniquely contributes. For styles where source independence is the default, topical similarity alone is never enough to combine sources: if one source's valuable thesis disappears inside another source's framing, keep them separate unless the combination creates a clearly stronger understanding that justifies the loss.
+For synthesized styles, the frame must also state why the contributing sources belong together, what each uniquely contributes, and what becomes more understandable only in combination. Treat the synthesis as a working explanation that must remain consistent with anomalies and qualifications found during analysis. For styles where source independence is the default, topical similarity alone is never enough to combine sources: if one source's valuable thesis disappears inside another source's framing, keep them separate unless the combination creates a clearly stronger understanding that justifies the loss and the style permits that transformation.
 
 If a coherent frame cannot be stated, narrow the focus, demote the item, turn it into a shorter discovery when the style permits, or remove it. Do not solve a framing problem with more prose.
 
-## 3. DRAFT — explain along the frame
+## 4. DRAFT — explain along the frame
 
 Write the complete editorial body in the digest's configured language using the selected style's required structure and Writing character.
 
-Draft from the reader's path to understanding, not from extraction notes or source order.
+Draft from the reader's path to understanding, not from extraction notes or source order. Apply `system/writing-editorial-prose.md` as the shared craft reference while preserving the selected style's voice and composition rules.
 
 - Let each paragraph perform a distinct job in the narrative spine.
 - Explain an idea before compressing it into shorthand.
@@ -61,7 +81,7 @@ Draft from the reader's path to understanding, not from extraction notes or sour
 
 The draft is not the deliverable.
 
-## 4. STRUCTURAL EDIT — repair the thought before the sentences
+## 5. STRUCTURAL EDIT — repair the thought before the sentences
 
 Re-read each substantive section as if encountering the material for the first time.
 
@@ -78,7 +98,7 @@ Answer internally:
 
 Rewrite, reorder, split, narrow, demote, or remove material until the structure works. Do not proceed because individual sentences sound polished.
 
-## 5. CLARITY EDIT — make the structure easy to understand
+## 6. CLARITY EDIT — make the structure easy to understand
 
 Once the structure is sound, edit for comprehension.
 
@@ -88,18 +108,23 @@ Once the structure is sound, edit for comprehension.
 - Render literal code, paths, operators, commands, identifiers, and syntax as code where supported.
 - Replace vague metaphors with literal technical language when the metaphor makes the mechanism harder to understand.
 - Preserve meaningful caveats and uncertainty.
+- Prefer important actors/concepts as subjects and important actions as verbs when that improves clarity.
+- Prefer ordinary exact verbs and concrete relationship language over inflated or vague association language.
+- Put already-established information before dependent new information when it improves sentence-to-sentence cohesion, and place emphasis where the reader can feel it rather than announcing it with meta-language.
 
 A knowledgeable reader should not need to reverse-engineer what a sentence is referring to.
 
-## 6. VOICE EDIT — make it belong to the selected style
+## 7. VOICE & NATURALNESS EDIT — make it belong to the selected style
 
-Apply `styles/editorial-base.md`, then the selected style's `## Writing character`, then compatible digest-specific tone preferences.
+Apply `styles/editorial-base.md`, the selected style's `## Writing character`, `system/writing-style-application.md`, and compatible digest-specific tone preferences. Then run the diagnostic in `system/writing-naturalness.md`.
 
-Improve rhythm, naturalness, emphasis, and rhetorical variety without changing the frame or inventing importance.
+Improve rhythm, naturalness, emphasis, and rhetorical variety without changing the frame or inventing importance. Naturalness must come from deliberate editorial choices, not fabricated personality, deliberate errors, arbitrary burstiness, or detector-oriented rewriting.
 
-Use wit, illumination, or productive agitation only where the material earns it. Remove LLM scaffolding, repetitive transitions, and sentences whose main job is to announce that an insight is important.
+Use wit, illumination, or productive agitation only where the material earns it. Remove LLM scaffolding, repetitive transitions, generic significance language, superficial participial analysis, vague authority, and sentences whose main job is to announce that an insight is important.
 
-## 7. COMPRESSION EDIT — cut only after understanding is secure
+Audit the whole digest for pattern density: repeated contrastive framing, rhetorical Q&A, triplets, em-dash emphasis, identical paragraph geometry, metronomic sentence length, or tidy moral endings. These devices are not forbidden; revise only when repetition reveals default machinery rather than material-driven choice.
+
+## 8. COMPRESSION EDIT — cut only after understanding is secure
 
 Now make the piece efficient.
 
@@ -114,7 +139,7 @@ Never preserve a weak branch merely by compressing it harder. Never remove the s
 
 For full editorial selections, fewer facts with stronger understanding is preferable to exhaustive density. For inherently compact styles, preserve the minimum logical bridge needed to keep the entry coherent.
 
-## 8. FINAL POLISH — publication check
+## 9. FINAL POLISH — publication check
 
 Perform one final read as a reader, not as the author.
 
@@ -129,6 +154,11 @@ Verify:
 - No unsupported claim, manufactured synthesis, or exaggerated conclusion was introduced during editing.
 - The output satisfies the selected style's structure and quality checks.
 - Template placeholders, example component counts, or neighboring section lengths have not dictated the number of items, paragraphs, or words.
+- Specific evidence or mechanisms carry claims of significance; generic importance language has not replaced useful detail.
+- Source relationships are stated concretely rather than through vague association language.
+- Any synthesized inference survived a check against source-specific caveats, anomalies, and plausible alternatives.
+- No personal anecdote, sensory detail, quotation, mistake, emotion, or biographical fingerprint was fabricated to make the prose appear human.
+- The important editorial choices—selection, omission, source combination/separation, qualification, and inference—are explainable from the reviewed material and selected style.
 
 Then ask internally: **Could an intelligent reader explain the main idea of each full selection in their own words after reading it once?** If not, the selection needs another structural or clarity pass.
 

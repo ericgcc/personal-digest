@@ -23,6 +23,16 @@ The fundamental unit is a **coherent editorial mini-essay built around one idea 
 | **Writing character** | Curious, selective, idea-driven, lively, lucid, and lightly magazine-like without becoming ornate. |
 | **Optional extension points** | Featured treatment, Discoveries, `Worth opening for`, and digest-authorized callouts when genuinely warranted. |
 
+## Writing reference profile
+
+Apply the shared writing references with the following emphasis:
+
+- `system/writing-reasoning-and-source-fidelity.md` — use deeply to understand and sharpen each promising source, but keep the reasoning **source-centered by default**.
+- `system/writing-editorial-prose.md` — **full depth**. Curated Discovery should have the richest magazine-like storytelling of the four styles while remaining factual and concise.
+- `system/writing-naturalness.md` — **full diagnostic pass** across the whole briefing.
+- `system/writing-style-application.md` — preserve the Curated Discovery boundary: discovery and curation come first; cross-source synthesis is occasional, not the organizing instinct.
+
+The prose may show curiosity and editorial personality, but never invent a first-person life, anecdote, sensory detail, reaction, or mistake. Its human quality comes from what it notices, selects, omits, and explains.
 
 ## Core principle: Digest-first reading
 
@@ -46,7 +56,7 @@ Before writing:
 2. Review the complete source set before selecting anything.
 3. Extract candidate ideas, arguments, techniques, explanations, examples, case studies, discoveries, or developments.
 4. Merge duplicates and substantially overlapping coverage.
-5. For each promising source, state internally the source's strongest thesis or reader promise and **why it was worth opening**. Treat a provocative headline as a hypothesis, not ground truth: confirm the thesis from the article itself.
+5. For each promising source, state internally the source's strongest thesis or reader promise and **why it was worth opening**. Treat a provocative headline as a hypothesis, not ground truth: confirm the thesis from the article itself. Notice the specific mechanism, example, distinction, anomaly, or unresolved question that gives the idea texture; do not replace it with a generic importance statement.
 6. Evaluate candidates by the amount of useful or interesting substance they contain and by expected value to this reader.
 7. Select only the material that genuinely deserves inclusion. Continue adding material while the next item's expected value clearly justifies the additional reading time; stop when the marginal item would noticeably dilute the edition.
 8. For each full selection, use `system/editorial-process.md` to frame one central focus, reader promise, narrative spine, necessary support, source-thesis check, and explicit branches to cut before drafting.
@@ -62,7 +72,7 @@ Do not penalize valuable outliers simply because they differ from the dominant m
 
 ## Relationship between sources
 
-Treat selected sources and ideas independently by default. **Start from the strongest thesis worth preserving, not from a topic that several articles happen to share.**
+Treat selected sources and ideas independently by default. **Start from the strongest thesis worth preserving, not from a topic that several articles happen to share.** Do not scan the corpus for a master theory simply because Synthesis MAX would; heterogeneity is a feature of this style when the strongest discoveries are unrelated.
 
 When several sources genuinely reinforce, extend, qualify, contradict, or complete the same idea, they may be combined into one stronger editorial item. Mere topical compatibility is not enough.
 
@@ -112,7 +122,7 @@ Prefer one idea understood well over several extracted takeaways compressed into
 
 ## Writing character
 
-Write with curiosity, selectivity, and visible editorial judgment. The prose should feel like a smart magazine editor **telling the reader a small, coherent story about an idea**, not a model converting articles into polished takeaways.
+Write with curiosity, selectivity, and visible editorial judgment. The prose should feel like a smart magazine editor **telling the reader a small, coherent story about an idea**, not a model converting articles into polished takeaways and not a miniature cross-source research synthesis.
 
 Make the interesting part arrive early, but orient the reader before relying on unfamiliar context. When a concrete fact, mechanism, contradiction, example, or consequence provides the best entrance, begin there and develop it into the larger idea. Prefer a readable progression over maximal information density.
 
@@ -120,7 +130,7 @@ Selections should have different rhetorical lives, but each one must still have 
 
 Allow moments of wit, illumination, or productive agitation when the material earns them. Keep them subordinate to clarity and fidelity. The style may be lively and memorable, but never ornate, hype-driven, or artificially profound.
 
-Titles should sharpen the idea rather than perform cleverness. A reader should understand what is at stake and feel a reason to continue.
+Titles should sharpen the idea rather than perform cleverness. A reader should understand what is at stake and feel a reason to continue. Prefer source-grounded specifics and ordinary exact verbs to polished abstraction. Vary entry points and paragraph shape because the selected ideas genuinely differ; do not manufacture irregularity, rhetorical punch lines, or grand pivots merely to sound human.
 
 ## Length and density
 
@@ -342,6 +352,8 @@ Before returning the digest, verify that:
 - Strong isolated ideas are allowed to stand alone.
 - The strongest thesis or reader promise of each source-centered selection remains recognizable; topical grouping has not erased why a source was worth opening.
 - Sources were combined only after a source-thesis check; topical similarity alone did not justify combination.
+- The editor did not search for a master theory across the corpus when strong independent discoveries were the better product.
+- Each full selection preserves at least one source-grounded detail, mechanism, distinction, example, or qualification when such a detail is what makes the idea genuinely worth keeping; generic significance has not replaced it.
 - Connections between sources exist only when they materially improve the selected idea.
 - Unrelated material has not been forced into common themes.
 - Stronger or more complex material receives the depth it needs independently; sections have not been equalized for visual symmetry.
@@ -355,10 +367,11 @@ Before returning the digest, verify that:
 - The edition stopped on marginal value rather than a fixed item count, paragraph count, or five-minute target.
 - `Worth reading`, when used, appears only as a highly selective source-catalog status for unselected originals that truly merit extra reading time.
 - Nothing editorial appears after `Sources`.
-
 - `TODAY'S EDIT` either states a genuinely interesting observation or creates honest curiosity without forcing unrelated material into one thesis.
 - Every paragraph advances one intelligible line of thought rather than merely restating the selection’s central claim or stacking another related fact.
 - Adjacent selections vary in rhetorical shape, sentence rhythm, and entry point instead of following a repeated LLM pattern.
 - Titles are sharp and informative without performing cleverness, and moments of wit, illumination, or agitation are earned rather than manufactured.
+- Naturalness comes from source-specific judgment and material-driven variation; no fake personal footprint or detector-oriented irregularity has been introduced.
+- The edition remains recognizably more discovery-oriented, source-thesis-preserving, and tonally agile than Synthesis MAX.
 
 The finished briefing should leave the reader **understanding a small number of ideas well enough to remember, explain, or use them**, while making the original sources optional paths for deeper exploration rather than required reading.

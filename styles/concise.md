@@ -20,6 +20,15 @@ A fast per-source digest designed for scanning. Keep each source separate and re
 | **Writing character** | Fast, crisp, concrete, lucid, and restrained. |
 | **Optional extension points** | None in the current contract; callouts are not supported. |
 
+## Writing reference profile
+
+Apply the shared writing references lightly and selectively:
+
+- `system/writing-reasoning-and-source-fidelity.md` — identify the one central value and protect fidelity; do not spend the tiny word budget on secondary inference.
+- `system/writing-editorial-prose.md` — prioritize direct subjects, strong verbs, compact logical bridges, and immediate reader value.
+- `system/writing-naturalness.md` — audit the **set of entries** for repeated scaffolds and cadence rather than making each short paragraph artificially quirky.
+- `system/writing-style-application.md` — preserve strict source independence and minimal editorial transformation.
+
 ## Summary mode
 Produce one compact entry for each reviewed source worth retaining.
 
@@ -35,7 +44,7 @@ If several sources cover the same story or idea, summarize each independently bu
 
 Write with brisk editorial clarity. The reader should understand the useful part almost immediately.
 
-Lead with the source's strongest idea, fact, technique, consequence, or distinction rather than with setup about what the source contains. Keep the paragraph concrete and information-dense, but do not turn it into a slogan or headline fragment.
+Lead with the source's strongest idea, fact, technique, consequence, or distinction rather than with setup about what the source contains. Keep the paragraph concrete and information-dense, but do not turn it into a slogan or headline fragment. One exact fact or mechanism may be enough; do not append a generic “why it matters” moral when the value is already visible.
 
 Use natural sentence rhythm even at short length. A compact entry can contain one sharp sentence or a few sentences with different jobs; do not force every entry into the same `claim → explanation → why it matters` pattern.
 
@@ -111,3 +120,5 @@ Before returning the digest, verify that:
 - The first sentence of each entry earns attention quickly instead of spending words describing the source.
 - Entries do not reuse the same summary scaffold or sentence rhythm mechanically.
 - The prose remains concrete and natural rather than slogan-like, inflated, or generic.
+- Plain exact wording has not been replaced by formal or significance-heavy phrasing merely to make a short entry sound substantial.
+- Variation across entries reflects differences in the sources; no deliberate irregularity or fake personality was added to evade an AI-like cadence.

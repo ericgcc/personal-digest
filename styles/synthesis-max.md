@@ -21,6 +21,17 @@ One selective briefing: no separate article summaries. Merge the strongest mater
 | **Writing character** | Analytical, connective, authoritative but restrained, precise, and intellectually alive. |
 | **Optional extension points** | Zero or one digest-authorized callout inside a thread when the rendering profile supports it. |
 
+## Writing reference profile
+
+Apply the shared writing references with the following emphasis:
+
+- `system/writing-reasoning-and-source-fidelity.md` — **full depth**. Evidence-led analysis and cross-source relationship testing are central to this style.
+- `system/writing-editorial-prose.md` — **full depth**. The result should read like a strong analytical magazine essay, not a research paper or literature review.
+- `system/writing-naturalness.md` — **full diagnostic pass** across the whole briefing.
+- `system/writing-style-application.md` — preserve the Synthesis MAX boundary: the relationship is the composition anchor, and combined sources must add explanatory value unavailable from the sources separately.
+
+Do not import academic surface conventions simply because the reasoning is analytical. Avoid ritual literature-survey language, repeated author-by-author attribution, and formal hedging formulas when claim-level citations and proportionate wording already make provenance clear.
+
 ## Synthesis mode
 
 Produce one integrated briefing, not a collection of article summaries.
@@ -28,10 +39,12 @@ Produce one integrated briefing, not a collection of article summaries.
 Before writing:
 
 1. Assign every reviewed source a permanent sequential number based on its input order.
-2. Evaluate each source for information value, explanatory power, practical significance, novelty and relevance to the broader source set.
-3. Identify meaningful relationships: reinforcement, contrast, qualification, shared patterns, complementary techniques or important tensions.
-4. Select the material that provides enough value to justify space in a short briefing.
-5. Choose the editorial structure that best reflects the evidence.
+2. Interrogate each promising source before synthesizing it: identify its actual thesis, strongest evidence/mechanism, meaningful caveats or anomalies, and what it uniquely contributes.
+3. Evaluate each source for information value, explanatory power, practical significance, novelty and relevance to the broader source set.
+4. Identify and classify meaningful relationships precisely: reinforcement, extension, qualification, contradiction, complementarity, shared cause/consequence, or independence.
+5. For every proposed multi-source thread, ask what becomes more understandable only in combination, what each source uniquely contributes, and whether an anomaly, caveat, or plausible alternative grouping weakens the synthesis.
+6. Select the material that provides enough value to justify space in a short briefing.
+7. Choose the editorial structure that best reflects the evidence. Treat the initial synthesis as a working explanation, not a conclusion that later evidence must be made to fit.
 
 Organize the briefing around synthesized ideas—not publications, authors or individual articles.
 
@@ -56,11 +69,11 @@ Write with analytical authority and restraint. The prose should make relationshi
 
 Start from the strongest concrete evidence, tension, or mechanism and let the synthesis emerge from it. Explain why sources belong together instead of relying on phrases such as “the broader pattern” or “the deeper lesson” to announce synthesis.
 
-A good thread should feel discovered rather than imposed: the reader can see how the contributing evidence leads to the editorial inference. Frame the thread before drafting so its evidence, relationship, and implication form one readable progression rather than a sequence of source observations. Distinguish sharply between what sources establish and what the briefing infers from them.
+A good thread should feel discovered rather than imposed: the reader can see how the contributing evidence leads to the editorial inference. The thesis should emerge from source interrogation rather than precede it. Frame the thread before drafting so its evidence, relationship, and implication form one readable progression rather than a sequence of source observations. Distinguish sharply between what sources establish and what the briefing infers from them, and preserve a meaningful anomaly or qualification when it changes the explanation rather than smoothing it away.
 
 Vary the rhetorical shape of threads. Some may begin with a contradiction, others with a concrete fact, mechanism, consequence, or question. Avoid repeating a polished `thesis → evidence → grand implication` cadence across the briefing.
 
-Use memorable phrasing when it clarifies the relationship, but prefer precision to cleverness and proportion to profundity.
+Use memorable phrasing when it clarifies the relationship, but prefer precision to cleverness and proportion to profundity. Let analytical authority come from specific evidence and exact relationship verbs rather than academic register, repeated `not just X, but Y` framing, rhetorical Q&A, or generic claims that something signals a broader shift.
 
 ## Length and density
 
@@ -86,7 +99,7 @@ Remove repetition aggressively. Do not restate a section’s thesis in its concl
 
 Open the briefing with one compact editorial synthesis of approximately 80–130 words with inline numerical citations. It must earn its place rather than act as a table of contents.
 
-If one well-supported overarching pattern, tension, or question exists, articulate it directly. If the strongest material instead forms several distinct threads, frame two or three of the most compelling ones and any honest relationship between them without forcing a single thesis.
+If one well-supported overarching pattern, tension, or question **emerges from the analyzed evidence**, articulate it directly. It may be modest. If the strongest material instead forms several distinct threads, frame two or three of the most compelling ones and any honest relationship between them without forcing a single thesis or upgrading topical proximity into significance.
 
 Do not write inventory prose such as “today's edition moves from X to Y and closes with Z.” Do not describe ingestion, filtering, ranking, or summarization. Put the most interesting analytical value early enough that the reader wants to continue into the threads.
 ### Thematic sections
@@ -187,6 +200,8 @@ Before returning the briefing, verify that:
 
 - It reads as one editorial briefing rather than multiple summaries.
 - Cross-source connections are substantive rather than superficial.
+- Each multi-source thread passes the relationship, unique-contribution, evidence/inference, and counter-test checks in `system/writing-reasoning-and-source-fidelity.md`.
+- The working thesis emerged from the material and was revised when caveats or anomalies required it; the source set was not recruited to defend a preselected grand idea.
 - Unrelated sources have not been forced into a common narrative.
 - Editorial inference is distinguishable from source-supported claims.
 - Multi-source synthesized claims cite the contributing sources together when appropriate.
@@ -204,3 +219,5 @@ Before returning the briefing, verify that:
 - Threads do not reuse the same rhetorical architecture or repeatedly announce “patterns” and “lessons” instead of demonstrating them.
 - Concrete evidence, mechanisms, tensions, or consequences support the synthesis before abstraction outruns the sources.
 - Memorable phrasing clarifies rather than manufacturing cleverness or profundity.
+- The briefing reads as analytical editorial nonfiction, not as a literature review, research abstract, or author-by-author survey.
+- Naturalness comes from evidence, judgment, rhythm, and proportion; repeated AI-shaped rhetorical patterns have been audited across the whole briefing.

@@ -56,7 +56,6 @@ Remove the template's example callout unless the active digest instructions auth
 
 When authorized, use at most one callout inside a thread, after the synthesis prose and before `SOURCE NOTES`. Use the shared neutral callout primitive from `system/html-rendering.md`.
 
-
 ## Template independence
 
 The HTML template is a structural specimen. Its placeholder Big Picture, thread, and source rows demonstrate markup only. Never infer thread count, paragraph count, or section length from the template; render exactly the editorial structure produced by the style.

@@ -110,7 +110,6 @@ When an email-only source has no reliable locator, preserve the same source numb
 
 For per-source styles that do not require numerical inline citations, link the article/item title when a valid locator exists. Otherwise render the title as normal editorial text and preserve email-only provenance without a fake link.
 
-
 ## Shared source-status badges
 
 When a style renders source statuses, use one shared semantic color system:

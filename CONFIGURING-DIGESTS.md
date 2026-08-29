@@ -266,7 +266,6 @@ Before enabling a new digest, verify:
 - [ ] the intended execution cadence is configured outside this repository/system configuration;
 - [ ] the digest is set to `enabled: true` only when ready.
 
-
 ## Source-catalog status colors
 
 When a style has a source catalog, status colors are semantic and shared: `Selected` is green; neutral states such as `Not selected`, `Duplicate`, `Limited content`, `Email-only`, `Promotional content`, and `Low signal` are gray. `Worth reading` is a special yellow catalog status supported only by `curated-discovery`; it marks an **unselected** original the editor still actively recommends if the reader has extra time. It is not a section and is not a synonym for a Discovery.

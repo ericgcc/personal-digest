@@ -7,7 +7,7 @@ This is the shared execution contract for every configured digest. It defines ho
 1. Read `system/registry.yaml` and locate the requested digest ID.
 2. Read the referenced file in `digests/`.
 3. Parse its YAML frontmatter as structured digest configuration.
-4. Resolve the shared style contract, editorial process, and editorial base from `defaults.style_contract`, `defaults.editorial_process`, and `defaults.editorial_base`, the selected style from `styles/<style>.md`, every adapter named by its source groups from `adapters/`, `system/html-rendering.md`, the matching style-specific rendering profile and template from `system/registry.yaml`, the SQLite state contract, and the shared state database.
+4. Resolve the shared style contract, editorial process, and editorial base from `defaults.style_contract`, `defaults.editorial_process`, and `defaults.editorial_base`; the shared writing references `system/writing-reasoning-and-source-fidelity.md`, `system/writing-editorial-prose.md`, `system/writing-naturalness.md`, and `system/writing-style-application.md`; the selected style from `styles/<style>.md`; every adapter named by its source groups from `adapters/`; `system/html-rendering.md`; the matching style-specific rendering profile and template from `system/registry.yaml`; the SQLite state contract; and the shared state database. `system/writing-research-basis.md` is provenance for maintainers and need not be loaded during normal digest execution.
 5. Treat any Markdown after the frontmatter as **optional digest-specific custom instructions**. A valid digest file may contain only frontmatter and no custom instructions at all.
 6. Stop safely if `enabled: false` or if any required dependency cannot be resolved.
 
@@ -15,6 +15,7 @@ Before touching Gmail, validate that:
 
 - the digest registry key, frontmatter `id`, and digest filename stem are identical;
 - the shared style contract, editorial process, and editorial base exist at the paths configured in the registry;
+- all four runtime writing references exist at their canonical `system/writing-*.md` paths;
 - the selected style name is canonical and exists both in `styles/` and `rendering_profiles`;
 - the selected style satisfies `system/style-contract.md`: it contains a complete `## Style interface`, a dedicated `## Writing character`, and `## Quality control`, with no contradiction between its interface declarations and detailed implementation;
 - every declared adapter exists;
@@ -40,6 +41,8 @@ Apply instructions in this order of authority:
 8. **Rendering profile and template** — presentation of the already-edited editorial structure in HTML.
 
 `system/style-contract.md` is not another prose layer in this hierarchy. It is the validation interface that determines whether a style is complete enough to run.
+
+The shared writing-reference files are likewise **not a new style layer**. They provide reasoning and craft techniques used by the editorial process, base, and selected style. `system/writing-style-application.md` gates their use so that, for example, analytical source comparison cannot turn Concise or Detailed into synthesis and cannot turn Curated Discovery into Synthesis MAX.
 
 Digest custom instructions are intentionally powerful **inside the selected style's envelope**. They may change or refine:
 
@@ -247,7 +250,7 @@ Editorial production is a staged process. Execute `system/editorial-process.md` 
 
 The required sequence is:
 
-`SELECT → FRAME → DRAFT → STRUCTURAL EDIT → CLARITY EDIT → VOICE EDIT → COMPRESSION EDIT → FINAL POLISH`
+`SELECT → ANALYZE → FRAME → DRAFT → STRUCTURAL EDIT → CLARITY EDIT → VOICE & NATURALNESS EDIT → COMPRESSION EDIT → FINAL POLISH`
 
 All diagnostic questions in the editorial process are **internal editorial checks**. A normal automated digest run must not stop to ask the user how to select, frame, organize, or rewrite material. Resolve those decisions from the reviewed sources, selected style, editorial base, digest configuration, and compatible custom instructions.
 
@@ -255,7 +258,7 @@ Selection quality and writing quality remain separate judgments. A beautifully w
 
 Preserve stable source numbering/provenance throughout the process. Editorial revision may narrow, reorder, retitle, demote, or remove material, but it must never introduce unreviewed material, unsupported claims, or source relationships the selected style does not permit. Preserve each reviewed item's final editorial outcome for state commit. When `curated-discovery` uses its catalog-only `Worth reading` recommendation, record that outcome distinctly from `Selected` and ordinary omission; no other style may invent that status.
 
-Rendering may begin only after `FINAL POLISH` passes the quality gates in `system/editorial-process.md`, `styles/editorial-base.md`, and the selected style.
+Rendering may begin only after `FINAL POLISH` passes the quality gates in `system/editorial-process.md`, `styles/editorial-base.md`, the selected style, and the applicable shared writing-reference diagnostics.
 
 ## Render and deliver
 

@@ -21,6 +21,15 @@ A structured per-source digest designed to preserve the important context, nuanc
 | **Writing character** | Calm, explanatory, exact, patient, and quietly engaging. |
 | **Optional extension points** | Derived topical grouping/index and a digest-authorized callout when compatible with the rendering profile. |
 
+## Writing reference profile
+
+Apply the shared writing references with a source-centered emphasis:
+
+- `system/writing-reasoning-and-source-fidelity.md` — use moderately within each source to identify hierarchy, evidence, mechanisms, and qualifications; never turn cross-source overlap into a shared conclusion.
+- `system/writing-editorial-prose.md` — **full clarity pass**. Reader orientation and explanatory sequence matter more here than compression.
+- `system/writing-naturalness.md` — audit repeated summary structures, transitions, and generic significance language across the digest.
+- `system/writing-style-application.md` — preserve the quiet editorial presence of Detailed: more explanatory than Concise, less reframing and personality than Curated Discovery.
+
 ## Summary mode
 Keep every source independent.
 
@@ -45,7 +54,7 @@ Put the central value early, then develop mechanism, evidence, examples, caveats
 
 Patience does not mean verbosity. Do not restate the same claim in prose and bullets, and do not turn supporting notes into a mechanical checklist. If bullets would fragment an explanation that needs sequence or causality, use prose instead. Vary sentence and paragraph shape naturally according to the argument.
 
-The voice should be exact without becoming clinical, and engaging without becoming showy. Do not manufacture drama or generalize beyond what the individual source supports.
+The voice should be exact without becoming clinical, and engaging without becoming showy. Do not manufacture drama or generalize beyond what the individual source supports. Avoid repetitive academic scaffolding such as opening every entry with “the author argues” or “the article explores”; attribute explicitly when the distinction between report, interpretation, recommendation, or evidence matters, and otherwise state the idea directly.
 
 ## Organization
 
@@ -189,3 +198,5 @@ Before returning the digest, verify that:
 - The useful idea or mechanism appears early enough that the reader is rewarded before secondary detail.
 - Explanations feel edited and natural rather than textbook-like, mechanical, or over-sectioned.
 - Prose and supporting notes do not duplicate the same point in different formats.
+- Repeated entry structures, transition crutches, and generic significance endings have been audited across the whole digest.
+- Naturalness comes from lucid source-specific explanation, not invented voice, artificial asymmetry, or cross-source editorializing.

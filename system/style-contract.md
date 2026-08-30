@@ -1,11 +1,9 @@
 # Style Contract
-
 This file defines the interface every canonical editorial style must implement. It is a **validation contract**, not an additional writing voice and not a universal output structure.
 
 The purpose is the same as an interface in software design: every style answers the same architectural questions, while each implementation remains free to produce a genuinely different editorial product.
 
 ## Required interface
-
 Every canonical `styles/<style>.md` file must contain a `## Style interface` section with explicit, non-empty declarations for all of these dimensions:
 
 | Dimension | What the style must declare |
@@ -30,26 +28,24 @@ A style must also contain a dedicated `## Writing character` section that develo
 The interface is a concise architectural declaration; the rest of the style file is the implementation. They must not contradict one another. If they do, the style is invalid and execution must stop safely rather than guessing which definition wins.
 
 ## What the interface does not require
-
 The contract intentionally does **not** require every style to have:
 
-- an introduction;
-- topical sections;
-- a Big Picture;
-- numerical citations;
-- callouts;
-- a source catalog;
-- synthesis;
-- the same length;
-- the same tone;
-- the same HTML composition.
+* an introduction;
+* topical sections;
+* a Big Picture;
+* numerical citations;
+* callouts;
+* a source catalog;
+* synthesis;
+* the same length;
+* the same tone;
+* the same HTML composition.
 
 For example, `Opening behavior: None` and `Source catalog: None` are complete valid implementations when that is part of the style's identity.
 
 The contract standardizes the questions, not the answers.
 
 ## Shared editorial inheritance
-
 Every canonical style automatically inherits `styles/editorial-base.md` as its quality floor and `system/editorial-process.md` as its production method.
 
 A style's `Writing character` may make the prose more brisk, patient, analytical, curious, lively, restrained, or otherwise distinctive, but it may not weaken the base requirements for clarity, coherence, reader orientation, specificity, naturalness, intellectual honesty, economy, reader interest, or rhetorical variety.
@@ -61,7 +57,6 @@ Every canonical style also inherits the shared source-reporting semantics in `sy
 Every canonical style inherits the complete-output language invariant in `system/workflow.md` and `system/html-rendering.md`. English labels and headings named inside a style file describe semantic structural roles; they are not fixed display strings. The delivered digest must localize all generated reader-facing copy to the configured language without changing the style's composition, status semantics, provenance, or state values. **Original source/article titles are the permanent exception: every style must display them verbatim in their original language and may never translate, paraphrase, normalize, or transliterate them.** A style may not opt out of either invariant or require an English UI unless the digest explicitly requests bilingual delivery.
 
 ## Integration requirements for a new canonical style
-
 A new style is runnable only when all of the following are true:
 
 1. `styles/<style>.md` exists and implements this interface.
@@ -76,10 +71,6 @@ A new style is runnable only when all of the following are true:
 If any requirement is missing, the style is not a valid canonical deliverable and the workflow must stop before source processing or delivery.
 
 ## Design principle
-
 Treat this contract as an interface, not a superclass implementation.
 
 New styles should share **editorial quality and architectural completeness** while remaining free to differ substantially in composition, source relationship, depth, rhythm, and reading experience.
-
-
-

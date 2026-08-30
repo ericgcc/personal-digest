@@ -1,19 +1,17 @@
 # Digest state database
-
 This is the runtime contract for persistent Digest System state.
 
-- Database: `state/digest-state.db`
-- Engine: SQLite
-- Schema version: `1`
-- Version check: `PRAGMA user_version = 1`
-- Scope: one shared database for every digest
+* Database: `state/digest-state.db`
+* Engine: SQLite
+* Schema version: `1`
+* Version check: `PRAGMA user_version = 1`
+* Scope: one shared database for every digest
 
 `digest_id` is the state namespace. The same Gmail message or article may therefore be stored once for `medium-bi-daily` and independently for another digest. Do not apply global deduplication across digest IDs.
 
 Digest aliases are **not stored in the database**. They remain configuration in `digests/<digest-id>.md`. Reads use the canonical ID plus declared aliases; all new writes use only the canonical ID.
 
 ## Runtime access
-
 Treat the database as binary state, not as a document.
 
 1. Fetch the Drive file as raw bytes to a local working path.
@@ -40,18 +38,16 @@ PRAGMA user_version;         -- must return: 1
 Use parameterized SQL for values. Never construct SQL by interpolating email IDs, URLs, titles, digest IDs, or other source data.
 
 ## Single-writer rule
-
 The database supports any number of configured digests, but the Drive-backed state artifact has one writer at a time.
 
-- Record the Drive `modifiedTime` when the database is fetched.
-- Before replacing the Drive file after a state commit, fetch metadata again.
-- If `modifiedTime` changed, do not overwrite it. Re-fetch the newest database and replay the intended transaction against that copy, or stop safely if the merge cannot be proven safe.
-- Never create a separate active database per digest to work around concurrency.
+* Record the Drive `modifiedTime` when the database is fetched.
+* Before replacing the Drive file after a state commit, fetch metadata again.
+* If `modifiedTime` changed, do not overwrite it. Re-fetch the newest database and replay the intended transaction against that copy, or stop safely if the merge cannot be proven safe.
+* Never create a separate active database per digest to work around concurrency.
 
 This protects the multi-digest state model from lost updates even though Drive is file storage rather than a database server.
 
 ## Schema
-
 ```sql
 CREATE TABLE metadata (
     key TEXT PRIMARY KEY,
@@ -126,11 +122,9 @@ The database must also set `PRAGMA user_version = 1`.
 `items.review_status` stores the final editorial outcome for the reviewed item. Keep existing historical values readable, including `not_selected`, but new runs must write `reviewed` for a substantively reviewed ordinary omission. New runs should use a stable lower-snake-case outcome appropriate to the active style, for example `selected`, `reviewed`, `duplicate`, `limited_content`, `email_only`, or `promotional_content`. When a historical `not_selected` value must be shown to a reader, render it as `Reviewed`; do not rewrite history merely to change the label. The special value `worth_reading` is permitted only for `curated-discovery` and `synthesis-max`, only when the source was **not** selected into the editorial body, and corresponds to their yellow source-catalog recommendation. It is not a Discovery classification.
 
 ## State lookup
-
 Build a read-identity list containing the canonical digest ID followed by any declared aliases.
 
 ### Email already processed
-
 Query `emails` for the Gmail message ID under any read identity. A match means the email must not be reprocessed for the current digest.
 
 Conceptually:
@@ -144,7 +138,6 @@ LIMIT 1;
 ```
 
 ### Item already reviewed
-
 Prefer `item_key`. Also use a normalized canonical URL when available so tracking variants do not create duplicate state.
 
 ```sql
@@ -161,7 +154,6 @@ LIMIT 1;
 Normalize missing or empty canonical URLs to SQL `NULL` before writes.
 
 ### Run already delivered
-
 ```sql
 SELECT run_key, digest_id, status, delivered_at
 FROM runs
@@ -172,7 +164,6 @@ LIMIT 1;
 A matching deterministic run key prevents duplicate delivery.
 
 ## Commit after successful delivery
-
 Do not persist a run as processed before Gmail confirms delivery.
 
 After successful delivery, apply all state changes to the local database in one transaction:
@@ -200,6 +191,4 @@ After commit:
 If database persistence succeeds but Gmail labeling fails, the database remains authoritative for deduplication and the labels can be repaired later. If Gmail delivery succeeds but database persistence fails, do not send again; use the deterministic run key plus Gmail Sent evidence to repair missing database state on the next execution.
 
 ## Historical migration
-
 The initial SQLite database was migrated from `state/Digest Processing Ledger.xlsx` without rewriting historical digest IDs. Historical `medium-daily` rows therefore remain `medium-daily`; the current digest config's alias makes that state visible to `medium-bi-daily` reads. New writes use only `medium-bi-daily`.
-

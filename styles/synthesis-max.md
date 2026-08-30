@@ -1,9 +1,7 @@
 # Synthesis MAX
-
 One selective briefing: no separate article summaries. Merge the strongest material into an editorial synthesis organized around the relationships, patterns, tensions and ideas genuinely supported by the source set, with links back to every source.
 
 ## Style interface
-
 | Dimension | Declaration |
 | --- | --- |
 | **Purpose** | Turn the strongest source material into one integrated briefing whose main value comes from meaningful relationships, patterns, tensions, and combined implications. |
@@ -13,7 +11,7 @@ One selective briefing: no separate article summaries. Merge the strongest mater
 | **Depth model** | Variable-high depth across a dense five-to-eight-minute body, normally 700–1,200 words excluding the catalog. |
 | **Organization model** | Big Picture opening → two to five numbered synthesized threads determined by the evidence. |
 | **Progression model** | Each thread develops a clear analytical arc from evidence or tension → relationship between sources → supported implication, with contributing material ordered by the argument rather than by source. |
-| **Opening behavior** | Required `THE BIG PICTURE` opening that earns its place as the briefing’s first editorial synthesis. |
+| **Opening behavior** | Required `THE BIG PICTURE` opening that earns its place as the briefing's first editorial synthesis. |
 | **Body behavior** | Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes. |
 | **Citation / provenance** | Permanent global numerical citations attached to supported claims/inferences plus thread-level source notes. |
 | **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering, with canonical statuses and per-source reading time for substantive material. |
@@ -22,18 +20,16 @@ One selective briefing: no separate article summaries. Merge the strongest mater
 | **Optional extension points** | Zero or one digest-authorized callout inside a thread when the rendering profile supports it. |
 
 ## Writing reference profile
-
 Apply the shared writing references with the following emphasis:
 
-- `system/writing-reasoning-and-source-fidelity.md` — **full depth**. Evidence-led analysis and cross-source relationship testing are central to this style.
-- `system/writing-editorial-prose.md` — **full depth**. The result should read like a strong analytical magazine essay, not a research paper or literature review.
-- `system/writing-naturalness.md` — **full diagnostic pass** across the whole briefing.
-- `system/writing-style-application.md` — preserve the Synthesis MAX boundary: the relationship is the composition anchor, and combined sources must add explanatory value unavailable from the sources separately.
+* `system/writing-reasoning-and-source-fidelity.md`—**full depth**. Evidence-led analysis and cross-source relationship testing are central to this style.
+* `system/writing-editorial-prose.md`—**full depth**. The result should read like a strong analytical magazine essay, not a research paper or literature review.
+* `system/writing-naturalness.md`—**full diagnostic pass** across the whole briefing.
+* `system/writing-style-application.md`—preserve the Synthesis MAX boundary: the relationship is the composition anchor, and combined sources must add explanatory value unavailable from the sources separately.
 
 Do not import academic surface conventions simply because the reasoning is analytical. Avoid ritual literature-survey language, repeated author-by-author attribution, and formal hedging formulas when claim-level citations and proportionate wording already make provenance clear.
 
 ## Synthesis mode
-
 Produce one integrated briefing, not a collection of article summaries.
 
 Before writing:
@@ -52,10 +48,10 @@ Seek synthesis where it is genuinely supported. Do not assume the source set has
 
 A strong section may answer questions such as:
 
-- What broader pattern becomes visible when these sources are considered together?
-- Where do sources reinforce, qualify or contradict one another?
-- What principle or implication emerges from their combined evidence?
-- Why does this matter beyond the individual source?
+* What broader pattern becomes visible when these sources are considered together?
+* Where do sources reinforce, qualify or contradict one another?
+* What principle or implication emerges from their combined evidence?
+* Why does this matter beyond the individual source?
 
 Explicitly explain connections rather than placing adjacent article summaries under a shared heading.
 
@@ -64,10 +60,9 @@ Prefer cross-source synthesis when meaningful, but do not force unrelated materi
 Recurring coverage is not automatically important. Repetition may represent duplication rather than signal.
 
 ## Writing character
-
 Write with analytical authority and restraint. The prose should make relationships visible without sounding as though every relationship is a revelation.
 
-Start from the strongest concrete evidence, tension, or mechanism and let the synthesis emerge from it. Explain why sources belong together instead of relying on phrases such as “the broader pattern” or “the deeper lesson” to announce synthesis.
+Start from the strongest concrete evidence, tension, or mechanism and let the synthesis emerge from it. Explain why sources belong together instead of relying on phrases such as "the broader pattern" or "the deeper lesson" to announce synthesis.
 
 A good thread should feel discovered rather than imposed: the reader can see how the contributing evidence leads to the editorial inference. The thesis should emerge from source interrogation rather than precede it. Frame the thread before drafting so its evidence, relationship, and implication form one readable progression rather than a sequence of source observations. Distinguish sharply between what sources establish and what the briefing infers from them, and preserve a meaningful anomaly or qualification when it changes the explanation rather than smoothing it away.
 
@@ -76,7 +71,6 @@ Vary the rhetorical shape of threads. Some may begin with a contradiction, other
 Use memorable phrasing when it clarifies the relationship, but prefer precision to cleverness and proportion to profundity. Let analytical authority come from specific evidence and exact relationship verbs rather than academic register, repeated `not just X, but Y` framing, rhetorical Q&A, or generic claims that something signals a broader shift.
 
 ## Length and density
-
 Aim for a dense five-to-eight-minute briefing.
 
 Target roughly 700–1,200 words for the briefing body, excluding the final source catalog.
@@ -87,39 +81,39 @@ Let information density determine length. Never create, split or expand a sectio
 
 Every paragraph must contribute at least one of the following:
 
-- New understanding.
-- Practical or conceptual value.
-- Cross-source synthesis.
-- An important qualification, disagreement or tension.
-- A clear reason to read an original source.
+* New understanding.
+* Practical or conceptual value.
+* Cross-source synthesis.
+* An important qualification, disagreement or tension.
+* A clear reason to read an original source.
 
-Remove repetition aggressively. Do not restate a section’s thesis in its conclusion.
+Remove repetition aggressively. Do not restate a section's thesis in its conclusion.
+
 ## Required structure
 ### The Big Picture
-
 Open the briefing with one compact editorial synthesis of approximately 80–130 words with inline numerical citations. It must earn its place rather than act as a table of contents.
 
 If one well-supported overarching pattern, tension, or question **emerges from the analyzed evidence**, articulate it directly. It may be modest. If the strongest material instead forms several distinct threads, frame two or three of the most compelling ones and any honest relationship between them without forcing a single thesis or upgrading topical proximity into significance.
 
-Do not write inventory prose such as “today's edition moves from X to Y and closes with Z.” Do not describe ingestion, filtering, ranking, or summarization. Put the most interesting analytical value early enough that the reader wants to continue into the threads.
-### Thematic sections
+Do not write inventory prose such as "today's edition moves from X to Y and closes with Z." Do not describe ingestion, filtering, ranking, or summarization. Put the most interesting analytical value early enough that the reader wants to continue into the threads.
 
+### Thematic sections
 Use numbered sections:
 
 `01 Descriptive editorial title`
 
 Each section should normally contain:
 
-- A one-sentence subtitle stating its central insight.
-- Two or three concise paragraphs developing the idea.
-- Inline numerical citations attached to the exact claims or synthesized inferences they support.
-- A short `SOURCES` line listing the principal source names and their stable numbers, linked when a valid locator exists.
+* A one-sentence subtitle stating its central insight.
+* Two or three concise paragraphs developing the idea.
+* Inline numerical citations attached to the exact claims or synthesized inferences they support.
+* A short `SOURCES` line listing the principal source names and their stable numbers, linked when a valid locator exists.
 
 Section titles must describe the synthesized idea, pattern, question or tension—not repeat an article title.
 
 Do not add an article-by-article roundup.
-## Citations
 
+## Citations
 Use numerical citations instead of article names in the prose.
 
 Assign each reviewed source one stable number and reuse it everywhere.
@@ -140,8 +134,8 @@ When a synthesized claim is derived from several sources, cite the contributing 
 
 A citation may either:
 
-- Directly support a factual claim established by the source.
-- Identify the sources from which a synthesized editorial inference is reasonably derived.
+* Directly support a factual claim established by the source.
+* Identify the sources from which a synthesized editorial inference is reasonably derived.
 
 Use language that makes editorial inference clear when a conclusion goes beyond what any single source states directly.
 
@@ -150,8 +144,8 @@ Never cite a source that does not materially contribute to the preceding claim o
 Do not add citations merely to make an interpretation appear more widely supported.
 
 Do not write full article titles or raw URLs inside the narrative; retain the numerical citation.
-## Final source catalog
 
+## Final source catalog
 End with a section titled `Sources`.
 
 List every reviewed article or newsletter item, including material not selected for the narrative.
@@ -164,63 +158,63 @@ Keep each source's permanent global number unchanged inside its group; grouping 
 
 For every source include:
 
-- Its number.
-- The article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
-- The author or publication when available.
-- The original source reading time as `N min` whenever the item was substantively read, using the shared source-reporting rule.
+* Its number.
+* The article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
+* The author or publication when available.
+* The original source reading time as `N min` whenever the item was substantively read, using the shared source-reporting rule.
 
 Add a short status label when it conveys editorial or operational state:
 
-- `Selected`
-- `Worth reading` — the source was not selected for the narrative, but after reading it the editor would still actively recommend the original if the reader has extra time. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
-- `Reviewed` — the source was substantively reviewed but was neither selected nor marked `Worth reading`.
-- `Promotional content`
-- `Duplicate`
-- `Limited content`
-- `Email-only`
-- `Low signal`
+* `Selected`
+* `Worth reading`—the source was not selected for the narrative, but after reading it the editor would still actively recommend the original if the reader has extra time. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
+* `Reviewed`—the source was substantively reviewed but was neither selected nor marked `Worth reading`.
+* `Promotional content`
+* `Duplicate`
+* `Limited content`
+* `Email-only`
+* `Low signal`
 
 `Selected` and `Worth reading` are mutually exclusive. `Worth reading` remains a catalog-only recommendation and does not create a narrative thread. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Worth reading · 8 min` or `Reviewed · 4 min`.
 
 Do not explain why each unselected source was omitted.
-The catalog exists for transparency and navigation; it is not another summary section.
-## Ending rules
 
+The catalog exists for transparency and navigation; it is not another summary section.
+
+## Ending rules
 Finish immediately after the source catalog.
 
 Do not include:
 
-- “What was left out.”
-- “Final signal.”
-- A concluding recap.
-- A generic list of takeaways.
-- A motivational closing.
-- A restatement of The Big Picture.
-## Quality control
+* "What was left out."
+* "Final signal."
+* A concluding recap.
+* A generic list of takeaways.
+* A motivational closing.
+* A restatement of The Big Picture.
 
+## Quality control
 Before returning the briefing, verify that:
 
-- It reads as one editorial briefing rather than multiple summaries.
-- Cross-source connections are substantive rather than superficial.
-- Each multi-source thread passes the relationship, unique-contribution, evidence/inference, and counter-test checks in `system/writing-reasoning-and-source-fidelity.md`.
-- The working thesis emerged from the material and was revised when caveats or anomalies required it; the source set was not recruited to defend a preselected grand idea.
-- Unrelated sources have not been forced into a common narrative.
-- Editorial inference is distinguishable from source-supported claims.
-- Multi-source synthesized claims cite the contributing sources together when appropriate.
-- Every factual claim has the appropriate numerical citation.
-- Every linked citation points to the correct original source; non-linkable email-only citations remain stable and are not given fabricated destinations.
-- Citation numbers remain consistent from beginning to end.
-- All reviewed sources appear in the final catalog.
-- The final catalog is grouped by source identity without changing permanent source numbers.
-- The strongest material receives the most space.
-- Repetition across sources is compressed rather than mistaken for importance.
-- The body remains dense enough for approximately five to eight minutes of reading.
-- No section has been added merely to satisfy a target count or reading time.
-- No closing section appears after `Sources`.
-- `THE BIG PICTURE` earns its place with genuine analytical value and is not a prose inventory of the sections.
-- Threads do not reuse the same rhetorical architecture or repeatedly announce “patterns” and “lessons” instead of demonstrating them.
-- Concrete evidence, mechanisms, tensions, or consequences support the synthesis before abstraction outruns the sources.
-- Memorable phrasing clarifies rather than manufacturing cleverness or profundity.
-- The briefing reads as analytical editorial nonfiction, not as a literature review, research abstract, or author-by-author survey.
-- Naturalness comes from evidence, judgment, rhythm, and proportion; repeated AI-shaped rhetorical patterns have been audited across the whole briefing.
-
+* It reads as one editorial briefing rather than multiple summaries.
+* Cross-source connections are substantive rather than superficial.
+* Each multi-source thread passes the relationship, unique-contribution, evidence/inference, and counter-test checks in `system/writing-reasoning-and-source-fidelity.md`.
+* The working thesis emerged from the material and was revised when caveats or anomalies required it; the source set was not recruited to defend a preselected grand idea.
+* Unrelated sources have not been forced into a common narrative.
+* Editorial inference is distinguishable from source-supported claims.
+* Multi-source synthesized claims cite the contributing sources together when appropriate.
+* Every factual claim has the appropriate numerical citation.
+* Every linked citation points to the correct original source; non-linkable email-only citations remain stable and are not given fabricated destinations.
+* Citation numbers remain consistent from beginning to end.
+* All reviewed sources appear in the final catalog.
+* The final catalog is grouped by source identity without changing permanent source numbers.
+* The strongest material receives the most space.
+* Repetition across sources is compressed rather than mistaken for importance.
+* The body remains dense enough for approximately five to eight minutes of reading.
+* No section has been added merely to satisfy a target count or reading time.
+* No closing section appears after `Sources`.
+* `THE BIG PICTURE` earns its place with genuine analytical value and is not a prose inventory of the sections.
+* Threads do not reuse the same rhetorical architecture or repeatedly announce "patterns" and "lessons" instead of demonstrating them.
+* Concrete evidence, mechanisms, tensions, or consequences support the synthesis before abstraction outruns the sources.
+* Memorable phrasing clarifies rather than manufacturing cleverness or profundity.
+* The briefing reads as analytical editorial nonfiction, not as a literature review, research abstract, or author-by-author survey.
+* Naturalness comes from evidence, judgment, rhythm, and proportion; repeated AI-shaped rhetorical patterns have been audited across the whole briefing.

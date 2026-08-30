@@ -1,11 +1,9 @@
 # Curated Discovery
-
 A selective, idea-first editorial briefing built from the strongest material in the complete source set.
 
-The fundamental unit is a **coherent editorial mini-essay built around one idea worth understanding**, not the newsletter, article, or topic. Review everything first, then decide what deserves the reader’s limited attention and what must be left out so the selected idea can be explained well.
+The fundamental unit is a **coherent editorial mini-essay built around one idea worth understanding**, not the newsletter, article, or topic. Review everything first, then decide what deserves the reader's limited attention and what must be left out so the selected idea can be explained well.
 
 ## Style interface
-
 | Dimension | Declaration |
 | --- | --- |
 | **Purpose** | Create a selective personal briefing around the strongest ideas worth learning, keeping, applying, or exploring. |
@@ -24,18 +22,16 @@ The fundamental unit is a **coherent editorial mini-essay built around one idea 
 | **Optional extension points** | Featured treatment, Discoveries, `Worth opening for`, and digest-authorized callouts when genuinely warranted. |
 
 ## Writing reference profile
-
 Apply the shared writing references with the following emphasis:
 
-- `system/writing-reasoning-and-source-fidelity.md` — use deeply to understand and sharpen each promising source, but keep the reasoning **source-centered by default**.
-- `system/writing-editorial-prose.md` — **full depth**. Curated Discovery should have the richest magazine-like storytelling of the four styles while remaining factual and concise.
-- `system/writing-naturalness.md` — **full diagnostic pass** across the whole briefing.
-- `system/writing-style-application.md` — preserve the Curated Discovery boundary: discovery and curation come first; cross-source synthesis is occasional, not the organizing instinct.
+* `system/writing-reasoning-and-source-fidelity.md`—use deeply to understand and sharpen each promising source, but keep the reasoning **source-centered by default**.
+* `system/writing-editorial-prose.md`—**full depth**. Curated Discovery should have the richest magazine-like storytelling of the four styles while remaining factual and concise.
+* `system/writing-naturalness.md`—**full diagnostic pass** across the whole briefing.
+* `system/writing-style-application.md`—preserve the Curated Discovery boundary: discovery and curation come first; cross-source synthesis is occasional, not the organizing instinct.
 
 The prose may show curiosity and editorial personality, but never invent a first-person life, anecdote, sensory detail, reaction, or mistake. Its human quality comes from what it notices, selects, omits, and explains.
 
 ## Core principle: Digest-first reading
-
 The digest is the primary reading experience.
 
 Deliver the substantive value directly: the reader should be able to **understand the selected idea, explain it in their own words, reflect on it, and retain its important substance without opening the original source**.
@@ -46,10 +42,9 @@ Never write teaser copy whose main purpose is to generate a click. If an idea is
 
 Explain the **one editorial idea selected from the source** using only the reasoning, mechanisms, evidence, examples, distinctions, trade-offs, or implications needed to make that idea understandable. Do not preserve every useful point merely because it exists in the source.
 
-Avoid phrases such as “the author explores…” or “this article discusses…” when the underlying idea can be stated directly.
+Avoid phrases such as "the author explores…" or "this article discusses…" when the underlying idea can be stated directly.
 
 ## Curation process
-
 Before writing:
 
 1. Assign every reviewed source a permanent sequential number based on input order.
@@ -71,7 +66,6 @@ A strong isolated idea may outrank a frequently repeated subject.
 Do not penalize valuable outliers simply because they differ from the dominant material.
 
 ## Relationship between sources
-
 Treat selected sources and ideas independently by default. **Start from the strongest thesis worth preserving, not from a topic that several articles happen to share.** Do not scan the corpus for a master theory simply because Synthesis MAX would; heterogeneity is a feature of this style when the strongest discoveries are unrelated.
 
 When several sources genuinely reinforce, extend, qualify, contradict, or complete the same idea, they may be combined into one stronger editorial item. Mere topical compatibility is not enough.
@@ -82,15 +76,14 @@ Before combining sources, state each source's valuable thesis in one sentence. A
 
 When combining sources:
 
-- Preserve what each one uniquely contributes.
-- Explain the relationship rather than stacking separate summaries.
-- Cite each contribution where it is actually used.
-- Prefer one primary thesis with genuinely complementary support over a broad topic assembled from multiple partial theses.
+* Preserve what each one uniquely contributes.
+* Explain the relationship rather than stacking separate summaries.
+* Cite each contribution where it is actually used.
+* Prefer one primary thesis with genuinely complementary support over a broad topic assembled from multiple partial theses.
 
 Never force unrelated material into a common narrative or broad artificial theme. Curated Discovery should remain recognizably source-thesis-preserving; cross-source synthesis is an occasional tool, not the default editorial operation.
 
 ## Editorial depth
-
 Use variable depth.
 
 Give substantial space to ideas that contain enough reasoning, detail, or implications to justify it. Compress narrower but worthwhile material. Omit weak material entirely. Within a selected article, omit secondary branches that would turn the piece into an inventory. **Allocate depth independently:** a simple idea may need one compact paragraph while a richer idea may need several. Do not equalize sections for visual symmetry.
@@ -99,17 +92,16 @@ Prefer a small number of substantive selections over a long list of shallow summ
 
 A full editorial item should normally contain enough information to understand:
 
-- What the idea actually is.
-- How or why it works.
-- What reasoning, evidence, mechanism, or example makes it useful or interesting.
-- Important qualifications, limitations, trade-offs, or consequences when relevant.
+* What the idea actually is.
+* How or why it works.
+* What reasoning, evidence, mechanism, or example makes it useful or interesting.
+* Important qualifications, limitations, trade-offs, or consequences when relevant.
 
 Preserve concrete details when they make the central idea clearer, more credible, or more useful. A detail may be correct and interesting yet still be omitted when it interrupts the narrative spine.
 
 Do not replace useful specifics with generic takeaways, but do not confuse specificity with completeness.
 
 ## Understanding over extraction
-
 Do not write the digest as a collection of sentences designed to be highlighted independently. Highlight-worthy language may emerge naturally from excellent explanation, but it is not the unit of construction.
 
 For every full selection, optimize for this outcome:
@@ -121,48 +113,43 @@ A sentence may exist mainly to orient, connect, qualify, exemplify, or make the 
 Prefer one idea understood well over several extracted takeaways compressed into the same space.
 
 ## Writing character
-
 Write with curiosity, selectivity, and visible editorial judgment. The prose should feel like a smart magazine editor **telling the reader a small, coherent story about an idea**, not a model converting articles into polished takeaways and not a miniature cross-source research synthesis.
 
 Make the interesting part arrive early, but orient the reader before relying on unfamiliar context. When a concrete fact, mechanism, contradiction, example, or consequence provides the best entrance, begin there and develop it into the larger idea. Prefer a readable progression over maximal information density.
 
-Selections should have different rhetorical lives, but each one must still have a clear internal spine. Do not make every item follow the same thesis/explanation/takeaway pattern, and do not repeatedly announce insights with phrases such as “the deeper pattern,” “the reusable lesson,” or “what matters is.” Deliver and develop the idea instead.
+Selections should have different rhetorical lives, but each one must still have a clear internal spine. Do not make every item follow the same thesis/explanation/takeaway pattern, and do not repeatedly announce insights with phrases such as "the deeper pattern," "the reusable lesson," or "what matters is." Deliver and develop the idea instead.
 
 Allow moments of wit, illumination, or productive agitation when the material earns them. Keep them subordinate to clarity and fidelity. The style may be lively and memorable, but never ornate, hype-driven, or artificially profound.
 
 Titles should sharpen the idea rather than perform cleverness. A reader should understand what is at stake and feel a reason to continue. Prefer source-grounded specifics and ordinary exact verbs to polished abstraction. Vary entry points and paragraph shape because the selected ideas genuinely differ; do not manufacture irregularity, rhetorical punch lines, or grand pivots merely to sound human.
 
 ## Length and density
-
 Use an **elastic reading budget** driven by editorial value. Most editions should land around **five to eight minutes**, but a genuinely rich source set may stretch to roughly **ten minutes**. A light day may be shorter.
 
 Do not target a fixed number of full selections, discoveries, paragraphs, or words. The recurring `4 full selections + 3 discoveries + 5 minutes` shape is not a template.
 
 Never add weaker material merely to reach a duration or count, and never compress strong additional material merely to force the edition back to five minutes. Include the next item when its expected value clearly justifies the reader's additional time; stop when the marginal item would dilute the briefing.
 
-Every paragraph must have a clear role in the selection’s progression: orient, develop, exemplify, qualify, test, or resolve the central idea.
+Every paragraph must have a clear role in the selection's progression: orient, develop, exemplify, qualify, test, or resolve the central idea.
 
 Remove repetition and secondary branches aggressively, but never cut the connective logic that makes the section understandable.
 
 ## Required structure
-
 ### Opening orientation
-
 Begin with one short editorial paragraph under a neutral introductory label such as:
 
 `TODAY'S EDIT`
 
 The opening must earn its existence.
 
-- **If a genuinely interesting observation, tension, or relationship emerges from the selected material, say it directly.**
-- **If no such observation exists, create curiosity around two or three of the strongest selections without inventing a connection between them.**
+* **If a genuinely interesting observation, tension, or relationship emerges from the selected material, say it directly.**
+* **If no such observation exists, create curiosity around two or three of the strongest selections without inventing a connection between them.**
 
 The orientation may therefore mention unrelated subjects when the source set is heterogeneous. That is better than forcing them into one thesis.
 
-Do not turn the table of contents into prose such as “today's edition moves from X to Y and closes with Z.” Do not describe ingestion, ranking, filtering, or summarization. Do not tease value that the body then withholds.
+Do not turn the table of contents into prose such as "today's edition moves from X to Y and closes with Z." Do not describe ingestion, ranking, filtering, or summarization. Do not tease value that the body then withholds.
 
 ### Main selections
-
 Present the strongest material as numbered editorial items:
 
 `01 Descriptive editorial title`
@@ -177,17 +164,16 @@ The deck should state or sharpen the central claim. It must not function as clic
 
 Each full item should:
 
-- Focus on one coherent idea, question, discovery, argument, or development.
-- Follow one explicit narrative spine; each paragraph must have a reason to follow the previous one.
-- Deliver meaningful substance directly while providing enough context to understand it.
-- Preserve only the reasoning and specifics that advance that spine; omit secondary branches even when they are useful in isolation.
-- Use inline numerical citations immediately after supported claims.
-- End with a compact `SOURCES` line naming the principal contributing sources.
+* Focus on one coherent idea, question, discovery, argument, or development.
+* Follow one explicit narrative spine; each paragraph must have a reason to follow the previous one.
+* Deliver meaningful substance directly while providing enough context to understand it.
+* Preserve only the reasoning and specifics that advance that spine; omit secondary branches even when they are useful in isolation.
+* Use inline numerical citations immediately after supported claims.
+* End with a compact `SOURCES` line naming the principal contributing sources.
 
 Order selections by editorial importance, not chronology or input order.
 
 ### Featured treatment
-
 When one selection is clearly stronger, richer, or more consequential than the others, it may receive a `FEATURED` label and **materially greater depth when that additional space improves understanding**. Featured is editorial judgment, not a decorative slot.
 
 Do not manufacture a featured item merely to satisfy the layout, and do not compress a genuinely rich featured idea to match the length of adjacent selections.
@@ -195,7 +181,6 @@ Do not manufacture a featured item merely to satisfy the layout, and do not comp
 If no selection clearly deserves special prominence, present the main selections with equal visual hierarchy.
 
 ### Discoveries
-
 When worthwhile material remains that does not justify a full editorial section, add:
 
 `## Discoveries`
@@ -215,26 +200,24 @@ Do not use this section as a roundup, link list, or dumping ground for marginal 
 Omit it entirely when nothing warrants inclusion.
 
 ## Optional depth cue
-
 When opening the original source offers a clear additional benefit that cannot reasonably fit in the digest, a selected item may end with one short line:
 
 **Worth opening for:** a precise description of the additional value available in the original source.
 
 Examples of legitimate reasons include:
 
-- A complete framework.
-- Detailed implementation steps.
-- Original data or methodology.
-- Diagrams or visual explanations.
-- Extensive worked examples.
-- A particularly strong argument or piece of writing.
+* A complete framework.
+* Detailed implementation steps.
+* Original data or methodology.
+* Diagrams or visual explanations.
+* Extensive worked examples.
+* A particularly strong argument or piece of writing.
 
 Do not use this as promotional copy.
 
 Do not add it when the source offers no meaningful value beyond what the digest already delivered. It is the right place to point to valuable secondary branches intentionally omitted to protect the coherence of the digest.
 
 ## Organization
-
 Let the structure emerge from the selected material.
 
 Do not impose fixed topical categories.
@@ -246,7 +229,6 @@ That diversity is acceptable and should remain visible rather than being forced 
 Use descriptive grouping headings only when several adjacent selections naturally belong together and the grouping genuinely improves navigation.
 
 ## Citations
-
 Use stable numerical citations throughout the digest.
 
 Assign each reviewed source one permanent number and reuse it everywhere.
@@ -272,7 +254,6 @@ When an item combines several sources, cite them at the relevant claims rather t
 Do not place raw URLs in the narrative.
 
 ## Section-level source lines
-
 End each full editorial item with:
 
 `SOURCES Publication [3] · Author [7]`
@@ -284,7 +265,6 @@ The source line exists for provenance and navigation. It does not replace inline
 Discoveries do not require a separate source line when their citation already makes provenance clear.
 
 ## Final source catalog
-
 End with:
 
 `Sources`
@@ -299,20 +279,20 @@ Grouping is visual/navigation only: keep each source's permanent global number u
 
 For every source include:
 
-- Its number.
-- The original article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
-- Author, newsletter, or publication when available.
-- The original source reading time as `N min` whenever the item was substantively read, using the shared source-reporting rule.
+* Its number.
+* The original article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
+* Author, newsletter, or publication when available.
+* The original source reading time as `N min` whenever the item was substantively read, using the shared source-reporting rule.
 
 Use a source status when it adds useful editorial information:
 
-- `Selected` — the source materially contributed to a full selection or Discovery.
-- `Worth reading` — the source was not selected for the editorial body, but after reading it the editor would still actively recommend spending additional time on the original. This is a catalog status, not a new section and not another name for a Discovery. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
-- `Duplicate`
-- `Limited content`
-- `Email-only`
-- `Promotional content`
-- `Reviewed` — the source was substantively reviewed but was neither selected nor marked `Worth reading`.
+* `Selected`—the source materially contributed to a full selection or Discovery.
+* `Worth reading`—the source was not selected for the editorial body, but after reading it the editor would still actively recommend spending additional time on the original. This is a catalog status, not a new section and not another name for a Discovery. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
+* `Duplicate`
+* `Limited content`
+* `Email-only`
+* `Promotional content`
+* `Reviewed`—the source was substantively reviewed but was neither selected nor marked `Worth reading`.
 
 `Selected` and `Worth reading` are mutually exclusive. A Discovery is already `Selected`; do not label it `Worth reading` merely because its original also contains useful depth. Use `Worth opening for` inside a selected item when the original offers meaningful additional depth. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Reviewed · 4 min`.
 
@@ -323,56 +303,54 @@ Do not explain individually why each one was omitted.
 The catalog exists for transparency, attribution, verification, and optional exploration—not as another digest section.
 
 ## Ending rules
-
 Finish immediately after the source catalog.
 
 Do not add:
 
-- A concluding recap.
-- A generic takeaway list.
-- A forced overarching thesis.
-- “What was left out.”
-- “Final thoughts.”
-- A motivational closing.
-- Another summary of the selected items.
+* A concluding recap.
+* A generic takeaway list.
+* A forced overarching thesis.
+* "What was left out."
+* "Final thoughts."
+* A motivational closing.
+* Another summary of the selected items.
 
 ## Quality control
-
 Before returning the digest, verify that:
 
-- The complete source set was reviewed before selection.
-- The briefing feels intentionally curated rather than comprehensive.
-- The digest itself contains the substantive value.
-- A reader can learn from the selected items without opening the sources.
-- Main selections read as coherent mini-essays rather than compressed inventories of source points.
-- After one reading, the reader can state the central idea of each full selection in their own words.
-- Each full selection has a clear `A → B → C` progression and every paragraph has a reason to follow the previous one.
-- Necessary context appears before dependent technical detail.
-- Supporting details advance the central focus; secondary branches have been cut rather than compressed into the piece.
-- Discoveries contain complete, understandable ideas.
-- Strong isolated ideas are allowed to stand alone.
-- The strongest thesis or reader promise of each source-centered selection remains recognizable; topical grouping has not erased why a source was worth opening.
-- Sources were combined only after a source-thesis check; topical similarity alone did not justify combination.
-- The editor did not search for a master theory across the corpus when strong independent discoveries were the better product.
-- Each full selection preserves at least one source-grounded detail, mechanism, distinction, example, or qualification when such a detail is what makes the idea genuinely worth keeping; generic significance has not replaced it.
-- Connections between sources exist only when they materially improve the selected idea.
-- Unrelated material has not been forced into common themes.
-- Stronger or more complex material receives the depth it needs independently; sections have not been equalized for visual symmetry.
-- Article headlines have not been reused as substitutes for editorial titles.
-- Every factual claim has the appropriate numerical citation, including email-only sources when relevant.
-- Citation numbers remain stable throughout.
-- Every reviewed source appears in the final catalog.
-- The final catalog is grouped by source identity without changing permanent source numbers.
-- Optional `Worth opening for` cues describe genuine additional value.
-- The editorial body uses an elastic reading budget: usually five to eight minutes, shorter when little qualifies, and up to roughly ten when genuinely strong material warrants it.
-- The edition stopped on marginal value rather than a fixed item count, paragraph count, or five-minute target.
-- `Worth reading`, when used, appears only as a highly selective source-catalog status for unselected originals that truly merit extra reading time.
-- Nothing editorial appears after `Sources`.
-- `TODAY'S EDIT` either states a genuinely interesting observation or creates honest curiosity without forcing unrelated material into one thesis.
-- Every paragraph advances one intelligible line of thought rather than merely restating the selection’s central claim or stacking another related fact.
-- Adjacent selections vary in rhetorical shape, sentence rhythm, and entry point instead of following a repeated LLM pattern.
-- Titles are sharp and informative without performing cleverness, and moments of wit, illumination, or agitation are earned rather than manufactured.
-- Naturalness comes from source-specific judgment and material-driven variation; no fake personal footprint or detector-oriented irregularity has been introduced.
-- The edition remains recognizably more discovery-oriented, source-thesis-preserving, and tonally agile than Synthesis MAX.
+* The complete source set was reviewed before selection.
+* The briefing feels intentionally curated rather than comprehensive.
+* The digest itself contains the substantive value.
+* A reader can learn from the selected items without opening the sources.
+* Main selections read as coherent mini-essays rather than compressed inventories of source points.
+* After one reading, the reader can state the central idea of each full selection in their own words.
+* Each full selection has a clear `A → B → C` progression and every paragraph has a reason to follow the previous one.
+* Necessary context appears before dependent technical detail.
+* Supporting details advance the central focus; secondary branches have been cut rather than compressed into the piece.
+* Discoveries contain complete, understandable ideas.
+* Strong isolated ideas are allowed to stand alone.
+* The strongest thesis or reader promise of each source-centered selection remains recognizable; topical grouping has not erased why a source was worth opening.
+* Sources were combined only after a source-thesis check; topical similarity alone did not justify combination.
+* The editor did not search for a master theory across the corpus when strong independent discoveries were the better product.
+* Each full selection preserves at least one source-grounded detail, mechanism, distinction, example, or qualification when such a detail is what makes the idea genuinely worth keeping; generic significance has not replaced it.
+* Connections between sources exist only when they materially improve the selected idea.
+* Unrelated material has not been forced into common themes.
+* Stronger or more complex material receives the depth it needs independently; sections have not been equalized for visual symmetry.
+* Article headlines have not been reused as substitutes for editorial titles.
+* Every factual claim has the appropriate numerical citation, including email-only sources when relevant.
+* Citation numbers remain stable throughout.
+* Every reviewed source appears in the final catalog.
+* The final catalog is grouped by source identity without changing permanent source numbers.
+* Optional `Worth opening for` cues describe genuine additional value.
+* The editorial body uses an elastic reading budget: usually five to eight minutes, shorter when little qualifies, and up to roughly ten when genuinely strong material warrants it.
+* The edition stopped on marginal value rather than a fixed item count, paragraph count, or five-minute target.
+* `Worth reading`, when used, appears only as a highly selective source-catalog status for unselected originals that truly merit extra reading time.
+* Nothing editorial appears after `Sources`.
+* `TODAY'S EDIT` either states a genuinely interesting observation or creates honest curiosity without forcing unrelated material into one thesis.
+* Every paragraph advances one intelligible line of thought rather than merely restating the selection's central claim or stacking another related fact.
+* Adjacent selections vary in rhetorical shape, sentence rhythm, and entry point instead of following a repeated LLM pattern.
+* Titles are sharp and informative without performing cleverness, and moments of wit, illumination, or agitation are earned rather than manufactured.
+* Naturalness comes from source-specific judgment and material-driven variation; no fake personal footprint or detector-oriented irregularity has been introduced.
+* The edition remains recognizably more discovery-oriented, source-thesis-preserving, and tonally agile than Synthesis MAX.
 
 The finished briefing should leave the reader **understanding a small number of ideas well enough to remember, explain, or use them**, while making the original sources optional paths for deeper exploration rather than required reading.

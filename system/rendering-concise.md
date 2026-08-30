@@ -1,27 +1,23 @@
 # Concise rendering
-
 Use with `styles/concise.md` and `templates/concise-email-v1.html`.
 
 **Visual personality: briefing ledger / newspaper briefs.** The design should optimize rapid scanning with the least visual machinery of any style. Its personality comes from restraint: source, linked title, compact paragraph, repeat.
 
 ## Localization
-
 All English component names in this profile are semantic maintainer labels. Resolve every visible label, generated editorial title, date, status, reading-time unit, call to action, accessibility string, and footer through the configured digest language. The template's localization placeholders must be filled with natural target-language copy; no hard-coded English UI text may survive in a non-English digest. **Do not localize original source/article titles:** every `SOURCE_TITLE` must be displayed verbatim in its original language. Preserve each component's visual treatment and structural role while localizing only its generated wording.
 
 ## Structure mapping
-
 1. Render the shared masthead and reading-time capsule.
 2. Render one compact independent entry for every retained source.
 3. Finish immediately after the final entry; do not add thematic sections, editor's notes, a final synthesis, or a source catalog.
 
 ## Source entry
-
 On desktop, use the template's narrow source rail beside the reading content:
 
-- source/publication name in compact uppercase/sans-serif treatment;
-- original article/item reading time as quiet `N min` metadata for every substantively read item;
-- article/item title in serif display type, directly linked only when a valid source locator exists;
-- one compact paragraph, normally 40–80 words, containing the central value of the source.
+* source/publication name in compact uppercase/sans-serif treatment;
+* original article/item reading time as quiet `N min` metadata for every substantively read item;
+* article/item title in serif display type, directly linked only when a valid source locator exists;
+* one compact paragraph, normally 40–80 words, containing the central value of the source.
 
 Separate entries with light horizontal rules and whitespace rather than cards.
 
@@ -30,22 +26,16 @@ The reading time describes the original source, not the concise summary, and sho
 Do not add numerical citation pills unless the style itself is later changed to require them; the linked title supplies provenance for each independent entry.
 
 ## Callouts
-
 Concise does not support callouts in its current editorial contract. Do not force the shared callout component into this layout. If a future change to `styles/concise.md` explicitly introduces callouts, update this rendering profile and template together.
 
 ## Template independence
-
 The HTML template is a structural specimen. Its placeholder source entry demonstrates markup only. Repeat the entry for every retained source; do not infer a fixed item count from the template.
 
 ## Responsive behavior
-
-- **Desktop:** preserve the compact source rail and full editorial reading column.
-- **Tablet:** narrow the source rail and gaps only while the paragraph remains comfortably wide.
-- **Mobile:** remove the side-by-side source rail entirely. Stack the source/publication above the linked title and paragraph, using the short blue horizontal accent demonstrated by the template.
-- Keep the entry single-column and body text comfortably readable.
-- Reflow source metadata rather than shrinking it.
+* **Desktop:** preserve the compact source rail and full editorial reading column.
+* **Tablet:** narrow the source rail and gaps only while the paragraph remains comfortably wide.
+* **Mobile:** remove the side-by-side source rail entirely. Stack the source/publication above the linked title and paragraph, using the short blue horizontal accent demonstrated by the template.
+* Keep the entry single-column and body text comfortably readable.
+* Reflow source metadata rather than shrinking it.
 
 The mobile experience should feel like a clean vertical list of editorial abstracts, not a compressed desktop table.
-
-
-

@@ -1,9 +1,7 @@
 # Configuring a Digest
-
 This is a user-facing reference for creating, changing, or renaming digests in the Digest System. It is **not part of the execution workflow** and does not need to be loaded during a normal digest run.
 
 ## Mental model
-
 A digest is assembled from separate layers with different responsibilities:
 
 | Layer | Location | Responsibility |
@@ -27,18 +25,16 @@ A file under `digests/` is primarily a **configuration file**. Its Markdown body
 Every digest automatically uses the shared editorial process, its writing references, and the shared editorial base through its selected canonical style. Custom instructions do not need to repeat universal writing-quality or naturalness rules and cannot opt out of the process or quality floor.
 
 ## Canonical styles
-
 Choose exactly one:
 
-- `concise` — independent, highly compressed per-source summaries.
-- `detailed` — independent, deeper structured per-source summaries.
-- `synthesis-max` — cross-source editorial synthesis where relationships are the main organizing principle.
-- `curated-discovery` — selective, idea-first curation; sources remain independent by default and are combined only when doing so materially improves the selected idea.
+* `concise`—independent, highly compressed per-source summaries.
+* `detailed`—independent, deeper structured per-source summaries.
+* `synthesis-max`—cross-source editorial synthesis where relationships are the main organizing principle.
+* `curated-discovery`—selective, idea-first curation; sources remain independent by default and are combined only when doing so materially improves the selected idea.
 
 Use these names exactly. Do not shorten `curated-discovery` to `curated` or invent aliases.
 
 ## 1. Create the digest file
-
 Create `digests/<digest-id>.md`.
 
 Minimal example:
@@ -61,7 +57,6 @@ sources:
 ```
 
 ### Language controls the complete reader-facing output
-
 `language` is a whole-output locale, not merely a prose preference. When it is anything other than English, every generated reader-visible string must be written in that language: digest display name when descriptive, subject and preheader, formatted dates, recurring purpose, section headings, generated editorial titles, summaries and synthesis, labels, statuses, reading-time units, calls to action, accessibility text, and footer copy. Original source/article titles are the explicit exception described below.
 
 Canonical IDs, URLs, run keys, state values, source numbers, code, and machine-facing placeholders remain unchanged. Author, publication, company, product, and other proper names remain in their established form unless the target language has a conventional localized form. **Source/article titles must always be preserved and displayed verbatim in their original language.** Never translate, paraphrase, normalize, or transliterate `SOURCE_TITLE`; keep the exact original title for display, links, state, deduplication, and provenance.
@@ -72,21 +67,20 @@ A template or style may name semantic components in English for maintainers, but
 
 The following must match exactly:
 
-- filename: `engineering-weekly.md`
-- frontmatter ID: `engineering-weekly`
-- registry key: `engineering-weekly`
+* filename: `engineering-weekly.md`
+* frontmatter ID: `engineering-weekly`
+* registry key: `engineering-weekly`
 
 Set `enabled: false` while building or testing a configuration that should not run.
 
 ## 2. Choose source groups and adapters
-
 A source group declares Gmail labels plus the adapters allowed to process messages from those labels. It may also declare structured `acquisition_filters` when an adapter explicitly supports filtering candidates before opening/reading them.
 
 Common adapters:
 
-- `medium` — Medium link collections; requires the authenticated local Chrome reading method defined by the adapter.
-- `inline-newsletter` — substantive content is primarily inside the email.
-- `link-newsletter` — the email is primarily an index pointing to external articles.
+* `medium`—Medium link collections; requires the authenticated local Chrome reading method defined by the adapter.
+* `inline-newsletter`—substantive content is primarily inside the email.
+* `link-newsletter`—the email is primarily an index pointing to external articles.
 
 When both inline and external material may occur:
 
@@ -132,41 +126,38 @@ Only use filter keys documented by the adapter. Unsupported acquisition filters 
 Source-group order matters. If one Gmail message matches several groups, the first matching group owns it for that run.
 
 ## 3. Add custom instructions only when useful
-
 Everything after the frontmatter is optional custom editorial guidance. A heading such as `# Custom instructions` is recommended for readability but is not required by the parser.
 
 Good custom instructions refine the digest **inside the selected style**. They may specify:
 
-- topics or domains to prioritize;
-- practical vs. news-oriented preferences;
-- editorial inclusion/exclusion rules applied after required source reading;
-- selectivity or signal thresholds;
-- tone and vocabulary;
-- useful tie-breakers when several items compete for space;
-- compatible callout labels or emphasis conventions.
+* topics or domains to prioritize;
+* practical vs. news-oriented preferences;
+* editorial inclusion/exclusion rules applied after required source reading;
+* selectivity or signal thresholds;
+* tone and vocabulary;
+* useful tie-breakers when several items compete for space;
+* compatible callout labels or emphasis conventions.
 
 For example:
 
 ```markdown
 # Custom instructions
-
 Prefer material that teaches a reusable technique or explains an engineering trade-off. De-emphasize minor product announcements and generic AI hype. Preserve room for unusually strong material outside the main topics.
 ```
 
 Custom instructions must not redefine the selected style. In particular, do not use them to:
 
-- weaken the shared editorial-base quality floor or skip/reorder mandatory stages in `system/editorial-process.md`;
-- turn `concise` or `detailed` into cross-source synthesis;
-- force `curated-discovery` to search for connections or themes merely because they exist;
-- remove a required `Sources` catalog from a style that requires one;
-- add a replacement top-level structure incompatible with the selected style;
-- change adapter reading methods, processed-state rules, reference integrity, or create pre-read exclusions; use supported structured `acquisition_filters` for the latter;
-- copy another digest's visual/editorial conventions into this one unless the selected rendering profile explicitly supports the same extension point.
+* weaken the shared editorial-base quality floor or skip/reorder mandatory stages in `system/editorial-process.md`;
+* turn `concise` or `detailed` into cross-source synthesis;
+* force `curated-discovery` to search for connections or themes merely because they exist;
+* remove a required `Sources` catalog from a style that requires one;
+* add a replacement top-level structure incompatible with the selected style;
+* change adapter reading methods, processed-state rules, reference integrity, or create pre-read exclusions; use supported structured `acquisition_filters` for the latter;
+* copy another digest's visual/editorial conventions into this one unless the selected rendering profile explicitly supports the same extension point.
 
 If one custom clause conflicts with the style, the workflow ignores that clause while preserving the rest of the custom instructions.
 
 ## 4. Register the digest
-
 Add the digest to `system/registry.yaml`:
 
 ```yaml
@@ -181,7 +172,6 @@ digests:
 The Digest System defines what happens when a digest is invoked. Daily/weekly/bi-daily execution cadence must be configured in the caller or automation that invokes the system.
 
 ## 5. Confirm the selected style is fully wired
-
 Every deliverable style must have all four pieces:
 
 ```text
@@ -196,7 +186,6 @@ The canonical style ID must be identical in all four locations. If any piece is 
 `templates/email-theme.html` is only the shared visual-language reference. It is not a fallback layout.
 
 ## 6. References when the newsletter itself is the source
-
 A source does not need an external website to be eligible.
 
 The system resolves links in this order:
@@ -211,7 +200,6 @@ If no reliable link exists, keep the source in the digest and provenance without
 Never substitute a homepage, sender domain, search result, unsubscribe URL, tracking link, or archive root merely to make a reference clickable.
 
 ## 7. Renaming a digest safely
-
 Digest IDs scope processing state. Renaming an ID without migration handling can make old messages look unprocessed.
 
 When renaming, add the old ID to the new digest frontmatter:
@@ -226,7 +214,6 @@ The workflow will read old labels and state-database rows as already processed, 
 Do not rename a digest merely for cosmetic display changes. Change `name:` instead when the processing identity should remain the same.
 
 ## 8. Shared SQLite state
-
 All digests use the same `state/digest-state.db`. Do **not** create a database per newsletter or per digest. Rows are scoped by `digest_id`, so the same Gmail message or article may legitimately have independent processing state in two different digests.
 
 The schema and runtime rules live in `system/state-database.md`. A new digest requires no database migration: once its configuration is registered, new rows are written under its canonical `digest_id`. Digest aliases remain configuration-driven and are used only when reading historical state.
@@ -236,7 +223,6 @@ Because the SQLite file is stored in Drive and persisted as one binary file, v1 
 Do not enable SQLite WAL mode for the persisted state file; the runtime contract intentionally uses a self-contained database file so no `-wal` or `-shm` sidecars need to be synchronized.
 
 ## 9. Optional fields
-
 `subject_template` may override the default email subject without changing the editorial style. Keep subject customization separate from editorial structure. Its variables remain intact, but any literal reader-facing words are localized to the configured language at render time.
 
 Example:
@@ -248,7 +234,6 @@ subject_template: "Engineering Notes — {date}"
 If no subject template is supplied, the workflow uses `<digest name> — <digest date>`.
 
 ## 10. Add a new canonical style
-
 A new style is a new editorial implementation, not just a prompt variant.
 
 Before registering it, read `system/style-contract.md` and create `styles/<style>.md` with a complete `## Style interface`. Every style must explicitly declare its purpose, composition unit, source relationship, selection/depth/organization models, **progression model**, opening/body behavior, provenance, source catalog, ending behavior, Writing character, and optional extension points.
@@ -268,7 +253,6 @@ Finally, wire the visual implementation:
 A style that lacks any of these pieces is not runnable and should fail preflight before Gmail is touched.
 
 ## Preflight checklist
-
 Before enabling a new digest, verify:
 
 - [ ] filename, frontmatter `id`, and registry key are identical;
@@ -290,13 +274,8 @@ Before enabling a new digest, verify:
 - [ ] the digest is set to `enabled: true` only when ready.
 
 ## Source reporting, statuses, and reading time
-
 Whenever any current or future style reports an individual source or article, show its original reading time as `N min` when that item was substantively read. Use the source-provided estimate when trustworthy; otherwise use the workflow's 225-words-per-minute estimate. This is independent of the aggregate time-saved capsule and does not require adding a source catalog to styles that do not have one. Omit the value for material that was not substantively read.
 
 When a style has a source catalog, status colors are semantic and shared: `Selected` is green; `Worth reading` is yellow; and neutral states such as `Reviewed`, `Duplicate`, `Limited content`, `Email-only`, `Promotional content`, and `Low signal` are gray. These are canonical semantic names, not mandatory English display strings; render their natural equivalents in the configured language. New output never uses the deprecated `Not selected` state or a translation of it; `Reviewed` means a substantive source was reviewed but neither selected nor actively recommended. `Worth reading` is supported by `curated-discovery` and `synthesis-max`; it marks an **unselected** original the editor still actively recommends if the reader has extra time. It is mutually exclusive with `Selected`, is not a section, and is not a synonym for a Discovery.
 
 Canonical HTML templates are structural specimens with placeholders. Their component counts and placeholder lengths are never editorial defaults. The style and editorial process determine how many items and paragraphs are produced.
-
-
-
-

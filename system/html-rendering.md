@@ -17,6 +17,19 @@ The shared `styles/editorial-base.md` establishes the prose quality floor, `syst
 
 If a style has no rendering profile/template mapping, stop safely rather than silently substituting another style's layout.
 
+## Complete-output localization
+
+The configured digest `language` applies to every generated reader-facing HTML string. This includes `<title>`, subject-derived display text, preheader, dates, masthead labels, recurring purpose, section and component headings, generated editorial titles, body copy, statuses, reading-time wording and units, counts, calls to action, callout labels, footer, `alt`, `title`, and `aria-label` attributes. Original source/article titles are the explicit invariant exception below.
+
+- Resolve a valid BCP 47 value for `{{HTML_LANG}}` and use it in `<html lang>`.
+- Use natural target-language editorial phrasing, grammar, capitalization, pluralization, date formatting, and time notation. Do not mechanically translate English word order.
+- Translate descriptive digest names and generated editorial titles when needed for a fully localized reading experience.
+- **Never translate a source/article title.** Every `{{SOURCE_TITLE}}` value must be the exact original title as published, displayed in its original language without paraphrase, normalization, or transliteration. Preserve the original URL and use the same verbatim title in source-led entries and final catalogs.
+- Preserve author/publication names, brands, products, code, identifiers, citations, and URLs unless a conventional localized reader-facing name exists.
+- Canonical English component/status names are semantic tokens. Their visible labels must be localized without changing their color, structural role, or internal state value.
+- Do not emit a bilingual interface or parenthetical English labels unless the active digest explicitly requests bilingual delivery.
+- Template comments and placeholder identifiers may remain English because they are not delivered as reader-visible copy. Every visible literal in a canonical style template must be a placeholder or language-invariant symbol; hard-coded English UI text is invalid.
+
 ## Shared visual language
 
 All style templates are built from the same visual language and should feel like one publication family without becoming clones.
@@ -62,28 +75,39 @@ Each rendering profile defines any additional responsive transformations require
 
 ### Document metadata and preheader
 
-- Set `<html lang>` to the digest language.
-- Set `<title>` to `<digest name> — <formatted digest date>`.
-- Replace the hidden preheader with one natural sentence, ideally 90–140 characters, that adds inbox-preview value rather than repeating the subject.
+- Set `<html lang="{{HTML_LANG}}">` using the resolved BCP 47 tag.
+- Set `<title>` to `<localized digest display name> — <localized formatted digest date>`.
+- Replace the hidden preheader with one natural target-language sentence, ideally 90–140 characters, that adds inbox-preview value rather than repeating the subject.
 - Preserve `<meta name="x-apple-disable-message-reformatting">` and the compatibility resets from the reference template.
 
 ### Masthead
 
-- Keep the small blue uppercase publication label in the upper left; use a concise reusable label such as `Signal Brief` unless the digest profile specifies another.
-- Place the digest date opposite it on larger screens and allow the pair to stack on narrow mobile layouts when needed.
-- Use the configured digest name as the large serif headline.
-- Under it, write one sentence describing the recurring purpose of the digest, not the findings of only this run.
+- Keep the small blue uppercase publication label in the upper left; generate a concise reusable target-language label through `{{PUBLICATION_LABEL}}` unless the digest profile specifies a localized alternative.
+- Place the localized digest date opposite it on larger screens and allow the pair to stack on narrow mobile layouts when needed.
+- Use the localized digest display name as the large serif headline. Preserve it unchanged only when it is a deliberate proper name or brand.
+- Under it, write one target-language sentence describing the recurring purpose of the digest, not the findings of only this run.
 
 ### Reading-time and time-saved capsule
 
 - Preserve the centered cream capsule and its typography.
-- The normal form is **`<reviewed-source reading time> → <digest reading time> · ⚡ Saved ~<difference>`**. Treat this as the default required output, not an optional enhancement.
+- The normal semantic form is **`<reviewed-source reading time> → <digest reading time> · ⚡ <localized saved label> ~<difference>`**. Treat this as the default required output, not an optional enhancement. Localize the label, time units, number formatting, and pluralization.
 - Compute the reviewed-source time from the substantive material actually read during this run, including reviewed items later omitted from the editorial body. Do not count duplicates skipped without rereading, promotional/admin material discarded without substantive reading, or inaccessible items.
 - Prefer a source's explicit reading-time estimate when it is available and trustworthy. Otherwise estimate from the full substantive text actually read using the shared reading-speed assumption defined by the workflow.
 - Estimate digest reading time from the finished editorial body, excluding the bibliographic source catalog and boilerplate footer.
 - Round for human readability; the displayed saved time is `max(reviewed-source time - digest time, 0)`.
-- Do not invent time for content that was not actually read. If the run genuinely lacks enough information to estimate reviewed-source time, use the fallback `About <digest time> read` and treat that as an exceptional degraded state.
+- Do not invent time for content that was not actually read. If the run genuinely lacks enough information to estimate reviewed-source time, use a natural localized equivalent of `About <digest time> read` and treat that as an exceptional degraded state.
 - Allow the capsule to wrap gracefully on mobile rather than reducing it to unreadable type.
+
+### Per-source reading time
+
+Whenever any current or future style reports an individual source or article—inside a source-led entry, source catalog, index, or other source-facing component—show that item's original substantive reading time in the configured language when it was actually read substantively. `<N> min` is only the English-format example; localize the unit and formatting when the target language differs.
+
+- Reuse the per-item value recorded during source normalization: prefer a trustworthy source-provided estimate; otherwise estimate from the substantive text actually read at the workflow's shared reading speed.
+- Round for human readability and describe the original source, not the digest summary. This per-source value is separate from the aggregate capsule.
+- In a source-status badge, append the value with a middle dot: `Selected · 12 min`, `Worth reading · 8 min`, `Reviewed · 4 min`, or `Limited content · 1 min`.
+- If the style has no status badge at that location, render `<N> min` as quiet source metadata beside or below the source identity.
+- Omit the value for duplicates skipped without rereading, pre-filtered candidates, promotional/administrative material discarded without substantive reading, and inaccessible content. A limited preview or email-only item may show a time only for the substantive material actually read.
+- This rule does not require a source catalog or statuses in a style whose editorial contract does not use them.
 
 ## Shared link and citation primitives
 
@@ -98,7 +122,7 @@ When a valid locator exists, use the shared clickable citation pill:
 When an email-only source has no reliable locator, preserve the same source number with a non-clickable reference pill:
 
 ```html
-<span class="citation" aria-label="Source 7, email-only">7</span>
+<span class="citation" aria-label="{{SOURCE_CITATION_ARIA_LABEL}}">7</span>
 ```
 
 - The visible content is only the stable source number.
@@ -112,13 +136,16 @@ For per-source styles that do not require numerical inline citations, link the a
 
 ## Shared source-status badges
 
-When a style renders source statuses, use one shared semantic color system:
+When a style renders source statuses, use one shared semantic color system. The backticked English names below identify canonical semantics; the visible badge text must be the natural localized equivalent:
 
 - **`Selected`** — pale green badge with dark green text. It means the source materially contributed to the digest body.
-- **`Worth reading`** — pale yellow badge with dark amber text. This status is authorized **only by `curated-discovery`** and only for an unselected source whose original the editor actively recommends if the reader has extra time. It is never a section, never a Discovery label, and must not appear in other styles.
-- **All other statuses** — neutral light-gray badge with muted slate text (`Not selected`, `Duplicate`, `Limited content`, `Email-only`, `Promotional content`, `Low signal`, or other style-authorized neutral states).
+- **`Worth reading`** — pale yellow badge with dark amber text. This status is authorized by `curated-discovery` and `synthesis-max`, only for an unselected source whose original the editor actively recommends if the reader has extra time. It is never a section, never a Discovery label, and is mutually exclusive with `Selected`.
+- **`Reviewed`** — neutral light-gray badge with muted slate text. It means the source was substantively reviewed but was neither selected nor marked `Worth reading`. This is the canonical reader-facing replacement for `Not selected`.
+- **Other operational statuses** — the same neutral treatment (`Duplicate`, `Limited content`, `Email-only`, `Promotional content`, `Low signal`, or another style-authorized neutral state).
 
-Use email-safe inline styles or matching classes from the active template. Status color communicates editorial state only; do not introduce icons or stars.
+New output must never display the deprecated `Not selected` label or a translation of that deprecated state. Historical state may still contain `not_selected`; when such a record must be rendered and it represents a substantive ordinary omission, display the localized equivalent of `Reviewed`. Do not relabel a more specific outcome such as `Duplicate` or `Promotional content`.
+
+Use email-safe inline styles or matching classes from the active template. Status color communicates editorial state only; do not introduce icons or stars. Append per-source reading time according to the preceding shared rule.
 
 ## Shared callout primitive
 
@@ -128,7 +155,7 @@ The light-blue inset component is a reusable **callout**, independent of any dig
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fc;border-radius:8px">
   <tr>
     <td style="padding:15px 18px">
-      <div class="callout-label">CALLOUT LABEL</div>
+      <div class="callout-label">{{CALLOUT_LABEL}}</div>
       <p style="margin:4px 0 0;font-size:14px;line-height:22px">Callout content.</p>
     </td>
   </tr>
@@ -187,7 +214,7 @@ Keep these responsibilities separate:
    Defines how the selected style's editorial structure maps to visual components and responsive behavior.
 
 6. **`templates/<style>-email-v1.html` — canonical structural reference implementation**
-   Shows the expected **visual composition and component markup using explicit placeholders**. Placeholder instances are not a quota: never infer how many selections, threads, topics, discoveries, source rows, paragraphs, or words to produce from the template. Repeat or omit components only according to the selected style's editorial output. Do not redesign the template on every run.
+   Shows the expected **visual composition and component markup using explicit placeholders**. Every reader-facing label must be a localization placeholder; hard-coded English display text is invalid. Placeholder instances are not a quota: never infer how many selections, threads, topics, discoveries, source rows, paragraphs, or words to produce from the template. Repeat or omit components only according to the selected style's editorial output. Do not redesign the template on every run.
 
 7. **`templates/email-theme.html` — shared visual language**
    Supplies reusable visual primitives and the family resemblance shared by every template.
@@ -210,3 +237,7 @@ Before sending:
 10. Confirm no two horizontal rules/borders appear consecutively between adjacent content blocks; collapse any doubled separator to one subtle rule.
 11. Confirm the reading-time capsule uses the full source → digest → saved form whenever the run contains enough measured or estimable source text; do not silently downgrade to digest-only reading time.
 12. Confirm every placeholder or temporary marker is gone except the intentional hidden run-key comment.
+13. Confirm every generated reader-facing string and accessibility attribute uses the configured language, the `<html lang>` value is valid, every source/article title is displayed verbatim in its original language, and no hard-coded English template text leaked into a non-English digest.
+
+
+

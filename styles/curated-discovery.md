@@ -18,7 +18,7 @@ The fundamental unit is a **coherent editorial mini-essay built around one idea 
 | **Opening behavior** | Required short editorial orientation that either states a genuinely interesting observation or creates honest curiosity around the strongest material without forcing a thesis. |
 | **Body behavior** | A value-determined number of coherent editorial mini-essays plus optional discoveries, with independently allocated depth, stable claim-level citations, and source notes. Stop on marginal value rather than a fixed slot count. |
 | **Citation / provenance** | Permanent global numerical citations plus selection-level source lines/source notes. |
-| **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering. |
+| **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering, with canonical statuses and per-source reading time for substantive material. |
 | **Ending behavior** | Stop immediately after the final source catalog. |
 | **Writing character** | Curious, selective, idea-driven, lively, lucid, and lightly magazine-like without becoming ornate. |
 | **Optional extension points** | Featured treatment, Discoveries, `Worth opening for`, and digest-authorized callouts when genuinely warranted. |
@@ -302,18 +302,19 @@ For every source include:
 - Its number.
 - The original article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
 - Author, newsletter, or publication when available.
+- The original source reading time as `N min` whenever the item was substantively read, using the shared source-reporting rule.
 
 Use a source status when it adds useful editorial information:
 
 - `Selected` — the source materially contributed to a full selection or Discovery.
-- `Worth reading` — **Curated Discovery only**: the source was not selected for the editorial body, but after reading it the editor would still actively recommend spending additional time on the original. This is a catalog status, not a new section and not another name for a Discovery. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
+- `Worth reading` — the source was not selected for the editorial body, but after reading it the editor would still actively recommend spending additional time on the original. This is a catalog status, not a new section and not another name for a Discovery. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
 - `Duplicate`
 - `Limited content`
 - `Email-only`
 - `Promotional content`
-- `Not selected`
+- `Reviewed` — the source was substantively reviewed but was neither selected nor marked `Worth reading`.
 
-`Selected` and `Worth reading` are mutually exclusive. A Discovery is already `Selected`; do not label it `Worth reading` merely because its original also contains useful depth. Use `Worth opening for` inside a selected item when the original offers meaningful additional depth.
+`Selected` and `Worth reading` are mutually exclusive. A Discovery is already `Selected`; do not label it `Worth reading` merely because its original also contains useful depth. Use `Worth opening for` inside a selected item when the original offers meaningful additional depth. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Reviewed · 4 min`.
 
 Do not summarize unselected sources.
 

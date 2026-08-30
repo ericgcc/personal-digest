@@ -4,6 +4,10 @@ Use with `styles/curated-discovery.md` and `templates/curated-discovery-email-v1
 
 **Visual personality: magazine edit.** The composition should make editorial judgment visible: a small number of selected ideas receive unequal depth, with optional discoveries below. It should feel curated, readable, and idea-first rather than like a list of article cards.
 
+## Localization
+
+All English component names in this profile are semantic maintainer labels. Resolve every visible label, generated editorial title, date, status, reading-time unit, call to action, accessibility string, and footer through the configured digest language. The template's localization placeholders must be filled with natural target-language copy; no hard-coded English UI text may survive in a non-English digest. **Do not localize original source/article titles:** every `SOURCE_TITLE` must be displayed verbatim in its original language. Preserve each component's visual treatment and structural role while localizing only its generated wording.
+
 ## Structure mapping
 
 1. Render the shared masthead and reading-time capsule.
@@ -43,7 +47,7 @@ Use the shared source-note treatment:
 
 The final `Sources` catalog uses the shared bibliographic row treatment, **grouped by source identity by default**. Give each newsletter/publication/sender one compact heading followed by its source rows. Keep the permanent global citation number in the rail; show the original title and an author only when it adds information beyond the group heading. Do not repeat the group identity on every row. Link only sources with a valid locator; email-only sources without one remain unlinked. Grouping is navigational only and must never renumber sources.
 
-Render source-status badges using the shared semantics from `system/html-rendering.md`: `Selected` in green, `Worth reading` in yellow, and every neutral status in gray. `Worth reading` is exclusive to this style and appears only inside `Sources` on an unselected source; it never creates a separate section and never labels a Discovery.
+Render source-status badges using the shared semantics from `system/html-rendering.md`: `Selected` in green, `Worth reading` in yellow, and every neutral status—including `Reviewed`—in gray. `Worth reading` appears only inside `Sources` on an unselected source; it never creates a separate section and never labels a Discovery. For every substantively read source, append the original reading time to the badge with a middle dot, for example `Selected · 12 min`, `Worth reading · 8 min`, or `Reviewed · 4 min`. More specific neutral outcomes may also carry time when substantive material was actually read; omit it when no substantive reading occurred.
 
 Separator invariant for full selections:
 
@@ -78,3 +82,6 @@ The HTML template is a structural specimen. Its placeholder selection, discovery
 - Keep body copy comfortably readable; reflow before shrinking.
 
 The mobile version should preserve the editorial hierarchy without preserving desktop geometry.
+
+
+

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" style="min-width:100%;background:#d1deec">
+<html lang="{{HTML_LANG}}" style="min-width:100%;background:#d1deec">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -13,7 +13,7 @@
     .wrap{width:100%;background:#d1deec}.card{width:100%;max-width:720px;background:#fff;border-radius:14px}.inner{width:100%;max-width:596px}
     .serif{font-family:Georgia,'Times New Roman',serif}.bodycopy{font-family:Arial,Helvetica,sans-serif;color:#34445a}
     .rule{height:1px;background:#e4e9f0;line-height:1px;font-size:1px}
-    .source-kicker{font:700 10px/17px Arial,Helvetica,sans-serif;color:#315fe7;letter-spacing:.9px;text-transform:uppercase}
+    .source-kicker{font:700 10px/17px Arial,Helvetica,sans-serif;color:#315fe7;letter-spacing:.9px;text-transform:uppercase}.source-time{margin-top:3px;font:12px/18px Arial,Helvetica,sans-serif;color:#8a96a7}
     .source-title{color:#17263a!important;text-decoration:none}.source-title:hover{text-decoration:underline}
     .summary{font:15px/24px Arial,Helvetica,sans-serif;color:#435168}
     .read-capsule{display:inline-block;border:1px solid #f0c88a;border-radius:18px;background:#fff9ef;padding:6px 14px;font:700 13px/18px Arial,Helvetica,sans-serif;color:#9b5b19;max-width:100%;box-sizing:border-box}
@@ -42,9 +42,11 @@
 <body style="margin:0;padding:0;background:#d1deec">
 <div class="preheader">{{PREHEADER}}</div><table role="presentation" class="wrap" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="outer-pad" align="center" style="padding:28px 18px 42px"><table role="presentation" class="card" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:720px;background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(39,54,74,.10)"><tr><td style="height:5px;background:#2376dc;border-radius:14px 14px 0 0"></td></tr>
 <!-- STRUCTURAL SPECIMEN ONLY. Repeat the entry for retained sources; this template does not imply an item count. -->
-<tr><td class="content-pad" style="padding:30px 62px 18px"><table role="presentation" class="inner" width="100%"><tr class="masthead-row"><td style="font:700 13px/20px Arial,Helvetica,sans-serif;color:#2376dc;letter-spacing:1.1px;text-transform:uppercase">Signal Brief</td><td class="masthead-date" align="right" style="font:14px/20px Arial,Helvetica,sans-serif;color:#7d899b">{{DATE}}</td></tr></table></td></tr><tr><td class="content-pad" style="padding:8px 62px 30px"><table role="presentation" class="inner" width="100%"><tr><td><h1 class="headline serif" style="margin:0 0 12px;font-size:38px;line-height:46px;color:#17263a">{{DIGEST_NAME}}</h1><p style="margin:0 0 22px;font:16px/26px Arial,Helvetica,sans-serif;color:#66758a">{{DIGEST_PURPOSE}}</p></td></tr><tr><td align="center"><span class="read-capsule">{{SOURCE_TIME}} → {{DIGEST_TIME}} · ⚡ Saved ~{{TIME_SAVED}}</span></td></tr></table></td></tr><tr><td class="content-pad" style="padding:0 62px"><div class="rule">&nbsp;</div></td></tr>
+<tr><td class="content-pad" style="padding:30px 62px 18px"><table role="presentation" class="inner" width="100%"><tr class="masthead-row"><td style="font:700 13px/20px Arial,Helvetica,sans-serif;color:#2376dc;letter-spacing:1.1px;text-transform:uppercase">{{PUBLICATION_LABEL}}</td><td class="masthead-date" align="right" style="font:14px/20px Arial,Helvetica,sans-serif;color:#7d899b">{{DATE}}</td></tr></table></td></tr><tr><td class="content-pad" style="padding:8px 62px 30px"><table role="presentation" class="inner" width="100%"><tr><td><h1 class="headline serif" style="margin:0 0 12px;font-size:38px;line-height:46px;color:#17263a">{{DIGEST_NAME}}</h1><p style="margin:0 0 22px;font:16px/26px Arial,Helvetica,sans-serif;color:#66758a">{{DIGEST_PURPOSE}}</p></td></tr><tr><td align="center"><span class="read-capsule">{{SOURCE_TIME}} → {{DIGEST_TIME}} · ⚡ {{SAVED_LABEL}} ~{{TIME_SAVED}}</span></td></tr></table></td></tr><tr><td class="content-pad" style="padding:0 62px"><div class="rule">&nbsp;</div></td></tr>
 <!-- REPEATABLE CONCISE ENTRY -->
-<tr><td class="content-pad brief-entry" style="padding:27px 62px 28px"><table role="presentation" class="inner" width="100%"><tr class="brief-row"><td class="source-rail" width="132"><div class="source-kicker">{{SOURCE_IDENTITY}}</div><div class="mobile-accent">&nbsp;</div></td><td class="source-copy"><h2 class="brief-title serif" style="margin:0 0 8px;font-size:22px;line-height:29px;color:#17263a"><a class="source-title" href="{{SOURCE_URL}}">{{SOURCE_TITLE}} ↗</a></h2><p class="summary" style="margin:0">{{CONCISE_SUMMARY}}</p></td></tr></table></td></tr>
+<tr><td class="content-pad brief-entry" style="padding:27px 62px 28px"><table role="presentation" class="inner" width="100%"><tr class="brief-row"><td class="source-rail" width="132"><div class="source-kicker">{{SOURCE_IDENTITY}}</div><div class="source-time">{{SOURCE_READING_TIME}}</div><div class="mobile-accent">&nbsp;</div></td><td class="source-copy"><h2 class="brief-title serif" style="margin:0 0 8px;font-size:22px;line-height:29px;color:#17263a"><a class="source-title" href="{{SOURCE_URL}}">{{SOURCE_TITLE}} ↗</a></h2><p class="summary" style="margin:0">{{CONCISE_SUMMARY}}</p></td></tr></table></td></tr>
 <tr><td style="background:#17263a;border-radius:0 0 14px 14px;padding:20px 30px;text-align:center;font:12px/18px Arial,Helvetica,sans-serif;color:#aab4c2">{{FOOTER}}</td></tr></table></td></tr></table><!-- run-key: {{RUN_KEY}} -->
 </body>
 </html>
+
+

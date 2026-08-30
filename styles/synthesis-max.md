@@ -16,7 +16,7 @@ One selective briefing: no separate article summaries. Merge the strongest mater
 | **Opening behavior** | Required `THE BIG PICTURE` opening that earns its place as the briefing’s first editorial synthesis. |
 | **Body behavior** | Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes. |
 | **Citation / provenance** | Permanent global numerical citations attached to supported claims/inferences plus thread-level source notes. |
-| **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering. |
+| **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering, with canonical statuses and per-source reading time for substantive material. |
 | **Ending behavior** | Stop immediately after the final source catalog. |
 | **Writing character** | Analytical, connective, authoritative but restrained, precise, and intellectually alive. |
 | **Optional extension points** | Zero or one digest-authorized callout inside a thread when the rendering profile supports it. |
@@ -167,18 +167,20 @@ For every source include:
 - Its number.
 - The article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
 - The author or publication when available.
+- The original source reading time as `N min` whenever the item was substantively read, using the shared source-reporting rule.
 
-Optionally add a short status label when relevant:
+Add a short status label when it conveys editorial or operational state:
 
 - `Selected`
+- `Worth reading` — the source was not selected for the narrative, but after reading it the editor would still actively recommend the original if the reader has extra time. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
+- `Reviewed` — the source was substantively reviewed but was neither selected nor marked `Worth reading`.
 - `Promotional content`
 - `Duplicate`
 - `Limited content`
 - `Email-only`
 - `Low signal`
-- `Not selected`
 
-`Worth reading` is not part of this style's source-catalog vocabulary. Do not use it here.
+`Selected` and `Worth reading` are mutually exclusive. `Worth reading` remains a catalog-only recommendation and does not create a narrative thread. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Worth reading · 8 min` or `Reviewed · 4 min`.
 
 Do not explain why each unselected source was omitted.
 The catalog exists for transparency and navigation; it is not another summary section.
@@ -221,3 +223,4 @@ Before returning the briefing, verify that:
 - Memorable phrasing clarifies rather than manufacturing cleverness or profundity.
 - The briefing reads as analytical editorial nonfiction, not as a literature review, research abstract, or author-by-author survey.
 - Naturalness comes from evidence, judgment, rhythm, and proportion; repeated AI-shaped rhetorical patterns have been audited across the whole briefing.
+

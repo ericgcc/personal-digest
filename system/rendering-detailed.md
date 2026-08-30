@@ -4,6 +4,10 @@ Use with `styles/detailed.md` and `templates/detailed-email-v1.html`.
 
 **Visual personality: annotated reader.** The digest should feel like a structured reading notebook: each source remains independently identifiable, with a coherent summary followed by the most useful supporting notes.
 
+## Localization
+
+All English component names in this profile are semantic maintainer labels. Resolve every visible label, generated editorial title, date, status, reading-time unit, call to action, accessibility string, and footer through the configured digest language. The template's localization placeholders must be filled with natural target-language copy; no hard-coded English UI text may survive in a non-English digest. **Do not localize original source/article titles:** every `SOURCE_TITLE` must be displayed verbatim in its original language. Preserve each component's visual treatment and structural role while localizing only its generated wording.
+
 ## Structure mapping
 
 1. Render the shared masthead and reading-time capsule.
@@ -37,14 +41,14 @@ Use a restrained numbered section opener that clearly acts as navigation rather 
 Each retained source should contain:
 
 - source/publication name as a small uppercase or sans-serif label;
-- optional honest per-source summary reading-time estimate if available;
+- required original-source reading time as quiet `N min` metadata for every substantively read article/item;
 - article/item title in serif display type, directly linked only when a valid source locator exists;
 - coherent explanatory paragraph(s) preserving the source's central idea and context;
 - `SOURCE NOTES` when the style output contains concise supporting points;
 - optional authorized callout;
 - optional secondary `OPEN ORIGINAL SOURCE` link/button as shown in the template, only when a valid locator exists.
 
-When a source locator exists, the linked title remains the primary source link and the secondary button is only an affordance. For email-only sources without a reliable locator, render the title as plain text, omit the button, and preserve provenance without inventing a URL.
+The per-source time describes the original material, not the detailed summary. When a source locator exists, the linked title remains the primary source link and the secondary button is only an affordance. For email-only sources without a reliable locator, render the title as plain text, omit the button, and preserve provenance without inventing a URL.
 
 ## SOURCE NOTES
 
@@ -76,3 +80,6 @@ The HTML template is a structural specimen. Placeholder topic/source/note compon
 - Preserve body readability near `16px / 25–26px`.
 
 Detailed should remain comfortably readable even when the digest contains many source entries or many topic sections.
+
+
+

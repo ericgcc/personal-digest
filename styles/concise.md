@@ -14,7 +14,7 @@ A fast per-source digest designed for scanning. Keep each source separate and re
 | **Progression model** | One compact logical arc: central value first, followed only by the support or qualification needed to make it intelligible. |
 | **Opening behavior** | None. Begin directly with the first retained source. |
 | **Body behavior** | One concise paragraph per retained source containing its central value and only essential support. |
-| **Citation / provenance** | Source/publication identity plus original title; link the title only when a valid locator exists. |
+| **Citation / provenance** | Source/publication identity, original title, and original reading time for substantive material; link the title only when a valid locator exists. |
 | **Source catalog** | None. |
 | **Ending behavior** | Stop immediately after the final source entry. |
 | **Writing character** | Fast, crisp, concrete, lucid, and restrained. |
@@ -64,7 +64,10 @@ Every sentence should contribute. Remove filler, unnecessary setup, redundant tr
 
 For each retained source include:
 ### Source or publication name
+*N min*
 **Article or item title**
+
+The reading time is required for every substantively read article or item and describes the original source, not this concise summary.
 
 One concise paragraph containing:
 - The central idea or development.

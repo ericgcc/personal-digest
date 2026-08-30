@@ -60,6 +60,14 @@ sources:
 ---
 ```
 
+### Language controls the complete reader-facing output
+
+`language` is a whole-output locale, not merely a prose preference. When it is anything other than English, every generated reader-visible string must be written in that language: digest display name when descriptive, subject and preheader, formatted dates, recurring purpose, section headings, generated editorial titles, summaries and synthesis, labels, statuses, reading-time units, calls to action, accessibility text, and footer copy. Original source/article titles are the explicit exception described below.
+
+Canonical IDs, URLs, run keys, state values, source numbers, code, and machine-facing placeholders remain unchanged. Author, publication, company, product, and other proper names remain in their established form unless the target language has a conventional localized form. **Source/article titles must always be preserved and displayed verbatim in their original language.** Never translate, paraphrase, normalize, or transliterate `SOURCE_TITLE`; keep the exact original title for display, links, state, deduplication, and provenance.
+
+A template or style may name semantic components in English for maintainers, but its delivered labels must use natural target-language equivalents. Do not produce a bilingual digest or retain English UI copy merely because it appears in a canonical example.
+
 `adapter_selection: auto` may be omitted when several adapters are listed because it is the default.
 
 The following must match exactly:
@@ -229,7 +237,7 @@ Do not enable SQLite WAL mode for the persisted state file; the runtime contract
 
 ## 9. Optional fields
 
-`subject_template` may override the default email subject without changing the editorial style. Keep subject customization separate from editorial structure.
+`subject_template` may override the default email subject without changing the editorial style. Keep subject customization separate from editorial structure. Its variables remain intact, but any literal reader-facing words are localized to the configured language at render time.
 
 Example:
 
@@ -252,7 +260,7 @@ A style may legitimately declare `Opening behavior: None`, `Source catalog: None
 Finally, wire the visual implementation:
 
 1. Create `system/rendering-<style>.md`.
-2. Create `templates/<style>-email-v1.html` using `templates/email-theme.html` as the visual language.
+2. Create `templates/<style>-email-v1.html` using `templates/email-theme.html` as the visual language. Every reader-facing literal must be an explicit localization placeholder; do not hard-code English labels into the template.
 3. Add `rendering_profiles.<style>` to `system/registry.yaml`.
 4. Verify that the rendering profile/template implement the style's actual structure rather than copying another style's composition.
 5. Run the style-contract validation before using it in a digest.
@@ -264,6 +272,7 @@ A style that lacks any of these pieces is not runnable and should fail preflight
 Before enabling a new digest, verify:
 
 - [ ] filename, frontmatter `id`, and registry key are identical;
+- [ ] `language` is present, recognizable, and can be mapped to a valid HTML language tag;
 - [ ] `style` is one of the canonical style IDs;
 - [ ] `system/registry.yaml` resolves `defaults.style_contract`, `defaults.editorial_process`, and `defaults.editorial_base`;
 - [ ] the selected style implements every required `## Style interface` dimension, including `Progression model`, plus dedicated `## Writing character` and `## Quality control` sections;
@@ -280,9 +289,14 @@ Before enabling a new digest, verify:
 - [ ] the intended execution cadence is configured outside this repository/system configuration;
 - [ ] the digest is set to `enabled: true` only when ready.
 
-## Source-catalog status colors
+## Source reporting, statuses, and reading time
 
-When a style has a source catalog, status colors are semantic and shared: `Selected` is green; neutral states such as `Not selected`, `Duplicate`, `Limited content`, `Email-only`, `Promotional content`, and `Low signal` are gray. `Worth reading` is a special yellow catalog status supported only by `curated-discovery`; it marks an **unselected** original the editor still actively recommends if the reader has extra time. It is not a section and is not a synonym for a Discovery.
+Whenever any current or future style reports an individual source or article, show its original reading time as `N min` when that item was substantively read. Use the source-provided estimate when trustworthy; otherwise use the workflow's 225-words-per-minute estimate. This is independent of the aggregate time-saved capsule and does not require adding a source catalog to styles that do not have one. Omit the value for material that was not substantively read.
+
+When a style has a source catalog, status colors are semantic and shared: `Selected` is green; `Worth reading` is yellow; and neutral states such as `Reviewed`, `Duplicate`, `Limited content`, `Email-only`, `Promotional content`, and `Low signal` are gray. These are canonical semantic names, not mandatory English display strings; render their natural equivalents in the configured language. New output never uses the deprecated `Not selected` state or a translation of it; `Reviewed` means a substantive source was reviewed but neither selected nor actively recommended. `Worth reading` is supported by `curated-discovery` and `synthesis-max`; it marks an **unselected** original the editor still actively recommends if the reader has extra time. It is mutually exclusive with `Selected`, is not a section, and is not a synonym for a Discovery.
 
 Canonical HTML templates are structural specimens with placeholders. Their component counts and placeholder lengths are never editorial defaults. The style and editorial process determine how many items and paragraphs are produced.
+
+
+
 

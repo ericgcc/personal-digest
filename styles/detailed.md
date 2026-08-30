@@ -15,7 +15,7 @@ A structured per-source digest designed to preserve the important context, nuanc
 | **Progression model** | Each source summary follows one coherent explanatory line: orient the reader, establish the central idea, then develop only the mechanisms, evidence, examples, or caveats that advance it. |
 | **Opening behavior** | No editorial opening. An optional navigational index may appear only when topical grouping genuinely helps. |
 | **Body behavior** | Central idea first, then explanatory prose and two to five useful details when bullets improve clarity; sequential prose when they do not. |
-| **Citation / provenance** | Every source remains explicitly identified; link the original title only when a valid locator exists. |
+| **Citation / provenance** | Every source remains explicitly identified with its original reading time for substantive material; link the original title only when a valid locator exists. |
 | **Source catalog** | None by default. |
 | **Ending behavior** | Stop after the final source summary. |
 | **Writing character** | Calm, explanatory, exact, patient, and quietly engaging. |
@@ -90,7 +90,11 @@ For each retained source include:
 
 ### Source or publication name
 
+*N min*
+
 **Article or item title**
+
+The reading time is required for every substantively read article or item and describes the original source, not this detailed summary.
 
 Begin with a short paragraph that explains the source’s central idea and enough context to understand why it matters.
 

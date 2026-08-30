@@ -4,6 +4,10 @@ Use with `styles/concise.md` and `templates/concise-email-v1.html`.
 
 **Visual personality: briefing ledger / newspaper briefs.** The design should optimize rapid scanning with the least visual machinery of any style. Its personality comes from restraint: source, linked title, compact paragraph, repeat.
 
+## Localization
+
+All English component names in this profile are semantic maintainer labels. Resolve every visible label, generated editorial title, date, status, reading-time unit, call to action, accessibility string, and footer through the configured digest language. The template's localization placeholders must be filled with natural target-language copy; no hard-coded English UI text may survive in a non-English digest. **Do not localize original source/article titles:** every `SOURCE_TITLE` must be displayed verbatim in its original language. Preserve each component's visual treatment and structural role while localizing only its generated wording.
+
 ## Structure mapping
 
 1. Render the shared masthead and reading-time capsule.
@@ -15,12 +19,13 @@ Use with `styles/concise.md` and `templates/concise-email-v1.html`.
 On desktop, use the template's narrow source rail beside the reading content:
 
 - source/publication name in compact uppercase/sans-serif treatment;
+- original article/item reading time as quiet `N min` metadata for every substantively read item;
 - article/item title in serif display type, directly linked only when a valid source locator exists;
 - one compact paragraph, normally 40–80 words, containing the central value of the source.
 
 Separate entries with light horizontal rules and whitespace rather than cards.
 
-When a valid locator exists, the linked title is the CTA. For email-only sources without a reliable locator, render the title as plain text with subtle email-only provenance; do not fabricate a CTA. Do not add avatars, thumbnails, engagement metrics, `KEY POINTS`, read-original buttons, or other per-entry chrome.
+The reading time describes the original source, not the concise summary, and should sit beneath or beside the source identity without becoming a badge. When a valid locator exists, the linked title is the CTA. For email-only sources without a reliable locator, render the title as plain text with subtle email-only provenance; do not fabricate a CTA. Do not add avatars, thumbnails, engagement metrics, `KEY POINTS`, read-original buttons, or other per-entry chrome.
 
 Do not add numerical citation pills unless the style itself is later changed to require them; the linked title supplies provenance for each independent entry.
 
@@ -41,3 +46,6 @@ The HTML template is a structural specimen. Its placeholder source entry demonst
 - Reflow source metadata rather than shrinking it.
 
 The mobile experience should feel like a clean vertical list of editorial abstracts, not a compressed desktop table.
+
+
+

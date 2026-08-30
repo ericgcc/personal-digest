@@ -4,6 +4,10 @@ Use with `styles/synthesis-max.md` and `templates/synthesis-max-email-v1.html`.
 
 **Visual personality: editorial dossier.** The composition should read as one analytical briefing: an opening thesis followed by a sequence of synthesized threads. It should feel cumulative and deliberate rather than like independent article cards.
 
+## Localization
+
+All English component names in this profile are semantic maintainer labels. Resolve every visible label, generated editorial title, date, status, reading-time unit, call to action, accessibility string, and footer through the configured digest language. The template's localization placeholders must be filled with natural target-language copy; no hard-coded English UI text may survive in a non-English digest. **Do not localize original source/article titles:** every `SOURCE_TITLE` must be displayed verbatim in its original language. Preserve each component's visual treatment and structural role while localizing only its generated wording.
+
 ## Structure mapping
 
 1. Render the shared masthead and reading-time capsule.
@@ -48,7 +52,7 @@ At the end of each thread:
 - place the stable numerical citation pill immediately after each name; make it clickable only when that source has a valid locator;
 - let entries wrap naturally on narrow screens.
 
-The final `Sources` catalog uses the shared bibliographic row pattern, **grouped by source identity by default**. Render each newsletter/publication/sender group with one compact source-group heading, followed by its rows. Each row keeps the permanent global citation number in the narrow numerical rail plus the original title and, when useful, an author distinct from the group identity. Do not repeat the group identity on every row. Link the citation/title only when a valid locator exists; otherwise render email-only provenance without a fabricated destination. Render `Selected` in the shared green status treatment and all other style-authorized statuses in neutral gray. `Worth reading` is not valid in this style. Grouping must never renumber sources.
+The final `Sources` catalog uses the shared bibliographic row pattern, **grouped by source identity by default**. Render each newsletter/publication/sender group with one compact source-group heading, followed by its rows. Each row keeps the permanent global citation number in the narrow numerical rail plus the original title and, when useful, an author distinct from the group identity. Do not repeat the group identity on every row. Link the citation/title only when a valid locator exists; otherwise render email-only provenance without a fabricated destination. Render `Selected` in the shared green status treatment, `Worth reading` in yellow, and every neutral status—including `Reviewed`—in gray. `Worth reading` appears only on an unselected source that the editor still actively recommends; it is mutually exclusive with `Selected` and does not create a narrative thread. For every substantively read source, append the original reading time to the badge with a middle dot, for example `Selected · 12 min`, `Worth reading · 8 min`, or `Reviewed · 4 min`. More specific neutral outcomes may also carry time when substantive material was actually read; omit it when no substantive reading occurred. Grouping must never renumber sources.
 
 ## Callouts
 
@@ -72,3 +76,6 @@ This layout should remain primarily linear across sizes.
 - Keep the bibliographic citation rail narrow enough to remain useful on mobile.
 
 Avoid side rails that would require a structural collapse on phone; Synthesis should feel like a continuous dossier at every width.
+
+
+

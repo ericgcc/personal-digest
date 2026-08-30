@@ -123,7 +123,7 @@ CREATE UNIQUE INDEX uq_items_digest_canonical_url
 
 The database must also set `PRAGMA user_version = 1`.
 
-`items.review_status` stores the final editorial outcome for the reviewed item. Keep existing historical values readable. New runs should use a stable lower-snake-case outcome appropriate to the active style, for example `selected`, `not_selected`, `duplicate`, `limited_content`, `email_only`, or `promotional_content`. The special value `worth_reading` is permitted only for `curated-discovery`, only when the source was **not** selected into the editorial body, and corresponds to that style's yellow source-catalog recommendation. It is not a Discovery classification.
+`items.review_status` stores the final editorial outcome for the reviewed item. Keep existing historical values readable, including `not_selected`, but new runs must write `reviewed` for a substantively reviewed ordinary omission. New runs should use a stable lower-snake-case outcome appropriate to the active style, for example `selected`, `reviewed`, `duplicate`, `limited_content`, `email_only`, or `promotional_content`. When a historical `not_selected` value must be shown to a reader, render it as `Reviewed`; do not rewrite history merely to change the label. The special value `worth_reading` is permitted only for `curated-discovery` and `synthesis-max`, only when the source was **not** selected into the editorial body, and corresponds to their yellow source-catalog recommendation. It is not a Discovery classification.
 
 ## State lookup
 
@@ -202,3 +202,4 @@ If database persistence succeeds but Gmail labeling fails, the database remains 
 ## Historical migration
 
 The initial SQLite database was migrated from `state/Digest Processing Ledger.xlsx` without rewriting historical digest IDs. Historical `medium-daily` rows therefore remain `medium-daily`; the current digest config's alias makes that state visible to `medium-bi-daily` reads. New writes use only `medium-bi-daily`.
+

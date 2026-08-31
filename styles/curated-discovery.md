@@ -16,7 +16,7 @@ The fundamental unit is a **coherent editorial mini-essay built around one idea 
 | **Opening behavior** | Required short editorial orientation that either states a genuinely interesting observation or creates honest curiosity around the strongest material without forcing a thesis. |
 | **Body behavior** | A value-determined number of coherent editorial mini-essays plus optional discoveries, with independently allocated depth, stable claim-level citations, and source notes. Stop on marginal value rather than a fixed slot count. |
 | **Citation / provenance** | Permanent global numerical citations plus selection-level source lines/source notes. |
-| **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering, with canonical statuses and per-source reading time for substantive material. |
+| **Source catalog** | Required complete catalog of the substantively reviewed corpus, with stable numbering, canonical statuses, per-source reading time, and grouping controlled by `source_catalog_grouping` (`source-identity` by default; `editorial-topic` when configured). |
 | **Ending behavior** | Stop immediately after the final source catalog. |
 | **Writing character** | Curious, selective, idea-driven, lively, lucid, and lightly magazine-like without becoming ornate. |
 | **Optional extension points** | Featured treatment, Discoveries, `Worth opening for`, and digest-authorized callouts when genuinely warranted. |
@@ -47,8 +47,8 @@ Avoid phrases such as "the author explores…" or "this article discusses…" wh
 ## Curation process
 Before writing:
 
-1. Assign every reviewed source a permanent sequential number based on input order.
-2. Review the complete source set before selecting anything.
+1. Form the catalog-eligible substantively reviewed corpus under the shared workflow, then assign every source in it a permanent sequential number based on input order.
+2. Review that complete substantive source set before selecting anything.
 3. Extract candidate ideas, arguments, techniques, explanations, examples, case studies, discoveries, or developments.
 4. Merge duplicates and substantially overlapping coverage.
 5. For each promising source, state internally the source's strongest thesis or reader promise and **why it was worth opening**. Treat a provocative headline as a hypothesis, not ground truth: confirm the thesis from the article itself. Notice the specific mechanism, example, distinction, anomaly, or unresolved question that gives the idea texture; do not replace it with a generic importance statement.
@@ -231,7 +231,7 @@ Use descriptive grouping headings only when several adjacent selections naturall
 ## Citations
 Use stable numerical citations throughout the digest.
 
-Assign each reviewed source one permanent number and reuse it everywhere.
+Assign each catalog-eligible substantively reviewed source one permanent number and reuse it everywhere.
 
 Render every inline citation using the permanent source number:
 
@@ -269,13 +269,16 @@ End with:
 
 `Sources`
 
-List **every reviewed source**, including items not selected for the editorial body.
+List **every catalog-eligible substantively reviewed source**, including items not selected for the editorial body. Do not list operational exclusions or non-editorial residue merely to document that they were encountered.
 
 Preserve the permanent source numbering used throughout the digest.
 
-Group the catalog by **source identity by default**. Prefer newsletter/publication, then sender/editorial source, then recurring author identity. Use `Other sources` only when no meaningful identity exists. Do not group by topic or by whether an item was selected.
+Resolve grouping from digest frontmatter:
 
-Grouping is visual/navigation only: keep each source's permanent global number unchanged. Do not renumber within groups. Avoid repeating the group name on every row; include an author only when it adds information beyond the group heading.
+* `source-identity` (default)—group by newsletter/publication, then sender/editorial source, then recurring author identity. Use `Other sources` only when no meaningful identity exists. Avoid repeating the group identity on every row; include an author only when it adds information beyond the heading.
+* `editorial-topic`—derive a small, useful set of reader-oriented topic or practice headings from the reviewed corpus itself. Assign each source once under its primary navigational topic; do not mirror selection status, invent a forced master taxonomy, or imply that a source contributed only to that topic. Because the group heading no longer identifies provenance, show author/publication/sender on every row when available.
+
+Grouping is visual/navigation only: keep each source's permanent global number unchanged and never renumber within groups. Do not group by whether an item was selected. Topic grouping organizes the bibliography; it does not turn Curated Discovery into cross-source synthesis.
 
 For every source include:
 
@@ -288,13 +291,12 @@ Use a source status when it adds useful editorial information:
 
 * `Selected`—the source materially contributed to a full selection or Discovery.
 * `Worth reading`—the source was not selected for the editorial body, but after reading it the editor would still actively recommend spending additional time on the original. This is a catalog status, not a new section and not another name for a Discovery. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
-* `Duplicate`
 * `Limited content`
-* `Email-only`
-* `Promotional content`
 * `Reviewed`—the source was substantively reviewed but was neither selected nor marked `Worth reading`.
 
-`Selected` and `Worth reading` are mutually exclusive. A Discovery is already `Selected`; do not label it `Worth reading` merely because its original also contains useful depth. Use `Worth opening for` inside a selected item when the original offers meaningful additional depth. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Reviewed · 4 min`.
+`Email-only` may appear as provenance beside one of these outcomes; it is not a competing selection status. Operational outcomes such as duplicate, promotional/administrative, social notification, low signal, inaccessible, or excluded before read remain internal and do not appear in the catalog.
+
+`Selected` and `Worth reading` are mutually exclusive. A Discovery is already `Selected`; do not label it `Worth reading` merely because its original also contains useful depth. Use `Worth opening for` inside a selected item when the original offers meaningful additional depth. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Reviewed · 4 min`. In localized output, keep `Worth reading` semantically distinct from `Worth opening for`; for Spanish use `Vale la pena leer` versus `Vale la pena abrirlo por:`.
 
 Do not summarize unselected sources.
 
@@ -318,7 +320,7 @@ Do not add:
 ## Quality control
 Before returning the digest, verify that:
 
-* The complete source set was reviewed before selection.
+* The complete catalog-eligible substantive source set was reviewed before selection.
 * The briefing feels intentionally curated rather than comprehensive.
 * The digest itself contains the substantive value.
 * A reader can learn from the selected items without opening the sources.
@@ -339,12 +341,12 @@ Before returning the digest, verify that:
 * Article headlines have not been reused as substitutes for editorial titles.
 * Every factual claim has the appropriate numerical citation, including email-only sources when relevant.
 * Citation numbers remain stable throughout.
-* Every reviewed source appears in the final catalog.
-* The final catalog is grouped by source identity without changing permanent source numbers.
+* Every catalog-eligible substantively reviewed source appears in the final catalog, and no operational exclusion appears there.
+* The final catalog uses the configured `source_catalog_grouping` mode without changing permanent source numbers; topic grouping, when chosen, uses corpus-derived reader-oriented headings and shows provenance on every row.
 * Optional `Worth opening for` cues describe genuine additional value.
 * The editorial body uses an elastic reading budget: usually five to eight minutes, shorter when little qualifies, and up to roughly ten when genuinely strong material warrants it.
 * The edition stopped on marginal value rather than a fixed item count, paragraph count, or five-minute target.
-* `Worth reading`, when used, appears only as a highly selective source-catalog status for unselected originals that truly merit extra reading time.
+* `Worth reading`, when used, appears only as a highly selective source-catalog status for unselected originals that truly merit extra reading time; every source cited in a full selection or Discovery is `Selected`, and the two sets are disjoint.
 * Nothing editorial appears after `Sources`.
 * `TODAY'S EDIT` either states a genuinely interesting observation or creates honest curiosity without forcing unrelated material into one thesis.
 * Every paragraph advances one intelligible line of thought rather than merely restating the selection's central claim or stacking another related fact.

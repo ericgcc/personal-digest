@@ -69,7 +69,7 @@ Each rendering profile defines any additional responsive transformations require
 ## Shared shell
 ### Document metadata and preheader
 * Set `<html lang="{{HTML_LANG}}">` using the resolved BCP 47 tag.
-* Set `<title>` to `<localized digest display name> — <localized formatted digest date>`.
+* Set `<title>` to `<localized full digest name> — <localized formatted digest date>`. The full name must contain one natural localized digest/summary descriptor, matching the delivered subject invariant.
 * Replace the hidden preheader with one natural target-language sentence, ideally 90–140 characters, that adds inbox-preview value rather than repeating the subject.
 * Preserve `<meta name="x-apple-disable-message-reformatting">` and the compatibility resets from the reference template.
 
@@ -129,9 +129,13 @@ When a style renders source statuses, use one shared semantic color system. The 
 * **`Selected`**—pale green badge with dark green text. It means the source materially contributed to the digest body.
 * **`Worth reading`**—pale yellow badge with dark amber text. This status is authorized by `curated-discovery` and `synthesis-max`, only for an unselected source whose original the editor actively recommends if the reader has extra time. It is never a section, never a Discovery label, and is mutually exclusive with `Selected`.
 * **`Reviewed`**—neutral light-gray badge with muted slate text. It means the source was substantively reviewed but was neither selected nor marked `Worth reading`. This is the canonical reader-facing replacement for `Not selected`.
-* **Other operational statuses**—the same neutral treatment (`Duplicate`, `Limited content`, `Email-only`, `Promotional content`, `Low signal`, or another style-authorized neutral state).
+* **`Limited content`**—an optional neutral qualifier only when a substantive but incomplete preview is catalog-eligible. `Email-only` is provenance and may accompany an editorial outcome; it is not a competing selection status.
 
-New output must never display the deprecated `Not selected` label or a translation of that deprecated state. Historical state may still contain `not_selected`; when such a record must be rendered and it represents a substantive ordinary omission, display the localized equivalent of `Reviewed`. Do not relabel a more specific outcome such as `Duplicate` or `Promotional content`.
+New output must never display the deprecated `Not selected` label or a translation of that deprecated state. Historical state may still contain `not_selected`; when such a catalog-eligible record must be rendered and it represents a substantive ordinary omission, display the localized equivalent of `Reviewed`.
+
+Operational exclusions such as `Duplicate`, `Promotional content`, `Administrative`, `Social notification`, `Low signal`, `Inaccessible`, and `Excluded before read` remain internal and must not be rendered as source rows or badges. The catalog is the substantively reviewed corpus, not an inbox audit log.
+
+Validate statuses by source ID immediately before HTML generation: every source represented in the editorial body is `Selected`; `Worth reading` is drawn only from the unselected remainder; and the sets are disjoint. Localize the two Curated Discovery concepts distinctly. In Spanish, use `Vale la pena leer` for the yellow `Worth reading` catalog badge and `Vale la pena abrirlo por:` for the selected-item `Worth opening for:` depth cue; never collapse both to `Vale la pena abrir`.
 
 Use email-safe inline styles or matching classes from the active template. Status color communicates editorial state only; do not introduce icons or stars. Append per-source reading time according to the preceding shared rule.
 
@@ -166,7 +170,7 @@ The active rendering profile defines where a callout may appear. If a style does
 ## Source provenance
 Source presentation depends on the selected style:
 
-* `curated-discovery` and `synthesis-max` use stable numerical citations, section/item-level `SOURCE NOTES`, and a final bibliographic `Sources` catalog. Citations and catalog titles are clickable only when a valid source locator exists.
+* `curated-discovery` and `synthesis-max` use stable numerical citations, section/item-level `SOURCE NOTES`, and a final bibliographic `Sources` catalog. The catalog grouping follows the style default or a valid digest-level `source_catalog_grouping` override. Citations and catalog titles are clickable only when a valid source locator exists.
 * `detailed` keeps each source independently identifiable inside its own entry and normally ends without a separate final catalog.
 * `concise` uses the source/publication label plus the article/item title, linked when possible, and normally ends without a separate final catalog.
 

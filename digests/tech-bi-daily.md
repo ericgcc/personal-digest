@@ -1,6 +1,6 @@
 ---
 id: tech-bi-daily
-name: Tech Bi-Daily
+name: Tech Bi-Daily Digest
 enabled: true
 language: English
 style: synthesis-max

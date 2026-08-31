@@ -42,7 +42,7 @@ Minimal example:
 ```yaml
 ---
 id: engineering-weekly
-name: Engineering Weekly
+name: Engineering Weekly Digest
 enabled: true
 language: English
 style: curated-discovery
@@ -62,6 +62,8 @@ sources:
 Canonical IDs, URLs, run keys, state values, source numbers, code, and machine-facing placeholders remain unchanged. Author, publication, company, product, and other proper names remain in their established form unless the target language has a conventional localized form. **Source/article titles must always be preserved and displayed verbatim in their original language.** Never translate, paraphrase, normalize, or transliterate `SOURCE_TITLE`; keep the exact original title for display, links, state, deduplication, and provenance.
 
 A template or style may name semantic components in English for maintainers, but its delivered labels must use natural target-language equivalents. Do not produce a bilingual digest or retain English UI copy merely because it appears in a canonical example.
+
+`name` is the complete reader-facing digest name. In delivered subjects it must identify the artifact as a digest or summary **exactly once**, using a natural equivalent in the configured language and natural word order. Do not blindly append an English suffix. Examples: `Tech Bi-Daily Digest — August 29, 2026` and `Resumen semanal de fotografía — 30 de agosto de 2026`.
 
 `adapter_selection: auto` may be omitted when several adapters are listed because it is the default.
 
@@ -223,15 +225,28 @@ Because the SQLite file is stored in Drive and persisted as one binary file, v1 
 Do not enable SQLite WAL mode for the persisted state file; the runtime contract intentionally uses a self-contained database file so no `-wal` or `-shm` sidecars need to be synchronized.
 
 ## 9. Optional fields
-`subject_template` may override the default email subject without changing the editorial style. Keep subject customization separate from editorial structure. Its variables remain intact, but any literal reader-facing words are localized to the configured language at render time.
+`subject_template` may override the default email subject without changing the editorial style. Keep subject customization separate from editorial structure. Its variables remain intact, but any literal reader-facing words are localized to the configured language at render time. The rendered subject must still contain one—and only one—natural localized digest/summary descriptor.
 
 Example:
 
 ```yaml
-subject_template: "Engineering Notes — {date}"
+subject_template: "Engineering Notes Digest — {date}"
 ```
 
-If no subject template is supplied, the workflow uses `<digest name> — <digest date>`.
+If no subject template is supplied, the workflow uses `<localized full digest name> — <localized digest date>`. If a legacy `name` lacks the descriptor, normalize the delivered subject rather than sending an ambiguous title; update the configuration afterward.
+
+`source_catalog_grouping` controls the final catalog only for styles that declare a source catalog. Supported values are:
+
+* `source-identity`—group by newsletter, publication, sender, or recurring author. This is the default for `curated-discovery` and `synthesis-max` unless the digest opts in to another supported mode.
+* `editorial-topic`—group by a small set of reader-oriented topics or uses derived from the substantively reviewed corpus. Each source appears once under its primary navigational topic; grouping must not imply that the source contributed only to that topic.
+
+Example:
+
+```yaml
+source_catalog_grouping: editorial-topic
+```
+
+The field is a preflight error when the selected style has no source catalog or does not support the requested mode. Grouping is navigational: it never changes source selection, status, numbering, or citations.
 
 ## 10. Add a new canonical style
 A new style is a new editorial implementation, not just a prompt variant.
@@ -257,6 +272,7 @@ Before enabling a new digest, verify:
 
 - [ ] filename, frontmatter `id`, and registry key are identical;
 - [ ] `language` is present, recognizable, and can be mapped to a valid HTML language tag;
+- [ ] the rendered subject contains one natural localized digest/summary descriptor;
 - [ ] `style` is one of the canonical style IDs;
 - [ ] `system/registry.yaml` resolves `defaults.style_contract`, `defaults.editorial_process`, and `defaults.editorial_base`;
 - [ ] the selected style implements every required `## Style interface` dimension, including `Progression model`, plus dedicated `## Writing character` and `## Quality control` sections;
@@ -264,6 +280,7 @@ Before enabling a new digest, verify:
 - [ ] Gmail labels are correct;
 - [ ] every adapter exists and matches the source structure;
 - [ ] every configured `acquisition_filters` key is explicitly supported by the selected adapter and has intentional values;
+- [ ] `source_catalog_grouping`, when present, is supported by the selected catalog style;
 - [ ] custom instructions refine rather than replace the style;
 - [ ] custom callouts are supported by the rendering profile;
 - [ ] `catch_up_days` is intentional;
@@ -276,6 +293,10 @@ Before enabling a new digest, verify:
 ## Source reporting, statuses, and reading time
 Whenever any current or future style reports an individual source or article, show its original reading time as `N min` when that item was substantively read. Use the source-provided estimate when trustworthy; otherwise use the workflow's 225-words-per-minute estimate. This is independent of the aggregate time-saved capsule and does not require adding a source catalog to styles that do not have one. Omit the value for material that was not substantively read.
 
-When a style has a source catalog, status colors are semantic and shared: `Selected` is green; `Worth reading` is yellow; and neutral states such as `Reviewed`, `Duplicate`, `Limited content`, `Email-only`, `Promotional content`, and `Low signal` are gray. These are canonical semantic names, not mandatory English display strings; render their natural equivalents in the configured language. New output never uses the deprecated `Not selected` state or a translation of it; `Reviewed` means a substantive source was reviewed but neither selected nor actively recommended. `Worth reading` is supported by `curated-discovery` and `synthesis-max`; it marks an **unselected** original the editor still actively recommends if the reader has extra time. It is mutually exclusive with `Selected`, is not a section, and is not a synonym for a Discovery.
+When a style has a source catalog, it reports the **substantively reviewed corpus**, not every candidate email or operational exclusion. Pure promotional/administrative material, social notifications, duplicates skipped without rereading, inaccessible items, pre-filtered candidates, and clearly low-signal residue stay in internal run/state accounting and do not receive source numbers or catalog rows. A promotional sender or Gmail category is not sufficient reason to exclude a source: retain it when the material itself has standalone editorial value, or when a digest explicitly curates opportunities/offers and the item genuinely qualifies. Once admitted, classify it by editorial outcome rather than displaying `Promotional content` merely as an audit record.
+
+Status colors are semantic and shared: `Selected` is green; `Worth reading` is yellow; and `Reviewed` or a substantive `Limited content` qualifier is gray. `Email-only` is provenance, not a selection outcome. These are canonical semantic names, not mandatory English display strings; render their natural equivalents in the configured language. New output never uses the deprecated `Not selected` state or a translation of it; `Reviewed` means a substantive source was reviewed but neither selected nor actively recommended. `Worth reading` is supported by `curated-discovery` and `synthesis-max`; it marks an **unselected** original the editor still actively recommends if the reader has extra time. It is mutually exclusive with `Selected`, is not a section, and is not a synonym for a Discovery.
+
+Before rendering, partition catalog-eligible source IDs into disjoint sets: `Selected`, `Worth reading`, and `Reviewed` (with optional substantive/provenance qualifiers). Every source cited anywhere in the editorial body—including a Discovery—must be `Selected`; therefore it cannot be `Worth reading`. Keep the visible translation of the catalog status semantically distinct from any `Worth opening for:` depth cue. In Spanish, prefer `Vale la pena leer` for the catalog status and `Vale la pena abrirlo por:` for the depth cue.
 
 Canonical HTML templates are structural specimens with placeholders. Their component counts and placeholder lengths are never editorial defaults. The style and editorial process determine how many items and paragraphs are produced.

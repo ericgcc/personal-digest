@@ -4,6 +4,7 @@ name: Photography Weekly Digest
 enabled: true
 language: Spanish
 style: curated-discovery
+source_catalog_grouping: editorial-topic
 sources:
   - gmail_labels:
       - Newsletters/Medium

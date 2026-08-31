@@ -23,6 +23,8 @@ Before touching Gmail, validate that:
 * the configured SQLite state database and state contract exist, the database passes `PRAGMA integrity_check`, and its `PRAGMA user_version` matches the contract;
 * any `aliases` are distinct from the canonical digest ID;
 * `language` is present, recognizable, and can be mapped to a valid BCP 47 tag for HTML metadata. Stop before source acquisition if the output language cannot be resolved unambiguously.
+* the delivered subject can resolve to one natural localized digest/summary descriptor; reject or normalize configurations that would omit or duplicate it;
+* `source_catalog_grouping`, when present, is supported by the selected style and is either `source-identity` or `editorial-topic`.
 
 Do not infer spelling aliases for styles or digest IDs. Configuration names must match exactly.
 
@@ -60,6 +62,8 @@ Preserve author/publication names, brands, product names, code, URLs, citation n
 English labels shown in canonical style files, rendering profiles, or template comments are semantic maintainer vocabulary, not fixed output copy. Render natural equivalents rather than literal or awkward translations, and do not leave English UI fragments in a non-English digest. Do not make the output bilingual unless digest custom instructions explicitly request bilingual delivery; a request to preserve a proper noun, code term, or original quotation alone is not a bilingual-output request.
 
 Internal state remains language-neutral. Values such as `selected`, `reviewed`, and `worth_reading` must not be translated in SQLite; only their visible labels are localized.
+
+The full reader-facing name used in the subject must identify the artifact as a digest or summary **exactly once**. Localize and position that descriptor naturally rather than blindly appending an English word. A configured `subject_template` may change the structure, but it may not remove this naming invariant.
 
 Digest custom instructions are intentionally powerful **inside the selected style's envelope**. They may change or refine:
 
@@ -177,8 +181,19 @@ Do not require a separate `hybrid-newsletter.md` adapter. Hybrid is a controlled
 * Assign different source identities to original commentary and external articles.
 * Normalize and deduplicate content so the same idea or article is not registered twice.
 
+## Canonical substantive-source eligibility
+Every style operates on a substantively reviewed corpus, not on a raw audit list of every candidate email, link, or operational exclusion.
+
+* During adapter processing, separate standalone editorial material from the delivery envelope: navigation, account/administrative notices, social notifications, engagement nudges, pure sales copy, affiliate blocks, repeated reminders, and other non-editorial residue.
+* Do not use sender identity, a Gmail Promotions category, or the mere presence of an offer as a blanket exclusion. If the material contains standalone substantive value, read and admit that material normally. If a digest explicitly curates opportunities or offers, admit a genuinely useful opportunity as substantive material after stripping urgency and sales framing.
+* Clearly non-editorial material may be classified and accounted for without opening its promotional destinations. If classification is ambiguous, preserve the candidate and follow the adapter's normal reading requirement.
+* Operational exclusions—including pure promotional/administrative material, social notifications, duplicates skipped without rereading, inaccessible items, configured pre-read exclusions, and clearly low-signal residue—remain available to internal run/state accounting but are not catalog-eligible. Do not assign them reader-facing source numbers, render them in any style, or include them in reading-time totals.
+* A limited preview or email-only item is catalog-eligible only when substantive material was actually read and the item has enough independent value to belong to the reviewed corpus.
+
+This eligibility rule is global across `concise`, `detailed`, `curated-discovery`, `synthesis-max`, and future styles. It determines the corpus presented to the editorial process; the active style still decides which eligible sources are selected and how they are composed.
+
 ## Source identity, references, and links
-Source identity and source linking are separate concerns. Every reviewed source must remain attributable even when it has no external URL.
+Source identity and source linking are separate concerns. Every catalog-eligible substantively reviewed source must remain attributable even when it has no external URL; operational exclusions retain internal traceability without becoming reader-facing sources.
 
 For each source, retain at minimum its source type, originating Gmail message ID, title/subject, author/publication/sender when available, adapter, and reading outcome. `canonical_url` is optional.
 
@@ -244,6 +259,7 @@ The SQLite database is the primary operational state. Gmail processed labels are
 ## Read and normalize
 * Follow every selected adapter exactly.
 * Record the Gmail message ID, thread ID, sender, subject, received time, adapter, canonical URL when available, resolved source locator when available, title, author/publication, and reading outcome.
+* Record operational exclusions for deduplication and run accountability, but form the reader-facing reviewed corpus only from items that pass canonical substantive-source eligibility. Assign stable source numbers to that corpus in input order before editorial selection; excluded candidates never consume a source number.
 * For every substantive item actually read, record or estimate its reading time for the shared time-saved capsule **and for per-source display whenever the active style reports that item**. Prefer a trustworthy source-provided reading-time value; otherwise estimate from the substantive word count using **225 words per minute**. Count reviewed material even when it is later omitted from the editorial body, because that reading effort is what the digest replaces. Do not count items skipped as duplicates without rereading, candidates excluded before reading by configured acquisition filters, material discarded without substantive reading, or inaccessible content. Preserve the per-item value through editorial production and rendering rather than recomputing it from the digest summary.
 * Normalize tracking URLs to their canonical destination when possible.
 * Deduplicate the same article/item across messages, source groups, canonical digest state, and declared state aliases. Prefer the most authoritative copy while retaining traceability to every originating message.
@@ -262,6 +278,8 @@ Selection quality and writing quality remain separate judgments. A beautifully w
 
 Preserve stable source numbering/provenance throughout the process. Editorial revision may narrow, reorder, retitle, demote, or remove material, but it must never introduce unreviewed material, unsupported claims, or source relationships the selected style does not permit. Preserve each reviewed item's final editorial outcome for state commit. New runs use `Reviewed` for a substantively reviewed ordinary omission, never `Not selected`. When `curated-discovery` or `synthesis-max` uses the catalog-only `Worth reading` recommendation, record that outcome distinctly from `Selected` and ordinary omission; no other style may invent that status.
 
+Before rendering any source catalog, derive three disjoint sets from catalog-eligible source IDs: `selected_source_ids`, `worth_reading_source_ids`, and `reviewed_source_ids`. Every source cited or named as support anywhere in the editorial body—including a Curated Discovery Discovery—belongs in `selected_source_ids`. `worth_reading_source_ids` must be a subset of the remaining unselected corpus. If the sets overlap or any body source is not `Selected`, repair the classifications and rerun final validation before delivery. A `Worth opening for:` depth cue inside selected content has no effect on catalog status.
+
 Rendering may begin only after `FINAL POLISH` passes the quality gates in `system/editorial-process.md`, `styles/editorial-base.md`, the selected style, and the applicable shared writing-reference diagnostics.
 
 ## Render and deliver
@@ -269,7 +287,7 @@ Rendering may begin only after `FINAL POLISH` passes the quality gates in `syste
 2. Total the reviewed-source reading time from all substantive items actually read in the run; estimate the finished editorial body's reading time at 225 words per minute; calculate the approximate time saved; and pass those values to the shared reading-time capsule. Also pass each substantive item's recorded reading time to every source-facing renderer component required by the active style.
 3. Render the final-polished prose according to `system/html-rendering.md`, then the selected style-specific rendering profile and matching template from `system/registry.yaml`.
 4. Use `templates/email-theme.html` only as the shared visual-language reference, not as a universal layout.
-5. Send the HTML email to the Gmail account owner (`me`). The default subject is `<localized digest display name> — <localized digest date>`; an optional `subject_template` in digest frontmatter may override its structure without changing the editorial style. Preserve template variables but localize any literal reader-facing words to the configured language.
+5. Send the HTML email to the Gmail account owner (`me`). The default subject is `<localized full digest name> — <localized digest date>`; the full name must contain one natural localized digest/summary descriptor. An optional `subject_template` in digest frontmatter may override its structure without changing the editorial style, but the rendered result must preserve that descriptor exactly once. Preserve template variables and original proper names while localizing literal reader-facing words to the configured language.
 6. Generate a deterministic run key from the canonical digest ID and the sorted admitted Gmail message IDs. Before sending, check both the state database and Gmail Sent for that run key to prevent duplicate delivery.
 
 Do not use HTML rendering as an opportunity to rewrite weak editorial prose. Rendering maps approved final prose into presentation; it does not perform editorial repair.

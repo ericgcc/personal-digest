@@ -14,7 +14,7 @@ One selective briefing: no separate article summaries. Merge the strongest mater
 | **Opening behavior** | Required `THE BIG PICTURE` opening that earns its place as the briefing's first editorial synthesis. |
 | **Body behavior** | Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes. |
 | **Citation / provenance** | Permanent global numerical citations attached to supported claims/inferences plus thread-level source notes. |
-| **Source catalog** | Required complete catalog of every reviewed source, grouped by source identity without renumbering, with canonical statuses and per-source reading time for substantive material. |
+| **Source catalog** | Required complete catalog of the substantively reviewed corpus, with stable numbering, canonical statuses, per-source reading time, and grouping controlled by `source_catalog_grouping` (`source-identity` by default; `editorial-topic` when explicitly configured). |
 | **Ending behavior** | Stop immediately after the final source catalog. |
 | **Writing character** | Analytical, connective, authoritative but restrained, precise, and intellectually alive. |
 | **Optional extension points** | Zero or one digest-authorized callout inside a thread when the rendering profile supports it. |
@@ -34,7 +34,7 @@ Produce one integrated briefing, not a collection of article summaries.
 
 Before writing:
 
-1. Assign every reviewed source a permanent sequential number based on its input order.
+1. Form the catalog-eligible substantively reviewed corpus under the shared workflow, then assign every source in it a permanent sequential number based on input order.
 2. Interrogate each promising source before synthesizing it: identify its actual thesis, strongest evidence/mechanism, meaningful caveats or anomalies, and what it uniquely contributes.
 3. Evaluate each source for information value, explanatory power, practical significance, novelty and relevance to the broader source set.
 4. Identify and classify meaningful relationships precisely: reinforcement, extension, qualification, contradiction, complementarity, shared cause/consequence, or independence.
@@ -116,7 +116,7 @@ Do not add an article-by-article roundup.
 ## Citations
 Use numerical citations instead of article names in the prose.
 
-Assign each reviewed source one stable number and reuse it everywhere.
+Assign each catalog-eligible substantively reviewed source one stable number and reuse it everywhere.
 
 Render every inline citation using the permanent source number:
 
@@ -148,13 +148,16 @@ Do not write full article titles or raw URLs inside the narrative; retain the nu
 ## Final source catalog
 End with a section titled `Sources`.
 
-List every reviewed article or newsletter item, including material not selected for the narrative.
+List every catalog-eligible substantively reviewed article or newsletter item, including material not selected for the narrative. Do not list operational exclusions or non-editorial residue merely to document that they were encountered.
 
 Preserve the permanent numbering used throughout the briefing.
 
-Group the catalog by **source identity by default**. Use the most useful stable identity available in this order: newsletter/publication, sender/editorial source, then recurring author identity. Use a neutral `Other sources` group only when no meaningful identity exists. Do not group by topic.
+Resolve grouping from digest frontmatter:
 
-Keep each source's permanent global number unchanged inside its group; grouping must never renumber citations. Within a group, do not repeat the group name on every row. Show an author only when it adds information beyond the group heading.
+* `source-identity` (default)—use the most useful stable identity in this order: newsletter/publication, sender/editorial source, then recurring author identity. Use `Other sources` only when no meaningful identity exists. Within a group, do not repeat the group name on every row; show an author only when it adds information beyond the heading.
+* `editorial-topic`—when explicitly configured, derive a small set of reader-oriented topic headings from the reviewed corpus and assign each source once under its primary navigational topic. Do not simply copy thread titles, because a source may support several synthesized threads; do not imply exclusive contribution. Show author/publication/sender on every row when available.
+
+Keep each source's permanent global number unchanged inside its group; grouping must never renumber citations or alter the synthesis. Source identity remains the preferred default for auditability in this style.
 
 For every source include:
 
@@ -168,13 +171,11 @@ Add a short status label when it conveys editorial or operational state:
 * `Selected`
 * `Worth reading`—the source was not selected for the narrative, but after reading it the editor would still actively recommend the original if the reader has extra time. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
 * `Reviewed`—the source was substantively reviewed but was neither selected nor marked `Worth reading`.
-* `Promotional content`
-* `Duplicate`
 * `Limited content`
-* `Email-only`
-* `Low signal`
 
-`Selected` and `Worth reading` are mutually exclusive. `Worth reading` remains a catalog-only recommendation and does not create a narrative thread. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Worth reading · 8 min` or `Reviewed · 4 min`.
+`Email-only` may appear as provenance beside one of these outcomes; it is not a competing selection status. Operational outcomes such as duplicate, promotional/administrative, social notification, low signal, inaccessible, or excluded before read remain internal and do not appear in the catalog.
+
+`Selected` and `Worth reading` are mutually exclusive. `Worth reading` remains a catalog-only recommendation and does not create a narrative thread. Every source cited in the narrative is `Selected`; derive `Worth reading` only from the unselected remainder and validate that the sets are disjoint. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Worth reading · 8 min` or `Reviewed · 4 min`.
 
 Do not explain why each unselected source was omitted.
 
@@ -205,8 +206,9 @@ Before returning the briefing, verify that:
 * Every factual claim has the appropriate numerical citation.
 * Every linked citation points to the correct original source; non-linkable email-only citations remain stable and are not given fabricated destinations.
 * Citation numbers remain consistent from beginning to end.
-* All reviewed sources appear in the final catalog.
-* The final catalog is grouped by source identity without changing permanent source numbers.
+* All catalog-eligible substantively reviewed sources appear in the final catalog, and no operational exclusion appears there.
+* The final catalog uses the configured `source_catalog_grouping` mode without changing permanent source numbers; `source-identity` remains the default, while configured topic grouping shows provenance on every row and does not falsely mirror the synthesis threads.
+* Every narrative source is `Selected`; `Worth reading` is drawn only from unselected sources, and the sets are disjoint.
 * The strongest material receives the most space.
 * Repetition across sources is compressed rather than mistaken for importance.
 * The body remains dense enough for approximately five to eight minutes of reading.

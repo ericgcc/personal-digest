@@ -169,7 +169,7 @@ Each full item should:
 * Deliver meaningful substance directly while providing enough context to understand it.
 * Preserve only the reasoning and specifics that advance that spine; omit secondary branches even when they are useful in isolation.
 * Use inline numerical citations immediately after supported claims.
-* End with a compact `SOURCES` line naming the principal contributing sources.
+* End with a compact selection-level source-notes component naming the principal contributing sources. Its visible label and treatment come exclusively from the matching rendering profile.
 
 Order selections by editorial importance, not chronology or input order.
 
@@ -256,7 +256,9 @@ Do not place raw URLs in the narrative.
 ## Section-level source lines
 End each full editorial item with:
 
-`SOURCES Publication [3] · Author [7]`
+`Publication [3] · Author [7]`
+
+This example specifies the information carried by the component, not its reader-facing label; the matching rendering profile owns that label.
 
 Include only sources that materially contributed to that item.
 

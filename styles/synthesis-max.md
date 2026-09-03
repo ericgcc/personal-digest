@@ -70,12 +70,14 @@ Vary the rhetorical shape of threads. Some may begin with a contradiction, other
 
 Use memorable phrasing when it clarifies the relationship, but prefer precision to cleverness and proportion to profundity. Let analytical authority come from specific evidence and exact relationship verbs rather than academic register, repeated `not just X, but Y` framing, rhetorical Q&A, or generic claims that something signals a broader shift.
 
+Do not use enumerative compression as a substitute for explanation. A run of nouns, features, techniques, stages, or examples is useful only when the sequence or comparison itself advances the argument. Otherwise, select the elements that matter and explain the mechanism, distinction, or relationship that makes them consequential. If several elements are essential, develop their roles instead of packing them into a dense list that merely signals breadth.
+
 ## Length and density
 Aim for a dense five-to-eight-minute briefing.
 
 Target roughly 700–1,200 words for the briefing body, excluding the final source catalog.
 
-Use two to five thematic sections depending on the structure genuinely supported by the material. Prefer a smaller number of developed insights over many shallow observations.
+Use two to five thematic sections depending on the structure genuinely supported by the material. This is a permitted range, not a coverage target. Prefer a smaller number of developed insights over many shallow observations; when the evidence can support either shape, three well-developed threads are preferable to five compressed ones.
 
 Let information density determine length. Never create, split or expand a section merely to satisfy a target count or reading time.
 
@@ -98,16 +100,14 @@ If one well-supported overarching pattern, tension, or question **emerges from t
 Do not write inventory prose such as "today's edition moves from X to Y and closes with Z." Do not describe ingestion, filtering, ranking, or summarization. Put the most interesting analytical value early enough that the reader wants to continue into the threads.
 
 ### Thematic sections
-Use numbered sections:
-
-`01 Descriptive editorial title`
+Use numbered thematic sections. Their renderer-visible numbering and fixed component label are controlled by the matching rendering profile; they are not editorial copy and must not be renamed or adapted by the style.
 
 Each section should normally contain:
 
 * A one-sentence subtitle stating its central insight.
-* Two or three concise paragraphs developing the idea.
+* As many paragraphs as the idea's analytical development genuinely requires. Allocate depth independently: a richer relationship may need several paragraphs, while a narrower one may need fewer. Do not infer paragraph count or section length from neighboring threads or from the HTML template.
 * Inline numerical citations attached to the exact claims or synthesized inferences they support.
-* A short `SOURCES` line listing the principal source names and their stable numbers, linked when a valid locator exists.
+* A short thread-level source-notes component exposing the principal source names and their stable numbers, linked when a valid locator exists. Its visible label and treatment come exclusively from the matching rendering profile.
 
 Section titles must describe the synthesized idea, pattern, question or tension—not repeat an article title.
 
@@ -216,6 +216,7 @@ Before returning the briefing, verify that:
 * No closing section appears after `Sources`.
 * `THE BIG PICTURE` earns its place with genuine analytical value and is not a prose inventory of the sections.
 * Threads do not reuse the same rhetorical architecture or repeatedly announce "patterns" and "lessons" instead of demonstrating them.
+* Enumerations do not replace explanation; when several elements are retained, their sequence, contrast, mechanism, or individual role is made clear.
 * Concrete evidence, mechanisms, tensions, or consequences support the synthesis before abstraction outruns the sources.
 * Memorable phrasing clarifies rather than manufacturing cleverness or profundity.
 * The briefing reads as analytical editorial nonfiction, not as a literature review, research abstract, or author-by-author survey.

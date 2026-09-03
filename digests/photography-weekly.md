@@ -2,7 +2,7 @@
 id: photography-weekly
 name: Photography Weekly Digest
 enabled: true
-language: Spanish
+language: English
 style: curated-discovery
 source_catalog_grouping: editorial-topic
 sources:

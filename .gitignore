@@ -2,3 +2,5 @@
 .obsidian/
 .makemd/
 .space/
+.digest-runs/
+node_modules/

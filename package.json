@@ -1,0 +1,11 @@
+{
+  "name": "personal-digest-runner",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "digest:run": "node tools/digest_runner.mjs run"
+  },
+  "dependencies": {
+    "@opencode-ai/sdk": "^1.18.27"
+  }
+}

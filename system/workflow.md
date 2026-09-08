@@ -280,28 +280,30 @@ Before invoking `analyze`, the agent must verify all of the following from the l
 2. The temporary input artifact exists and is non-empty UTF-8 JSON.
 3. The `run` command will run the canonical `tools/digest_runner.mjs` from that root, which materializes the canonical source artifact itself.
 
-Immediately after `analyze` succeeds, the agent must verify that the resolved absolute path of the materialized artifact is exactly `<canonical-root>/.digest-runs/<run-id>/source-acquisition/sources.json`. All stages after `analyze` must use only that canonical copy as their sole `--reference`; a later stage must never use the temporary task-workspace file.
+Immediately after `analyze` succeeds, the agent must verify that the resolved absolute path of the materialized artifact is exactly `<canonical-root>/.digest-runs/<run-id>/source-acquisition/sources.json`. Every later editorial stage that requires the source corpus must use only that canonical copy as its sole source reference; it must never use the temporary task-workspace file. The `render` stage intentionally receives no source-corpus reference because approved provenance and catalog data are already fixed in `final.md`.
 
 ## Local editorial stage runner
-All editorial production and HTML rendering are mandatory local OpenCode SDK stages. The scheduled-task agent must invoke `tools/digest_runner.mjs`; it must not perform a stage itself, merge stages, replace a failed stage with chat output, or directly generate the final HTML.
+All editorial production and HTML rendering normally run as local OpenCode SDK stages through `tools/digest_runner.mjs`. The scheduled-task agent must use the runner first and must not perform a stage itself until that same stage has failed in two distinct runner attempts. After two failed runner attempts, the controlled stage fallback defined below is mandatory.
 
-The agent must not invoke `opencode`, `opencode.cmd`, `opencode serve`, the OpenCode SDK, or an OpenCode session directly. `tools/digest_runner.mjs` is the only authorized local entry point for editorial production. It owns corpus import, one SDK-managed OpenCode server, one session per stage, stage prompts, copied context, response capture, artifact creation, stage timeouts, and server shutdown.
+The agent must not invoke `opencode`, `opencode.cmd`, `opencode serve`, the OpenCode SDK, or an OpenCode session directly. `tools/digest_runner.mjs` is the only authorized local entry point to OpenCode. The runner owns corpus import, SDK-managed OpenCode servers and sessions, stage prompts, copied context, response capture, artifact creation, stage timeouts, and server shutdown. The controlled fallback is performed by the scheduled-task agent itself without invoking OpenCode or its SDK directly.
 
 The agent owns only these responsibilities around the runner:
 
 1. Acquire and normalize sources according to the configured adapters, then write `sources.json` as defined above.
 2. Generate a unique `<run-id>` for this execution. It must be a single directory name and must not contain path separators.
-3. Invoke the local runner once. The runner starts OpenCode once, creates a separate SDK session for each required stage in the exact order below, writes every stage artifact, and passes the preceding output plus the canonical source corpus to the next stage internally.
+3. Invoke the local runner for the initial pipeline. If a stage fails, use the runner's resume command to retry that stage once before considering fallback. Successful stages must not be rerun merely because a later stage failed.
 4. Read the final artifacts, perform the workflow's final validation, deliver only validated `email.html`, then commit state and labels after delivery.
 
 The runner itself creates `.digest-runs/<run-id>/<stage>/`. That directory contains copied canonical context, copied input artifacts, the prompt, OpenCode event/error logs, and the single stage output. It is an allowed local operational artifact. It is neither a configuration source nor persistent processing state, and no later stage may edit an earlier stage's `context/`, `input/`, or `output/` files.
 
 Run commands from the canonical local-synced Digest System root. Do not use a Google Drive connector, browser URL, cloud workspace, task workspace, sandbox directory, or temporary clone to read canonical configuration or create run artifacts. On Windows, use the local Node.js runtime that passed preflight; `node` below denotes that runtime.
 
-The only authorized editorial command signature is:
+The authorized editorial command signatures are:
 
 ```text
 node tools/digest_runner.mjs run --digest <digest-id> --run-id <run-id> --input <temporary-sources.json>
+node tools/digest_runner.mjs resume --digest <digest-id> --run-id <run-id> --from-stage <stage>
+node tools/digest_runner.mjs materialize --digest <digest-id> --run-id <run-id> --stage <completed-fallback-stage> --input <temporary-fallback-artifact>
 ```
 
 ```powershell
@@ -311,7 +313,26 @@ $temporarySources = "<absolute-path-to-task-workspace-sources.json>"
 node tools/digest_runner.mjs run --digest "{{digest}}" --run-id $run --input $temporarySources
 ```
 
-The initial `--input` corpus may originate in a task workspace only because that environment may be unable to write directly to the canonical local folder. That exception ends at the runner boundary: the runner validates and imports the corpus once, then all remaining inputs, outputs, and logs must exist only under `.digest-runs/<run-id>/` in the canonical local root.
+## Two-attempt stage recovery and controlled fallback
+Apply this policy independently to every runner-managed stage from `analyze` through `render`:
+
+1. **First attempt:** run the stage through the canonical runner. The initial `run` invocation counts as the first attempt for every stage it reaches.
+2. **Second attempt:** if that stage fails, retry the same stage through `digest_runner.mjs resume --from-stage <failed-stage>`. The retry must use the same run ID, the same immutable prior-stage output, the same canonical source artifact when that stage requires it, and freshly prepared canonical context. It must create a new runner-managed OpenCode session/request. Do not rerun already successful earlier stages.
+3. **Fallback after two failures:** only when two distinct runner attempts for the same stage have failed, the scheduled-task agent must perform exactly that failed stage itself. Use the identical stage purpose, primary input, allowed source reference, canonical context, output format, quality gates, and prohibitions that the runner would have applied. Do not merge it with another stage, revise an earlier approved artifact, add outside knowledge, reacquire sources, or broaden the editorial scope.
+4. Write the fallback result as one complete UTF-8 artifact in the scheduled task's temporary workspace. Do not assume that the task can write directly into the canonical local-synced Digest System folder.
+5. Invoke `digest_runner.mjs materialize` to validate and import that temporary fallback artifact into the failed stage's canonical output path under `.digest-runs/<run-id>/<stage>/output/`. The runner is the only component permitted to materialize a temporary fallback artifact in the canonical run directory. It must verify the expected filename and format for that stage, reject an empty artifact, parse JSON outputs, preserve or archive the two failed-attempt logs, record `agent-fallback` provenance, and refuse to overwrite an already valid canonical stage output.
+6. Immediately verify that the resolved materialized path is exactly the expected canonical stage output path. Every stage-specific quality and source-fidelity requirement still applies.
+7. **Return to the runner:** after materialization and validation succeed, resume the immediately following stage through the canonical runner. That following stage starts with its own first runner attempt and receives the materialized fallback artifact as its primary input. Apply this same two-attempt rule independently to every subsequent stage.
+8. When `render` is the fallback stage, materialization is the last runner operation; proceed to final HTML validation and delivery only after the canonical `email.html` has been verified.
+9. If temporary artifact creation, materialization, or fallback validation fails, stop safely. Never skip the failed stage, send a partial digest, or commit processing state.
+
+A runner invocation that fails before reaching the requested stage does not count as a stage attempt. An attempt counts only when the runner created/prepared that stage and the stage request then failed, timed out, returned an invalid artifact, or returned an empty artifact. Preserve attempt-specific error evidence so the two-failure threshold is auditable.
+
+The temporary fallback artifact is only an import handoff. After successful materialization, all later stages must use only the canonical copy under `.digest-runs/<run-id>/`. They must never use the task-workspace fallback file as their primary input or source reference.
+
+For `render`, the fallback may map the already approved `final.md` into the selected template itself only after two failed runner render attempts. It must not perform editorial rewriting. It must apply the configured subject, complete-output language rules, source/catalog classifications, reading-time values, HTML safety checks, and exact invisible run marker before delivery validation.
+
+The initial `--input` corpus and a controlled fallback artifact may originate in a task workspace because that environment may be unable to write directly to the canonical local folder. Each exception ends at its runner materialization boundary: the runner validates and imports the artifact once, then every later stage must use only the canonical copy under `.digest-runs/<run-id>/` in the canonical local root.
 
 The expected outputs are fixed:
 
@@ -325,7 +346,7 @@ The expected outputs are fixed:
 | `voice-edit` | `clarity-edit.md` + canonical `sources.json` | `voice-edit.md` | `VOICE & NATURALNESS EDIT`: apply the selected style and audit pattern density without changing the approved meaning. |
 | `compression-edit` | `voice-edit.md` + canonical `sources.json` | `compression-edit.md` | `COMPRESSION EDIT`: remove secondary branches and repetition only after understanding is secure. |
 | `final-polish` | `compression-edit.md` + canonical `sources.json` | `final.md` | `FINAL POLISH`: complete the publication and source-fidelity checks. |
-| `render` | `final.md` + canonical `sources.json` | `email.html` | Map final-approved prose into the selected rendering profile and template without editorial rewriting. |
+| `render` | `final.md` only | `email.html` | Map final-approved prose into the selected rendering profile and template without editorial rewriting. |
 
 The runner stages are intentionally separated even though they run inside one SDK-managed OpenCode server. `analysis.json` and `frame.json` must be valid JSON; every Markdown/HTML output must be non-empty. The runner writes each artifact directly from the matching OpenCode SDK response, so a response that is empty or invalid for its expected format is a failed stage.
 
@@ -344,10 +365,10 @@ For every stage, `digest_runner.mjs` copies the Markdown files below into that s
 | `final-polish` | Every-stage context; the process, editorial base, and naturalness reference identify the `FINAL POLISH` work. |
 | `render` | `system/workflow.md`; `digests/<digest-id>.md`; `styles/<selected-style>.md`; `system/html-rendering.md`; `system/rendering-<selected-style>.md`; and `templates/<selected-style>-email-v1.html`. `final.md` already contains the approved source provenance/catalog; do not pass article bodies or `templates/email-theme.html` into the render request. |
 
-OpenCode receives only copied stage inputs and copied canonical context. It must not access Gmail, Drive, Chrome/Edge, SQLite, external sources, delivery tools, or canonical configuration files. It must not re-read, search, or augment the normalized corpus. The scheduled-task agent already performed required source acquisition; OpenCode's authority begins with editorial analysis and ends after it returns the content used to write `email.html`.
+OpenCode receives only copied stage inputs and copied canonical context. It must not access Gmail, Drive, Chrome/Edge, SQLite, external sources, delivery tools, or canonical configuration files. It must not re-read, search, or augment the normalized corpus. The scheduled-task agent already performed required source acquisition; OpenCode's normal authority begins with editorial analysis and ends after it returns the content used to write `email.html`. The only exception is the controlled, stage-local agent fallback after two failed runner attempts.
 
 ## Editorial production pipeline
-`tools/digest_runner.mjs` executes this production pipeline through separate SDK-managed OpenCode stages. The agent must use the command and artifacts in `## Local editorial stage runner`; it does not itself execute the editorial passes or render the email.
+`tools/digest_runner.mjs` executes this production pipeline through separate SDK-managed OpenCode stages. The agent must use the commands and artifacts in `## Local editorial stage runner`. It may execute one editorial or render stage itself only under `## Two-attempt stage recovery and controlled fallback`, then must return subsequent stages to the runner.
 
 The required sequence is:
 
@@ -385,7 +406,9 @@ If delivery or a required dependency fails, do not label messages or persist the
 ## Failure behavior
 * Never silently substitute snippets, search results, unauthenticated copies, or alternate reading methods for an adapter's required reading method.
 * Never silently substitute another style, rendering profile, or template when configuration is inconsistent.
-* If Node.js, `tools/digest_runner.mjs`, `@opencode-ai/sdk`, local OpenCode, a required stage input, or a required stage output is unavailable, invalid, empty, or fails, stop safely. Do not perform that stage in the scheduled-task agent, replace it with chat output, skip it, or send a partial digest.
+* If a runner-managed stage fails, apply the two-attempt recovery and controlled fallback policy. Do not fall back before two counted failures of that exact stage. After a validated fallback, return the next stage to the runner.
+* If Node.js, `tools/digest_runner.mjs`, a required canonical input, or required canonical context is unavailable such that the requested stage cannot be attempted through the runner, stop safely; an infrastructure failure before stage preparation does not authorize fallback.
+* Never replace a failed stage with informal chat output, skip it, merge it with another stage, or send a partial digest.
 * If the scheduled-task agent cannot invoke the canonical local `tools/digest_runner.mjs`, stop safely. The initial runner input may originate in its task workspace, but only the runner may materialize the canonical source artifact; every later run artifact must resolve under the canonical root.
 * Leave inaccessible items pending and state the reason in run notes.
 * If a custom instruction conflicts with the style or workflow, keep the compatible custom instructions, ignore only the conflicting clause, and note the conflict.

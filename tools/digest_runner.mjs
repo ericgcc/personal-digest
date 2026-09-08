@@ -1,5 +1,5 @@
 import { createOpencode } from "@opencode-ai/sdk";
-import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -92,12 +92,50 @@ async function copyFile(source, destination) {
   await cp(source, destination);
 }
 
+function stageIndex(stageName) {
+  const index = STAGES.findIndex(([name]) => name === stageName);
+  if (index === -1) throw new RunnerError(`Unknown stage: ${stageName}`);
+  return index;
+}
+
+async function nextAttemptDirectory(workDir) {
+  const attemptsDir = path.join(workDir, "attempts");
+  await mkdir(attemptsDir, { recursive: true });
+  const entries = await readdir(attemptsDir, { withFileTypes: true });
+  const numbers = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => /^attempt-(\d+)$/.exec(entry.name))
+    .filter(Boolean)
+    .map((match) => Number(match[1]));
+  const attemptNumber = (numbers.length ? Math.max(...numbers) : 0) + 1;
+  const attemptDir = path.join(attemptsDir, `attempt-${attemptNumber}`);
+  await mkdir(attemptDir, { recursive: true });
+  return { attemptDir, attemptNumber };
+}
+
+async function validateArtifactText(stage, text, sourceDescription) {
+  const [name, , outputFormat] = stage;
+  let artifact = text.trim();
+  if (!artifact) throw new RunnerError(`${sourceDescription} is empty for stage ${name}`);
+  if (outputFormat === "JSON") {
+    artifact = removeCodeFence(artifact);
+    try {
+      JSON.parse(artifact);
+    } catch (error) {
+      throw new RunnerError(`${sourceDescription} is not valid JSON for stage ${name}: ${error.message}`);
+    }
+  }
+  return artifact;
+}
+
 async function prepareStage(runId, digestId, configPath, style, stage, inputPath, sourcePath) {
   const [name, outputName] = stage;
   const workDir = stageDirectory(runId, name);
   const inputDir = path.join(workDir, "input");
   const contextDir = path.join(workDir, "context");
   const outputDir = path.join(workDir, "output");
+  await rm(inputDir, { recursive: true, force: true });
+  await rm(contextDir, { recursive: true, force: true });
   await mkdir(inputDir, { recursive: true });
   await mkdir(outputDir, { recursive: true });
   await copyFile(inputPath, path.join(inputDir, path.basename(inputPath)));
@@ -141,8 +179,15 @@ ${references}
 
 Return only the complete requested ${stage[2]} artifact in your final response. Do not wrap it in a Markdown code fence. Do not narrate your work, describe the artifact, or use file-writing tools to create it.
 Do not write HTML unless this is the render stage. Do not send email, access Gmail, Drive, Chrome, SQLite, or any network source. Do not edit files. Do not ask questions.`;
-  await writeFile(path.join(workDir, "prompt.txt"), prompt, "utf8");
-  return { workDir, outputPath: path.join(outputDir, outputName), prompt };
+  const { attemptDir, attemptNumber } = await nextAttemptDirectory(workDir);
+  await writeFile(path.join(attemptDir, "prompt.txt"), prompt, "utf8");
+  await writeFile(path.join(attemptDir, "attempt.json"), JSON.stringify({
+    attempt: attemptNumber,
+    stage: name,
+    started_at: new Date().toISOString(),
+    provenance: "runner",
+  }, null, 2), "utf8");
+  return { workDir, attemptDir, attemptNumber, outputPath: path.join(outputDir, outputName), prompt };
 }
 
 function responseText(result) {
@@ -198,22 +243,27 @@ async function executeStages(digestId, runId, configPath, style, sourcePath, sta
     opencode = await createOpencode({ hostname: "127.0.0.1", port: 0, timeout: 30000 });
     for (const stage of STAGES.slice(startIndex)) {
       const [name, outputName, outputFormat] = stage;
+      const canonicalOutput = path.join(stageDirectory(runId, name), "output", outputName);
+      if (await exists(canonicalOutput)) {
+        throw new RunnerError(`Canonical stage output already exists: ${canonicalOutput}`);
+      }
       const prepared = await prepareStage(runId, digestId, configPath, style, stage, inputPath, sourcePath);
-      const session = await opencode.client.session.create({ body: { title: `${digestId} ${runId} ${name}` } });
+      const session = await opencode.client.session.create({ body: { title: `${digestId} ${runId} ${name} attempt ${prepared.attemptNumber}` } });
       const sessionData = session.data ?? session;
       try {
         const result = await promptWithTimeout(opencode.client, sessionData.id, prepared.prompt, timeoutSeconds);
-        await writeFile(path.join(prepared.workDir, "sdk-response.json"), JSON.stringify(result, null, 2), "utf8");
-        let artifact = responseText(result);
-        if (outputFormat === "JSON") {
-          artifact = removeCodeFence(artifact);
-          JSON.parse(artifact);
-        }
-        if (!artifact) throw new RunnerError("OpenCode returned no final text artifact");
+        await writeFile(path.join(prepared.attemptDir, "sdk-response.json"), JSON.stringify(result, null, 2), "utf8");
+        const artifact = await validateArtifactText(stage, responseText(result), "OpenCode response");
         await writeFile(prepared.outputPath, artifact, "utf8");
+        await writeFile(path.join(prepared.attemptDir, "completed.json"), JSON.stringify({
+          attempt: prepared.attemptNumber,
+          stage: name,
+          completed_at: new Date().toISOString(),
+          output: prepared.outputPath,
+        }, null, 2), "utf8");
         inputPath = prepared.outputPath;
       } catch (error) {
-        await writeFile(path.join(prepared.workDir, "sdk-error.log"), `${error.stack ?? error}\n`, "utf8");
+        await writeFile(path.join(prepared.attemptDir, "sdk-error.log"), `${error.stack ?? error}\n`, "utf8");
         throw new RunnerError(`${name} failed: ${error.message}`);
       }
     }
@@ -227,15 +277,75 @@ async function resume() {
   const runId = requiredOption("--run-id");
   const fromStage = requiredOption("--from-stage");
   const timeoutSeconds = Number(option("--timeout") ?? 900);
-  if (fromStage !== "render") throw new RunnerError("Only --from-stage render is supported");
   if (!Number.isInteger(timeoutSeconds) || timeoutSeconds <= 0) throw new RunnerError("--timeout must be a positive whole number");
   validateRunId(runId);
   const { configPath, style } = await resolveDigest(digestId);
   const sourcePath = sourceArtifact(runId);
   if (!(await exists(sourcePath))) throw new RunnerError(`Canonical source artifact does not exist: ${sourcePath}`);
-  const outputPath = path.join(stageDirectory(runId, "render"), "output", "email.html");
-  if (await exists(outputPath)) throw new RunnerError(`Render output already exists: ${outputPath}`);
-  await executeStages(digestId, runId, configPath, style, sourcePath, STAGES.length - 1, timeoutSeconds);
+  const startIndex = stageIndex(fromStage);
+  const [stageName, outputName] = STAGES[startIndex];
+  const outputPath = path.join(stageDirectory(runId, stageName), "output", outputName);
+  if (await exists(outputPath)) throw new RunnerError(`Canonical stage output already exists: ${outputPath}`);
+  await executeStages(digestId, runId, configPath, style, sourcePath, startIndex, timeoutSeconds);
+  console.log(path.join(stageDirectory(runId, "render"), "output", "email.html"));
+}
+
+async function failedAttemptCount(workDir) {
+  let count = 0;
+  const attemptsDir = path.join(workDir, "attempts");
+  const entries = await readdir(attemptsDir, { withFileTypes: true }).catch(() => []);
+  for (const entry of entries) {
+    if (entry.isDirectory() && /^attempt-\d+$/.test(entry.name) &&
+        await exists(path.join(attemptsDir, entry.name, "sdk-error.log"))) count += 1;
+  }
+  if (await exists(path.join(workDir, "sdk-error.log"))) count += 1;
+  return count;
+}
+
+async function materialize() {
+  const digestId = requiredOption("--digest");
+  const runId = requiredOption("--run-id");
+  const requestedStage = requiredOption("--stage");
+  const temporaryArtifactPath = path.resolve(requiredOption("--input"));
+  validateRunId(runId);
+  await resolveDigest(digestId);
+  const sourcePath = sourceArtifact(runId);
+  if (!(await exists(sourcePath))) throw new RunnerError(`Canonical source artifact does not exist: ${sourcePath}`);
+  const index = stageIndex(requestedStage);
+  const stage = STAGES[index];
+  const [name, outputName] = stage;
+  const workDir = stageDirectory(runId, name);
+  if (index > 0) {
+    const prior = STAGES[index - 1];
+    const priorPath = path.join(stageDirectory(runId, prior[0]), "output", prior[1]);
+    if (!(await exists(priorPath))) throw new RunnerError(`Required prior-stage artifact does not exist: ${priorPath}`);
+  }
+  const failures = await failedAttemptCount(workDir);
+  if (failures < 2) {
+    throw new RunnerError(`Stage ${name} has ${failures} recorded failed runner attempt(s); two are required before fallback materialization`);
+  }
+  const outputPath = path.join(workDir, "output", outputName);
+  if (await exists(outputPath)) throw new RunnerError(`Canonical stage output already exists: ${outputPath}`);
+  const bytes = await readFile(temporaryArtifactPath).catch(() => {
+    throw new RunnerError(`Temporary fallback artifact does not exist: ${temporaryArtifactPath}`);
+  });
+  let text;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (error) {
+    throw new RunnerError(`Temporary fallback artifact is not valid UTF-8: ${temporaryArtifactPath}: ${error.message}`);
+  }
+  const artifact = await validateArtifactText(stage, text, "Temporary fallback artifact");
+  await mkdir(path.dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, artifact, "utf8");
+  await writeFile(path.join(workDir, "fallback-provenance.json"), JSON.stringify({
+    provenance: "agent-fallback",
+    stage: name,
+    imported_at: new Date().toISOString(),
+    failed_runner_attempts: failures,
+    temporary_input: temporaryArtifactPath,
+    canonical_output: outputPath,
+  }, null, 2), "utf8");
   console.log(outputPath);
 }
 
@@ -249,7 +359,12 @@ if (process.argv[2] === "run") {
     console.error(`digest_runner: ${error.message}`);
     process.exitCode = 1;
   });
+} else if (process.argv[2] === "materialize") {
+  materialize().catch((error) => {
+    console.error(`digest_runner: ${error.message}`);
+    process.exitCode = 1;
+  });
 } else {
-  console.error("Usage: node tools/digest_runner.mjs run --digest <id> --run-id <id> --input <temporary-sources.json> [--timeout <seconds>]\n       node tools/digest_runner.mjs resume --digest <id> --run-id <id> --from-stage render [--timeout <seconds>]");
+  console.error("Usage: node tools/digest_runner.mjs run --digest <id> --run-id <id> --input <temporary-sources.json> [--timeout <seconds>]\n       node tools/digest_runner.mjs resume --digest <id> --run-id <id> --from-stage <stage> [--timeout <seconds>]\n       node tools/digest_runner.mjs materialize --digest <id> --run-id <id> --stage <stage> --input <temporary-artifact>");
   process.exitCode = 1;
 }

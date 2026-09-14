@@ -8,8 +8,8 @@ One selective cross-source explanatory briefing: no separate article summaries a
 | **Composition unit** | A reader-understandable concrete topic, question, mechanism, development, or tension explained through at least two substantively contributing sources. |
 | **Source relationship** | Cross-source synthesis is mandatory in every narrative thread. Prefer two or three sources when sufficient; use four or more only when all contribute to the same concrete subject without requiring a broad abstraction to hold them together. Single-source threads are not permitted. |
 | **Selection model** | Highly selective: include material that contributes enough information, explanatory power, practical significance, novelty, or relationship value to justify space. |
-| **Depth model** | Variable-high depth across a dense five-to-eight-minute body, normally 700–1,200 words excluding the catalog. |
-| **Organization model** | Big Picture opening → two to five numbered synthesized threads determined by the evidence. |
+| **Depth model** | Variable-high depth across a dense five-to-eight-minute body, normally 1,100–1,800 words excluding the catalog. |
+| **Organization model** | Big Picture opening → one to five numbered synthesized threads determined by the evidence; use fewer when the corpus cannot support honest multi-source grouping. |
 | **Progression model** | Each thread develops from concrete orientation → integrated explanation and source contributions → supported synthesis or implication, with material ordered by the explanation rather than by source. |
 | **Opening behavior** | Required `THE BIG PICTURE` opening whose first duty is clear orientation; add cross-source interpretation only when it makes the picture easier to understand. |
 | **Body behavior** | Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes. |
@@ -100,9 +100,9 @@ Let each paragraph perform one primary explanatory job. If several unfamiliar co
 ## Length and density
 Aim for a dense five-to-eight-minute briefing.
 
-Target roughly 700–1,200 words for the briefing body, excluding the final source catalog.
+Target roughly 1,100–1,800 words for the briefing body, excluding the final source catalog.
 
-Use two to five thematic sections depending on the structure genuinely supported by the material. This is a permitted range, not a coverage target. Prefer a smaller number of developed insights over many shallow observations; when the evidence can support either shape, three well-developed threads are preferable to five compressed ones.
+Use one to five thematic sections depending on the structure genuinely supported by the material. This is a permitted range, not a coverage target. Prefer a smaller number of developed insights over many shallow observations; when the evidence can support either shape, three well-developed threads are preferable to five compressed ones.
 
 Let information density determine length. Never create, split or expand a section merely to satisfy a target count or reading time.
 

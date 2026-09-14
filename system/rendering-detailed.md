@@ -11,7 +11,7 @@ All English component names in this profile are semantic maintainer labels. Reso
 2. When topical grouping genuinely improves navigation, render `IN THIS DIGEST` as a compact index.
 3. Render each broad topic as a section header.
 4. Within the section, render every retained source as its own independent reading entry.
-5. Finish after the final source summary; do not add a final source catalog unless explicitly requested by the style/digest.
+5. Finish after the final source summary; do not add a final source catalog.
 
 ## IN THIS DIGEST index
 Use only when the output contains useful topical grouping. Do not invent sections for the sake of the component.

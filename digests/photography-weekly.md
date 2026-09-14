@@ -50,7 +50,7 @@ When a selected idea supports a useful exercise, include one compact `📷 TRY T
 
 Use `📍 LOCAL & TIMELY` for an unusually relevant workshop, photo walk, exhibition, contest, submission opportunity, or community activity. Prioritize opportunities accessible from Montréal and preserve useful dates, locations, deadlines, costs, and participation details.
 
-Use `🎓 OFFER WORTH OPENING` only for a genuinely valuable course, guide, book, preset, tool, free resource, or other learning opportunity. State the concrete additional value and report price or deadline information neutrally, without reproducing promotional urgency.
+Use `🎓 LEARNING RESOURCE` only for a genuinely valuable course, guide, book, preset, tool, free resource, or other learning opportunity. State the concrete additional value and report price or deadline information neutrally, without reproducing promotional urgency.
 
 These are optional callout labels inside the existing Curated Discovery structure, not required sections or quotas. Local opportunities and offers may instead appear as compact Discoveries when they do not justify a full selection. When editorial value is otherwise comparable, place them after substantive learning and visual material.
 

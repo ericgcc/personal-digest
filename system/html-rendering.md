@@ -22,6 +22,7 @@ The configured digest `language` applies to every generated reader-facing HTML s
 * Use natural target-language editorial phrasing, grammar, capitalization, pluralization, date formatting, and time notation. Do not mechanically translate English word order.
 * Translate descriptive digest names and generated editorial titles when needed for a fully localized reading experience.
 * **Never translate a source/article title.** Every `{{SOURCE_TITLE}}` value must be the exact original title as published, displayed in its original language without paraphrase, normalization, or transliteration. Preserve the original URL and use the same verbatim title in source-led entries and final catalogs.
+* `{{SOURCE_TITLE}}` is the verbatim title text alone. `{{SOURCE_TITLE_HTML}}` is the same verbatim title already wrapped in its presentation markup—linked when a valid source locator exists, plain text otherwise. Per-source entry titles use the latter form so the linked/unlinked branch lives in the renderer rather than in the template. Neither placeholder may ever carry a translated, paraphrased, or normalized title.
 * Preserve author/publication names, brands, products, code, identifiers, citations, and URLs unless a conventional localized reader-facing name exists.
 * Canonical English component/status names are semantic tokens. Their visible labels must be localized without changing their color, structural role, or internal state value.
 * Do not emit a bilingual interface or parenthetical English labels unless the active digest explicitly requests bilingual delivery.
@@ -86,7 +87,7 @@ Each rendering profile defines any additional responsive transformations require
 * Prefer a source's explicit reading-time estimate when it is available and trustworthy. Otherwise estimate from the full substantive text actually read using the shared reading-speed assumption defined by the workflow.
 * Estimate digest reading time from the finished editorial body, excluding the bibliographic source catalog and boilerplate footer.
 * Round for human readability; the displayed saved time is `max(reviewed-source time - digest time, 0)`.
-* Do not invent time for content that was not actually read. If the run genuinely lacks enough information to estimate reviewed-source time, use a natural localized equivalent of `About <digest time> read` and treat that as an exceptional degraded state.
+* Do not invent time for content that was not actually read. If the run genuinely lacks enough information to estimate reviewed-source time, use a natural localized equivalent of `About <digest time> read` and treat that as an exceptional degraded state. In that degraded state, replace the **entire** capsule text with that localized form; never leave the `<reviewed-source reading time> → <digest reading time>` structure partially filled, and never render a missing source time as a measured value.
 * Allow the capsule to wrap gracefully on mobile rather than reducing it to unreadable type.
 
 ### Per-source reading time
@@ -187,7 +188,7 @@ Never add a source catalog merely because another style has one. Follow the sele
 Keep these responsibilities separate:
 
 1. **`system/editorial-process.md`—shared editorial production method**
-   Defines the autonomous `SELECT → FRAME → DRAFT → structural/clarity/voice/compression edits → FINAL POLISH` sequence. It governs how prose becomes publication-ready before HTML exists.
+   Defines the autonomous `SELECT → ANALYZE → FRAME → DRAFT → structural/clarity/voice/compression edits → FINAL POLISH` sequence. It governs how prose becomes publication-ready before HTML exists.
 
 2. **`styles/editorial-base.md`—shared editorial quality floor**
    Defines how excellent digest prose behaves across every style: clarity, coherence, orientation, specificity, rhythm, naturalness, intellectual honesty, economy, and reader interest. It does not impose one voice or layout.

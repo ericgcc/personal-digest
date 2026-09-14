@@ -233,6 +233,8 @@ Example:
 subject_template: "Engineering Notes Digest — {date}"
 ```
 
+Digest-level `subject_template` variables use single braces (`{date}`). This differs from the double-brace placeholders used inside HTML templates (`{{DATE}}`); the two syntaxes are not interchangeable.
+
 If no subject template is supplied, the workflow uses `<localized full digest name> — <localized digest date>`. If a legacy `name` lacks the descriptor, normalize the delivered subject rather than sending an ambiguous title; update the configuration afterward.
 
 `source_catalog_grouping` controls the final catalog only for styles that declare a source catalog. Supported values are:

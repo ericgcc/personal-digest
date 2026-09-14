@@ -16,7 +16,7 @@ One selective cross-source explanatory briefing: no separate article summaries a
 | **Citation / provenance** | Permanent global numerical citations attached to supported claims/inferences plus thread-level source notes. |
 | **Source catalog** | Required complete catalog of the substantively reviewed corpus, with stable numbering, canonical statuses, per-source reading time, and grouping controlled by `source_catalog_grouping` (`source-identity` by default; `editorial-topic` when explicitly configured). |
 | **Ending behavior** | Stop immediately after the final source catalog. |
-| **Writing character** | Explanatory and analytical, connective, authoritative but restrained, precise, and intellectually alive. |
+| **Writing character** | Explanatory, domain-accessible, and analytical; connective, authoritative but restrained, precise, and intellectually alive. |
 | **Optional extension points** | Zero or one digest-authorized callout inside a thread when the rendering profile supports it. |
 
 ## Writing reference profile
@@ -80,6 +80,23 @@ Use memorable phrasing when it clarifies the relationship, but prefer precision 
 
 Do not use enumerative compression as a substitute for explanation. A run of nouns, features, techniques, stages, or examples is useful only when the sequence or comparison itself advances the argument. Otherwise, select the elements that matter and explain the mechanism, distinction, or relationship that makes them consequential. If several elements are essential, develop their roles instead of packing them into a dense list that merely signals breadth.
 
+## Domain accessibility in synthesis
+Synthesis MAX combines material that may carry different specialist vocabularies and assumed contexts. Write for an intelligent reader who is not necessarily familiar with any of those domains. The reader should gain access to the sources through the synthesis, not need prior access to understand it.
+
+Begin each thread by establishing its concrete subject, relevant actors, situation, or mechanism in broadly understandable language. Introduce specialized terminology only after the reader has enough context to understand what it refers to and why it matters.
+
+Preserve domain terms that carry necessary precision, but explain them at the point of use through their function, effect, referent, consequence, or a concise example. Do not require the reader to infer their meaning from adjacent jargon.
+
+Move through one level of abstraction at a time:
+
+`concrete subject → source evidence or mechanisms → relationship → implication`
+
+Do not combine unfamiliar terminology, compressed source context, metaphor, and editorial inference in the same sentence. Unpack them in the order required for understanding.
+
+Every additional domain creates an orientation cost. Include a cross-domain source only when its concrete explanatory contribution is strong enough to repay that cost within the thread's limited reading budget. Conceptual similarity alone does not repay it.
+
+Let each paragraph perform one primary explanatory job. If several unfamiliar concepts are essential, establish their roles and relationships before asking them to support a broader conclusion. A reader should never need to understand the synthesis in order to reconstruct what the underlying material was about.
+
 ## Length and density
 Aim for a dense five-to-eight-minute briefing.
 
@@ -101,7 +118,7 @@ Remove repetition aggressively. Do not restate a section's thesis in its conclus
 
 ## Required structure
 ### The Big Picture
-Open the briefing with one compact orientation of approximately 80–130 words with inline numerical citations. Its first duty is to tell the reader, in plain language, what the most important development, mechanism, question, or tension is and why it matters. Add a cross-source interpretation only when it makes that picture clearer. It must earn its place rather than act as a table of contents.
+Open the briefing with one compact orientation of approximately 80–130 words with inline numerical citations. Its first duty is to tell the reader, in plain language, what the most important development, mechanism, question, or tension is and why it matters. Establish the concrete world of the briefing before introducing specialized vocabulary or an overarching interpretation. Add a cross-source interpretation only when it makes that picture clearer. It must earn its place rather than act as a table of contents.
 
 If one well-supported overarching pattern, tension, or question **emerges from the analyzed evidence**, articulate it directly. It may be modest. If the strongest material instead forms several distinct threads, frame two or three of the most compelling ones and any honest relationship between them without forcing a single thesis or upgrading topical proximity into significance.
 
@@ -118,7 +135,7 @@ Each section should normally contain:
 * Inline numerical citations attached to the exact claims or synthesized inferences they support.
 * A short thread-level source-notes component exposing the principal source names and their stable numbers, linked when a valid locator exists. Its visible label and treatment come exclusively from the matching rendering profile.
 
-Section titles and subtitles must let the reader identify the concrete subject before reading the body. Prefer specific mechanisms, developments, questions, or consequences over slogans, metaphors, or abstract conclusions that the body must decode. Do not repeat an article title.
+Section titles and subtitles must let the reader identify the concrete subject before reading the body. Use the most broadly understandable vocabulary that preserves the necessary precision; a specialized term may appear when essential, but it must not carry the full burden of orientation. Prefer specific mechanisms, developments, questions, or consequences over slogans, metaphors, or abstract conclusions that the body must decode. Do not repeat an article title.
 
 Do not add an article-by-article roundup.
 
@@ -212,6 +229,10 @@ Before returning the briefing, verify that:
 * Each selected source's main explanatory value remains recoverable after reframing and integration.
 * Combining the sources makes the underlying subject easier to understand rather than merely producing a more abstract idea that can contain them.
 * Two or three sources are preferred when sufficient; threads with four or more still revolve around one concrete subject and remain easy to follow.
+* An intelligent reader outside the contributing source domains can explain what each thread is about, what happened or how it works, and why it matters after one reading.
+* Necessary specialized terms are understandable through their function, effect, referent, consequence, or a concise example before the prose depends on them.
+* No sentence asks the reader to decode unfamiliar vocabulary, missing context, metaphor, and editorial inference simultaneously.
+* Every cross-domain source provides enough concrete explanatory value to justify the additional orientation it requires.
 * The working thesis emerged from the material and was revised when caveats or anomalies required it; the source set was not recruited to defend a preselected grand idea.
 * Unrelated sources have not been forced into a common narrative.
 * Editorial inference is distinguishable from source-supported claims.

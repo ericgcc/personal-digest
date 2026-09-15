@@ -8,3 +8,8 @@ node_modules/
 # Python bytecode caches (compiled artifacts, never source)
 __pycache__/
 *.py[cod]
+
+# Local secrets - never commit
+.env
+.env.*
+!.env.example

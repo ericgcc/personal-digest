@@ -82,6 +82,43 @@ Reasoning tokens bill as output and dominate both cost and latency, so effort is
 
 Overridable for experiments: `DIGEST_MAX_OUTPUT_TOKENS` (default 262144), `DIGEST_RETRY_ATTEMPTS` (default 3), `DIGEST_RETRY_BASE_DELAY_MS` (default 2000), `DIGEST_REQUEST_TIMEOUT_MS` (defaults to the `--timeout` value).
 
+## Cost tracking
+
+Every completed pipeline writes `.digest-runs/<run-id>/run-summary.json` and appends one row to `.digest-runs/cost-ledger.jsonl`. The summary is derived from the measured usage each stage already records, so it needs no extra API calls. It also prints a one-line cost summary to stderr at the end of a run.
+
+The record includes per-stage timing, cache hit and miss tokens, output and reasoning tokens, and the cost of the run. It also records **which billing band the run was billed in**, determined per stage from that stage's own start time, so a run that straddles a boundary is reported as `mixed` rather than silently averaged.
+
+Alongside the actual cost it stores three counterfactuals over the same work: what it would have cost entirely off-peak, entirely peak, and with no cache reuse at all. Those make it obvious whether scheduling and caching are actually paying off.
+
+Pricing lives in one place in the runner (`PRICING`) and is applied at write time. Rebuilding after a price change therefore re-prices history at current rates.
+
+**Peak hours are 01:00-04:00 and 06:00-10:00 UTC, Monday-Friday.** Everything else is off-peak and costs exactly half. If a digest can be scheduled, avoiding those windows is the single largest cost lever available, worth more than caching.
+
+### Analysing cost over time
+
+```powershell
+node tools/verify-run.mjs --all                    # every measured run in the ledger
+node tools/verify-run.mjs --all --digest tech-bi-daily
+```
+
+Reports per-run cost and band, plus totals: average cost per run, total tokens, reasoning share of output, aggregate cache hit ratio, how many runs were billed in peak, and what the same work would have cost entirely off-peak.
+
+### Rebuilding the ledger
+
+If the ledger is deleted, or to backfill runs that predate cost accounting:
+
+```powershell
+node --env-file=.env tools/digest_runner.mjs ledger
+```
+
+It scans every run directory and rewrites the ledger from scratch, which makes it authoritative rather than additive. Runs with no recorded token usage, such as those from the earlier OpenCode implementation, are skipped and reported so they cannot drag averages toward zero.
+
+## Leak guard
+
+Cost, cache, and verification data are operational and must never reach a reader. They are written outside the stage artifacts, and the `render` stage receives only the approved prose, the rendering contract, and the template, so no path exists for them to enter the email.
+
+The verifier additionally scans the delivered HTML for operational markers and reports an error if any are found, because a leak would be invisible in a rendered email.
+
 ## Example orchestration
 
 Use one unique run ID per scheduled execution. The agent invokes the runner once; it imports the temporary corpus and manages the nine internal stage handoffs.
@@ -100,26 +137,31 @@ For `medium-bi-daily` and `photography-weekly`, the agent uses the Medium adapte
 The one runner command creates:
 
 ```text
-.digest-runs/<run-id>/<stage>/
-  context/                 # copied canonical instructions (for audit)
-  input/                   # copied primary input
-  output/<stage-output>    # required result
-  prompt.txt               # the complete request, verbatim
-  model-response.json      # raw response from the model
-  stage-error.log          # created only when that stage fails
-  attempts/attempt-N/
-    attempt.json           # timing, provenance, corpus policy and byte count
-    corpus-context.json    # the exact source numbers and bytes that stage received
-    prompt.txt             # this attempt's request
-    model-response.json    # this attempt's raw response
-    completed.json         # finish reason, cache statistics, usage
-    stage-error.log        # present only for a failed attempt
+.digest-runs/<run-id>/
+  run-summary.json         # authoritative cost, timing, and billing-band record
+  verification.md          # written by verify-run.mjs, advisory findings
+  verification.json
+  <stage>/
+    context/               # copied canonical instructions (for audit)
+    input/                 # copied primary input
+    output/<stage-output>  # required result
+    prompt.txt             # the complete request, verbatim
+    model-response.json    # raw response from the model
+    stage-error.log        # created only when that stage fails
+    attempts/attempt-N/
+      attempt.json         # timing, provenance, corpus policy and byte count
+      corpus-context.json  # the exact source numbers and bytes that stage received
+      prompt.txt           # this attempt's request
+      model-response.json  # this attempt's raw response
+      completed.json       # finish reason, cache statistics, usage
+      stage-error.log      # present only for a failed attempt
 ```
 
-The acquisition artifact lives beside the stage folders:
+Beside the run directories:
 
 ```text
-.digest-runs/<run-id>/source-acquisition/sources.json
+.digest-runs/<run-id>/source-acquisition/sources.json   # the canonical imported corpus
+.digest-runs/cost-ledger.jsonl                           # one row per measured run, for analysis over time
 ```
 
 Every stage's `completed.json` records `cache_hit_tokens`, `cache_miss_tokens`, and `cache_hit_ratio`, so prefix-cache effectiveness is auditable per stage.
@@ -132,12 +174,15 @@ node --env-file=.env tools/digest_runner.mjs resume --digest tech-bi-daily --run
 
 ## Verification
 
-`verify-run.mjs` checks a completed run against the artifact contract. It is read-only and never modifies a run.
+`verify-run.mjs` checks a completed run against the artifact contract. It is read-only and never modifies a run's artifacts.
 
 ```powershell
 node tools/verify-run.mjs --run <run-id> --digest tech-bi-daily
+node tools/verify-run.mjs --all                      # cost analysis across the ledger
 ```
 
-It verifies artifact presence and non-emptiness, the absence of truncated stages, JSON validity, citation integrity, that every citation was available to `draft`, ending rules, status-label semantics, the style-specific structural contract, body length against the style budget, and reports total time, cache ratio, and estimated cost. It exits `0` when every check passes and `1` otherwise; warnings do not fail a run.
+It verifies artifact presence and non-emptiness, the absence of truncated stages, JSON validity, citation integrity, that every citation was available to `draft`, ending rules, status-label semantics, the style-specific structural contract, body length against the style budget, the invisible run-key marker and title date against the authoritative delivery values, and that no operational data leaked into the HTML.
+
+**It is advisory by default and writes its findings into the run folder** as `verification.md` and `verification.json`. The runner is the delivery gate: a stage that fails, returns an empty artifact, or stops at the output ceiling makes `run` exit non-zero, and that is what blocks delivery. The verifier only describes the artifacts. Pass `--strict` to opt into gating on its findings instead.
 
 These files are ignored by Git. A nonzero exit code from the runner means the model failed, timed out, hit the output ceiling, or did not produce the required nonempty/valid-JSON artifact. Under `system/workflow.md`, an editorial stage that fails twice **stops the run safely**; only `render` may be completed by the agent.

@@ -50,8 +50,76 @@ const option = (name) => {
 const flag = (name) => process.argv.includes(name);
 
 const runId = option("--run");
+const allMode = flag("--all");
+
+// ------------------------------------------------------------------ aggregate mode
+// Reads the cross-run ledger the runner appends to, so cost can be analysed over time
+// without re-scanning every run directory.
+if (allMode) {
+  const ledgerPath = path.join(ROOT, RUNS, "cost-ledger.jsonl");
+  let entries = [];
+  try {
+    entries = (await readFile(ledgerPath, "utf8"))
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => {
+        try { return JSON.parse(line); } catch { return null; }
+      })
+      .filter(Boolean);
+  } catch {
+    console.error(`verify-run: no ledger found at ${ledgerPath}`);
+    console.error("It is written by the runner after a pipeline completes.");
+    process.exit(1);
+  }
+
+  entries.sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
+  const digestFilter = option("--digest");
+  const filtered = digestFilter ? entries.filter((e) => e.digest_id === digestFilter) : entries;
+  if (filtered.length === 0) {
+    console.error(`verify-run: ledger has ${entries.length} row(s), none matching the filter`);
+    process.exit(1);
+  }
+
+  const sum = (fn) => filtered.reduce((a, e) => a + (fn(e) ?? 0), 0);
+  const totalCost = sum((e) => e.cost_usd?.actual);
+
+  console.log(`\nCost ledger — ${filtered.length} run(s)${digestFilter ? ` for ${digestFilter}` : ""}\n`);
+  console.log("started (UTC)".padEnd(21), "digest".padEnd(17), "band".padEnd(9), "sec".padStart(7), "tokens".padStart(10), "cost".padStart(10));
+  for (const e of filtered) {
+    console.log(
+      String(e.started_at ?? "?").slice(0, 19).padEnd(21),
+      String(e.digest_id ?? "?").padEnd(17),
+      String(e.billing_band ?? "?").padEnd(9),
+      String(Math.round(e.total_seconds ?? 0)).padStart(7),
+      String(e.tokens?.total ?? 0).padStart(10),
+      ("$" + Number(e.cost_usd?.actual ?? 0).toFixed(4)).padStart(10)
+    );
+  }
+
+  const peakRuns = filtered.filter((e) => e.billing_band === "peak").length;
+  const mixedRuns = filtered.filter((e) => e.billing_band === "mixed").length;
+  console.log("\nTOTALS");
+  console.log(`  runs                ${filtered.length}`);
+  console.log(`  total cost          $${totalCost.toFixed(4)}`);
+  console.log(`  average per run     $${(totalCost / filtered.length).toFixed(4)}`);
+  console.log(`  total tokens        ${sum((e) => e.tokens?.total).toLocaleString()}`);
+  console.log(`  total seconds       ${Math.round(sum((e) => e.total_seconds))}`);
+  console.log(`  reasoned tokens     ${sum((e) => e.tokens?.reasoning).toLocaleString()} (${((sum((e) => e.tokens?.reasoning) / (sum((e) => e.tokens?.output) || 1)) * 100).toFixed(0)}% of output)`);
+  console.log(`  cache hit ratio     ${(sum((e) => e.tokens?.cache_hit) / (sum((e) => e.tokens?.total_input) || 1)).toFixed(3)}`);
+  console.log(`  billed in peak      ${peakRuns} run(s)${mixedRuns ? `, ${mixedRuns} straddling a boundary` : ""}`);
+  console.log(`  cost if all off-peak $${sum((e) => e.cost_usd?.if_all_off_peak).toFixed(4)}`);
+  if (filtered.length > 1) {
+    const first = String(filtered[0].started_at).slice(0, 10);
+    const last = String(filtered[filtered.length - 1].started_at).slice(0, 10);
+    console.log(`  window              ${first} to ${last}`);
+  }
+  console.log("");
+  process.exit(0);
+}
+
 if (!runId) {
   console.error("Usage: node tools/verify-run.mjs --run <run-id> [--digest <digest-id>] [--strict]");
+  console.error("       node tools/verify-run.mjs --all [--digest <digest-id>]");
   process.exit(1);
 }
 const strict = flag("--strict");
@@ -300,6 +368,13 @@ if (html) {
 }
 
 // ------------------------------------------------------------------ cost + cache
+// The runner records authoritative cost in run-summary.json; prefer it over recomputing,
+// so pricing lives in exactly one place.
+let summary = null;
+try {
+  summary = await readJson(path.join(runDir, "run-summary.json"));
+} catch { /* fall back to recomputing below */ }
+
 let hit = 0, miss = 0, out = 0, sec = 0, counted = 0;
 const perStage = [];
 for (const stage of STAGES) {
@@ -316,8 +391,26 @@ for (const stage of STAGES) {
 }
 const cost = (hit * 0.003 + miss * 0.15 + out * 0.6) / 1e6;
 if (counted) {
+  const actual = summary?.cost_usd?.actual ?? cost;
+  const band = summary?.billing_band ?? "unknown";
   add(OK, "cost",
-    `${sec.toFixed(1)}s total, cache hit ratio ${hit + miss ? (hit / (hit + miss)).toFixed(3) : "n/a"}, ~$${cost.toFixed(4)} off-peak`);
+    `$${actual.toFixed(4)} (${band}), ${sec.toFixed(1)}s total, cache hit ratio ${hit + miss ? (hit / (hit + miss)).toFixed(3) : "n/a"}`);
+}
+
+// ------------------------------------------------------------------ leak guard
+// Operational data has no legitimate path into the delivered artifact: render receives only
+// the approved prose, the rendering contract, and the template. Check anyway, because a
+// leak here would expose run internals to readers and would be invisible in a rendered email.
+if (html) {
+  const LEAK_MARKERS = [
+    "prompt_cache_hit_tokens", "prompt_cache_miss_tokens", "cache_hit_ratio", "reasoning_tokens",
+    "estimated_cost_usd", "cost_usd", "run-summary", "run_summary", "cost-ledger", "cost_ledger",
+    "verification.json", "verification.md", "billing_band", "if_all_peak", "if_nothing_cached",
+    "corpus-context", "corpus_policy", "cache_miss_tokens",
+  ];
+  const found = LEAK_MARKERS.filter((m) => html.includes(m));
+  if (found.length === 0) add(OK, "leak-guard", "no operational or cost data present in email.html");
+  else add(ERROR, "leak-guard", `operational data leaked into email.html: ${found.join(", ")}`);
 }
 
 // ------------------------------------------------------------------ reporting
@@ -339,8 +432,15 @@ const report = {
   verified_at: stamp,
   advisory: !strict,
   counts,
-  totals: { seconds: Number(sec.toFixed(1)), cache_hit_tokens: hit, cache_miss_tokens: miss, output_tokens: out, estimated_cost_usd_off_peak: Number(cost.toFixed(4)) },
-  per_stage: perStage,
+  totals: {
+    seconds: summary?.total_seconds ?? Number(sec.toFixed(1)),
+    billing_band: summary?.billing_band ?? null,
+    cache_hit_tokens: hit,
+    cache_miss_tokens: miss,
+    output_tokens: out,
+    cost_usd: summary?.cost_usd ?? { actual: Number(cost.toFixed(6)) },
+  },
+  per_stage: summary?.stages ?? perStage,
   findings,
 };
 
@@ -374,6 +474,28 @@ if (counts.skip) {
 }
 lines.push("## All checks", "", "| Status | Check | Detail |", "| --- | --- | --- |");
 for (const f of findings) lines.push(`| ${f.status} | ${f.check} | ${f.detail.replace(/\|/g, "\\|")} |`);
+
+if (summary) {
+  const c = summary.cost_usd ?? {};
+  lines.push(
+    "", "## Cost and timing", "",
+    `- **Billing band:** \`${summary.billing_band}\` (peak is 01:00-04:00 and 06:00-10:00 UTC, Mon-Fri)`,
+    `- **Started:** ${summary.started_at}`,
+    `- **Completed:** ${summary.completed_at}`,
+    `- **Total:** ${summary.total_seconds}s`,
+    `- **Tokens:** ${summary.tokens?.total?.toLocaleString() ?? "n/a"} = ` +
+      `${summary.tokens?.cache_hit?.toLocaleString() ?? 0} cached + ` +
+      `${summary.tokens?.cache_miss?.toLocaleString() ?? 0} uncached + ` +
+      `${summary.tokens?.output?.toLocaleString() ?? 0} output (${summary.tokens?.reasoning?.toLocaleString() ?? 0} reasoning)`,
+    `- **Cost:** $${Number(c.actual ?? 0).toFixed(4)}`,
+    "", "| Scenario | Cost |", "| --- | --- |",
+    `| Actual | $${Number(c.actual ?? 0).toFixed(4)} |`,
+    `| If entirely off-peak | $${Number(c.if_all_off_peak ?? 0).toFixed(4)} |`,
+    `| If entirely peak | $${Number(c.if_all_peak ?? 0).toFixed(4)} |`,
+    `| If nothing were cached | $${Number(c.if_nothing_cached ?? 0).toFixed(4)} |`,
+  );
+}
+
 if (perStage.length) {
   lines.push("", "## Per-stage timing and cache", "", "| Stage | Seconds | Cache hit ratio |", "| --- | --- | --- |");
   for (const s of perStage) lines.push(`| ${s.stage} | ${s.seconds} | ${s.cacheRatio ?? "n/a"} |`);

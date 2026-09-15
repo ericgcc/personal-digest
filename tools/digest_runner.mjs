@@ -67,6 +67,83 @@ const STYLE_BODY_BUDGET = {
 // and must not re-litigate length.
 const STAGES_ENFORCING_BUDGET = new Set(["draft", "compression-edit", "final-polish"]);
 
+// ---------------------------------------------------------------------------------------
+// Cost accounting
+// ---------------------------------------------------------------------------------------
+
+// DeepSeek prices in USD per 1,000,000 tokens. Off-peak is exactly half of peak.
+// Source: api-docs.deepseek.com/quick_start/pricing, read 2026-09-14.
+const PRICING = {
+  cacheHit:  { offPeak: 0.003, peak: 0.006 },
+  cacheMiss: { offPeak: 0.15,  peak: 0.30  },
+  output:    { offPeak: 0.60,  peak: 1.20  },
+};
+
+// Peak hours are 01:00-04:00 and 06:00-10:00 UTC, Monday-Friday. Every other hour is
+// off-peak. Billing band is decided per stage from that stage's own start time, because a
+// long run can span a boundary.
+const PEAK_UTC_HOURS = [[1, 4], [6, 10]];
+
+function billingBand(isoTimestamp) {
+  const at = new Date(isoTimestamp);
+  const weekday = at.getUTCDay() >= 1 && at.getUTCDay() <= 5;
+  const hour = at.getUTCHours();
+  const inPeakWindow = PEAK_UTC_HOURS.some(([from, to]) => hour >= from && hour < to);
+  return weekday && inPeakWindow ? "peak" : "off-peak";
+}
+
+function costForBand(band, { hit = 0, miss = 0, output = 0 }) {
+  const key = band === "peak" ? "peak" : "offPeak";
+  return (hit / 1e6) * PRICING.cacheHit[key]
+    + (miss / 1e6) * PRICING.cacheMiss[key]
+    + (output / 1e6) * PRICING.output[key];
+}
+
+// The ledger is the cross-run record used for cost analysis over time. It lives beside the
+// run directories rather than inside one, so a single run's cleanup cannot lose history.
+const LEDGER_PATH = path.join(ROOT, RUNS_DIRECTORY, "cost-ledger.jsonl");
+
+function ledgerRow(summary) {
+  return {
+    run_id: summary.run_id,
+    digest_id: summary.digest_id,
+    style: summary.style,
+    started_at: summary.started_at,
+    completed_at: summary.completed_at,
+    billing_band: summary.billing_band,
+    total_seconds: summary.total_seconds,
+    tokens: summary.tokens,
+    cost_usd: summary.cost_usd,
+  };
+}
+
+async function readLedger() {
+  try {
+    return (await readFile(LEDGER_PATH, "utf8"))
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => {
+        try { return JSON.parse(line); } catch { return null; }
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function writeLedger(rows) {
+  await mkdir(path.dirname(LEDGER_PATH), { recursive: true });
+  await writeFile(LEDGER_PATH, rows.length ? `${rows.map((r) => JSON.stringify(r)).join("\n")}\n` : "", "utf8");
+  return LEDGER_PATH;
+}
+
+async function appendLedger(summary) {
+  // Re-running a stage range must not double-count a run. Drop any prior row for this run.
+  const kept = (await readLedger()).filter((row) => row.run_id !== summary.run_id);
+  kept.push(ledgerRow(summary));
+  return writeLedger(kept);
+}
+
 // Which corpus context each stage receives. This table is the only place that decision is
 // made. Stages that only transform approved prose do not need article bodies, so removing
 // the corpus from them cuts both the per-request payload and the cache-miss exposure they
@@ -503,6 +580,123 @@ async function callDeepSeek({ systemText, userText, stageName, timeoutMs }) {
   }
 }
 
+// Build the per-run cost record from the measured usage of each stage, and derive the
+// counterfactuals that tell us whether scheduling and caching are pulling their weight.
+function buildRunSummary({ runId, digestId, style, corpusPolicy, stages }) {
+  let hit = 0, miss = 0, output = 0, reasoning = 0, seconds = 0;
+  let actual = 0, allOffPeak = 0, allPeak = 0;
+  const perStage = [];
+
+  for (const s of stages) {
+    hit += s.hit; miss += s.miss; output += s.output;
+    reasoning += s.reasoning; seconds += s.seconds;
+
+    const band = billingBand(s.startedAt);
+    const stageCost = costForBand(band, s);
+    actual += stageCost;
+    allOffPeak += costForBand("off-peak", s);
+    allPeak += costForBand("peak", s);
+
+    perStage.push({
+      stage: s.name,
+      started_at: s.startedAt,
+      completed_at: s.completedAt,
+      seconds: Number(s.seconds.toFixed(2)),
+      billing_band: band,
+      cache_hit_tokens: s.hit,
+      cache_miss_tokens: s.miss,
+      output_tokens: s.output,
+      reasoning_tokens: s.reasoning,
+      cache_hit_ratio: s.hit + s.miss ? Number((s.hit / (s.hit + s.miss)).toFixed(4)) : null,
+      cost_usd: Number(stageCost.toFixed(6)),
+    });
+  }
+
+  const billedBands = [...new Set(perStage.map((s) => s.billing_band))];
+
+  return {
+    schema_version: 1,
+    run_id: runId,
+    digest_id: digestId,
+    style,
+    corpus_policy: corpusPolicy ?? null,
+    started_at: perStage[0]?.started_at ?? null,
+    completed_at: perStage[perStage.length - 1]?.completed_at ?? null,
+    // Recorded explicitly so a later analysis never has to re-derive the band, and so a
+    // run that straddles a boundary is visible rather than silently averaged.
+    billing_band: billedBands.length === 1 ? billedBands[0] : "mixed",
+    total_seconds: Number(seconds.toFixed(2)),
+    tokens: {
+      cache_hit: hit,
+      cache_miss: miss,
+      output,
+      reasoning,
+      total_input: hit + miss,
+      total: hit + miss + output,
+    },
+    cost_usd: {
+      actual: Number(actual.toFixed(6)),
+      // Same work, priced entirely in the cheaper or the dearer band.
+      if_all_off_peak: Number(allOffPeak.toFixed(6)),
+      if_all_peak: Number(allPeak.toFixed(6)),
+      // Same work with no cache reuse at all, priced off-peak.
+      if_nothing_cached: Number((((hit + miss) / 1e6) * PRICING.cacheMiss.offPeak + (output / 1e6) * PRICING.output.offPeak).toFixed(6)),
+    },
+    stages: perStage,
+  };
+}
+
+// Read the measured usage back from disk rather than accumulating it in memory. A resumed
+// run only executes part of the pipeline, but the cost record must still describe the whole
+// run, and every stage's measurement is already persisted in its own attempt directory.
+async function readMeasuredStages(runId) {
+  const measured = [];
+  for (const [name] of STAGES) {
+    const attemptDir = path.join(stageDirectory(runId, name), "attempts", "attempt-1");
+    try {
+      const attempt = JSON.parse(await readFile(path.join(attemptDir, "attempt.json"), "utf8"));
+      const completed = JSON.parse(await readFile(path.join(attemptDir, "completed.json"), "utf8"));
+      const usage = completed.usage ?? {};
+      measured.push({
+        name,
+        startedAt: attempt.started_at,
+        completedAt: completed.completed_at,
+        seconds: (new Date(completed.completed_at) - new Date(attempt.started_at)) / 1000,
+        hit: completed.cache_hit_tokens ?? usage.prompt_cache_hit_tokens ?? 0,
+        miss: completed.cache_miss_tokens ?? usage.prompt_cache_miss_tokens ?? 0,
+        output: usage.completion_tokens ?? 0,
+        reasoning: usage.completion_tokens_details?.reasoning_tokens ?? 0,
+      });
+    } catch {
+      // Stage did not run or did not complete; it simply contributes nothing.
+    }
+  }
+  return measured;
+}
+
+async function writeRunSummary(runId, digestId, style, corpusPolicy) {
+  const stages = await readMeasuredStages(runId);
+  if (stages.length === 0) return null;
+  const summary = buildRunSummary({ runId, digestId, style, corpusPolicy, stages });
+  // A run with no recorded tokens predates cost accounting or never reached the model.
+  // Such a run must not enter the ledger, or it would drag every average and ratio toward
+  // zero while looking like a genuinely cheap run.
+  if (!summary.tokens.total) return null;
+  await writeFile(path.join(ROOT, RUNS_DIRECTORY, runId, "run-summary.json"), JSON.stringify(summary, null, 2), "utf8");
+  await appendLedger(summary);
+  return summary;
+}
+
+function logCostSummary(summary) {
+  const c = summary.cost_usd;
+  const t = summary.tokens;
+  console.error(
+    `run cost: $${c.actual.toFixed(4)} (${summary.billing_band}, ${summary.total_seconds.toFixed(0)}s) | ` +
+    `tokens ${t.total.toLocaleString()} = ${t.cache_hit.toLocaleString()} hit + ${t.cache_miss.toLocaleString()} miss + ${t.output.toLocaleString()} out | ` +
+    `off-peak would be $${c.if_all_off_peak.toFixed(4)}, all-peak $${c.if_all_peak.toFixed(4)}, no-cache $${c.if_nothing_cached.toFixed(4)}`
+  );
+}
+
 async function run() {
   const digestId = requiredOption("--digest");
   const runId = requiredOption("--run-id");
@@ -513,6 +707,8 @@ async function run() {
   const { configPath, style } = await resolveDigest(digestId);
   const sourcePath = await importSources(runId, temporarySourcePath);
   await executeStages(digestId, runId, configPath, style, sourcePath, 0, timeoutSeconds);
+  const summary = await writeRunSummary(runId, digestId, style, null);
+  if (summary) logCostSummary(summary);
   console.log(path.join(stageDirectory(runId, "render"), "output", "email.html"));
 }
 
@@ -588,6 +784,8 @@ async function resume() {
   const outputPath = path.join(stageDirectory(runId, stageName), "output", outputName);
   if (await exists(outputPath)) throw new RunnerError(`Canonical stage output already exists: ${outputPath}`);
   await executeStages(digestId, runId, configPath, style, sourcePath, startIndex, timeoutSeconds);
+  const summary = await writeRunSummary(runId, digestId, style, null);
+  if (summary) logCostSummary(summary);
   console.log(path.join(stageDirectory(runId, "render"), "output", "email.html"));
 }
 
@@ -601,6 +799,42 @@ async function failedAttemptCount(workDir) {
   }
   if (await exists(path.join(workDir, "stage-error.log"))) count += 1;
   return count;
+}
+
+// Rebuild run-summary.json and the cost ledger from the run directories already on disk.
+// Useful for backfilling runs that predate cost accounting, and for repairing a ledger that
+// was deleted. Pricing is applied at rebuild time, so historical rows use current rates.
+async function rebuildLedger() {
+  const runsRoot = path.join(ROOT, RUNS_DIRECTORY);
+  const entries = await readdir(runsRoot, { withFileTypes: true }).catch(() => []);
+  const rebuilt = [];
+  const skipped = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const runId = entry.name;
+    let digestId = null;
+    let style = null;
+    try {
+      const corpus = JSON.parse(await readFile(path.join(runsRoot, runId, "source-acquisition", "sources.json"), "utf8"));
+      digestId = corpus.digest_id ?? null;
+    } catch { /* no corpus: try the digest config below */ }
+    if (!digestId) { skipped.push(`${runId} (no digest_id recorded)`); continue; }
+    try {
+      ({ style } = await resolveDigest(digestId));
+    } catch { skipped.push(`${runId} (unknown digest ${digestId})`); continue; }
+    const summary = await writeRunSummary(runId, digestId, style, null);
+    if (summary) rebuilt.push(summary);
+    else skipped.push(`${runId} (no token usage recorded)`);
+  }
+  rebuilt.sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
+  // A rebuild is authoritative: it replaces the ledger rather than merging into it, so a
+  // row that is no longer valid cannot survive from an earlier rebuild.
+  await writeLedger(rebuilt.map(ledgerRow));
+  const total = rebuilt.reduce((a, s) => a + (s.cost_usd?.actual ?? 0), 0);
+  for (const s of rebuilt) console.error(`  ${String(s.started_at).slice(0, 19)}  ${s.digest_id.padEnd(17)} ${s.billing_band.padEnd(9)} $${s.cost_usd.actual.toFixed(4)}`);
+  for (const s of skipped) console.error(`  skipped: ${s}`);
+  console.error(`ledger rebuilt: ${rebuilt.length} measured run(s), $${total.toFixed(4)} total`);
+  console.error(`ledger path: ${LEDGER_PATH}`);
 }
 
 async function materialize() {
@@ -665,7 +899,12 @@ if (process.argv[2] === "run") {
     console.error(`digest_runner: ${error.message}`);
     process.exitCode = 1;
   });
+} else if (process.argv[2] === "ledger") {
+  rebuildLedger().catch((error) => {
+    console.error(`digest_runner: ${error.message}`);
+    process.exitCode = 1;
+  });
 } else {
-  console.error("Usage: node tools/digest_runner.mjs run --digest <id> --run-id <id> --input <temporary-sources.json> [--timeout <seconds>]\n       node tools/digest_runner.mjs resume --digest <id> --run-id <id> --from-stage <stage> [--timeout <seconds>]\n       node tools/digest_runner.mjs materialize --digest <id> --run-id <id> --stage <stage> --input <temporary-artifact>");
+  console.error("Usage: node tools/digest_runner.mjs run --digest <id> --run-id <id> --input <temporary-sources.json> [--timeout <seconds>]\n       node tools/digest_runner.mjs resume --digest <id> --run-id <id> --from-stage <stage> [--timeout <seconds>]\n       node tools/digest_runner.mjs materialize --digest <id> --run-id <id> --stage <stage> --input <temporary-artifact>\n       node tools/digest_runner.mjs ledger");
   process.exitCode = 1;
 }

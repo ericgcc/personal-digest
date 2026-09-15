@@ -208,7 +208,7 @@ These are resolved. The implementer makes no judgment calls.
 | D4 | Corpus handling in Phase 1 | **Send whole, unchanged** | Minimal change first, so transport regressions are isolated from context regressions. Tiering happens in Phase 3. |
 | D5 | `sources.json` schema | **Unchanged through Phase 5** | Schema is produced by the orchestrator; changing it changes the orchestrator contract. Deferred to optional Phase 6. |
 | D6 | Filenames in the run directory | **Rename `sdk-*` → `model-*` / `stage-*`** | "sdk" is misleading once the SDK is gone. Performed in Task 1.6, because all four affected sites are rewritten there; Task 5.3 only verifies it and fixes documentation. |
-| D7 | Streaming | **Enabled** | Keeps bytes flowing and avoids idle-connection failures — the exact class of failure that killed the baseline render stage. |
+| D7 | Streaming | **Deferred** | Originally recommended to prevent idle-connection failure, but the baseline render failure was root-caused to payload bloat (974,924-byte corpus + 1,644,939-byte theme against a 17,890-byte `final.md`), which Task 1.5's inline context removes directly. Both Phase 1 replays completed with no transport error. Streaming would risk losing `usage` (cache/cost instrumentation) and add SSE parsing surface for no measured benefit. Implement only if a real run shows an idle-connection or long-generation failure. |
 | D8 | Editorial failure policy | **Fail safely, no agent fallback** | Agreed. Handing a heavy stage back to the orchestrator re-incurs the expensive path the offload exists to avoid. |
 | D9 | Render failure policy | **Keep agent fallback** | Mechanical template mapping; no source re-reading; cheap and safe for the orchestrator to perform. |
 | D10 | CLI signatures | **Unchanged** | `system/workflow.md` references them throughout; changing them widens blast radius for no benefit. |
@@ -1025,78 +1025,52 @@ $final = Get-Content ".digest-runs\$run\final-polish\output\final.md" -Raw
 
 **Files modified:** `tools/digest_runner.mjs`
 
-### Task 4.1 — Add retry with exponential backoff
+### Task 4.1 — Add retry with exponential backoff — DONE
+
+Implemented in `tools/digest_runner.mjs`. Constants and the wrapper:
 
 ```js
 const RETRYABLE_STATUS = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
+const RETRY_ATTEMPTS = Number(process.env.DIGEST_RETRY_ATTEMPTS ?? 3);
+const RETRY_BASE_DELAY_MS = Number(process.env.DIGEST_RETRY_BASE_DELAY_MS ?? 2_000);
 
-async function withRetry(operation, { attempts = 3, baseDelayMs = 2_000, stageName }) {
-  let lastError;
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      return await operation(attempt);
-    } catch (error) {
-      lastError = error;
-      const status = Number(/(\d{3})/.exec(error.message)?.[1]);
-      const retryable = error.name === "AbortError"
-        || error.message.includes("fetch failed")
-        || RETRYABLE_STATUS.has(status);
-      if (!retryable || attempt === attempts) break;
-      const delay = baseDelayMs * 2 ** (attempt - 1);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-  throw new RunnerError(`${stageName} failed after ${attempts} attempts: ${lastError.message}`);
-}
+async function withRetry(operation, { stageName }) { /* ... */ }
+```
+
+Wired around the stage call in `executeStages`:
+
+```js
+const { text, finishReason, usage, raw } = await withRetry(
+  () => callDeepSeek({ systemText: prepared.systemText, userText: prepared.userText, stageName: name, timeoutMs: resolveTimeoutMs(timeoutSeconds) }),
+  { stageName: name }
+);
 ```
 
 **Rules the implementer must preserve:**
 
 - **Do not retry** on 400, 401, 403, 404, or 422. These are configuration or payload errors; retrying burns time and money.
-- Retries are **inside** one stage attempt. The two-failure threshold counting (Phase 5) counts *stage attempts*, not HTTP retries.
+- **Do not retry a timeout.** A timeout is arguably transient, but retrying it multiplies the stage wall time by the attempt count. The stage-level two-attempt policy already covers that case, and the operator controls `--timeout`.
+- Retries are **inside** one stage attempt. The two-failure threshold counting (Phase 5) counts *stage attempts*, not transport retries.
 
-**Acceptance:** a forced 503 (temporarily point the endpoint at `httpbin.org/status/503`) retries three times and fails cleanly; a forced 401 fails immediately.
+**Acceptance:** a forced 503 retries three times and fails cleanly; a forced 401 fails immediately.
 
-### Task 4.2 — Enable streaming
+### Task 4.2 — Streaming — DEFERRED
 
-1. Change `stream: false` to `stream: true`.
-2. Replace JSON parsing with SSE accumulation:
+**Not implemented. Deferred deliberately, with the original justification now falsified by evidence.**
 
-```js
-async function readSseText(response) {
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let text = "";
-  let usage = null;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("data:")) continue;
-      const data = trimmed.slice(5).trim();
-      if (data === "[DONE]") continue;
-      let chunk;
-      try { chunk = JSON.parse(data); } catch { continue; }
-      text += chunk?.choices?.[0]?.delta?.content ?? "";
-      if (chunk?.usage) usage = chunk.usage;
-    }
-  }
-  return { text: text.trim(), usage };
-}
-```
+D7 recommended streaming because non-streamed responses were believed to be at risk of idle-connection failure — "the exact class of failure that killed the baseline render stage."
 
-3. In `callDeepSeek`, branch on streaming and keep the same return shape.
+The baseline render failure has since been root-caused to **payload bloat**, not to non-streaming: the OpenCode session accumulated a 974,924-byte corpus plus the 1,644,939-byte `templates/email-theme.html` specimen against a 17,890-byte `final.md`. Task 1.5's inline context removes that cause directly, and both Phase 1 replays completed with no transport error of any kind, including a `render` stage that previously failed twice.
 
-**Rules the implementer must preserve:**
+So streaming would now be defending against an already-solved problem, at a real cost:
 
-- The abort timer must be an **inactivity** timer, not a total-duration timer. Reset it on every chunk. A total-duration timer would kill legitimately long generations.
+1. **Usage data risk.** OpenAI-compatible streaming only returns `usage` when `stream_options: { include_usage: true }` is honoured. If DeepSeek ignores it, every stage loses `usage`, which destroys the cache-ratio instrumentation that Phase 2 depends on and the cost accounting that §3.3 depends on.
+2. **Timer restructuring.** The abort timer must become an inactivity timer reset on every chunk. Getting this wrong either kills long generations or lets a dead connection hang indefinitely.
+3. **New parsing surface.** SSE accumulation introduces a new class of bug for no measured benefit.
 
-**Acceptance:** a 30-minute-scale generation completes without a transport error; `completed.json.usage` is populated.
+The correct sequence is therefore: **add streaming only if a real run shows an idle-connection or long-generation failure.** Record the trigger in §18 when it occurs.
+
+If it is implemented later, the preservation rules are unchanged: the abort timer must be an **inactivity** timer reset on every chunk, never a total-duration timer, and `usage` must be verified to survive streaming before the change is accepted.
 
 ### Task 4.3 — Confirm the render failure class is resolved
 
@@ -1398,6 +1372,46 @@ Run 2 confirms the fix: every stage returned `finish_reason: "stop"`, and `struc
 **Comparison to the old baseline is not yet meaningful.** Run 2 used an 8-source fixture versus the baseline's 78 sources. Per-source wall time is 66 s now versus 23 s for OpenCode, so the new transport is slower per source at this test size. The full replay in §6.3 is required before drawing a conclusion, because caching benefits grow with a larger shared prefix while fixed per-stage overhead does not.
 
 **Verification artifacts (run 2):** `final.md` 16,654 bytes ending cleanly on the catalog; catalog numbering `1–8` complete and sequential; `email.html` 37,141 bytes with the hidden run-key present, `</html>` closed, and **zero unresolved placeholders**.
+
+### Cost structure — corrected
+
+An earlier assumption in this document treated corpus size and context tiering as cost-critical. **Measurement disproves that.** Cost is dominated by output, not input:
+
+| Component | Test A | Share | Rate |
+| --- | --- | --- | --- |
+| Reasoning tokens | $0.0355 | 43% | $0.60/M (output) |
+| Output content | $0.0318 | 38% | $0.60/M (output) |
+| Input, cache **miss** | $0.0148 | 18% | $0.15/M |
+| Input, cache **hit** | $0.0013 | 2% | $0.003/M |
+| **Total** | **$0.0833** | | |
+
+**Output is 81% of cost.** Context tiering (Phase 3) removes cached input, which is ~2% of the bill. Its real value is **reduced cache-miss exposure** — a miss on the ~60K-token corpus costs $0.009 per stage — and lower latency. It is an optimisation, not the cost lever this document previously claimed.
+
+**Off-peak is the single largest cost lever and it is free.** Peak is 01:00–04:00 and 06:00–10:00 UTC, Monday–Friday; all other hours are half price. A scheduled digest can avoid peak almost entirely.
+
+**Cache variance is a cost risk.** In Test A, `structural-edit` recorded **zero cache hits** (`0 hit / 60,341 miss`) where run 2 had `56,704 hit / 3,945 miss` on the same stage and input. That single event added ~$0.008, cancelling almost the entire saving from reduced reasoning effort. The DeepSeek documentation describes caching as best-effort. Treat a cache miss as a real cost event, not an anomaly.
+
+### Length findings (2026-09-15)
+
+Digest body length was measured against each style's declared budget. The catalog is excluded, because the rendering contract excludes it from editorial reading time.
+
+| Output | Style | Body words | Reader time | vs budget |
+| --- | --- | --- | --- | --- |
+| PREV medium, 78 sources | `curated-discovery` | 1,143 | 5.1 min | in range |
+| PREV tech, 78 sources | `synthesis-max` | 1,061 | 4.7 min | **under** |
+| NEW medium, 8 sources | `curated-discovery` | 2,429 | 10.8 min | **over +35%** |
+| NEW medium, 8 sources, Test A | `curated-discovery` | 2,345 | 10.4 min | **over +30%** |
+
+**Two conclusions:**
+
+1. **The earlier word-count change is not the cause of the `curated-discovery` overage.** That change touched only `synthesis-max` (700–1,200 → 1,100–1,800) and `detailed` (120–220 → 170–280). `curated-discovery` was never modified. The overage has a different cause and is unresolved.
+2. **The earlier word-count change does affect `synthesis-max`, in the opposite direction from the digests delivered so far.** The prev system produced 1,061 body words, which was inside the old 700–1,200 range but is **below** the new 1,100–1,800 floor. Raising that budget will lengthen `synthesis-max` output relative to what has been received.
+
+**Most likely explanation for the `curated-discovery` overage:** the smoke fixture is the first 8 sources of a 78-source corpus, not a selection. A highly selective style given only 8 candidates has little to omit, so it likely covered most of them. The 78-source `synthesis-max` replay tests this directly: if that run lands near budget, the overage is a small-corpus artifact rather than a model behaviour.
+
+**Open question — which target is correct for `synthesis-max`.** The old budget (700–1,200 words) and the old stated duration (five-to-eight minutes) were mutually inconsistent at the workflow's own 225 wpm: 700–1,200 words is 3.1–5.3 minutes. Phase 1's D1 chose to keep the stated duration and raise the words. The delivered digests show the model had been honouring the *words*, producing ~4.7 minutes. If the received 4.7-minute digests are considered correct, then the correct fix was to **lower the stated duration to match the words**, not the reverse. Resolve this before enabling `synthesis-max` in production.
+
+**Catalog observation:** in the prev 78-source digest the catalog was **1,525 words against a 1,143-word body** — 57% of the document was bibliography. Worth reviewing separately.
 
 ### Post-change measurements
 

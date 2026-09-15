@@ -269,6 +269,33 @@ function removeCodeFence(text) {
   return match ? match[1] : text;
 }
 
+// Transient transport problems are retried inside a single stage attempt so a
+// momentary network hiccup does not consume one of the two stage-level attempts.
+// Configuration and payload errors are never retried.
+const RETRYABLE_STATUS = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
+const RETRY_ATTEMPTS = Number(process.env.DIGEST_RETRY_ATTEMPTS ?? 3);
+const RETRY_BASE_DELAY_MS = Number(process.env.DIGEST_RETRY_BASE_DELAY_MS ?? 2_000);
+
+async function withRetry(operation, { stageName }) {
+  let lastError;
+  for (let attempt = 1; attempt <= RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      const status = Number(/HTTP (\d{3})/.exec(error.message ?? "")?.[1]);
+      // A timeout is not retried: it would multiply the stage wall time by the
+      // attempt count, and the stage-level retry already covers it.
+      const retryable =
+        /fetch failed|ECONNRESET|ETIMEDOUT|socket hang up|EAI_AGAIN/i.test(error.message ?? "") ||
+        RETRYABLE_STATUS.has(status);
+      if (!retryable || attempt === RETRY_ATTEMPTS) break;
+      await new Promise((resolve) => setTimeout(resolve, RETRY_BASE_DELAY_MS * 2 ** (attempt - 1)));
+    }
+  }
+  throw new RunnerError(`${stageName} failed after ${RETRY_ATTEMPTS} transport attempt(s): ${lastError.message}`);
+}
+
 async function callDeepSeek({ systemText, userText, stageName, timeoutMs }) {
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) throw new RunnerError("DEEPSEEK_API_KEY is not set");
@@ -348,12 +375,15 @@ async function executeStages(digestId, runId, configPath, style, sourcePath, sta
     }
     const prepared = await prepareStage(runId, digestId, configPath, style, stage, inputPath, sourcePath);
     try {
-      const { text, finishReason, usage, raw } = await callDeepSeek({
-        systemText: prepared.systemText,
-        userText: prepared.userText,
-        stageName: name,
-        timeoutMs: resolveTimeoutMs(timeoutSeconds),
-      });
+      const { text, finishReason, usage, raw } = await withRetry(
+        () => callDeepSeek({
+          systemText: prepared.systemText,
+          userText: prepared.userText,
+          stageName: name,
+          timeoutMs: resolveTimeoutMs(timeoutSeconds),
+        }),
+        { stageName: name }
+      );
       await writeFile(path.join(prepared.attemptDir, "model-response.json"), JSON.stringify(raw, null, 2), "utf8");
       // A truncated response is an incomplete artifact that can still look plausible.
       // Fail loudly rather than letting it flow downstream as approved prose.

@@ -20,7 +20,7 @@ Before touching Gmail, validate that:
 * every source group declares at least one Gmail label and at least one adapter;
 * any source-group `acquisition_filters` use only keys explicitly supported by one of that group's declared adapters, and configured values are non-empty;
 * the rendering profile and template exist and match the selected style;
-* `tools/digest_runner.mjs` and `package.json` exist; Node.js can execute the runner; `DEEPSEEK_API_KEY` is set and non-empty in the process environment; and the configured DeepSeek chat endpoint responds to an authenticated request;
+* `tools/digest_runner.mjs` and `package.json` exist; Node.js can execute the runner; the local `.env` file defines a non-empty `DEEPSEEK_API_KEY` and is loaded with Node's native `--env-file` flag; and the configured DeepSeek chat endpoint responds to an authenticated request;
 * the configured SQLite state database and state contract exist, the database passes `PRAGMA integrity_check`, and its `PRAGMA user_version` matches the contract;
 * any `aliases` are distinct from the canonical digest ID;
 * `language` is present, recognizable, and can be mapped to a valid BCP 47 tag for HTML metadata. Stop before source acquisition if the output language cannot be resolved unambiguously.
@@ -298,19 +298,21 @@ The runner itself creates `.digest-runs/<run-id>/<stage>/`. That directory conta
 
 Run commands from the canonical local-synced Digest System root. Do not use a Google Drive connector, browser URL, cloud workspace, task workspace, sandbox directory, or temporary clone to read canonical configuration or create run artifacts. On Windows, use the local Node.js runtime that passed preflight; `node` below denotes that runtime.
 
+The model credential is read from the repository-root `.env` file, which is git-ignored. Every runner command must therefore pass `--env-file=.env`, so the key is never exported into a shell profile, written into a prompt, or committed. Use `--env-file-if-exists=.env` only where the run must be attempted and allowed to fail cleanly when the file is absent.
+
 The authorized editorial command signatures are:
 
 ```text
-node tools/digest_runner.mjs run --digest <digest-id> --run-id <run-id> --input <temporary-sources.json>
-node tools/digest_runner.mjs resume --digest <digest-id> --run-id <run-id> --from-stage <stage>
-node tools/digest_runner.mjs materialize --digest <digest-id> --run-id <run-id> --stage <completed-fallback-stage> --input <temporary-fallback-artifact>
+node --env-file=.env tools/digest_runner.mjs run --digest <digest-id> --run-id <run-id> --input <temporary-sources.json>
+node --env-file=.env tools/digest_runner.mjs resume --digest <digest-id> --run-id <run-id> --from-stage <stage>
+node --env-file=.env tools/digest_runner.mjs materialize --digest <digest-id> --run-id <run-id> --stage <completed-fallback-stage> --input <temporary-fallback-artifact>
 ```
 
 ```powershell
 $run = "<unique-run-id>"
 $temporarySources = "<absolute-path-to-task-workspace-sources.json>"
 
-node tools/digest_runner.mjs run --digest "{{digest}}" --run-id $run --input $temporarySources
+node --env-file=.env tools/digest_runner.mjs run --digest "{{digest}}" --run-id $run --input $temporarySources
 ```
 
 ## Two-attempt stage recovery and controlled fallback
@@ -426,7 +428,7 @@ If delivery or a required dependency fails, do not label messages or persist the
 * Never silently substitute snippets, search results, unauthenticated copies, or alternate reading methods for an adapter's required reading method.
 * Never silently substitute another style, rendering profile, or template when configuration is inconsistent.
 * If a runner-managed stage fails, retry it once, then apply the policy in `## Two-attempt stage recovery and controlled fallback`: editorial stages stop the run safely, and only `render` may be performed by the agent.
-* If Node.js, `tools/digest_runner.mjs`, a required canonical input, required canonical context, or `DEEPSEEK_API_KEY` is unavailable such that the requested stage cannot be attempted through the runner, stop safely; an infrastructure failure before stage preparation does not authorize fallback.
+* If Node.js, `tools/digest_runner.mjs`, `--env-file=.env`, a required canonical input, required canonical context, or the model credential is unavailable such that the requested stage cannot be attempted through the runner, stop safely; an infrastructure failure before stage preparation does not authorize fallback.
 * Never replace a failed stage with informal chat output, skip it, merge it with another stage, or send a partial digest.
 * If the scheduled-task agent cannot invoke the canonical local `tools/digest_runner.mjs`, stop safely. The initial runner input may originate in its task workspace, but only the runner may materialize the canonical source artifact; every later run artifact must resolve under the canonical root.
 * Leave inaccessible items pending and state the reason in run notes.

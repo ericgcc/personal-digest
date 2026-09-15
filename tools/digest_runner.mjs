@@ -67,6 +67,39 @@ const STYLE_BODY_BUDGET = {
 // and must not re-litigate length.
 const STAGES_ENFORCING_BUDGET = new Set(["draft", "compression-edit", "final-polish"]);
 
+// Which corpus context each stage receives. This table is the only place that decision is
+// made. Stages that only transform approved prose do not need article bodies, so removing
+// the corpus from them cuts both the per-request payload and the cache-miss exposure they
+// would otherwise carry.
+//
+// NOTE: tiering means the corpus block is no longer identical across all editorial stages,
+// so cross-stage prefix reuse falls back to the shared system block. Measured before
+// tiering, the shared prefix was ~56.7K tokens; afterwards the shared part is the system
+// block alone. Hits on that block still apply, and the system block is the same size as
+// before.
+const STAGE_CORPUS_POLICY = {
+  analyze: "full",
+  frame: "none",
+  draft: "shortlist",
+  "structural-edit": "none",
+  "clarity-edit": "none",
+  "voice-edit": "none",
+  "compression-edit": "none",
+  "final-polish": "provenance",
+  render: "none",
+};
+
+// Fields retained by the `provenance` policy. full_text must never appear here.
+const PROVENANCE_FIELDS = [
+  "source_number",
+  "title",
+  "author_or_publication",
+  "canonical_url",
+  "resolved_source_locator",
+  "reading_minutes",
+  "reading_outcome",
+];
+
 class RunnerError extends Error {}
 
 function option(name) {
@@ -167,6 +200,71 @@ function wrapBlock(tag, payload) {
   return `<${tag}>\n${payload}\n</${tag}>`;
 }
 
+// Collect every source number referenced anywhere in analysis.json. Used to build the
+// draft-stage shortlist so draft receives the sources it may actually write about.
+function shortlistSourceNumbers(analysisJson) {
+  const numbers = new Set();
+  if (!analysisJson) return numbers;
+  for (const match of JSON.stringify(analysisJson).matchAll(/"source_number"\s*:\s*(\d+)/g)) {
+    numbers.add(Number(match[1]));
+  }
+  return numbers;
+}
+
+// Project the canonical corpus down to what a stage's policy allows. Returns the text to
+// inline, the policy actually applied, and any warning worth recording.
+function projectCorpus(corpus, policy, analysisJson) {
+  const sources = Array.isArray(corpus.sources) ? corpus.sources : [];
+
+  if (policy === "full") {
+    return { text: JSON.stringify(corpus, null, 2), effectivePolicy: "full", sourceCount: sources.length, warning: null };
+  }
+
+  if (policy === "shortlist") {
+    const keep = shortlistSourceNumbers(analysisJson);
+    const fullFallback = (warning) => ({
+      text: JSON.stringify(corpus, null, 2),
+      effectivePolicy: "full",
+      sourceCount: sources.length,
+      warning,
+    });
+    // Fail open twice over: an empty extraction, or a shortlist that matches nothing in
+    // the corpus, both mean the projection is broken. Sending too much is far safer than
+    // silently starving a stage of its inputs.
+    if (keep.size === 0) {
+      return fullFallback("shortlist extraction found no source numbers; fell back to the full corpus");
+    }
+    const filtered = sources.filter((source) => keep.has(source.source_number));
+    if (filtered.length === 0) {
+      return fullFallback(`shortlist matched ${keep.size} source number(s) but none exist in the corpus; fell back to the full corpus`);
+    }
+    return {
+      text: JSON.stringify({ ...corpus, sources: filtered }, null, 2),
+      effectivePolicy: "shortlist",
+      sourceCount: filtered.length,
+      warning: keep.size > filtered.length
+        ? `shortlist referenced ${keep.size} source numbers but only ${filtered.length} exist in the corpus`
+        : null,
+    };
+  }
+
+  if (policy === "provenance") {
+    const manifest = sources.map((source) => {
+      const row = {};
+      for (const field of PROVENANCE_FIELDS) row[field] = source[field] ?? null;
+      return row;
+    });
+    return {
+      text: JSON.stringify({ ...corpus, sources: manifest }, null, 2),
+      effectivePolicy: "provenance",
+      sourceCount: manifest.length,
+      warning: null,
+    };
+  }
+
+  throw new RunnerError(`Unknown corpus policy: ${policy}`);
+}
+
 function stageIndex(stageName) {
   const index = STAGES.findIndex(([name]) => name === stageName);
   if (index === -1) throw new RunnerError(`Unknown stage: ${stageName}`);
@@ -214,7 +312,10 @@ async function prepareStage(runId, digestId, configPath, style, stage, inputPath
   await mkdir(inputDir, { recursive: true });
   await mkdir(outputDir, { recursive: true });
   await copyFile(inputPath, path.join(inputDir, path.basename(inputPath)));
-  if (name !== "analyze" && name !== "render") await copyFile(sourcePath, path.join(inputDir, "sources.json"));
+  // The source corpus is deliberately not copied into input/ for every stage. Each stage
+  // now receives a corpus block sized by STAGE_CORPUS_POLICY, and what it actually received
+  // is recorded in its attempt directory and verbatim in prompt.txt. The canonical corpus
+  // remains at source-acquisition/sources.json.
 
   const editorialFiles = [
     "system/workflow.md",
@@ -251,9 +352,19 @@ async function prepareStage(runId, digestId, configPath, style, stage, inputPath
     "Follow only the canonical instruction documents.\n\n" +
     await readContextFiles(invariantFiles);
 
-  const corpusBlock = name === "render"
-    ? ""
-    : wrapBlock("source_corpus", await readFile(sourcePath, "utf8"));
+  const corpusPolicy = STAGE_CORPUS_POLICY[name] ?? "none";
+  let corpusBlock = "";
+  let corpusRecord = null;
+  if (corpusPolicy !== "none") {
+    const corpus = JSON.parse(await readFile(sourcePath, "utf8"));
+    let analysisJson = null;
+    if (corpusPolicy === "shortlist") {
+      const analysisPath = path.join(stageDirectory(runId, "analyze"), "output", "analysis.json");
+      analysisJson = JSON.parse(await readFile(analysisPath, "utf8"));
+    }
+    corpusRecord = projectCorpus(corpus, corpusPolicy, analysisJson);
+    corpusBlock = corpusRecord.text ? wrapBlock("source_corpus", corpusRecord.text) : "";
+  }
 
   const previousBlock = name === "analyze"
     ? ""
@@ -283,7 +394,29 @@ async function prepareStage(runId, digestId, configPath, style, stage, inputPath
     stage: name,
     started_at: new Date().toISOString(),
     provenance: "runner",
+    corpus_policy: corpusRecord?.effectivePolicy ?? "none",
+    corpus_sources: corpusRecord?.sourceCount ?? 0,
+    corpus_bytes: corpusRecord?.text.length ?? 0,
+    corpus_warning: corpusRecord?.warning ?? null,
   }, null, 2), "utf8");
+  if (corpusRecord) {
+    // Derived from the exact text that was sent, so this record is a faithful manifest of
+    // what the stage received. Task 3.4 checks the final citations against it.
+    let sourceNumbers = [];
+    try {
+      sourceNumbers = (JSON.parse(corpusRecord.text).sources ?? []).map((source) => source.source_number);
+    } catch {
+      sourceNumbers = [];
+    }
+    await writeFile(path.join(attemptDir, "corpus-context.json"), JSON.stringify({
+      requested_policy: corpusPolicy,
+      effective_policy: corpusRecord.effectivePolicy,
+      source_count: corpusRecord.sourceCount,
+      source_numbers: sourceNumbers,
+      bytes: corpusRecord.text.length,
+      warning: corpusRecord.warning,
+    }, null, 2), "utf8");
+  }
   return { workDir, attemptDir, attemptNumber, outputPath: path.join(outputDir, outputName), systemText, userText };
 }
 
@@ -418,12 +551,18 @@ async function executeStages(digestId, runId, configPath, style, sourcePath, sta
       }
       const artifact = await validateArtifactText(stage, text, "DeepSeek response");
       await writeFile(prepared.outputPath, artifact, "utf8");
+      const cacheHit = usage?.prompt_cache_hit_tokens ?? 0;
+      const cacheMiss = usage?.prompt_cache_miss_tokens ?? 0;
+      const cacheTotal = cacheHit + cacheMiss;
       await writeFile(path.join(prepared.attemptDir, "completed.json"), JSON.stringify({
         attempt: prepared.attemptNumber,
         stage: name,
         completed_at: new Date().toISOString(),
         output: prepared.outputPath,
         finish_reason: finishReason,
+        cache_hit_tokens: cacheHit,
+        cache_miss_tokens: cacheMiss,
+        cache_hit_ratio: cacheTotal ? Number((cacheHit / cacheTotal).toFixed(4)) : null,
         usage,
       }, null, 2), "utf8");
       inputPath = prepared.outputPath;

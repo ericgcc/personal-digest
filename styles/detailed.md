@@ -8,7 +8,7 @@ A structured per-source digest designed to preserve the important context, nuanc
 | **Composition unit** | One independent retained source or substantial subentry. |
 | **Source relationship** | Sources remain independent; topical proximity is navigation only, never synthesis. |
 | **Selection model** | Preserve reasonably broad substantive coverage while removing obvious noise and low-information material. |
-| **Depth model** | Variable-medium depth: typically 170–280 words and roughly 45–75 seconds per substantive source, expanding only when extra detail materially improves understanding. |
+| **Depth model** | Variable-medium depth: typically 120–220 words and roughly 30–60 seconds per substantive source, expanding only when extra detail materially improves understanding. |
 | **Organization model** | Optional broad topical grouping derived from the actual source set; otherwise direct source-by-source presentation. |
 | **Progression model** | Each source summary follows one coherent explanatory line: orient the reader, establish the central idea, then develop only the mechanisms, evidence, examples, or caveats that advance it. |
 | **Opening behavior** | No editorial opening. An optional navigational index may appear only when topical grouping genuinely helps. |
@@ -66,9 +66,9 @@ If the source set is small, heterogeneous or does not support useful grouping, p
 Within every topic, keep each source clearly identifiable and independent.
 
 ## Length and density
-Aim for approximately 45–75 seconds of reading per substantive source.
+Aim for approximately 30–60 seconds of reading per substantive source.
 
-Typical summaries should be roughly 170–280 words, but let information density determine length.
+Typical summaries should be roughly 120–220 words, but let information density determine length.
 
 Use less space for simple announcements, short essays or incremental updates.
 

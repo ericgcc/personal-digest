@@ -32,21 +32,40 @@ const STAGE_THINKING = Object.fromEntries(
   STAGES.map(([name]) => [name, name === "render" ? { type: "disabled" } : { type: "enabled" }]),
 );
 
-// Reasoning effort per stage. The four edit stages revise an existing document against
-// an explicit checklist rather than discovering structure, so they run at low effort.
-// Judgment-heavy stages keep higher effort. Reasoning dominates both latency and cost
-// because it bills as output, so this split is the primary cost control.
+// Reasoning effort per stage. Measured on an identical fixture, lowering effort cut edit
+// stages by 41-66% wall time and 56-85% reasoning tokens. But one of those stages is
+// reductive: compression-edit exists to cut length, and at low effort it removed only
+// 0.2% of the body versus 3.8% at medium, becoming effectively inert. Reductive and
+// structural stages therefore keep higher effort while purely transformative stages run low.
 const STAGE_REASONING_EFFORT = {
   analyze: "high",
   frame: "high",
   draft: "high",
-  "structural-edit": "low",
+  "structural-edit": "medium",
   "clarity-edit": "low",
   "voice-edit": "low",
-  "compression-edit": "low",
+  "compression-edit": "high",
   "final-polish": "high",
   render: undefined,
 };
+
+// Body-length target per style, injected into the stages whose job includes establishing
+// or enforcing body length. A measured replay showed draft overshooting the style budget
+// by 115% and no later stage recovering it, because the style file states the target as
+// prose the model treats as advisory.
+//
+// These values MUST mirror the Depth model and Length sections of styles/<style>.md,
+// which remain the source of truth. Update both together when a style budget changes.
+const STYLE_BODY_BUDGET = {
+  "curated-discovery": "about 1,125-1,800 words for the briefing body, excluding the source catalog",
+  "synthesis-max": "about 700-1,200 words for the briefing body, excluding the source catalog",
+  detailed: "about 120-220 words per substantive source entry",
+  concise: "about 40-80 words per retained source entry",
+};
+
+// Stages that establish or enforce body length. The other stages transform approved prose
+// and must not re-litigate length.
+const STAGES_ENFORCING_BUDGET = new Set(["draft", "compression-edit", "final-polish"]);
 
 class RunnerError extends Error {}
 
@@ -244,7 +263,11 @@ async function prepareStage(runId, digestId, configPath, style, stage, inputPath
     `Stage: ${name}\n` +
     `Digest ID: ${digestId}\n` +
     `Selected style: ${style}\n` +
-    `Purpose: ${stage[3]}\n\n` +
+    `Purpose: ${stage[3]}\n` +
+    (STAGES_ENFORCING_BUDGET.has(name) && STYLE_BODY_BUDGET[style]
+      ? `Length target: ${STYLE_BODY_BUDGET[style]}. Treat this as a binding constraint, not a suggestion.\n`
+      : "") +
+    `\n` +
     `Return ONLY the complete ${stage[2]} artifact. Do not wrap it in a Markdown code fence. ` +
     `Do not narrate, explain, or describe the artifact. Do not use tools. Do not edit files. ` +
     `Do not access the network, Gmail, Drive, Chrome, or SQLite. Do not ask questions. ` +

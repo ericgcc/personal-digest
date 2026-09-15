@@ -1349,11 +1349,55 @@ Record the run ID used for each replay so the evidence is auditable.
 
 | Replay | Run ID | Date | Result | Notes |
 | --- | --- | --- | --- | --- |
-| Reduced replay (§6.5) | | | | |
+| Reduced replay (§6.5) | `replay-phase1-0914T225817` | 2026-09-14 | **invalid** | Exit 0, but 2 stages truncated — see Phase 1 findings |
+| Reduced replay, retry | `replay-phase1b-0914T231129` | 2026-09-14 | **PASS** | All 9 stages `stop`, no truncation |
 | Full replay — `medium-bi-daily` (§6.3) | | | | Primary; comparable to §3.2 baseline |
 | Full replay — `tech-bi-daily` (§6.3) | | | | `synthesis-max` coverage |
 | Single-stage `resume` (§6.6) | | | | |
 | Orchestrator run (§6.8) | | | | Live digest, once |
+
+### Phase 1 findings (2026-09-14)
+
+**Transport works.** Direct DeepSeek calls succeeded on all nine stages; the OpenCode SDK is fully removed; no API key appeared in any run artifact across both replays.
+
+**Prefix caching confirmed.** The byte-identical invariant block produced consistent hits across stages 2–8:
+
+| Run | Stage | Input | Hit | Miss | Ratio |
+| --- | --- | --- | --- | --- | --- |
+| 1 | analyze | 56,990 | 0 | 56,990 | 0 (cold) |
+| 1 | frame | 67,186 | 56,704 | 10,482 | 0.844 |
+| 1 | clarity-edit | 58,538 | 56,704 | 1,834 | **0.969** |
+| 1 | render | 30,812 | 0 | 30,812 | 0 (own prefix) |
+| 2 | analyze | — | — | — | **0.997** |
+| 2 | structural-edit | — | — | — | 0.935 |
+| 2 | render | — | — | — | 0.870 |
+
+Run 2's `analyze` ratio of 0.997 and `render` ratio of 0.870 show that **caching persists across runs**, not just within one. The §4.2 payload layout works.
+
+**BUG FOUND AND FIXED — silent truncation.** In run 1, `structural-edit` and `clarity-edit` returned `finish_reason: "length"` with only 1,500 content tokens each. Reasoning tokens count against `max_tokens` on this model, and those stages spent 28–31K reasoning tokens against a 32,768 ceiling. Artifacts were truncated mid-sentence, yet were written as valid outputs and consumed downstream.
+
+Fix, both applied in Task 1.6:
+
+1. `MAX_OUTPUT_TOKENS` raised 32,768 → **131,072**, so reasoning plus artifact fit.
+2. A `finish_reason === "length"` guard now **throws**, failing the stage instead of writing a truncated artifact. Truncation can no longer pass as success.
+
+Run 2 confirms the fix: every stage returned `finish_reason: "stop"`, and `structural-edit` produced 17,008 bytes versus 7,304 truncated.
+
+**Reasoning dominates cost and time.** 69% of run 1's output tokens were reasoning. Reasoning volume correlates almost linearly with stage duration. This is the remaining performance concern and is addressed by the reasoning-effort decision in Phase 2.
+
+| Metric | Run 1 (truncated) | Run 2 (fixed) | §3.2 baseline |
+| --- | --- | --- | --- |
+| Wall time | 734.4 s | 529.3 s | 1,809 s |
+| Cache hit tokens | 396,928 | 480,128 | n/a |
+| Cache miss tokens | 124,673 | 43,347 | n/a |
+| Output tokens | 173,591 | 129,138 | n/a |
+| …reasoning share | 69% | 60% | n/a |
+| Cost (off-peak) | $0.1240 | **$0.0854** | n/a |
+| Corpus | 8 sources | 8 sources | 78 sources |
+
+**Comparison to the old baseline is not yet meaningful.** Run 2 used an 8-source fixture versus the baseline's 78 sources. Per-source wall time is 66 s now versus 23 s for OpenCode, so the new transport is slower per source at this test size. The full replay in §6.3 is required before drawing a conclusion, because caching benefits grow with a larger shared prefix while fixed per-stage overhead does not.
+
+**Verification artifacts (run 2):** `final.md` 16,654 bytes ending cleanly on the catalog; catalog numbering `1–8` complete and sequential; `email.html` 37,141 bytes with the hidden run-key present, `</html>` closed, and **zero unresolved placeholders**.
 
 ### Post-change measurements
 

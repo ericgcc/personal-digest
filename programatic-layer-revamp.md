@@ -1413,6 +1413,64 @@ Digest body length was measured against each style's declared budget. The catalo
 
 **Catalog observation:** in the prev 78-source digest the catalog was **1,525 words against a 1,143-word body** — 57% of the document was bibliography. Worth reviewing separately.
 
+### Synthesis-max full-corpus replay (2026-09-15)
+
+Run `replay-synthmax-0915T000909`, digest `tech-bi-daily`, 53 sources / 974,924 bytes.
+
+| Metric | Value |
+| --- | --- |
+| Exit code | 0 |
+| Wall time | 581.7 s |
+| Stage finishes | all `stop`, no truncation |
+| Cache hit / miss | 2,067,456 / 778,928 |
+| Output tokens | 151,534 (reasoning 67,205) |
+| **Cost (off-peak)** | **$0.2140** |
+| **Cost (peak)** | **$0.4279** |
+| `final.md` | 4,055 words total (body 3,097 + catalog 958) |
+| `email.html` | 69,383 bytes, run-key present, closed, no unresolved placeholders |
+
+**Structural contract: PASSES.** `THE BIG PICTURE` present; 6 body sections all integrating two or more sources; **zero single-source threads**, satisfying the style's defining rule. Status labels reconcile to the 53-source corpus: 25 `Selected`, 3 `Worth reading`, 25 `Reviewed`.
+
+### Defect found — length overshoot
+
+Same 53-source corpus, same style file apart from the Phase 1 budget change:
+
+| Output | Body words | Reader time | vs budget (1,100–1,800 w / 4.9–8.0 min) |
+| --- | --- | --- | --- |
+| PREV (GPT/OpenCode) | 1,061 | 4.7 min | under |
+| NEW (DeepSeek, 9-stage) | **3,097** | **13.8 min** | **over +72%** |
+
+The new pipeline produces **2.9× the previous body length**. Raising the budget in Phase 1 (+50%) explains only part of this; roughly 2× is unexplained by configuration.
+
+**Stage-by-stage word progression (synthesis-max):**
+
+| Stage | Words | Delta | Reasoning tokens |
+| --- | --- | --- | --- |
+| analyze | 9,154 | — | 9,817 |
+| frame | 4,530 | −4,624 | 12,408 |
+| draft | 3,861 | −669 | 16,354 |
+| structural-edit | 3,863 | +2 | 9,934 |
+| clarity-edit | 4,073 | +210 | 1,190 |
+| voice-edit | 4,071 | −2 | 4,907 |
+| compression-edit | 4,059 | **−12** | 749 |
+| final-polish | 4,055 | −4 | 11,846 |
+
+**Two independent causes:**
+
+1. **`draft` overshoots the style budget and no later stage recovers it.** Draft lands at 3,861 words against a 1,100–1,800 target — **+115% over**. The style file states the target as "Target roughly 1,100–1,800 words," and the model treats it as advisory.
+
+2. **`compression-edit` is effectively inoperative, and Test A made it worse.** This is a regression introduced by the Test A reasoning-effort change:
+
+| Run | Edit effort | Words removed | Cut % | Reasoning tokens |
+| --- | --- | --- | --- | --- |
+| run 2 | `medium` | 103 | 3.8% | 3,890 |
+| testA | `low` | 4 | 0.2% | 797 |
+| synthmax | `low` | 12 | 0.3% | 749 |
+
+Lowering `compression-edit` to `low` cut its reasoning tokens by ~80% and its actual work from 3.8% to ~0.2%. Note that even the 3.8% achieved at `medium` was far short of the 46–115% reduction a working compression pass would need, so **the stage was already underpowered before Test A**. Test A made a marginal stage nearly inert.
+
+**Consequence for Test A.** The four-stage effort reduction delivered the predicted per-stage gains (−41% to −66% wall time, −56% to −85% reasoning), but one of those stages — `compression-edit` — is a *reductive* stage whose entire purpose is cutting length. Reducing its effort removed its function. Test A's effort split should be revised: `compression-edit` needs `medium` or `high`, while `clarity-edit` and `voice-edit` can remain `low`.
+
 ### Post-change measurements
 
 | Metric | Target | Phase 2 | Phase 3 | Phase 5 |

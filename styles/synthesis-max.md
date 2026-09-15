@@ -1,31 +1,31 @@
 # Synthesis MAX
-One selective briefing: no separate article summaries. Merge the strongest material into an editorial synthesis organized around the relationships, patterns, tensions and ideas genuinely supported by the source set, with links back to every source.
+One selective cross-source explanatory briefing: no separate article summaries and no single-source threads. Integrate the strongest material around concrete topics, questions, mechanisms, developments, or tensions that at least two sources make easier to understand together, with links back to every source.
 
 ## Style interface
 | Dimension | Declaration |
 | --- | --- |
-| **Purpose** | Turn the strongest source material into one integrated briefing whose main value comes from meaningful relationships, patterns, tensions, and combined implications. |
-| **Composition unit** | A synthesized editorial insight or thematic thread. |
-| **Source relationship** | Cross-source synthesis is fundamental when supported; unrelated material must not be forced together, and a valuable source may stand largely alone when necessary. |
+| **Purpose** | Help the reader understand the strongest material through meaningful relationships between sources. The synthesis must improve explanation, not merely produce a higher-level interpretation. |
+| **Composition unit** | A reader-understandable concrete topic, question, mechanism, development, or tension explained through at least two substantively contributing sources. |
+| **Source relationship** | Cross-source synthesis is mandatory in every narrative thread. Prefer two or three sources when sufficient; use four or more only when all contribute to the same concrete subject without requiring a broad abstraction to hold them together. Single-source threads are not permitted. |
 | **Selection model** | Highly selective: include material that contributes enough information, explanatory power, practical significance, novelty, or relationship value to justify space. |
-| **Depth model** | Variable-high depth across a dense five-to-eight-minute body, normally 700–1,200 words excluding the catalog. |
-| **Organization model** | Big Picture opening → two to five numbered synthesized threads determined by the evidence. |
-| **Progression model** | Each thread develops a clear analytical arc from evidence or tension → relationship between sources → supported implication, with contributing material ordered by the argument rather than by source. |
-| **Opening behavior** | Required `THE BIG PICTURE` opening that earns its place as the briefing's first editorial synthesis. |
+| **Depth model** | Variable-high depth across a dense five-to-eight-minute body, normally 1,100–1,800 words excluding the catalog. |
+| **Organization model** | Big Picture opening → one to five numbered synthesized threads determined by the evidence; use fewer when the corpus cannot support honest multi-source grouping. |
+| **Progression model** | Each thread develops from concrete orientation → integrated explanation and source contributions → supported synthesis or implication, with material ordered by the explanation rather than by source. |
+| **Opening behavior** | Required `THE BIG PICTURE` opening whose first duty is clear orientation; add cross-source interpretation only when it makes the picture easier to understand. |
 | **Body behavior** | Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes. |
 | **Citation / provenance** | Permanent global numerical citations attached to supported claims/inferences plus thread-level source notes. |
 | **Source catalog** | Required complete catalog of the substantively reviewed corpus, with stable numbering, canonical statuses, per-source reading time, and grouping controlled by `source_catalog_grouping` (`source-identity` by default; `editorial-topic` when explicitly configured). |
 | **Ending behavior** | Stop immediately after the final source catalog. |
-| **Writing character** | Analytical, connective, authoritative but restrained, precise, and intellectually alive. |
+| **Writing character** | Explanatory, domain-accessible, and analytical; connective, authoritative but restrained, precise, and intellectually alive. |
 | **Optional extension points** | Zero or one digest-authorized callout inside a thread when the rendering profile supports it. |
 
 ## Writing reference profile
 Apply the shared writing references with the following emphasis:
 
 * `system/writing-reasoning-and-source-fidelity.md`—**full depth**. Evidence-led analysis and cross-source relationship testing are central to this style.
-* `system/writing-editorial-prose.md`—**full depth**. The result should read like a strong analytical magazine essay, not a research paper or literature review.
+* `system/writing-editorial-prose.md`—**full depth**. The result should read like a lucid analytical magazine briefing, not a research paper, literature review, or compressed conceptual essay.
 * `system/writing-naturalness.md`—**full diagnostic pass** across the whole briefing.
-* `system/writing-style-application.md`—preserve the Synthesis MAX boundary: the relationship is the composition anchor, and combined sources must add explanatory value unavailable from the sources separately.
+* `system/writing-style-application.md`—preserve the Synthesis MAX boundary: every thread must synthesize at least two sources, and the relationship must make a concrete subject easier to understand than the sources would separately.
 
 Do not import academic surface conventions simply because the reasoning is analytical. Avoid ritual literature-survey language, repeated author-by-author attribution, and formal hedging formulas when claim-level citations and proportionate wording already make provenance clear.
 
@@ -38,29 +38,37 @@ Before writing:
 2. Interrogate each promising source before synthesizing it: identify its actual thesis, strongest evidence/mechanism, meaningful caveats or anomalies, and what it uniquely contributes.
 3. Evaluate each source for information value, explanatory power, practical significance, novelty and relevance to the broader source set.
 4. Identify and classify meaningful relationships precisely: reinforcement, extension, qualification, contradiction, complementarity, shared cause/consequence, or independence.
-5. For every proposed multi-source thread, ask what becomes more understandable only in combination, what each source uniquely contributes, and whether an anomaly, caveat, or plausible alternative grouping weakens the synthesis.
+5. For every proposed thread, ask: **What concrete topic, question, mechanism, development, or tension do at least two sources help the reader understand better together—and what does each source add?** Then apply the relationship, contribution, evidence, counter-test, comprehension, and semantic-distance checks in `system/writing-reasoning-and-source-fidelity.md`.
 6. Select the material that provides enough value to justify space in a short briefing.
 7. Choose the editorial structure that best reflects the evidence. Treat the initial synthesis as a working explanation, not a conclusion that later evidence must be made to fit.
 
-Organize the briefing around synthesized ideas—not publications, authors or individual articles.
+Organize the briefing around concrete shared subjects that become more understandable through synthesis—not publications, authors, individual articles, or abstract principles invented to connect distant material.
 
 Seek synthesis where it is genuinely supported. Do not assume the source set has one unifying theme.
 
 A strong section may answer questions such as:
 
-* What broader pattern becomes visible when these sources are considered together?
+* What concrete development, mechanism, question, or tension do these sources jointly explain?
 * Where do sources reinforce, qualify or contradict one another?
-* What principle or implication emerges from their combined evidence?
-* Why does this matter beyond the individual source?
+* What does each source contribute that the others do not?
+* What supported implication becomes visible after the shared subject is clear?
 
 Explicitly explain connections rather than placing adjacent article summaries under a shared heading.
 
-Prefer cross-source synthesis when meaningful, but do not force unrelated material together. A valuable source may stand largely on its own when it contains an important case study, explanation, technique or discovery with no honest counterpart in the source set.
+Every narrative thread must integrate at least two sources that contribute materially. Prefer two or three when they are sufficient. Four or more are welcome only when every source helps explain the same concrete subject and the thread remains easy to follow. A second source used only as decoration, analogy, or citation padding does not satisfy this requirement.
+
+If a valuable source has no honest synthesis partner, keep it outside the Synthesis MAX narrative; it may still appear as `Worth reading` or `Reviewed` in the source catalog. Never create a single-source thread.
+
+Do not group sources merely because they instantiate the same broad principle. If the relationship becomes visible only after translating distant domains into a slogan, metaphor, or high-level abstraction, keep them separate. The farther apart the source domains are, the stronger and more concrete the explanatory benefit must be.
 
 Recurring coverage is not automatically important. Repetition may represent duplication rather than signal.
 
 ## Writing character
 Write with analytical authority and restraint. The prose should make relationships visible without sounding as though every relationship is a revelation.
+
+Write so the reader understands the material through the synthesis, not so the reader admires the synthesis itself.
+
+Orient the reader in the concrete shared subject before compressing it into an inference. Explain what is happening, how it works, or what question is at stake; integrate what each source contributes; then let the synthesis or implication emerge. `Explain first, synthesize second` does not mean summarizing sources one by one. It means making the phenomenon intelligible before asking the reader to interpret a higher-level conclusion.
 
 Start from the strongest concrete evidence, tension, or mechanism and let the synthesis emerge from it. Explain why sources belong together instead of relying on phrases such as "the broader pattern" or "the deeper lesson" to announce synthesis.
 
@@ -72,12 +80,29 @@ Use memorable phrasing when it clarifies the relationship, but prefer precision 
 
 Do not use enumerative compression as a substitute for explanation. A run of nouns, features, techniques, stages, or examples is useful only when the sequence or comparison itself advances the argument. Otherwise, select the elements that matter and explain the mechanism, distinction, or relationship that makes them consequential. If several elements are essential, develop their roles instead of packing them into a dense list that merely signals breadth.
 
+## Domain accessibility in synthesis
+Synthesis MAX combines material that may carry different specialist vocabularies and assumed contexts. Write for an intelligent reader who is not necessarily familiar with any of those domains. The reader should gain access to the sources through the synthesis, not need prior access to understand it.
+
+Begin each thread by establishing its concrete subject, relevant actors, situation, or mechanism in broadly understandable language. Introduce specialized terminology only after the reader has enough context to understand what it refers to and why it matters.
+
+Preserve domain terms that carry necessary precision, but explain them at the point of use through their function, effect, referent, consequence, or a concise example. Do not require the reader to infer their meaning from adjacent jargon.
+
+Move through one level of abstraction at a time:
+
+`concrete subject → source evidence or mechanisms → relationship → implication`
+
+Do not combine unfamiliar terminology, compressed source context, metaphor, and editorial inference in the same sentence. Unpack them in the order required for understanding.
+
+Every additional domain creates an orientation cost. Include a cross-domain source only when its concrete explanatory contribution is strong enough to repay that cost within the thread's limited reading budget. Conceptual similarity alone does not repay it.
+
+Let each paragraph perform one primary explanatory job. If several unfamiliar concepts are essential, establish their roles and relationships before asking them to support a broader conclusion. A reader should never need to understand the synthesis in order to reconstruct what the underlying material was about.
+
 ## Length and density
 Aim for a dense five-to-eight-minute briefing.
 
-Target roughly 700–1,200 words for the briefing body, excluding the final source catalog.
+Target roughly 1,100–1,800 words for the briefing body, excluding the final source catalog.
 
-Use two to five thematic sections depending on the structure genuinely supported by the material. This is a permitted range, not a coverage target. Prefer a smaller number of developed insights over many shallow observations; when the evidence can support either shape, three well-developed threads are preferable to five compressed ones.
+Use one to five thematic sections depending on the structure genuinely supported by the material. This is a permitted range, not a coverage target. Prefer a smaller number of developed insights over many shallow observations; when the evidence can support either shape, three well-developed threads are preferable to five compressed ones.
 
 Let information density determine length. Never create, split or expand a section merely to satisfy a target count or reading time.
 
@@ -93,23 +118,24 @@ Remove repetition aggressively. Do not restate a section's thesis in its conclus
 
 ## Required structure
 ### The Big Picture
-Open the briefing with one compact editorial synthesis of approximately 80–130 words with inline numerical citations. It must earn its place rather than act as a table of contents.
+Open the briefing with one compact orientation of approximately 80–130 words with inline numerical citations. Its first duty is to tell the reader, in plain language, what the most important development, mechanism, question, or tension is and why it matters. Establish the concrete world of the briefing before introducing specialized vocabulary or an overarching interpretation. Add a cross-source interpretation only when it makes that picture clearer. It must earn its place rather than act as a table of contents.
 
 If one well-supported overarching pattern, tension, or question **emerges from the analyzed evidence**, articulate it directly. It may be modest. If the strongest material instead forms several distinct threads, frame two or three of the most compelling ones and any honest relationship between them without forcing a single thesis or upgrading topical proximity into significance.
 
-Do not write inventory prose such as "today's edition moves from X to Y and closes with Z." Do not describe ingestion, filtering, ranking, or summarization. Put the most interesting analytical value early enough that the reader wants to continue into the threads.
+Do not write inventory prose such as "today's edition moves from X to Y and closes with Z." Do not describe ingestion, filtering, ranking, or summarization. Do not open with a polished abstraction whose concrete meaning becomes clear only after reading the body. Put the clearest high-value orientation early enough that the reader wants to continue into the threads.
 
 ### Thematic sections
 Use numbered thematic sections. Their renderer-visible numbering and fixed component label are controlled by the matching rendering profile; they are not editorial copy and must not be renamed or adapted by the style.
 
 Each section should normally contain:
 
-* A one-sentence subtitle stating its central insight.
+* Material from at least two substantively contributing sources.
+* A one-sentence subtitle that identifies the concrete subject and states what the combined material helps explain.
 * As many paragraphs as the idea's analytical development genuinely requires. Allocate depth independently: a richer relationship may need several paragraphs, while a narrower one may need fewer. Do not infer paragraph count or section length from neighboring threads or from the HTML template.
 * Inline numerical citations attached to the exact claims or synthesized inferences they support.
 * A short thread-level source-notes component exposing the principal source names and their stable numbers, linked when a valid locator exists. Its visible label and treatment come exclusively from the matching rendering profile.
 
-Section titles must describe the synthesized idea, pattern, question or tension—not repeat an article title.
+Section titles and subtitles must let the reader identify the concrete subject before reading the body. Use the most broadly understandable vocabulary that preserves the necessary precision; a specialized term may appear when essential, but it must not carry the full burden of orientation. Prefer specific mechanisms, developments, questions, or consequences over slogans, metaphors, or abstract conclusions that the body must decode. Do not repeat an article title.
 
 Do not add an article-by-article roundup.
 
@@ -197,8 +223,16 @@ Do not include:
 Before returning the briefing, verify that:
 
 * It reads as one editorial briefing rather than multiple summaries.
+* Every narrative thread integrates at least two substantively contributing sources; no thread is single-source and no second source is merely ornamental.
 * Cross-source connections are substantive rather than superficial.
-* Each multi-source thread passes the relationship, unique-contribution, evidence/inference, and counter-test checks in `system/writing-reasoning-and-source-fidelity.md`.
+* Each thread passes the relationship, unique-contribution, evidence/inference, counter-test, comprehension, and semantic-distance checks in `system/writing-reasoning-and-source-fidelity.md`.
+* Each selected source's main explanatory value remains recoverable after reframing and integration.
+* Combining the sources makes the underlying subject easier to understand rather than merely producing a more abstract idea that can contain them.
+* Two or three sources are preferred when sufficient; threads with four or more still revolve around one concrete subject and remain easy to follow.
+* An intelligent reader outside the contributing source domains can explain what each thread is about, what happened or how it works, and why it matters after one reading.
+* Necessary specialized terms are understandable through their function, effect, referent, consequence, or a concise example before the prose depends on them.
+* No sentence asks the reader to decode unfamiliar vocabulary, missing context, metaphor, and editorial inference simultaneously.
+* Every cross-domain source provides enough concrete explanatory value to justify the additional orientation it requires.
 * The working thesis emerged from the material and was revised when caveats or anomalies required it; the source set was not recruited to defend a preselected grand idea.
 * Unrelated sources have not been forced into a common narrative.
 * Editorial inference is distinguishable from source-supported claims.
@@ -214,10 +248,11 @@ Before returning the briefing, verify that:
 * The body remains dense enough for approximately five to eight minutes of reading.
 * No section has been added merely to satisfy a target count or reading time.
 * No closing section appears after `Sources`.
-* `THE BIG PICTURE` earns its place with genuine analytical value and is not a prose inventory of the sections.
+* `THE BIG PICTURE` gives clear orientation before interpretation, earns its place with genuine analytical value, and is not a prose inventory of the sections.
+* A reader can identify the concrete subject of every thread from its title and subtitle without first decoding a slogan or metaphor.
 * Threads do not reuse the same rhetorical architecture or repeatedly announce "patterns" and "lessons" instead of demonstrating them.
 * Enumerations do not replace explanation; when several elements are retained, their sequence, contrast, mechanism, or individual role is made clear.
 * Concrete evidence, mechanisms, tensions, or consequences support the synthesis before abstraction outruns the sources.
 * Memorable phrasing clarifies rather than manufacturing cleverness or profundity.
-* The briefing reads as analytical editorial nonfiction, not as a literature review, research abstract, or author-by-author survey.
+* The briefing reads as lucid analytical editorial nonfiction, not as a literature review, research abstract, author-by-author survey, or collection of compressed conclusions.
 * Naturalness comes from evidence, judgment, rhythm, and proportion; repeated AI-shaped rhetorical patterns have been audited across the whole briefing.

@@ -78,7 +78,6 @@ Use these only when genuinely warranted:
 
 * `🔥 TREND`—an emerging pattern supported by meaningful evidence.
 * `🛠 PRACTICAL`—a concrete technique, workflow, checklist, or experiment worth applying.
-* `📖 READ`—a source whose full detail offers unusually high additional value.
 * `✍️ WRITE`—an idea or connection with potential for a thoughtful technical or professional post.
 
-Integrate signals inside the relevant selection or discovery. Do not create a signals appendix. Use no more than four or five in total.
+Integrate signals inside the relevant selection. Do not create a signals appendix. Use no more than three or four in total.

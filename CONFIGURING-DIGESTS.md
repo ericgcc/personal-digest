@@ -233,6 +233,8 @@ Example:
 subject_template: "Engineering Notes Digest — {date}"
 ```
 
+Digest-level `subject_template` variables use single braces (`{date}`). This differs from the double-brace placeholders used inside HTML templates (`{{DATE}}`); the two syntaxes are not interchangeable.
+
 If no subject template is supplied, the workflow uses `<localized full digest name> — <localized digest date>`. If a legacy `name` lacks the descriptor, normalize the delivered subject rather than sending an ambiguous title; update the configuration afterward.
 
 `source_catalog_grouping` controls the final catalog only for styles that declare a source catalog. Supported values are:
@@ -297,6 +299,6 @@ When a style has a source catalog, it reports the **substantively reviewed corpu
 
 Status colors are semantic and shared: `Selected` is green; `Worth reading` is yellow; and `Reviewed` or a substantive `Limited content` qualifier is gray. `Email-only` is provenance, not a selection outcome. These are canonical semantic names, not mandatory English display strings; render their natural equivalents in the configured language. New output never uses the deprecated `Not selected` state or a translation of it; `Reviewed` means a substantive source was reviewed but neither selected nor actively recommended. `Worth reading` is supported by `curated-discovery` and `synthesis-max`; it marks an **unselected** original the editor still actively recommends if the reader has extra time. It is mutually exclusive with `Selected`, is not a section, and is not a synonym for a Discovery.
 
-Before rendering, partition catalog-eligible source IDs into disjoint sets: `Selected`, `Worth reading`, and `Reviewed` (with optional substantive/provenance qualifiers). Every source cited anywhere in the editorial body—including a Discovery—must be `Selected`; therefore it cannot be `Worth reading`. Keep the visible translation of the catalog status semantically distinct from any `Worth opening for:` depth cue. In Spanish, prefer `Vale la pena leer` for the catalog status and `Vale la pena abrirlo por:` for the depth cue.
+Before rendering, partition catalog-eligible source IDs into disjoint sets: `Selected`, `Worth reading`, and `Reviewed` (with optional substantive/provenance qualifiers). Every source cited anywhere in the editorial body—including a Discovery—must be `Selected`; therefore it cannot be `Worth reading`. Keep the visible translation of the catalog status semantically distinct from any `Worth opening for:` depth cue in every supported language; the two must never collapse to the same wording, because one recommends an unselected source and the other points to extra depth inside selected content.
 
 Canonical HTML templates are structural specimens with placeholders. Their component counts and placeholder lengths are never editorial defaults. The style and editorial process determine how many items and paragraphs are produced.

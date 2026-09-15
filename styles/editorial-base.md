@@ -18,7 +18,7 @@ All digest prose must protect these qualities:
 * **Clarity**—make the meaning easy to grasp without flattening important nuance.
 * **Coherence**—develop an intelligible line of thought. Sentences, examples, and paragraphs must have a reason to follow one another rather than merely sharing a topic.
 * **Specificity**—use concrete mechanisms, examples, evidence, numbers, distinctions, and consequences when they help the reader understand the central idea. Prefer showing why something matters through specifics before declaring its importance.
-* **Orientation**—supply the context a knowledgeable reader needs before depending on unfamiliar terminology, assumptions, or technical detail.
+* **Orientation**—supply the context an intelligent reader who may not share the source's domain knowledge needs before depending on unfamiliar terminology, actors, assumptions, references, or detail.
 * **Rhythm**—vary sentence length and paragraph movement so the prose does not feel mechanically generated.
 * **Naturalness**—write like an excellent human editor, not like documentation, an executive-summary generator, or a templated LLM response. Naturalness must come from specific, explainable editorial choices—not fabricated personality, arbitrary irregularity, or detector-oriented tricks.
 * **Intellectual honesty**—preserve uncertainty, limitations, disagreement, and scale; never manufacture importance or certainty.
@@ -67,14 +67,21 @@ or, when context is already obvious:
 
 Use informative headings, focused paragraphs, and concrete entrances. Do not bury the strongest mechanism or consequence under generic setup, but do not force the reader to infer missing premises merely to achieve compression.
 
-## Technical clarity
-Technical precision must improve understanding rather than perform expertise.
+## Domain accessibility and technical clarity
+Write for an intelligent reader who does not necessarily share the source's domain knowledge or assumed context. Domain fidelity does not require insider language, and accessibility does not require flattening the material.
 
-* Introduce an unfamiliar term before relying on it when the surrounding context does not make it obvious.
+Specialized language includes technical terms as well as professional shorthand, institutional names, acronyms, academic concepts, legal or medical categories, financial vocabulary, cultural references, named frameworks, and any other language whose meaning depends on prior membership in a domain.
+
+* Prefer broadly understandable language when it preserves the necessary precision.
+* When a specialized term carries meaning worth preserving, establish its meaning, function, or referent before depending on the label. Explain it at the point of use through what it does, changes, enables, limits, or causes.
+* Do not assume that an intelligent or technically capable reader knows every subdomain represented in the sources.
+* Control conceptual load. Avoid introducing several unresolved terms, actors, systems, frameworks, or references before establishing how they relate.
+* Do not combine an unfamiliar term, an unfamiliar context, a metaphor, and an editorial conclusion in one compressed sentence. Unpack them in the order required for understanding.
+* Do not add dictionary-style definitions or tutorial detours when a short functional explanation is enough.
+* Prefer literal meaning over vague metaphor. A metaphor should clarify an already grounded idea, not become another concept the reader must decode.
+* When a small concrete example makes a mechanism, distinction, or practice easier to understand, use it.
+* Omit domain detail that is correct but distracts from the section's central line of thought.
 * Render literal code, operators, paths, commands, identifiers, and syntax as code where the output format supports it.
-* Prefer the literal technical meaning over vague metaphor. For example, say "compare the raw path string" rather than "check the spelling" when discussing path normalization.
-* When a tiny concrete example explains a mechanism better than another abstract sentence, use the example.
-* Omit implementation detail that is correct but distracts from the section's central line of thought.
 
 ## Wit, illumination, and agitation
 When the material genuinely supports it, look for opportunities to provide:
@@ -162,7 +169,9 @@ The staged editing sequence is defined in `system/editorial-process.md`. Before 
 
 * The reader can identify what each substantive section is actually about.
 * The reason each paragraph follows the previous one is intelligible.
-* Necessary context appears before dependent technical detail.
+* Necessary context appears before dependent domain terminology, references, or detail.
+* An intelligent reader outside the specific source domain can explain what the section is about, what happened or how it works, and why it matters after one reading.
+* Necessary specialized terms remain precise but are understandable through their function, effect, referent, consequence, or a concise example.
 * Supporting material advances the central focus rather than accumulating beside it.
 * The piece contains enough explanation to understand the selected idea without opening the source.
 * Compression has not removed the logic that makes facts meaningful.

@@ -8,13 +8,13 @@ A structured per-source digest designed to preserve the important context, nuanc
 | **Composition unit** | One independent retained source or substantial subentry. |
 | **Source relationship** | Sources remain independent; topical proximity is navigation only, never synthesis. |
 | **Selection model** | Preserve reasonably broad substantive coverage while removing obvious noise and low-information material. |
-| **Depth model** | Variable-medium depth: typically 120–220 words and roughly 45–75 seconds per substantive source, expanding only when extra detail materially improves understanding. |
+| **Depth model** | Variable-medium depth: typically 170–280 words and roughly 45–75 seconds per substantive source, expanding only when extra detail materially improves understanding. |
 | **Organization model** | Optional broad topical grouping derived from the actual source set; otherwise direct source-by-source presentation. |
 | **Progression model** | Each source summary follows one coherent explanatory line: orient the reader, establish the central idea, then develop only the mechanisms, evidence, examples, or caveats that advance it. |
 | **Opening behavior** | No editorial opening. An optional navigational index may appear only when topical grouping genuinely helps. |
 | **Body behavior** | Central idea first, then explanatory prose and two to five useful details when bullets improve clarity; sequential prose when they do not. |
 | **Citation / provenance** | Every source remains explicitly identified with its original reading time for substantive material; link the original title only when a valid locator exists. |
-| **Source catalog** | None by default. |
+| **Source catalog** | None. |
 | **Ending behavior** | Stop after the final source summary. |
 | **Writing character** | Calm, explanatory, exact, patient, and quietly engaging. |
 | **Optional extension points** | Derived topical grouping/index and a digest-authorized callout when compatible with the rendering profile. |
@@ -25,7 +25,7 @@ Apply the shared writing references with a source-centered emphasis:
 * `system/writing-reasoning-and-source-fidelity.md`—use moderately within each source to identify hierarchy, evidence, mechanisms, and qualifications; never turn cross-source overlap into a shared conclusion.
 * `system/writing-editorial-prose.md`—**full clarity pass**. Reader orientation and explanatory sequence matter more here than compression.
 * `system/writing-naturalness.md`—audit repeated summary structures, transitions, and generic significance language across the digest.
-* `system/writing-style-application.md`—preserve the quiet editorial presence of Detailed: more explanatory than Concise, less reframing and personality than Curated Discovery.
+* `system/writing-style-application.md`—preserve the quiet editorial presence of Detailed: explanatory and patient, with minimal reframing and restrained editorial personality.
 
 ## Summary mode
 Keep every source independent.
@@ -68,7 +68,7 @@ Within every topic, keep each source clearly identifiable and independent.
 ## Length and density
 Aim for approximately 45–75 seconds of reading per substantive source.
 
-Typical summaries should be roughly 120–220 words, but let information density determine length.
+Typical summaries should be roughly 170–280 words, but let information density determine length.
 
 Use less space for simple announcements, short essays or incremental updates.
 
@@ -173,7 +173,7 @@ Do not include:
 * A concluding synthesis.
 * Generic takeaways.
 * A motivational closing.
-* A separate source catalog unless explicitly requested.
+* A source catalog.
 
 ## Quality control
 Before returning the digest, verify that:

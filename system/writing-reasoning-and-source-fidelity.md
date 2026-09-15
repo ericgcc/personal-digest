@@ -65,14 +65,27 @@ When comparison is permitted by the selected style, classify the relationship pr
 Name the relationship internally in concrete terms. If the best explanation is only "they are both about X," keep them independent.
 
 ## The synthesis test
-For a proposed multi-source idea, answer all four questions:
+For a proposed multi-source idea, answer all six questions:
 
 1. **Relationship:** What exactly changes when these sources are read together?
 2. **Contribution:** What does each source uniquely add?
 3. **Evidence:** Which claims support the relationship, and which parts are editorial inference?
 4. **Counter-test:** Does an anomaly, caveat, or alternative grouping materially weaken the proposed synthesis?
+5. **Comprehension:** Does combining the sources make the underlying subject easier to understand, or merely produce a more abstract idea that can encompass them?
+6. **Semantic distance:** Can the sources be joined through one concrete topic, question, mechanism, development, or tension? The farther apart their domains are, the stronger and more concrete the explanatory benefit must be. If they belong together only after translating them into a broad principle, slogan, or metaphor, do not group them.
 
 If the combined idea is no more informative than separate summaries, do not synthesize it.
+
+For Synthesis MAX, every narrative thread must pass all six questions and contain at least two substantively contributing sources. A second source that supplies only decoration, analogy, or citation volume does not count.
+
+## The source-explanatory-value test
+For any style that permits reframing or synthesis:
+
+1. State what each selected source most usefully teaches, explains, demonstrates, or reveals.
+2. State the proposed editorial role of that source in the combined piece.
+3. Check whether the reader can still recover its main explanatory value from the finished framing.
+
+Reframing is allowed, but do not reduce a source's strongest explanatory contribution to thematic decoration or a stray example. If combining sources makes an important contribution harder to understand, keep it separate or form a more coherent group.
 
 ## The source-thesis preservation test
 For styles where sources are independent by default:
@@ -95,7 +108,7 @@ Strong editorial prose can be confident without pretending the evidence is broad
 ## Style gate
 Apply these moves at different intensity according to the selected style:
 
-* **Synthesis MAX:** full source interrogation and cross-source relationship testing are central. The synthesis must emerge from evidence and survive the counter-test.
+* **Synthesis MAX:** full source interrogation and cross-source relationship testing are central. Every narrative thread requires at least two substantively contributing sources, and the synthesis must emerge from evidence and survive the counter-, comprehension, semantic-distance, and source-explanatory-value tests.
 * **Curated Discovery:** use analysis primarily to discover and sharpen the strongest source-centered idea. Cross-source comparison is optional and must pass the source-thesis preservation test.
 * **Detailed:** analyze within each source to identify structure, significance, evidence, and caveats; never turn overlap into a shared conclusion.
 * **Concise:** use only enough analysis to identify the one central value and avoid distortion. Do not spend the reader's tiny budget on secondary inference.

@@ -15,6 +15,24 @@ Avoid the curse of knowledge:
 * Do not show the research process simply to prove that research occurred.
 * Assume intelligence, not prior exposure to every detail.
 
+## Bridge domain knowledge without flattening it
+The reader may be capable and well informed without knowing this source's field, institution, vocabulary, history, or conventions. Treat specialized knowledge as something the prose can make available, not as an entrance requirement.
+
+When a domain term is necessary, a useful sequence is:
+
+`plain-language meaning or function → necessary domain term → consequence or significance`
+
+This is not a rigid sentence template. It is an information-ordering principle: give the reader enough meaning to understand the label, then show why the concept belongs in the piece.
+
+* Retain a specialized term when it supplies necessary precision, is central to the idea, or will be reused. Explain it at the point of use through its function, effect, referent, consequence, or a concise example.
+* If a term appears only once and an ordinary phrase carries the same meaning, prefer the ordinary phrase.
+* Treat professional shorthand, acronyms, named frameworks, institutions, historical references, and field-specific metaphors as potentially unfamiliar—not only scientific or technical vocabulary.
+* Introduce new concepts at a rate the explanation can support. Do not make the reader hold several undefined actors, labels, or distinctions in working memory while also interpreting the conclusion.
+* Do not stack an unfamiliar term, a new actor or context, a metaphor, and an editorial inference in the same sentence. Separate orientation from interpretation.
+* Explain without adopting a classroom voice. A short functional clause is often enough; use a fuller example only when it materially improves understanding.
+
+The goal is not to remove the vocabulary that makes a domain precise. It is to make that vocabulary learnable within the reading experience.
+
 ## Present the thing, not the performance of knowing it
 For general-interest editorial prose, aim for the stance of a capable editor showing an intelligent peer something worth seeing. The research and analysis may have been difficult; the prose should present their result rather than reenact their difficulty.
 
@@ -24,7 +42,7 @@ For general-interest editorial prose, aim for the stance of a capable editor sho
 * Trust the reader to connect obvious dots; explain the non-obvious relationship.
 * Treat the reader as an equal who lacks this particular context, not as a student waiting for a lecture.
 
-This is compatible with analytical depth: Synthesis MAX can do difficult reasoning internally and still read like editorial nonfiction rather than like a paper reporting its method.
+This is compatible with analytical depth: a style may do difficult reasoning internally and still read like editorial nonfiction rather than like a paper reporting its method.
 
 ## Make the prose transparent to the thought
 The reader should spend attention on the idea, not on decoding the sentence.
@@ -124,8 +142,11 @@ A title should sharpen the idea. A deck should help the reader enter it.
 After the structural and clarity edits, read the prose once for the reader's experience:
 
 * Can the reader picture or understand what the important nouns refer to?
+* Could an intelligent reader outside this specific domain explain what happened or how it works and why it matters?
+* Are necessary specialized terms understandable at the point where the prose begins to depend on them?
 * Are the important actions actually expressed as actions?
 * Does new information arrive in an order the reader can absorb?
+* Has any sentence combined unfamiliar vocabulary, missing context, metaphor, and inference into one decoding task?
 * Does each paragraph advance rather than orbit the idea?
 * Are specifics doing explanatory work?
 * Is the final sentence the right place to stop?

@@ -7,6 +7,81 @@
 
 ---
 
+## 0. Progress at a glance
+
+**Legend:** `[x]` done · `[ ]` not started · `[~]` deferred, decision recorded
+
+**Overall:** Phases 0, 1, and 4 complete (Phase 4 except streaming). Phase 2 is 3 of 4 — only the cache-ratio logging field is outstanding. Phases 3, 5, and 6 are not started.
+
+**Production blocker:** Phase 5. Until `system/workflow.md` stops describing OpenCode, the orchestrator reads a contract that no longer matches the code.
+
+| Phase | Scope | Done |
+| --- | --- | --- |
+| 0 | Prerequisites and baseline | 6 / 6 |
+| 1 | Replace the transport | 8 / 8 |
+| 2 | Validate and tune caching | 3 / 4 |
+| 3 | Tier the context per stage | 0 / 4 |
+| 4 | Resilience | 2 / 3 (1 deferred) |
+| 5 | Failure policy and cleanup | 0 / 5 |
+| 6 | Optional: split the corpus | 0 / 4 |
+
+### Phase 0 — Prerequisites and baseline
+
+- [x] 0.1 Provision the API key in `.env`
+- [x] 0.2 Capture the current cost/latency baseline
+- [x] 0.3 Probe the live API and record exact request/response shape
+- [x] 0.4 Create a safety branch point
+- [x] 0.5 Build a reduced smoke fixture
+- [x] 0.6 Record fixture availability
+
+### Phase 1 — Replace the transport
+
+- [x] 1.1 Add a configuration block at the top of the runner
+- [x] 1.2 Add context assembly helpers
+- [x] 1.3 Add the DeepSeek call function
+- [x] 1.4 Define per-stage thinking configuration
+- [x] 1.5 Rewrite `prepareStage` to inline context
+- [x] 1.6 Rewrite `executeStages` for direct calls
+- [x] 1.7 Remove the SDK dependency
+- [x] 1.8 Smoke-test on the smallest available run
+
+### Phase 2 — Validate and tune caching
+
+- [ ] 2.1 Log cache statistics per stage — **outstanding**
+- [x] 2.2 Run twice and measure the hit rate
+- [x] 2.3 Confirm the byte-identical prefix invariant
+- [x] 2.4 Record latency and cost
+
+### Phase 3 — Tier the context per stage
+
+- [ ] 3.1 Define the per-stage context policy
+- [ ] 3.2 Implement the shortlist projection
+- [ ] 3.3 Wire the policy into `prepareStage`
+- [ ] 3.4 Verify no stage lost required information
+
+### Phase 4 — Resilience
+
+- [x] 4.1 Add retry with exponential backoff
+- [~] 4.2 Streaming — deferred, rationale and re-entry trigger recorded
+- [x] 4.3 Confirm the render failure class is resolved
+
+### Phase 5 — Failure policy and cleanup
+
+- [ ] 5.1 Editorial stages fail safely
+- [ ] 5.2 Update the runner description in `workflow.md`
+- [ ] 5.3 Verify the artifact rename and update documentation
+- [ ] 5.4 Rewrite `tools/README.md`
+- [ ] 5.5 Final full-pipeline verification
+
+### Phase 6 — Optional: split the corpus artifact
+
+- [ ] 6.1 Define the split format
+- [ ] 6.2 Update the orchestrator contract
+- [ ] 6.3 Update the runner import
+- [ ] 6.4 Update stage context assembly
+
+---
+
 ## 1. Summary
 
 Replace the local OpenCode SDK transport with **direct DeepSeek API calls** in the existing Node.js runner. The nine-stage editorial pipeline, the run-directory artifact contract, the CLI command signatures, and the orchestrator/runner responsibility split all stay intact. Only the *transport* changes, plus three targeted improvements:
@@ -401,7 +476,7 @@ Verify against the pre-existing contract:
 
 **No production file is modified in this phase.**
 
-### Task 0.1 — Provision the API key in `.env`
+### [x] Task 0.1 — Provision the API key in `.env`
 
 1. Create an API key in the DeepSeek platform console.
 2. Top up the balance (a $5 balance is ample; see §3.3).
@@ -444,7 +519,7 @@ node --env-file=.env -e "console.log(process.env.DEEPSEEK_API_KEY ? 'loaded, len
 3. `git check-ignore -v .env` reports the `.gitignore` rule that matched.
 4. The key appears in no tracked file, no `package.json`, no prompt, and no `.digest-runs/` artifact.
 
-### Task 0.2 — Capture the current cost/latency baseline
+### [x] Task 0.2 — Capture the current cost/latency baseline
 
 1. Confirm the baseline run's artifacts are still present:
 
@@ -463,7 +538,7 @@ Test-Path ".digest-runs/medium-bi-daily-20260905T123141Z-f320d18f/render/attempt
 
 **Acceptance:** §18 is populated. Without a baseline, the Phase 2 comparison is impossible.
 
-### Task 0.3 — Probe the live API and record exact request/response shape
+### [x] Task 0.3 — Probe the live API and record exact request/response shape
 
 Write a throwaway script at `C:\Users\ericg\AppData\Local\Temp\_ds_probe.mjs` (outside the repo):
 
@@ -506,7 +581,7 @@ Then delete the probe file.
 
 **Acceptance:** §18 records the confirmed `reasoning_effort` values and usage field names. **Task 0.3 is already complete — see §18.**
 
-### Task 0.4 — Create a safety branch point
+### [x] Task 0.4 — Create a safety branch point
 
 ```powershell
 git status --short          # must be empty
@@ -515,7 +590,7 @@ git tag pre-deepseek-revamp
 
 **Acceptance:** tag exists. This is the rollback anchor for every later phase.
 
-### Task 0.5 — Build a reduced smoke fixture
+### [x] Task 0.5 — Build a reduced smoke fixture
 
 A full fixture run is the right end-to-end test but is slow to iterate on. Create a small, deterministic corpus for fast transport checks.
 
@@ -548,7 +623,7 @@ node "$env:TEMP\_subset_corpus.cjs" ".digest-runs\medium-bi-daily-20260905T12314
 
 **Acceptance:** `$env:TEMP\smoke-corpus.json` exists, parses as JSON, and contains 8 items in its `sources` array.
 
-### Task 0.6 — Record fixture availability
+### [x] Task 0.6 — Record fixture availability
 
 Fixtures live under `.digest-runs/`, which is gitignored and therefore local-only. If these directories are ever deleted, the fixture-based tests must be rebuilt from a real run.
 
@@ -565,7 +640,7 @@ Fixtures live under `.digest-runs/`, which is gitignored and therefore local-onl
 
 **Files modified:** `tools/digest_runner.mjs`, `package.json`
 
-### Task 1.1 — Add a configuration block at the top of the runner
+### [x] Task 1.1 — Add a configuration block at the top of the runner
 
 Replace the SDK import line and add configuration:
 
@@ -580,7 +655,7 @@ const MAX_OUTPUT_TOKENS = Number(process.env.DIGEST_MAX_OUTPUT_TOKENS ?? 32_768)
 
 Delete every other reference to `createOpencode`. **Acceptance:** `grep -n "opencode\|OpenCode" tools/digest_runner.mjs` returns no matches.
 
-### Task 1.2 — Add context assembly helpers
+### [x] Task 1.2 — Add context assembly helpers
 
 Add these functions. They are new — no existing function is modified.
 
@@ -610,7 +685,7 @@ function wrapBlock(tag, payload) {
 
 **Acceptance:** verify from a stage's `prompt.txt` during a reduced replay that both documents appear exactly once, in sorted order, each inside a `<document>` tag.
 
-### Task 1.3 — Add the DeepSeek call function
+### [x] Task 1.3 — Add the DeepSeek call function
 
 ```js
 async function callDeepSeek({ systemText, userText, stageName }) {
@@ -664,7 +739,7 @@ async function callDeepSeek({ systemText, userText, stageName }) {
 
 **Acceptance:** a call with valid key and a one-word prompt returns non-empty `text` and a non-null `usage`.
 
-### Task 1.4 — Define per-stage thinking configuration
+### [x] Task 1.4 — Define per-stage thinking configuration
 
 Add near `STAGES`:
 
@@ -689,7 +764,7 @@ const STAGE_REASONING_EFFORT = {
 
 **Acceptance:** every stage name in `STAGES` has an entry in `STAGE_REASONING_EFFORT`. If Task 0.3 rejected `"medium"`, substitute the nearest accepted value and record the substitution in §18.
 
-### Task 1.5 — Rewrite `prepareStage` to inline context
+### [x] Task 1.5 — Rewrite `prepareStage` to inline context
 
 Replace the body of `prepareStage` so that it:
 
@@ -736,7 +811,7 @@ const userText = [corpusBlock, previousBlock, stageBlock].filter(Boolean).join("
 
 **Acceptance:** `prompt.txt` contains no instruction to read files; contains the full corpus exactly once; and `systemText` is byte-identical between two consecutive editorial stages of the same run (verify with `git diff --no-index` on two extracted system blocks).
 
-### Task 1.6 — Rewrite `executeStages` for direct calls
+### [x] Task 1.6 — Rewrite `executeStages` for direct calls
 
 Replace the OpenCode server lifecycle with a direct call. Delete `opencode` from the function, remove the `try/finally` around `createOpencode`, and replace the prompt invocation:
 
@@ -778,7 +853,7 @@ On failure, write `stage-error.log` and rethrow as a `RunnerError` naming the st
 2. `grep -n "sdk-response\|sdk-error" tools/digest_runner.mjs` returns nothing.
 3. A deliberately failed stage still produces `stage-error.log` and is counted by `failedAttemptCount`.
 
-### Task 1.7 — Remove the SDK dependency
+### [x] Task 1.7 — Remove the SDK dependency
 
 1. Delete the SDK from `package.json` dependencies, leaving:
 
@@ -798,7 +873,7 @@ On failure, write `stage-error.log` and rethrow as a `RunnerError` naming the st
 
 **Acceptance:** `package.json` has no dependencies; `node_modules/@opencode-ai/sdk` does not exist.
 
-### Task 1.8 — Smoke-test on the smallest available run
+### [x] Task 1.8 — Smoke-test on the smallest available run
 
 Use the existing test run ID from `.digest-runs/` if its artifacts are complete, or a fresh run ID with a small corpus. Run the full pipeline:
 
@@ -825,7 +900,7 @@ node tools/digest_runner.mjs run --digest medium-bi-daily --run-id $run --input 
 
 **Files modified:** `tools/digest_runner.mjs` (logging only)
 
-### Task 2.1 — Log cache statistics per stage
+### [ ] Task 2.1 — Log cache statistics per stage
 
 In `Task 1.6`'s `completed.json` write, add the derived cache ratio:
 
@@ -841,7 +916,7 @@ const total = hit + miss;
 
 **Acceptance:** every `completed.json` contains `cache_hit_ratio`.
 
-### Task 2.2 — Run twice and measure the hit rate
+### [x] Task 2.2 — Run twice and measure the hit rate
 
 1. Run a full pipeline on a fresh run ID using a **medium-sized corpus** (30–80 sources).
 2. Extract the ratios:
@@ -864,7 +939,7 @@ Get-ChildItem -Recurse -Filter completed.json ".digest-runs\<run-id>" |
 | Ratios near 0 in all stages | The prefix is not byte-identical. Check: (a) `readContextFiles` sorting, (b) no timestamp or run ID inside the system block, (c) no per-stage text prepended before the corpus. Fix and re-run. |
 | Ratios rise across stages | First call warmed the cache. Acceptable; re-run to confirm steady state. |
 
-### Task 2.3 — Confirm the byte-identical prefix invariant
+### [x] Task 2.3 — Confirm the byte-identical prefix invariant
 
 Extract the system block from two editorial stages and diff them:
 
@@ -879,7 +954,7 @@ if ($sys[0] -ceq $sys[1] -and $sys[1] -ceq $sys[2]) { "PREFIX IDENTICAL" } else 
 
 **Acceptance:** prints `PREFIX IDENTICAL`.
 
-### Task 2.4 — Record latency and cost
+### [x] Task 2.4 — Record latency and cost
 
 For each stage compute duration from `attempt.json.started_at` and `completed.json.completed_at`. Add to §18:
 
@@ -900,7 +975,7 @@ For each stage compute duration from `attempt.json.started_at` and `completed.js
 
 **Files modified:** `tools/digest_runner.mjs`
 
-### Task 3.1 — Define the per-stage context policy
+### [ ] Task 3.1 — Define the per-stage context policy
 
 Add a single authoritative table:
 
@@ -930,7 +1005,7 @@ const STAGE_CORPUS_POLICY = {
 
 **Acceptance:** every stage in `STAGES` has a policy entry.
 
-### Task 3.2 — Implement the shortlist projection
+### [ ] Task 3.2 — Implement the shortlist projection
 
 ```js
 function shortlistSourceNumbers(analysisJson) {
@@ -972,7 +1047,7 @@ function projectCorpus(corpus, policy, analysisJson) {
 
 **Acceptance:** verify each policy against a real corpus (a reduced replay is sufficient) and confirm: `full` unchanged; `provenance` has no `full_text` key anywhere; `none` returns `""`; `shortlist` returns a subset.
 
-### Task 3.3 — Wire the policy into `prepareStage`
+### [ ] Task 3.3 — Wire the policy into `prepareStage`
 
 Replace the corpus block construction:
 
@@ -1000,7 +1075,7 @@ if (policy !== "none") {
 
 **Acceptance gate:** if the measured saving is under 20% of total tokens, revert this phase (`git revert`) and record why in §18.
 
-### Task 3.4 — Verify no stage lost required information
+### [ ] Task 3.4 — Verify no stage lost required information
 
 For a completed run, confirm that `draft` still receives everything it cites:
 
@@ -1025,7 +1100,7 @@ $final = Get-Content ".digest-runs\$run\final-polish\output\final.md" -Raw
 
 **Files modified:** `tools/digest_runner.mjs`
 
-### Task 4.1 — Add retry with exponential backoff — DONE
+### [x] Task 4.1 — Add retry with exponential backoff
 
 Implemented in `tools/digest_runner.mjs`. Constants and the wrapper:
 
@@ -1054,7 +1129,7 @@ const { text, finishReason, usage, raw } = await withRetry(
 
 **Acceptance:** a forced 503 retries three times and fails cleanly; a forced 401 fails immediately.
 
-### Task 4.2 — Streaming — DEFERRED
+### [~] Task 4.2 — Streaming (deferred)
 
 **Not implemented. Deferred deliberately, with the original justification now falsified by evidence.**
 
@@ -1072,7 +1147,7 @@ The correct sequence is therefore: **add streaming only if a real run shows an i
 
 If it is implemented later, the preservation rules are unchanged: the abort timer must be an **inactivity** timer reset on every chunk, never a total-duration timer, and `usage` must be verified to survive streaming before the change is accepted.
 
-### Task 4.3 — Confirm the render failure class is resolved
+### [x] Task 4.3 — Confirm the render failure class is resolved
 
 Re-run the baseline scenario (large corpus, `curated-discovery`) and confirm `render` succeeds where it previously failed twice with `fetch failed`.
 
@@ -1086,7 +1161,7 @@ Re-run the baseline scenario (large corpus, `curated-discovery`) and confirm `re
 
 **Files modified:** `system/workflow.md`, `tools/digest_runner.mjs`, `tools/README.md`, `package.json`
 
-### Task 5.1 — Editorial stages fail safely
+### [ ] Task 5.1 — Editorial stages fail safely
 
 1. In `system/workflow.md`, replace the `## Two-attempt stage recovery and controlled fallback` section with a policy that states:
 
@@ -1100,7 +1175,7 @@ Re-run the baseline scenario (large corpus, `curated-discovery`) and confirm `re
 
 **Acceptance:** the section clearly distinguishes the two policies; no sentence implies editorial fallback is available.
 
-### Task 5.2 — Update the runner description in `workflow.md`
+### [ ] Task 5.2 — Update the runner description in `workflow.md`
 
 Replace every OpenCode reference with the actual transport. Specifically:
 
@@ -1116,7 +1191,7 @@ Replace every OpenCode reference with the actual transport. Specifically:
 
 **Acceptance:** `Select-String -Path system/workflow.md -Pattern "opencode|OpenCode"` returns nothing.
 
-### Task 5.3 — Verify the artifact rename and update documentation
+### [ ] Task 5.3 — Verify the artifact rename and update documentation
 
 The rename itself was completed in Task 1.6. This task verifies it and fixes the documentation that still names the old files.
 
@@ -1138,7 +1213,7 @@ Expect four matches: two writes in `executeStages`, two reads in `failedAttemptC
 
 **Acceptance:** `grep -rn "sdk-response\|sdk-error" tools/ system/` returns nothing. Exactly four `model-response.json` / `stage-error.log` matches exist in the runner.
 
-### Task 5.4 — Rewrite `tools/README.md`
+### [ ] Task 5.4 — Rewrite `tools/README.md`
 
 Update to describe the DeepSeek transport:
 
@@ -1151,7 +1226,7 @@ Update to describe the DeepSeek transport:
 
 **Acceptance:** README contains no OpenCode reference and documents the environment variable.
 
-### Task 5.5 — Final full-pipeline verification
+### [ ] Task 5.5 — Final full-pipeline verification
 
 1. Fresh run on each of the three configured digests, or at minimum `tech-bi-daily` (`synthesis-max`) and `medium-bi-daily` (`curated-discovery`).
 2. Confirm per run:
@@ -1175,7 +1250,7 @@ Update to describe the DeepSeek transport:
 
 **Blast radius warning:** `sources.json` is produced by the **ChatGPT orchestrator**. Changing its schema changes the orchestrator contract, `system/workflow.md`, and `tools/README.md`. This is the only phase that reaches outside the runner.
 
-### Task 6.1 — Define the split format
+### [ ] Task 6.1 — Define the split format
 
 ```
 .digest-runs/<run-id>/source-acquisition/sources.json     ← manifest: metadata only, no full_text
@@ -1184,15 +1259,15 @@ Update to describe the DeepSeek transport:
 
 The manifest gains `full_text_path: "text/<source_number>.md"` and drops `full_text`.
 
-### Task 6.2 — Update the orchestrator contract
+### [ ] Task 6.2 — Update the orchestrator contract
 
 In `system/workflow.md`, amend the `sources.json` requirements so each catalog-eligible source carries its substantive text in a sibling file, and state that both artifacts are materialized by the runner.
 
-### Task 6.3 — Update the runner import
+### [ ] Task 6.3 — Update the runner import
 
 `importSources` must accept a directory containing `sources.json` plus `text/`, validate that every `full_text_path` resolves, and refuse partial imports.
 
-### Task 6.4 — Update stage context assembly
+### [ ] Task 6.4 — Update stage context assembly
 
 Stages with a text-consuming policy (`analyze`, `draft`) resolve text files lazily and inline only what the policy requires.
 
@@ -1407,9 +1482,18 @@ Digest body length was measured against each style's declared budget. The catalo
 1. **The earlier word-count change is not the cause of the `curated-discovery` overage.** That change touched only `synthesis-max` (700–1,200 → 1,100–1,800) and `detailed` (120–220 → 170–280). `curated-discovery` was never modified. The overage has a different cause and is unresolved.
 2. **The earlier word-count change does affect `synthesis-max`, in the opposite direction from the digests delivered so far.** The prev system produced 1,061 body words, which was inside the old 700–1,200 range but is **below** the new 1,100–1,800 floor. Raising that budget will lengthen `synthesis-max` output relative to what has been received.
 
-**Most likely explanation for the `curated-discovery` overage:** the smoke fixture is the first 8 sources of a 78-source corpus, not a selection. A highly selective style given only 8 candidates has little to omit, so it likely covered most of them. The 78-source `synthesis-max` replay tests this directly: if that run lands near budget, the overage is a small-corpus artifact rather than a model behaviour.
+**Most likely explanation for the `curated-discovery` overage:** the smoke fixture is the first 8 sources of a 78-source corpus, not a selection. A highly selective style given only 8 candidates has little to omit, so it likely covered most of them. The later 53-source `synthesis-max` replay **disproved** this for that style — it overshot far more on a full corpus — so the overage is a model/instruction behaviour, not a small-corpus artifact.
 
-**Open question — which target is correct for `synthesis-max`.** The old budget (700–1,200 words) and the old stated duration (five-to-eight minutes) were mutually inconsistent at the workflow's own 225 wpm: 700–1,200 words is 3.1–5.3 minutes. Phase 1's D1 chose to keep the stated duration and raise the words. The delivered digests show the model had been honouring the *words*, producing ~4.7 minutes. If the received 4.7-minute digests are considered correct, then the correct fix was to **lower the stated duration to match the words**, not the reverse. Resolve this before enabling `synthesis-max` in production.
+**RESOLVED — `synthesis-max` and `detailed` budgets reverted (2026-09-15).** The earlier digest-system word-count change raised `synthesis-max` from 700–1,200 to 1,100–1,800 words and `detailed` from 120–220 to 170–280. That change is now reverted, and the stated durations were corrected to match the words at the system's own 225 wpm:
+
+| Style | Words (reverted) | Reader time (corrected) | Arithmetic at 225 wpm |
+| --- | --- | --- | --- |
+| `synthesis-max` | 700–1,200 | **three-to-five-minute** (was five-to-eight) | 3.1–5.3 min |
+| `detailed` | 120–220 | **30–60 seconds** (was 45–75) | 0.53–0.98 min |
+| `curated-discovery` | unchanged (minute-based) | five to eight minutes | 1,125–1,800 words |
+| `concise` | unchanged | 10–20 seconds | 40–80 words = 10.7–21.3 s |
+
+**The principle applied:** where a style's word count and its stated duration disagreed, the **word count was treated as authoritative** and the duration was corrected to match. This follows the observed behaviour — the model honoured the words, not the duration — and it preserves the length of the digests already being delivered. All four styles are now internally consistent at 225 wpm.
 
 **Catalog observation:** in the prev 78-source digest the catalog was **1,525 words against a 1,143-word body** — 57% of the document was bibliography. Worth reviewing separately.
 
@@ -1469,7 +1553,30 @@ The new pipeline produces **2.9× the previous body length**. Raising the budget
 
 Lowering `compression-edit` to `low` cut its reasoning tokens by ~80% and its actual work from 3.8% to ~0.2%. Note that even the 3.8% achieved at `medium` was far short of the 46–115% reduction a working compression pass would need, so **the stage was already underpowered before Test A**. Test A made a marginal stage nearly inert.
 
-**Consequence for Test A.** The four-stage effort reduction delivered the predicted per-stage gains (−41% to −66% wall time, −56% to −85% reasoning), but one of those stages — `compression-edit` — is a *reductive* stage whose entire purpose is cutting length. Reducing its effort removed its function. Test A's effort split should be revised: `compression-edit` needs `medium` or `high`, while `clarity-edit` and `voice-edit` can remain `low`.
+**Consequence for Test A.** The four-stage effort reduction delivered the predicted per-stage gains (−41% to −66% wall time, −56% to −85% reasoning), but one of those stages — `compression-edit` — is a *reductive* stage whose entire purpose is cutting length. Reducing its effort removed its function.
+
+### Fixes applied (2026-09-15)
+
+Three corrections were applied to `tools/digest_runner.mjs` and the two affected style files. **Not yet re-verified by replay** — the next full replay should confirm them.
+
+**Fix 1 — reasoning effort reclassified by stage function.** The original split treated all four edit stages as equivalent. That was wrong: `compression-edit` is reductive, and reducing its effort made it inert.
+
+| Stage | Before Test A | After Test A | **Now** | Rationale |
+| --- | --- | --- | --- | --- |
+| `structural-edit` | medium | low | **medium** | Structural repair needs judgment |
+| `clarity-edit` | medium | low | **low** | Transformative, checklist-driven |
+| `voice-edit` | medium | low | **low** | Transformative, checklist-driven |
+| `compression-edit` | medium | low | **high** | Reductive — more reasoning directly buys the outcome |
+
+`analyze`, `frame`, `draft`, and `final-polish` remain `high`; `render` remains thinking-disabled.
+
+**Fix 2 — body-length budget injected into length-governing stages.** A measured replay showed `draft` overshooting the style budget by 115% and no later stage recovering it, because the style states the target as prose the model treats as advisory. The runner now injects a `Length target:` line into the `stage_task` block for `draft`, `compression-edit`, and `final-polish` only — the stages whose job includes establishing or enforcing length. The other stages transform approved prose and must not re-litigate length.
+
+A `STYLE_BODY_BUDGET` table in the runner mirrors each style's Depth model. **These values must be updated together with `styles/<style>.md`**, which remains the source of truth. The injected text sits inside the stage task block, which is already stage-specific, so it does not affect the cache-invariant prefix.
+
+**Fix 3 — style budgets reverted and durations corrected.** See the resolution above. `synthesis-max` back to 700–1,200 words with a three-to-five-minute duration; `detailed` back to 120–220 words with a 30–60-second duration. All four styles now agree with 225 wpm.
+
+**Not fixed, still open:** the `curated-discovery` overage (2,429 words vs a 1,125–1,800 budget) remains unexplained. It is the same class of defect as the `synthesis-max` draft overshoot, and Fix 2 injects the budget for `curated-discovery` too, so the next replay should show whether that resolves it.
 
 ### Post-change measurements
 

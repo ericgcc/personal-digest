@@ -29,7 +29,7 @@ rendering_profiles:
 digests:
   medium-bi-daily:
     config: digests/medium-bi-daily.md
-    catch_up_days: 5
+    catch_up_days: 3
   tech-bi-daily:
     config: digests/tech-bi-daily.md
     catch_up_days: 3

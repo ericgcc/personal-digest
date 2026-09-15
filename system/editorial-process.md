@@ -44,7 +44,7 @@ For styles that permit source combination, classify any proposed relationship pr
 The output of this stage is a **working editorial understanding**, not polished prose and not a thesis that must be defended at all costs.
 
 ## 3. FRAME—decide the story before writing it
-Frame every substantive output unit before drafting prose. The scale of the frame depends on the style: a Concise entry may need only two logical moves, while a Curated Discovery selection or Synthesis MAX thread may need a fuller arc.
+Frame every substantive output unit before drafting prose. The scale of the frame depends on the selected style's composition unit: a compact single-source entry may need only two logical moves, while a fuller editorial selection or synthesized thread may need a longer arc.
 
 For each unit, determine internally:
 

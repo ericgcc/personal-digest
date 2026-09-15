@@ -42,7 +42,7 @@ For general-interest editorial prose, aim for the stance of a capable editor sho
 * Trust the reader to connect obvious dots; explain the non-obvious relationship.
 * Treat the reader as an equal who lacks this particular context, not as a student waiting for a lecture.
 
-This is compatible with analytical depth: Synthesis MAX can do difficult reasoning internally and still read like editorial nonfiction rather than like a paper reporting its method.
+This is compatible with analytical depth: a style may do difficult reasoning internally and still read like editorial nonfiction rather than like a paper reporting its method.
 
 ## Make the prose transparent to the thought
 The reader should spend attention on the idea, not on decoding the sentence.

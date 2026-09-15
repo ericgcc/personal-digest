@@ -25,7 +25,7 @@ The fundamental unit is a **coherent editorial mini-essay built around one idea 
 Apply the shared writing references with the following emphasis:
 
 * `system/writing-reasoning-and-source-fidelity.md`—use deeply to understand and sharpen each promising source, but keep the reasoning **source-centered by default**.
-* `system/writing-editorial-prose.md`—**full depth**. Curated Discovery should have the richest magazine-like storytelling of the four styles while remaining factual and concise.
+* `system/writing-editorial-prose.md`—**full depth**. Curated Discovery should have richly developed magazine-like storytelling while remaining factual and concise.
 * `system/writing-naturalness.md`—**full diagnostic pass** across the whole briefing.
 * `system/writing-style-application.md`—preserve the Curated Discovery boundary: discovery and curation come first; cross-source synthesis is occasional, not the organizing instinct.
 
@@ -298,7 +298,7 @@ Use a source status when it adds useful editorial information:
 
 `Email-only` may appear as provenance beside one of these outcomes; it is not a competing selection status. Operational outcomes such as duplicate, promotional/administrative, social notification, low signal, inaccessible, or excluded before read remain internal and do not appear in the catalog.
 
-`Selected` and `Worth reading` are mutually exclusive. A Discovery is already `Selected`; do not label it `Worth reading` merely because its original also contains useful depth. Use `Worth opening for` inside a selected item when the original offers meaningful additional depth. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Reviewed · 4 min`. In localized output, keep `Worth reading` semantically distinct from `Worth opening for`; for Spanish use `Vale la pena leer` versus `Vale la pena abrirlo por:`.
+`Selected` and `Worth reading` are mutually exclusive. A Discovery is already `Selected`; do not label it `Worth reading` merely because its original also contains useful depth. Use `Worth opening for` inside a selected item when the original offers meaningful additional depth. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Reviewed · 4 min`. In localized output, keep `Worth reading` semantically distinct from `Worth opening for` in every supported language; they must never collapse to the same translated string.
 
 Do not summarize unselected sources.
 
@@ -355,6 +355,6 @@ Before returning the digest, verify that:
 * Adjacent selections vary in rhetorical shape, sentence rhythm, and entry point instead of following a repeated LLM pattern.
 * Titles are sharp and informative without performing cleverness, and moments of wit, illumination, or agitation are earned rather than manufactured.
 * Naturalness comes from source-specific judgment and material-driven variation; no fake personal footprint or detector-oriented irregularity has been introduced.
-* The edition remains recognizably more discovery-oriented, source-thesis-preserving, and tonally agile than Synthesis MAX.
+* The edition remains recognizably discovery-oriented, source-thesis-preserving, and tonally agile rather than collapsing into a cross-source synthesis.
 
 The finished briefing should leave the reader **understanding a small number of ideas well enough to remember, explain, or use them**, while making the original sources optional paths for deeper exploration rather than required reading.

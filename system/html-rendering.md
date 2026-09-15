@@ -136,7 +136,7 @@ New output must never display the deprecated `Not selected` label or a translati
 
 Operational exclusions such as `Duplicate`, `Promotional content`, `Administrative`, `Social notification`, `Low signal`, `Inaccessible`, and `Excluded before read` remain internal and must not be rendered as source rows or badges. The catalog is the substantively reviewed corpus, not an inbox audit log.
 
-Validate statuses by source ID immediately before HTML generation: every source represented in the editorial body is `Selected`; `Worth reading` is drawn only from the unselected remainder; and the sets are disjoint. Localize the two Curated Discovery concepts distinctly. In Spanish, use `Vale la pena leer` for the yellow `Worth reading` catalog badge and `Vale la pena abrirlo por:` for the selected-item `Worth opening for:` depth cue; never collapse both to `Vale la pena abrir`.
+Validate statuses by source ID immediately before HTML generation: every source represented in the editorial body is `Selected`; `Worth reading` is drawn only from the unselected remainder; and the sets are disjoint. Localize the two Curated Discovery concepts distinctly in every supported language: the `Worth reading` catalog badge and the selected-item `Worth opening for:` depth cue must never collapse to the same translated string, because one is a recommendation about an unselected source and the other is a depth cue inside selected content.
 
 Use email-safe inline styles or matching classes from the active template. Status color communicates editorial state only; do not introduce icons or stars. Append per-source reading time according to the preceding shared rule.
 
@@ -172,8 +172,8 @@ The active rendering profile defines where a callout may appear. If a style does
 Source presentation depends on the selected style:
 
 * `curated-discovery` and `synthesis-max` use stable numerical citations, section/item-level `SOURCE NOTES`, and a final bibliographic `Sources` catalog. The catalog grouping follows the style default or a valid digest-level `source_catalog_grouping` override. Citations and catalog titles are clickable only when a valid source locator exists.
-* `detailed` keeps each source independently identifiable inside its own entry and normally ends without a separate final catalog.
-* `concise` uses the source/publication label plus the article/item title, linked when possible, and normally ends without a separate final catalog.
+* `detailed` keeps each source independently identifiable inside its own entry and has no source catalog.
+* `concise` uses the source/publication label plus the article/item title and has no source catalog.
 
 Never add a source catalog merely because another style has one. Follow the selected style file and rendering profile.
 

@@ -220,7 +220,7 @@ All digests use the same `state/digest-state.db`. Do **not** create a database p
 
 The schema and runtime rules live in `system/state-database.md`. A new digest requires no database migration: once its configuration is registered, new rows are written under its canonical `digest_id`. Digest aliases remain configuration-driven and are used only when reading historical state.
 
-Because the SQLite file is stored in Drive and persisted as one binary file, v1 assumes **one state writer at a time**. Multiple digests are fully supported, but their executions should be serialized rather than scheduled to commit simultaneously. This is a storage-concurrency rule, not a restriction on how many digests can exist.
+Because the state file is a single synchronized binary file rather than a database server, v1 assumes **one state writer at a time**. Multiple digests are fully supported, but their executions should be serialized rather than scheduled to commit simultaneously. This is a storage-concurrency rule, not a restriction on how many digests can exist.
 
 Do not enable SQLite WAL mode for the persisted state file; the runtime contract intentionally uses a self-contained database file so no `-wal` or `-shm` sidecars need to be synchronized.
 

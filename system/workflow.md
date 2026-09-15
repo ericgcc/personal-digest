@@ -247,13 +247,13 @@ The shared persistent state store is the SQLite database configured by `defaults
 
 For every run:
 
-1. Fetch the database as a raw binary file to a local working path; never parse or edit SQLite as text.
+1. Resolve the database at the path configured by `defaults.state_database`, inside the canonical local Digest System root. Never parse or edit SQLite as text, and never read it through a cloud-sync connector, web URL, or temporary clone.
 2. Open it using SQLite (the Python standard-library `sqlite3` module is acceptable) and apply the required pragmas from the state contract.
 3. Validate `PRAGMA integrity_check`, `PRAGMA foreign_key_check`, and `PRAGMA user_version` before relying on its state.
 4. Use parameterized SQL for all values and explicit transactions for all writes.
 5. Read processed state across the canonical digest ID plus any declared aliases, but write only the canonical digest ID.
-6. Do not use WAL mode for the persisted Drive database; the state file must remain self-contained with no required `-wal` or `-shm` sidecars.
-7. Serialize state writers. Multiple digests may share this database, but two digest executions must not replace it concurrently. Record the Drive file modification time when downloading it and verify it has not changed before replacement. If it changed, reload the newest copy and replay the transaction or stop safely rather than overwriting another run.
+6. Do not use WAL mode; the state file must remain one self-contained file with no required `-wal` or `-shm` sidecars.
+7. Serialize state writers. Multiple digests may share this database, but two digest executions must not write it concurrently. Record the file's modification time and size before the transaction and confirm both are unchanged after committing. If either changed, re-read the current file and replay the transaction rather than overwriting newer state.
 
 The SQLite database is the primary operational state. Gmail processed labels are a secondary recovery and inspection signal; they must never cause a separate per-digest database or duplicate state store to be created.
 
@@ -276,7 +276,7 @@ The task environment may require the agent to write its initial corpus artifact 
 
 Before invoking `analyze`, the agent must verify all of the following from the local filesystem:
 
-1. The current working directory is the canonical local-synced Digest System root, not a task workspace, sandbox, temporary clone, or Drive connector workspace.
+1. The current working directory is the canonical local Digest System root, not a task workspace, sandbox, temporary clone, or cloud-connector workspace.
 2. The temporary input artifact exists and is non-empty UTF-8 JSON.
 3. The `run` command will run the canonical `tools/digest_runner.mjs` from that root, which materializes the canonical source artifact itself.
 
@@ -296,7 +296,7 @@ The agent owns only these responsibilities around the runner:
 
 The runner itself creates `.digest-runs/<run-id>/<stage>/`. That directory contains copied canonical context, the copied primary input, the assembled prompt, the model response, the per-stage corpus manifest, any stage error log, and the single stage output. It is an allowed local operational artifact. It is neither a configuration source nor persistent processing state, and no later stage may edit an earlier stage's `context/`, `input/`, or `output/` files.
 
-Run commands from the canonical local-synced Digest System root. Do not use a Google Drive connector, browser URL, cloud workspace, task workspace, sandbox directory, or temporary clone to read canonical configuration or create run artifacts. On Windows, use the local Node.js runtime that passed preflight; `node` below denotes that runtime.
+Run commands from the canonical local Digest System root. Do not use a cloud-storage connector, web URL, cloud workspace, task workspace, sandbox directory, or temporary clone to read canonical configuration or create run artifacts. On Windows, use the local Node.js runtime that passed preflight; `node` below denotes that runtime.
 
 The model credential is read from the repository-root `.env` file, which is git-ignored. Every runner command must therefore pass `--env-file=.env`, so the key is never exported into a shell profile, written into a prompt, or committed. Use `--env-file-if-exists=.env` only where the run must be attempted and allowed to fail cleanly when the file is absent.
 
@@ -333,7 +333,7 @@ The editorial stages are `analyze`, `frame`, `draft`, `structural-edit`, `clarit
 1. **First attempt:** the initial `run` invocation.
 2. **Second attempt:** `digest_runner.mjs resume --from-stage render`.
 3. **After a second failure,** the scheduled-task agent may perform the render itself. It must apply the identical rendering contract, template, provenance, complete-output language rules, and HTML-safety requirements that the runner would have applied. It must not perform editorial rewriting.
-4. Write the result as one complete UTF-8 artifact in the task's temporary workspace. Do not assume the task can write directly into the canonical local-synced Digest System folder.
+4. Write the result as one complete UTF-8 artifact in the task's temporary workspace. Do not assume the task can write directly into the canonical local Digest System folder.
 5. Invoke `digest_runner.mjs materialize --stage render` to validate and import it into `.digest-runs/<run-id>/render/output/email.html`. The runner is the only component permitted to materialize a fallback artifact in the canonical run directory. It must verify the expected filename and format, reject an empty artifact, preserve the failed-attempt logs, record `agent-fallback` provenance, and refuse to overwrite an already valid canonical stage output.
 6. Immediately verify that the resolved materialized path is exactly the expected canonical stage output path.
 7. When `render` is the fallback stage, materialization is the last runner operation; proceed to final HTML validation and delivery only after the canonical `email.html` has been verified.
@@ -386,7 +386,7 @@ The reason for tiering: the edit stages transform already-approved prose and nev
 | `final-polish` | Every-stage context; the process, editorial base, and naturalness reference identify the `FINAL POLISH` work. |
 | `render` | `system/workflow.md`; `digests/<digest-id>.md`; `styles/<selected-style>.md`; `system/html-rendering.md`; `system/rendering-<selected-style>.md`; and `templates/<selected-style>-email-v1.html`. `final.md` already contains the approved source provenance/catalog; do not pass article bodies or `templates/email-theme.html` into the render request. |
 
-The runner receives only its copied stage inputs and inlined canonical context. It must not access Gmail, Drive, Chrome/Edge, SQLite, external sources, delivery tools, or canonical configuration files, and its only permitted network destination is the configured model endpoint. It must not re-read, search, or augment the normalized corpus. The scheduled-task agent already performed required source acquisition; the runner's authority begins with editorial analysis and ends after it returns the content used to write `email.html`. The only exception is the controlled `render` fallback described above.
+The runner receives only its copied stage inputs and inlined canonical context. It must not access Gmail, cloud storage, Chrome/Edge, SQLite, external sources, delivery tools, or canonical configuration files, and its only permitted network destination is the configured model endpoint. It must not re-read, search, or augment the normalized corpus. The scheduled-task agent already performed required source acquisition; the runner's authority begins with editorial analysis and ends after it returns the content used to write `email.html`. The only exception is the controlled `render` fallback described above.
 
 ## Editorial production pipeline
 `tools/digest_runner.mjs` executes this production pipeline through one direct model call per stage. The agent must use the commands and artifacts in `## Local editorial stage runner`. Editorial stages have no fallback; only `render` may be performed by the agent, and only under `## Two-attempt stage recovery and controlled fallback`.
@@ -419,8 +419,8 @@ The agent validates the returned HTML but does not use validation as an opportun
 After Gmail confirms delivery:
 
 1. Apply the run, every admitted email, and every reviewed item to a local working copy of the SQLite state database in one transaction, using the canonical digest ID. Store each item's final editorial outcome in `items.review_status`; write `reviewed`, not `not_selected`, for a substantively reviewed ordinary omission. `worth_reading` is valid only when the active style is `curated-discovery` or `synthesis-max` and the source was not selected into the editorial body.
-2. Commit the local transaction, run the database integrity checks required by `system/state-database.md`, close the connection, and replace the same Drive database file only if it has not changed since this run downloaded it. If it changed, re-fetch the latest database and safely replay the state transaction rather than overwriting newer state.
-3. Only after the updated database is safely persisted to Drive, apply `Digest/Processed/<digest-id>` to each successfully processed source email.
+2. Commit the local transaction, run the database integrity checks required by `system/state-database.md`, close the connection, and confirm the state file's modification time and size are unchanged from before the transaction. If either changed, re-read the current file and safely replay the state transaction rather than overwriting newer state.
+3. Only after the updated database is safely persisted to disk, apply `Digest/Processed/<digest-id>` to each successfully processed source email.
 
 If delivery or a required dependency fails, do not label messages or persist them as processed. If the email was sent but state persistence failed, a later run must detect the run key in Gmail Sent and repair the state database and labels without sending again. If database persistence succeeds but Gmail labeling fails, the database remains authoritative for deduplication and the missing labels should be repaired without reprocessing or resending.
 
@@ -433,4 +433,4 @@ If delivery or a required dependency fails, do not label messages or persist the
 * If the scheduled-task agent cannot invoke the canonical local `tools/digest_runner.mjs`, stop safely. The initial runner input may originate in its task workspace, but only the runner may materialize the canonical source artifact; every later run artifact must resolve under the canonical root.
 * Leave inaccessible items pending and state the reason in run notes.
 * If a custom instruction conflicts with the style or workflow, keep the compatible custom instructions, ignore only the conflicting clause, and note the conflict.
-* If the required browser session, Gmail, Drive, shared editorial process, shared editorial base, style contract, selected style implementation, template, state contract, or SQLite state database is unavailable or invalid, stop safely without committing processing state.
+* If the required browser session, Gmail access, the shared editorial process, shared editorial base, style contract, selected style implementation, template, state contract, or SQLite state database is unavailable or invalid, stop safely without committing processing state.

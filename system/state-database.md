@@ -12,10 +12,10 @@ This is the runtime contract for persistent Digest System state.
 Digest aliases are **not stored in the database**. They remain configuration in `digests/<digest-id>.md`. Reads use the canonical ID plus declared aliases; all new writes use only the canonical ID.
 
 ## Runtime access
-Treat the database as binary state, not as a document.
+The database is a single binary file at `state/digest-state.db` in the canonical local Digest System root. Treat it as binary state, not as a document.
 
-1. Fetch the Drive file as raw bytes to a local working path.
-2. Open the local copy with SQLite. Python's standard-library `sqlite3` module is acceptable.
+1. Confirm the path resolves to a file inside the canonical local root. Do not read it through a cloud-sync connector, a web URL, or a temporary clone.
+2. Open it directly with SQLite. Python's standard-library `sqlite3` module is acceptable.
 3. On every connection execute:
 
 ```sql
@@ -25,7 +25,7 @@ PRAGMA journal_mode = DELETE;
 PRAGMA synchronous = FULL;
 ```
 
-Do not use WAL mode for the persisted Drive copy because WAL requires sidecar files that are not part of the configured state artifact.
+Do not use WAL mode. The state must remain one self-contained file with no `-wal` or `-shm` sidecar, because the state artifact is synchronized as a single file and sidecars would not travel with it.
 
 Before reading state, require:
 
@@ -38,14 +38,14 @@ PRAGMA user_version;         -- must return: 1
 Use parameterized SQL for values. Never construct SQL by interpolating email IDs, URLs, titles, digest IDs, or other source data.
 
 ## Single-writer rule
-The database supports any number of configured digests, but the Drive-backed state artifact has one writer at a time.
+The database supports any number of configured digests, but the state file has one writer at a time.
 
-* Record the Drive `modifiedTime` when the database is fetched.
-* Before replacing the Drive file after a state commit, fetch metadata again.
-* If `modifiedTime` changed, do not overwrite it. Re-fetch the newest database and replay the intended transaction against that copy, or stop safely if the merge cannot be proven safe.
+* Record the file's modification time and size before beginning a state transaction.
+* After committing, confirm they are unchanged before finishing.
+* If either changed, do not overwrite it. Re-read the current file, replay the intended transaction against that copy, and stop safely if the merge cannot be proven safe.
 * Never create a separate active database per digest to work around concurrency.
 
-This protects the multi-digest state model from lost updates even though Drive is file storage rather than a database server.
+This protects the multi-digest state model from lost updates. The file is synchronized storage rather than a database server, so nothing arbitrates concurrent writers for you. A digest execution that holds the file open across a network-synchronized folder should keep the write window as short as possible.
 
 ## Schema
 ```sql
@@ -186,9 +186,8 @@ After commit:
 
 1. run `PRAGMA integrity_check` and `PRAGMA foreign_key_check` again;
 2. close the SQLite connection completely;
-3. verify the Drive database has not changed since download;
-4. replace the same `state/digest-state.db` Drive file with the committed local copy;
-5. only then apply the canonical `Digest/Processed/<digest-id>` Gmail labels.
+3. verify the state file's modification time and size are unchanged from before the transaction;
+4. only then apply the canonical `Digest/Processed/<digest-id>` Gmail labels.
 
 If database persistence succeeds but Gmail labeling fails, the database remains authoritative for deduplication and the labels can be repaired later. If Gmail delivery succeeds but database persistence fails, do not send again; use the deterministic run key plus Gmail Sent evidence to repair missing database state on the next execution.
 

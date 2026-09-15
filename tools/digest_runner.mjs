@@ -11,8 +11,8 @@ const DEEPSEEK_MODEL = "deepseek-flash";
 // edit stages spending 28-31K reasoning tokens on a small corpus, which left only
 // ~1.5K for the artifact and silently truncated it. The cap must therefore cover
 // reasoning plus the full artifact. The model still generates only what it needs;
-// this is a ceiling, not a target. DeepSeek's maximum output is 384K.
-const MAX_OUTPUT_TOKENS = Number(process.env.DIGEST_MAX_OUTPUT_TOKENS ?? 131_072);
+// this is a ceiling, not a target, so headroom is free. DeepSeek's maximum is 384K.
+const MAX_OUTPUT_TOKENS = Number(process.env.DIGEST_MAX_OUTPUT_TOKENS ?? 262_144);
 const STAGES = [
   ["analyze", "analysis.json", "JSON", "SELECT -> ANALYZE: evaluate the complete reviewed corpus, source fidelity, relationships, qualifications, and candidates."],
   ["frame", "frame.json", "JSON", "FRAME: establish editorial units, reader promises, narrative spines, support, and branches to omit before prose."],
@@ -32,14 +32,18 @@ const STAGE_THINKING = Object.fromEntries(
   STAGES.map(([name]) => [name, name === "render" ? { type: "disabled" } : { type: "enabled" }]),
 );
 
+// Reasoning effort per stage. The four edit stages revise an existing document against
+// an explicit checklist rather than discovering structure, so they run at low effort.
+// Judgment-heavy stages keep higher effort. Reasoning dominates both latency and cost
+// because it bills as output, so this split is the primary cost control.
 const STAGE_REASONING_EFFORT = {
   analyze: "high",
   frame: "high",
   draft: "high",
-  "structural-edit": "medium",
-  "clarity-edit": "medium",
-  "voice-edit": "medium",
-  "compression-edit": "medium",
+  "structural-edit": "low",
+  "clarity-edit": "low",
+  "voice-edit": "low",
+  "compression-edit": "low",
   "final-polish": "high",
   render: undefined,
 };

@@ -15,6 +15,8 @@
 
 **Remaining before production:** one live digest run through the orchestrator (Task 5.5).
 
+**Open defects are tracked in `KNOWN-ISSUES.md`** — four entries from the first live test run, three of them orchestrator-side and one in the render stage. They are recorded there rather than here because they span components and outlive this revamp.
+
 | Phase | Scope | Done |
 | --- | --- | --- |
 | 0 | Prerequisites and baseline | 6 / 6 |

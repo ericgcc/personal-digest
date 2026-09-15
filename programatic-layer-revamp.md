@@ -1484,16 +1484,18 @@ Digest body length was measured against each style's declared budget. The catalo
 
 **Most likely explanation for the `curated-discovery` overage:** the smoke fixture is the first 8 sources of a 78-source corpus, not a selection. A highly selective style given only 8 candidates has little to omit, so it likely covered most of them. The later 53-source `synthesis-max` replay **disproved** this for that style — it overshot far more on a full corpus — so the overage is a model/instruction behaviour, not a small-corpus artifact.
 
-**RESOLVED — `synthesis-max` and `detailed` budgets reverted (2026-09-15).** The earlier digest-system word-count change raised `synthesis-max` from 700–1,200 to 1,100–1,800 words and `detailed` from 120–220 to 170–280. That change is now reverted, and the stated durations were corrected to match the words at the system's own 225 wpm:
+**RESOLVED — style budgets normalised to 700–1,200 words (2026-09-15).** The earlier digest-system word-count change raised `synthesis-max` from 700–1,200 to 1,100–1,800 words and `detailed` from 120–220 to 170–280. Both are now reverted. In addition, `curated-discovery` was converted from a minute-based budget to the **same 700–1,200-word target** as `synthesis-max`, since both are selective briefings and should land at comparable length. Every stated duration was then corrected to agree with the words at the system's own 225 wpm:
 
-| Style | Words (reverted) | Reader time (corrected) | Arithmetic at 225 wpm |
+| Style | Words | Reader time | Arithmetic at 225 wpm |
 | --- | --- | --- | --- |
-| `synthesis-max` | 700–1,200 | **three-to-five-minute** (was five-to-eight) | 3.1–5.3 min |
-| `detailed` | 120–220 | **30–60 seconds** (was 45–75) | 0.53–0.98 min |
-| `curated-discovery` | unchanged (minute-based) | five to eight minutes | 1,125–1,800 words |
+| `synthesis-max` | 700–1,200 | **three to five minutes** (was five-to-eight) | 3.1–5.3 min |
+| `curated-discovery` | **700–1,200** (was minute-based) | **three to five minutes**, elastic to ~six (was five-to-eight, elastic to ten) | 3.1–5.3 min |
+| `detailed` | 120–220 (reverted) | **30–60 seconds** (was 45–75) | 0.53–0.98 min |
 | `concise` | unchanged | 10–20 seconds | 40–80 words = 10.7–21.3 s |
 
 **The principle applied:** where a style's word count and its stated duration disagreed, the **word count was treated as authoritative** and the duration was corrected to match. This follows the observed behaviour — the model honoured the words, not the duration — and it preserves the length of the digests already being delivered. All four styles are now internally consistent at 225 wpm.
+
+`curated-discovery` retains its elastic model; only the bounds moved. Its ceiling is now roughly **1,350 words / six minutes** — exactly six minutes at 225 wpm — instead of the previous ten minutes, scaled proportionally from the old 8-to-10-minute ratio.
 
 **Catalog observation:** in the prev 78-source digest the catalog was **1,525 words against a 1,143-word body** — 57% of the document was bibliography. Worth reviewing separately.
 
@@ -1574,9 +1576,9 @@ Three corrections were applied to `tools/digest_runner.mjs` and the two affected
 
 A `STYLE_BODY_BUDGET` table in the runner mirrors each style's Depth model. **These values must be updated together with `styles/<style>.md`**, which remains the source of truth. The injected text sits inside the stage task block, which is already stage-specific, so it does not affect the cache-invariant prefix.
 
-**Fix 3 — style budgets reverted and durations corrected.** See the resolution above. `synthesis-max` back to 700–1,200 words with a three-to-five-minute duration; `detailed` back to 120–220 words with a 30–60-second duration. All four styles now agree with 225 wpm.
+**Fix 3 — style budgets normalised and durations corrected.** See the resolution above. All four styles now carry a word count that agrees with their stated duration at 225 wpm: `synthesis-max` and `curated-discovery` at 700–1,200 words / three to five minutes, `detailed` at 120–220 words / 30–60 seconds, and `concise` at 40–80 words per entry / 10–20 seconds.
 
-**Not fixed, still open:** the `curated-discovery` overage (2,429 words vs a 1,125–1,800 budget) remains unexplained. It is the same class of defect as the `synthesis-max` draft overshoot, and Fix 2 injects the budget for `curated-discovery` too, so the next replay should show whether that resolves it.
+**Not fixed, still open:** the `curated-discovery` overage (2,429 words against a now 700–1,200 budget, measured before Fix 2). It is the same class of defect as the `synthesis-max` draft overshoot, and Fix 2 injects the budget for `curated-discovery` too, so the next replay should show whether that resolves it. This is now a larger gap than before, because the target was lowered from 1,125–1,800 to 700–1,200.
 
 ### Post-change measurements
 

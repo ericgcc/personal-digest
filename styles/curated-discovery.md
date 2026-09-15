@@ -10,7 +10,7 @@ The fundamental unit is a **coherent editorial mini-essay built around one idea 
 | **Composition unit** | A coherent editorial mini-essay built around one idea worth understanding; shorter worthwhile material may appear as a discovery. |
 | **Source relationship** | Preserve strong source theses independently by default; combine sources only when the relationship materially improves understanding and the valuable thesis of each source remains appropriately represented. |
 | **Selection model** | Highly selective and value-first; omission is expected and strong outliers may outrank recurring topics. |
-| **Depth model** | Elastic, value-driven depth: usually five to eight minutes, shorter on light days and up to roughly ten minutes when unusually strong material warrants the extra time. Allocate depth independently per idea. |
+| **Depth model** | Elastic, value-driven depth: normally 700–1,200 words and roughly three to five minutes, shorter on light days and up to roughly 1,350 words / six minutes when unusually strong material warrants the extra time. Allocate depth independently per idea. |
 | **Organization model** | Short editorial orientation → importance-ordered numbered selections → optional discoveries → complete source catalog. |
 | **Progression model** | Each full selection follows one narrative spine from orientation or concrete entrance → explanation/development → useful consequence, qualification, or resolution. Discoveries remain compact but coherent. |
 | **Opening behavior** | Required short editorial orientation that either states a genuinely interesting observation or creates honest curiosity around the strongest material without forcing a thesis. |
@@ -124,11 +124,11 @@ Allow moments of wit, illumination, or productive agitation when the material ea
 Titles should sharpen the idea rather than perform cleverness. A reader should understand what is at stake and feel a reason to continue. Prefer source-grounded specifics and ordinary exact verbs to polished abstraction. Vary entry points and paragraph shape because the selected ideas genuinely differ; do not manufacture irregularity, rhetorical punch lines, or grand pivots merely to sound human.
 
 ## Length and density
-Use an **elastic reading budget** driven by editorial value. Most editions should land around **five to eight minutes**, but a genuinely rich source set may stretch to roughly **ten minutes**. A light day may be shorter.
+Use an **elastic reading budget** driven by editorial value. Most editions should land around **700–1,200 words, roughly three to five minutes**, but a genuinely rich source set may stretch to roughly **1,350 words / six minutes**. A light day may be shorter.
 
-Do not target a fixed number of full selections, discoveries, paragraphs, or words. The recurring `4 full selections + 3 discoveries + 5 minutes` shape is not a template.
+Do not target a fixed number of full selections, discoveries, paragraphs, or words. The recurring `4 full selections + 3 discoveries + 3 minutes` shape is not a template.
 
-Never add weaker material merely to reach a duration or count, and never compress strong additional material merely to force the edition back to five minutes. Include the next item when its expected value clearly justifies the reader's additional time; stop when the marginal item would dilute the briefing.
+Never add weaker material merely to reach a duration or count, and never compress strong additional material merely to force the edition back to three minutes. Include the next item when its expected value clearly justifies the reader's additional time; stop when the marginal item would dilute the briefing.
 
 Every paragraph must have a clear role in the selection's progression: orient, develop, exemplify, qualify, test, or resolve the central idea.
 
@@ -346,8 +346,8 @@ Before returning the digest, verify that:
 * Every catalog-eligible substantively reviewed source appears in the final catalog, and no operational exclusion appears there.
 * The final catalog uses the configured `source_catalog_grouping` mode without changing permanent source numbers; topic grouping, when chosen, uses corpus-derived reader-oriented headings and shows provenance on every row.
 * Optional `Worth opening for` cues describe genuine additional value.
-* The editorial body uses an elastic reading budget: usually five to eight minutes, shorter when little qualifies, and up to roughly ten when genuinely strong material warrants it.
-* The edition stopped on marginal value rather than a fixed item count, paragraph count, or five-minute target.
+* The editorial body uses an elastic reading budget: normally 700–1,200 words / three to five minutes, shorter when little qualifies, and up to roughly 1,350 words / six minutes when genuinely strong material warrants it.
+* The edition stopped on marginal value rather than a fixed item count, paragraph count, or duration target.
 * `Worth reading`, when used, appears only as a highly selective source-catalog status for unselected originals that truly merit extra reading time; every source cited in a full selection or Discovery is `Selected`, and the two sets are disjoint.
 * Nothing editorial appears after `Sources`.
 * `TODAY'S EDIT` either states a genuinely interesting observation or creates honest curiosity without forcing unrelated material into one thesis.

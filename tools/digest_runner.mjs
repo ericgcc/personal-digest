@@ -57,7 +57,7 @@ const STAGE_REASONING_EFFORT = {
 // These values MUST mirror the Depth model and Length sections of styles/<style>.md,
 // which remain the source of truth. Update both together when a style budget changes.
 const STYLE_BODY_BUDGET = {
-  "curated-discovery": "about 1,125-1,800 words for the briefing body, excluding the source catalog",
+  "curated-discovery": "about 700-1,200 words for the briefing body, excluding the source catalog",
   "synthesis-max": "about 700-1,200 words for the briefing body, excluding the source catalog",
   detailed: "about 120-220 words per substantive source entry",
   concise: "about 40-80 words per retained source entry",

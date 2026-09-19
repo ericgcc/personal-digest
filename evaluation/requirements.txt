@@ -1,0 +1,16 @@
+# Historical digest quality evaluation dependencies.
+#
+#   conda create -y -n digest-eval python=3.11
+#   conda run -n digest-eval python -m pip install -r evaluation/requirements.txt
+#
+# Pinned to the versions this analysis was performed with, so historical
+# results stay comparable with the recorded deepeval/readsight versions.
+readsight==1.0.5
+deepeval==4.2.3
+
+# Reporting and analysis.
+PyYAML==6.0.1
+scipy==1.10.1
+
+# Tests.
+pytest==9.1.1

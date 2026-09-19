@@ -5,6 +5,13 @@
 .digest-runs/
 node_modules/
 
+# Generated evaluation output (derived from .digest-runs, reproducible)
+evaluation-results/
+
+# Local Python environment
+.venv/
+venv/
+
 # Python bytecode caches (compiled artifacts, never source)
 __pycache__/
 *.py[cod]

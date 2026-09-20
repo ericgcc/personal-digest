@@ -74,6 +74,27 @@ class NoiseSample:
     def spread(self) -> float:
         return round(max(self.scores) - min(self.scores), 6) if self.scores else 0.0
 
+    @property
+    def weakest_section_spread(self) -> float | None:
+        """How much the weakest section's score moved across repeats.
+
+        Reported separately from ``spread`` because it is consistently larger:
+        the document score averages every section, so a section-level verdict is
+        inherently less reproducible than the document-level number.
+        """
+        if len(self.weakest_section_scores) < 2:
+            return None
+        return round(
+            max(self.weakest_section_scores) - min(self.weakest_section_scores), 6
+        )
+
+    @property
+    def understood_ratio_spread(self) -> float | None:
+        """How much the share of sections understood moved across repeats."""
+        if len(self.understood_ratios) < 2:
+            return None
+        return round(max(self.understood_ratios) - min(self.understood_ratios), 6)
+
     def dimension_spread(self) -> dict[str, float]:
         return {
             name: round(max(values) - min(values), 6)
@@ -96,10 +117,19 @@ class NoiseSample:
             "stdev": self.stdev,
             "spread": self.spread,
             "errors": list(self.errors),
+            # Both shapes are written: ``dimension_scores`` is what ``load_noise``
+            # reads back (it needs the raw values to recompute the spread), and
+            # ``dimension_spread`` is the derived figure for a human reader.
+            # Emitting only the spread made the round trip lossy.
+            "dimension_scores": {
+                name: list(values) for name, values in self.dimension_scores.items()
+            },
             "dimension_spread": self.dimension_spread(),
             "critical_failure_counts": list(self.critical_failure_counts),
             "weakest_section_scores": list(self.weakest_section_scores),
+            "weakest_section_spread": self.weakest_section_spread,
             "understood_ratios": list(self.understood_ratios),
+            "understood_ratio_spread": self.understood_ratio_spread,
             "issue_type_sets": [sorted(item) for item in self.issue_type_sets],
             "understandable_flags": list(self.understandable_flags),
         }

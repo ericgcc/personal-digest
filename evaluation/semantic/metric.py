@@ -557,6 +557,16 @@ def evaluate_regression(
     if not isinstance(regression, RegressionEvaluation):  # pragma: no cover - defensive
         regression = RegressionEvaluation.model_validate(regression)
 
+    # The judge references sections in whatever form it was shown, so the ids it
+    # names are mapped back onto the parsed sections.
+    regression = regression.model_copy(
+        update={
+            "affected_sections": _normalize_section_ids(
+                list(regression.affected_sections), list(after.sections)
+            )
+        }
+    )
+
     evaluation = reconcile_evaluation(regression.after, list(after.sections))
     result = SemanticResult(
         evaluation=evaluation,
@@ -585,6 +595,38 @@ def _with_sections(result: SemanticResult, parsed: ParsedDigest) -> SemanticResu
             replace(result, sections=_section_metadata(parsed))
         ),
     )
+
+
+def _normalize_section_ids(
+    values: list[str], sections: list[DigestSection]
+) -> list[str]:
+    """Map section references in a judge response onto the parsed section ids.
+
+    The prompt renders sections as ``SECTION 01``, so the judge echoes that form
+    in some fields and the bare id in others. Left alone, ``affected_sections``
+    would contain a mixture of ``"SECTION 01"`` and ``"01"``, and any consumer
+    matching on ids would silently miss half of them. Unrecognised values are
+    kept as written rather than dropped, so nothing is hidden.
+    """
+    known = {section.section_id for section in sections if section.section_id}
+    if not known:
+        return values
+    by_title = {
+        section.title.strip().lower(): section.section_id
+        for section in sections
+        if section.section_id and section.title
+    }
+    normalized: list[str] = []
+    for value in values:
+        text = str(value).strip()
+        candidate = text.upper().removeprefix("SECTION").strip().strip(":")
+        if candidate in known:
+            normalized.append(candidate)
+        elif text.lower() in by_title:
+            normalized.append(by_title[text.lower()])
+        else:
+            normalized.append(text)
+    return normalized
 
 
 def reconcile_evaluation(

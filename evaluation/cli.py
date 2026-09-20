@@ -430,9 +430,13 @@ def cmd_noise(args: argparse.Namespace, paths: ProjectPaths) -> int:
     results_dir = _results_dir(paths, args)
     write_json(
         results_dir / "noise.json",
-        {"generated_at": utc_now(), "repeats": report.repeats,
-         "band": report.band.to_dict(), "samples": [s.to_dict() for s in report.samples],
-         "judge_usage": usage},
+        {
+            "generated_at": utc_now(),
+            # ``to_dict`` carries the qualitative agreement and the derived
+            # spreads; hand-building the payload here silently dropped them.
+            **report.to_dict(),
+            "judge_usage": usage,
+        },
     )
     if not report.samples:
         print("No complete runs were available for the stability experiment.")
@@ -537,9 +541,9 @@ def cmd_all(args: argparse.Namespace, paths: ProjectPaths) -> int:
             results_dir / "noise.json",
             {
                 "generated_at": utc_now(),
-                "repeats": noise_report.repeats,
-                "band": noise_report.band.to_dict(),
-                "samples": [sample.to_dict() for sample in noise_report.samples],
+                # ``NoiseReport.to_dict`` carries the qualitative agreement as
+                # well; hand-building the payload here silently dropped it.
+                **noise_report.to_dict(),
                 "judge_usage": noise_usage,
             },
         )
@@ -564,9 +568,7 @@ def cmd_all(args: argparse.Namespace, paths: ProjectPaths) -> int:
             results_dir / "noise.json",
             {
                 "generated_at": utc_now(),
-                "repeats": noise_report.repeats,
-                "band": noise_report.band.to_dict(),
-                "samples": [sample.to_dict() for sample in noise_report.samples],
+                **noise_report.to_dict(),
                 "judge_usage": noise_usage,
             },
         )

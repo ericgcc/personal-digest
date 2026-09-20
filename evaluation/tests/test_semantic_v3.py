@@ -565,6 +565,26 @@ def test_reconcile_realigns_hallucinated_section_ids() -> None:
     assert {item.section_id for item in repaired.section_evaluations} == {"01", "02"}
 
 
+def test_comparison_normalizes_prefixed_section_references() -> None:
+    """The prompt renders ``SECTION 01``, so the judge echoes that form.
+
+    Left alone, affected_sections would mix ``"SECTION 01"`` with ``"01"`` and a
+    consumer matching on ids would silently miss half of them.
+    """
+    judge, _calls = _judge([_regression(affected_sections=["SECTION 01", "02"])])
+    result = evaluate_regression(DIGEST, DIGEST, style="synthesis-max", judge=judge)
+    assert result.regression is not None
+    assert result.regression.affected_sections == ["01", "02"]
+
+
+def test_comparison_keeps_an_unrecognised_section_reference() -> None:
+    judge, _calls = _judge([_regression(affected_sections=["the closing section"])])
+    result = evaluate_regression(DIGEST, DIGEST, style="synthesis-max", judge=judge)
+    assert result.regression is not None
+    # Kept as written rather than dropped, so nothing is hidden.
+    assert result.regression.affected_sections == ["the closing section"]
+
+
 def test_details_payload_is_serialisable() -> None:
     judge, _calls = _judge([_evaluation(issues=[
         {

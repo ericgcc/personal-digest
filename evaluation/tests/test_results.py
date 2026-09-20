@@ -316,7 +316,7 @@ def test_report_uses_the_measured_noise_band(pass_result, tmp_path) -> None:
     text = path.read_text(encoding="utf-8")
     assert "Warning band: 0.060" in text
     assert "within-noise" in text
-    assert "smallest non-zero semantic delta is **0.01**" in text
+    assert "smallest non-zero semantic delta is **0.10**" in text
 
 
 def test_transitions_carry_comparable_formula_and_delta_metrics(pass_result) -> None:

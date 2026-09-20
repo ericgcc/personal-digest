@@ -14,6 +14,7 @@ from typing import Any, Mapping, Sequence
 
 from ..historical.run_model import HistoricalRun
 from ..semantic.noise import NoiseBand, NoiseReport
+from ..semantic.rubric import MAX_SCORE, MIN_SCORE, RUBRIC_BANDS
 from ..version import SCORE_DECIMAL_PLACES, SCORE_RESOLUTION
 from . import analysis
 from .analysis import (
@@ -39,21 +40,26 @@ TRANSITION_COLUMNS: tuple[tuple[str, str], ...] = (
     ("formula_lix", "LIX"),
 )
 
-#: Scores at or above this share of the scale sit in the top rubric band (9-10),
-#: which is what the ceiling-effect check looks for.
-TOP_BAND_FLOOR = 0.9
+#: The overall-score floor of the top rubric band (see
+#: :data:`evaluation.semantic.rubric.RUBRIC_BANDS`), used by the ceiling-effect
+#: check. Derived from the rubric rather than hard-coded: the bands are declared
+#: in one place, and the summary score is on the same 0-10 scale as the bands, so
+#: a literal here would silently stop meaning anything if either changed.
+TOP_BAND_FLOOR = RUBRIC_BANDS[0].low
+TOP_BAND_LABEL = RUBRIC_BANDS[0].label
 
 
 def _resolution_text() -> str:
     """Describe the metric's resolution from the configured decimal places."""
     resolution = SCORE_RESOLUTION
     resolution_str = f"{resolution:.{SCORE_DECIMAL_PLACES + 1}f}"
-    values = 10 * (10**SCORE_DECIMAL_PLACES) + 1
+    values = round((MAX_SCORE - MIN_SCORE) / resolution) + 1
     return (
         f"The rubric asks the judge for a score on a 0-10 scale with "
-        f"**{SCORE_DECIMAL_PLACES} decimal place(s)**, so the smallest non-zero semantic "
-        f"delta is **{resolution_str}** after DeepEval's normalization, and the scale offers "
-        f"**{values}** distinct values."
+        f"**{SCORE_DECIMAL_PLACES} decimal place(s)**, and v3 reports that score "
+        f"directly rather than a normalized 0-1 value, so the smallest non-zero "
+        f"semantic delta is **{resolution_str}** and the scale offers **{values}** "
+        f"distinct values."
     )
 
 
@@ -239,6 +245,61 @@ def _noise_section(inputs: ReportInputs) -> str:
         "`within-noise`. This band is a measurement, not a calibrated significance "
         "threshold.",
     ]
+
+    # Per-section verdicts move more than the document score does, so the
+    # document band alone would overstate how reproducible a section-level
+    # finding is. Report the qualitative agreement separately.
+    weakest_spreads = [
+        sample.weakest_section_spread
+        for sample in inputs.noise.samples
+        if sample.weakest_section_spread is not None
+    ]
+    section_rows = [
+        [
+            sample.label,
+            ", ".join(_fmt(score, 2) for score in sample.weakest_section_scores) or "-",
+            _fmt(sample.weakest_section_spread, 3),
+            ", ".join(
+                _fmt(ratio, 2) for ratio in sample.understood_ratios
+            )
+            or "-",
+            ", ".join(str(count) for count in sample.critical_failure_counts) or "-",
+        ]
+        for sample in inputs.noise.samples
+    ]
+    lines.extend(
+        [
+            "",
+            "### Per-section stability",
+            "",
+            "The band above is measured on the document-level score. Section-level "
+            "verdicts are the units the evaluator actually diagnoses, and they move more.",
+            "",
+            _table(
+                [
+                    "artifact",
+                    "weakest-section scores",
+                    "weakest spread",
+                    "sections understood ratio",
+                    "critical failures",
+                ],
+                section_rows,
+            ),
+        ]
+    )
+    if weakest_spreads:
+        lines.extend(
+            [
+                "",
+                f"- Weakest-section score spread across repeats: up to "
+                f"**{_fmt(max(weakest_spreads), 3)}**, which is "
+                f"{max(weakest_spreads) / band.max_spread:.1f}x the document-level band."
+                if band.max_spread
+                else "",
+            ]
+        )
+    if inputs.noise.qualitative is not None:
+        lines.extend(["", inputs.noise.qualitative.describe()])
     return "\n".join(lines)
 
 
@@ -266,7 +327,8 @@ def _resolution_section(inputs: ReportInputs) -> str:
             f"- Score range: **{min(scores):.3f}** to **{max(scores):.3f}**; mean "
             f"**{sum(scores) / len(scores):.3f}**.",
             f"- Distinct scores observed: **{len(distinct)}** — {preview}.",
-            f"- Artifacts in the top rubric band (9-10): **{top}** of {len(scores)}.",
+            f"- Artifacts in the top rubric band ({TOP_BAND_LABEL}): **{top}** of "
+            f"{len(scores)}.",
         ]
     )
     if len(distinct) <= 4:
@@ -286,6 +348,18 @@ def _resolution_section(inputs: ReportInputs) -> str:
                 "highest rubric band. The metric separates the best stages from the worst only "
                 "weakly, so small deltas should be read with care rather than as evidence that "
                 "nothing changed.",
+            ]
+        )
+    elif not top:
+        lines.extend(
+            [
+                "",
+                f"**No ceiling effect at the top band.** No artifact reached the "
+                f"{TOP_BAND_LABEL} band, and the observed range spans "
+                f"{(max(scores) - min(scores)):.1f} points. The top band is reserved for "
+                "output where no substantive section requires the reader to supply missing "
+                "context; that no artifact reaches it is a finding about the pipeline, not "
+                "about the metric's resolution.",
             ]
         )
 
@@ -835,10 +909,10 @@ def _answer_e(inputs: ReportInputs) -> str:
             item.label,
             item.count,
             item.documents,
-            ", ".join(
-                f"{name} {count}" for name, count in item.severities
-            )
-            or "-",
+            # Only document-level issues carry a severity, so this column covers a
+            # subset of the occurrences above. Said explicitly rather than
+            # leaving a reader to assume the two add up.
+            ", ".join(f"{name} {count}" for name, count in item.severities) or "-",
             ", ".join(f"{name}: {count}" for name, count in item.styles) or "-",
             ", ".join(item.stages[:4]) or "-",
         ]
@@ -850,7 +924,7 @@ def _answer_e(inputs: ReportInputs) -> str:
                 "issue type",
                 "occurrences",
                 "documents",
-                "severity",
+                "severity (document-level only)",
                 "style",
                 "stages",
             ],
@@ -1050,8 +1124,12 @@ def _limitations_section(inputs: ReportInputs) -> str:
         "segmentation, which differs from ReadSight's internal segmentation. Both are "
         "reported under distinct keys.",
         "- The semantic score is concentrated in a few discrete values, so any ranking of "
-        "stage outputs by that score is mostly arbitrary. Reason-cluster counts and "
+        "stage outputs by that score is mostly arbitrary. The issue taxonomy and the "
         "correlations inherit this weakness.",
+        "- Section-level scores are less reproducible than the document score, which "
+        "averages them. A section diagnosed in one evaluation may be scored a full point "
+        "differently in the next, so a section-level finding should be confirmed by a "
+        "repeat before it drives a decision.",
     ]
     if inputs.noise is None:
         lines.append(

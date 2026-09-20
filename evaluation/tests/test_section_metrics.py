@@ -133,12 +133,54 @@ def test_serialisation_uses_a_stable_prefix() -> None:
 
 
 def test_source_catalog_does_not_become_a_section() -> None:
+    """The reader-facing preprocessing must run, or ``Sources`` is measured.
+
+    A numbered link row is excluded by the segmentation rules anyway, so this
+    asserts on a heading the parser *would* accept, which is the case that
+    actually broke: a 450-word ``## Sources`` block was reported as a section
+    while the semantic pass excluded it.
+    """
     with_catalog = DIGEST + (
-        "\n## Sources\n\n1. [A title](https://example.com/a)\n"
+        f"\n## Sources\n\n{BODY}\n{BODY}\n{BODY}\n{BODY}\n"
+        "1. [A title](https://example.com/a)\n"
         "2. [B title](https://example.com/b)\n"
     )
     titles = [item.title for item in _metrics(with_catalog).sections]
     assert "Sources" not in titles
+    assert [item.section_id for item in _metrics(with_catalog).sections] == ["01", "02"]
+
+
+def test_a_catalog_heading_is_excluded_under_both_the_default_and_explicit_option() -> None:
+    """The exclusion is on by default; the explicit option must agree."""
+    catalog = f"\n## Sources\n\n{BODY}\n{BODY}\n{BODY}\n{BODY}\n"
+    default = _metrics(DIGEST + catalog)
+    explicit = _metrics(
+        DIGEST + catalog,
+        section_options=SectionOptions(
+            semantic_options=SemanticOptions(exclude_source_catalog=True)
+        ),
+    )
+    assert [item.title for item in default.sections] == [
+        item.title for item in explicit.sections
+    ]
+    assert "Sources" not in [item.title for item in explicit.sections]
+
+
+def test_keeping_the_catalog_makes_it_a_section() -> None:
+    """The opposite option must be honoured too, not just ignored."""
+    catalog = f"\n## Sources\n\n{BODY}\n{BODY}\n{BODY}\n{BODY}\n"
+    kept = _metrics(
+        DIGEST + catalog,
+        section_options=SectionOptions(
+            semantic_options=SemanticOptions(exclude_source_catalog=False)
+        ),
+    )
+    assert "Sources" in [item.title for item in kept.sections]
+
+
+def test_prepare_can_be_disabled_when_the_caller_already_preprocessed() -> None:
+    """Explicit escape hatch: no second preprocessing pass."""
+    assert _metrics(DIGEST, prepare=False).sections
 
 
 def test_explicit_catalog_exclusion_is_honoured() -> None:

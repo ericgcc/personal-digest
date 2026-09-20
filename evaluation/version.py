@@ -33,9 +33,14 @@ DETERMINISTIC_VERSION = "v1"
 #: prompt template.
 SCORE_DECIMAL_PLACES = 1
 
-#: The smallest non-zero semantic delta the current rubric can express, on the
-#: normalized 0-1 scale DeepEval reports.
-SCORE_RESOLUTION = 10 ** (-SCORE_DECIMAL_PLACES) / 10
+#: The smallest non-zero semantic delta the current rubric can express.
+#:
+#: v3 stores the judge's own 0-10 score rather than DeepEval's normalized 0-1
+#: value, so this is the decimal place the judge is asked for and there is no
+#: further division. (v1 and v2 divided by 10 to convert a normalized score back
+#: onto the rubric scale; applying that here would understate the metric's
+#: resolution by an order of magnitude.)
+SCORE_RESOLUTION = 10 ** (-SCORE_DECIMAL_PLACES)
 
 METRIC_NAME = "Reader-Facing Editorial Quality"
 

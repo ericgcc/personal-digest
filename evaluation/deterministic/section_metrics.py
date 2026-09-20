@@ -241,13 +241,20 @@ def evaluate_section_metrics(
     section_options: SectionOptions | None = None,
     thresholds: StructureThresholds | None = None,
     parsed: Any = None,
+    prepare: bool = True,
 ) -> DigestSectionMetrics:
     """Compute per-section deterministic metrics for an artifact.
 
     This is additive to the document-level metrics and makes no semantic claim.
+
+    ``prepare`` defaults to true so the reader-facing preprocessing runs.
+    Without it the source catalog is not removed, and a 450-word ``Sources``
+    block is reported as a section — describing a different set of sections than
+    the judge is given, which defeats the point of measuring them per section.
+    Pass ``prepare=False`` only when the caller has already preprocessed.
     """
     digest = parsed or parse_sections(
-        text, style=style, options=section_options, prepare=False
+        text, style=style, options=section_options, prepare=prepare
     )
     metrics = [
         evaluate_section(section, language=language, thresholds=thresholds)

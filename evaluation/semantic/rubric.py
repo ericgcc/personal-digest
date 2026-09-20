@@ -1,157 +1,129 @@
-"""The versioned G-Eval definition for reader-facing editorial quality.
+"""The ``reader_quality_v3`` score bands.
 
-Everything here is part of the evaluation definition and is versioned in
-:mod:`evaluation.version`. Changing the steps, the rubric, or the reader task
-changes the meaning of every historical score, so all three are recorded with
-each result.
+v2's bands were too generous: a digest with one confusing section but otherwise
+fluent prose sat comfortably in the top band, and "minor" issues were named
+without moving the score. The v3 bands are stricter, state explicitly that good
+prose elsewhere does not erase a local failure, and reserve the top band for
+output where **no** substantive section requires the reader to supply missing
+context.
 
-The judge is deliberately *not* given the source articles. This metric measures
-the experience of a reader who has not read the sources; if the judge could see
-them it would silently fill in context the digest itself failed to provide.
+The bands are defined here as data, and the judge prompt is rendered from them so
+the two can never drift apart.
 """
 
 from __future__ import annotations
 
-from deepeval.metrics.g_eval import Rubric
+from dataclasses import dataclass
 
-from ..version import METRIC_NAME
+MIN_SCORE = 0.0
+MAX_SCORE = 10.0
 
-#: The ``input`` given to the G-Eval test case: the reader's task, not a source.
-READER_TASK_DESCRIPTION = (
-    "Read the digest stage output below as an intelligent reader who has not read "
-    "any of the source articles it was built from. Judge how well the output "
-    "explains its subject, situation, and main point, and how strong the reader's "
-    "actual understanding of the text is after one careful read."
-)
 
-#: Explicit evaluation steps. These are supplied rather than generated so the
-#: definition is stable and auditable across historical runs.
-EVALUATION_STEPS: tuple[str, ...] = (
-    "Read the output as an intelligent reader who has not seen any of the source "
-    "material. Determine whether the subject, the situation, and the main point "
-    "are understandable on the first read.",
-    "Check whether technical concepts, actors, references, examples, and causal "
-    "relationships receive enough context to understand why they are being "
-    "mentioned. Penalize unexplained referents and statements that only make "
-    "sense if the reader already knows the source.",
-    "Determine whether the text explains and synthesizes ideas rather than merely "
-    "paraphrasing, enumerating, or reporting what individual sources said.",
-    "Evaluate the progression of the argument or narrative. Each paragraph should "
-    "establish enough context for the next one, and relationships such as cause, "
-    "contrast, consequence, or significance should be explicit when necessary.",
-    "Penalize sentences or passages that are grammatically valid but require "
-    "rereading to understand. Do not penalize technical subject matter simply "
-    "because it is technical if it is explained clearly.",
-    "Judge the output in its original language. Do not penalize non-English "
-    "writing; the quality standard must remain conceptually equivalent across "
-    "languages.",
-    "Produce the final score based on the reader's actual ability to understand "
-    "the text, not on superficial polish. Strong grammar or elegant wording must "
-    "not compensate for missing context or unclear explanation.",
-    "Write the reason in English, even when the evaluated digest is written in "
-    "another language, so that historical reports remain comparable.",
-)
+@dataclass(frozen=True)
+class ScoreBand:
+    """One overall-score band with its reader-facing consequence."""
 
-#: Explicit score bands.
-#:
-#: DeepEval normalizes the raw score onto 0-1 even though the bands are expressed
-#: on a 0-10 scale. Each band is also an *inclusive decimal interval*: the judge is
-#: told that band ``7-8`` means anything from 7.0 up to 8.9 (see
-#: :mod:`evaluation.semantic.template`). The band boundaries stay integers because
-#: DeepEval validates ``Rubric.score_range`` as an integer tuple bounded by 0-10.
-RUBRIC_BANDS: tuple[tuple[tuple[int, int], str], ...] = (
-    (
-        (0, 2),
-        "Fundamentally unclear: the reader cannot reliably determine what important "
-        "portions are about without consulting external context. Important "
-        "references, concepts, or relationships are unexplained. The text may "
-        "resemble compressed notes or source fragments.",
+    low: float
+    high: float
+    name: str
+    criterion: str
+
+    @property
+    def label(self) -> str:
+        return f"{self.low:.1f}-{self.high:.1f}"
+
+    def contains(self, score: float) -> bool:
+        return self.low <= score <= self.high
+
+
+#: Overall bands, highest first so the prompt reads from the aspiration down.
+RUBRIC_BANDS: tuple[ScoreBand, ...] = (
+    ScoreBand(
+        9.0,
+        10.0,
+        "Exceptional",
+        "All substantive sections are understandable on first read. No critical failures. "
+        "The reader can explain what each section is about, why it matters, and how the "
+        "important ideas connect. Domain concepts receive context before they become "
+        "load-bearing.",
     ),
-    (
-        (3, 4),
-        "Difficult to follow: the general topic can eventually be inferred, but "
-        "important context is missing. Multiple passages require rereading or prior "
-        "knowledge. The writing frequently reports facts or claims without "
-        "explaining their significance or connection.",
+    ScoreBand(
+        8.0,
+        8.9,
+        "Strong",
+        "No major comprehension failures. A few localized explanations could be clearer, but "
+        "the reader never loses orientation.",
     ),
-    (
-        (5, 6),
-        "Understandable but weakly explained: the main point is understandable, but "
-        "there are material clarity problems such as missing context, dense "
-        "passages, abrupt transitions, unexplained technical references, or "
-        "source-by-source reporting instead of synthesis.",
+    ScoreBand(
+        7.0,
+        7.9,
+        "Generally understandable but meaningfully flawed",
+        "At least one section requires rereading, assumes nontrivial unstated context, or "
+        "communicates its main point less clearly than intended. This is the expected score "
+        "for decent-but-not-good-enough digest prose.",
     ),
-    (
-        (7, 8),
-        "Clear and coherent: the output is understandable on the first read. It "
-        "provides enough context, explains technical ideas appropriately, connects "
-        "claims logically, and synthesizes information into a coherent explanation. "
-        "Minor clarity issues may remain.",
+    ScoreBand(
+        5.0,
+        6.9,
+        "Material editorial problems",
+        "One or more substantive sections are hard to understand, context is missing, domain "
+        "facts substitute for explanation, or important logical connections are implicit.",
     ),
-    (
-        (9, 10),
-        "Exceptionally clear: the output is immediately understandable, "
-        "self-contained, well synthesized, and naturally structured. Technical "
-        "material is introduced with exactly the context needed. The reader "
-        "understands not only what happened or what the sources say, but why the "
-        "ideas matter and how they connect.",
+    ScoreBand(
+        3.0,
+        4.9,
+        "Frequently difficult to follow",
+        "The reader can identify the topic but repeatedly has to reconstruct what the writer "
+        "means.",
+    ),
+    ScoreBand(
+        0.0,
+        2.9,
+        "Fundamentally unsuccessful",
+        "Important sections cannot be understood without external context.",
     ),
 )
 
-#: A short statement of what the metric measures, used as the metric's criteria.
-CRITERIA = (
-    "Reader-facing editorial quality: how well a digest stage output explains and "
-    "synthesizes its subject for a reader who has not read the underlying sources."
+#: The calibration rule the judge is given verbatim. It is a scoring instruction,
+#: deliberately not a production threshold.
+CALIBRATION_RULE = (
+    "A digest containing a clearly critical section should almost never receive a 9+ "
+    "overall score. Good prose in other sections does not erase a local failure."
 )
 
 
-def build_rubric() -> list[Rubric]:
-    """Return the rubric as DeepEval ``Rubric`` objects."""
-    return [
-        Rubric(score_range=score_range, expected_outcome=outcome)
-        for score_range, outcome in RUBRIC_BANDS
-    ]
+def band_for(score: float) -> ScoreBand:
+    """Return the band a score falls into."""
+    for band in RUBRIC_BANDS:
+        if band.contains(score):
+            return band
+    return RUBRIC_BANDS[-1] if score < MIN_SCORE else RUBRIC_BANDS[0]
 
 
-def band_span(score_range: tuple[int, int], decimal_places: int) -> tuple[float, float]:
-    """Return the inclusive decimal span of a band, e.g. ``(7, 8)`` -> ``(7.0, 8.9)``.
-
-    Band ``0-2`` covers 0.0-2.9 and band ``9-10`` covers 9.0-10.0, so the bands
-    tile the whole scale without gaps or overlap.
-    """
-    low, high = score_range
-    step = 10 ** (-decimal_places)
-    if high >= 10:
-        return float(low), 10.0
-    return float(low), round(high + 1 - step, decimal_places)
+def band_name(score: float | None) -> str | None:
+    """Return the band name for a score, or ``None`` when there is no score."""
+    if score is None:
+        return None
+    return band_for(score).name
 
 
-def rubric_as_text(decimal_places: int = 0) -> str:
-    """Return the rubric in the notation used by the prompt template.
-
-    With ``decimal_places=0`` the bands render as the canonical integer ranges
-    (``7-8``). With decimals the bands render as their real decimal spans
-    (``7.0-8.9``), which is what the judge is shown.
-    """
-    lines = []
-    for score_range, outcome in RUBRIC_BANDS:
-        if decimal_places <= 0:
-            start, end = score_range
-            label = f"{start}" if start == end else f"{start}-{end}"
-        else:
-            low, high = band_span(score_range, decimal_places)
-            label = f"{low:.{decimal_places}f}-{high:.{decimal_places}f}"
-        lines.append(f"{label}: {outcome}")
+def overall_rubric_text() -> str:
+    """Render the bands as the judge prompt presents them."""
+    lines = ["## Overall score bands (0-10)", ""]
+    for band in RUBRIC_BANDS:
+        lines.append(f"- **{band.label} — {band.name}.** {band.criterion}")
+    lines.append("")
+    lines.append(f"**Calibration rule:** {CALIBRATION_RULE}")
     return "\n".join(lines)
 
 
 __all__ = [
-    "CRITERIA",
-    "EVALUATION_STEPS",
-    "METRIC_NAME",
-    "READER_TASK_DESCRIPTION",
+    "CALIBRATION_RULE",
+    "MAX_SCORE",
+    "MIN_SCORE",
     "RUBRIC_BANDS",
-    "band_span",
-    "build_rubric",
-    "rubric_as_text",
+    "ScoreBand",
+    "band_for",
+    "band_name",
+    "overall_rubric_text",
 ]

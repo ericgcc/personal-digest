@@ -37,8 +37,16 @@ class JudgeUnavailableError(RuntimeError):
 
 @dataclass
 class JudgeUsage:
-    """Accumulated token usage across judge calls."""
+    """Accumulated token usage across judge calls.
 
+    ``requests`` is the acceptance-relevant counter: one request is one logical
+    judgement, however many transport attempts it took. ``calls`` counts
+    successful HTTP responses and ``failures`` counts failed attempts, so
+    ``calls + failures`` is the number of attempts actually made. A retry that
+    succeeds therefore raises ``calls`` but not ``requests``.
+    """
+
+    requests: int = 0
     calls: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -59,7 +67,9 @@ class JudgeUsage:
 
     def to_dict(self) -> dict[str, int]:
         return {
+            "judge_requests": self.requests,
             "judge_calls": self.calls,
+            "judge_attempts": self.calls + self.failures,
             "judge_prompt_tokens": self.prompt_tokens,
             "judge_completion_tokens": self.completion_tokens,
             "judge_total_tokens": self.total_tokens,
@@ -110,6 +120,7 @@ class DeepSeekJudge(DeepEvalBaseLLM):
         return self.config.model
 
     def generate(self, prompt: str, schema: Type[T] | None = None, **kwargs: Any) -> Any:
+        self.usage.requests += 1
         data = self._chat(prompt)
         if schema is not None:
             return schema(**data)

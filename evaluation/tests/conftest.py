@@ -125,6 +125,61 @@ def _write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def stub_evaluation_payload(score: float, *, sections: int = 2) -> dict:
+    """A valid ``ReaderQualityEvaluation`` payload for stubbing the judge.
+
+    Shared so the record, delta, merge and report tests all exercise the same
+    schema the real judge must satisfy.
+    """
+    section_rows = [
+        {
+            "section_id": f"{index + 1:02d}",
+            "title": f"Section {index + 1}",
+            "reader_reconstruction": {
+                "subject": "The section's subject.",
+                "main_claim": "The section's claim.",
+                "why_it_matters": "Why a reader should care.",
+            },
+            "first_pass_comprehension": score,
+            "context_sufficiency": score,
+            "explanatory_clarity": score,
+            "logical_progression": score,
+            "understandable_on_first_read": score >= 5.0,
+            "reader_can_explain_why_it_matters": score >= 5.0,
+            "requires_rereading": score < 5.0,
+            "headline_sets_expectation": True,
+            "body_fulfills_expectation": True,
+            "takeaway_is_explicit": True,
+            "missing_context": [],
+            "unexplained_concepts": [],
+            "unclear_referents": [],
+            "broken_logical_links": [],
+            "narrative_problem": None,
+            "critical_failure": False,
+            "critical_failure_reason": None,
+        }
+        for index in range(sections)
+    ]
+    return {
+        "overall_score": score,
+        "overall_summary": f"stub reason for overall score {score}",
+        "dimensions": {
+            "first_pass_comprehension": score,
+            "context_sufficiency": score,
+            "explanatory_clarity": score,
+            "synthesis_quality": score,
+            "narrative_coherence": score,
+            "reader_orientation": score,
+        },
+        "section_evaluations": section_rows,
+        "weakest_section_id": section_rows[0]["section_id"],
+        "weakest_section_score": score,
+        "critical_failure_count": 0,
+        "issues": [],
+        "revision_priorities": ["No revision required for this stub."],
+    }
+
+
 @pytest.fixture
 def project(tmp_path: Path) -> ProjectPaths:
     """Build a minimal project tree shaped like the real Digest System."""

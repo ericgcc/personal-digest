@@ -48,7 +48,7 @@ with Node's `--env-file`. There is no second provider.
 | `DIGEST_EVAL_JUDGE_TIMEOUT_SECONDS` | `300` | Per-request timeout. |
 | `DIGEST_EVAL_JUDGE_RETRY_ATTEMPTS` | `3` | Transport retries. |
 | `DIGEST_EVAL_JUDGE_RETRY_BASE_DELAY_MS` | `2000` | Exponential backoff base. |
-| `DIGEST_EVAL_RESULTS_DIR` | `evaluation-results/` | Output location. |
+| `DIGEST_EVAL_RESULTS_DIR` | `evaluation-results-v3/` | Output location. |
 | `DIGEST_EVAL_ROOT` | repository root | Project root override. |
 
 ## Commands
@@ -91,25 +91,29 @@ python -m evaluation all --drill-down --drill-down-stage clarity-edit
 | `--include-source-catalog` | Include the bibliographic catalog in the semantic input. |
 | `--keep-source-catalog` | Include it in deterministic metrics too. |
 | `--long-sentence-threshold`, `--very-long-sentence-threshold` | Structural thresholds (default 25 / 35). |
-| `--drill-down` | **Diagnostic only**: evaluate substantive sections of the selected runs. |
+| `--comparison` | **Diagnostic only**: also run the before/after regression pass (one judge call per pair). |
+| `--comparison-from`, `--comparison-to` | Stage pair for the comparison pass (default `voice-edit` → `final-polish`). |
+| `--calibration` | Score the evaluator against the human-labelled expectations in `evaluation/calibration/expectations.yaml`. |
 
 ## Outputs
 
-Written to `evaluation-results/` (git-ignored; fully reproducible):
+Written to `evaluation-results-v3/` (git-ignored; fully reproducible):
 
 | File | Contents |
 | --- | --- |
 | `run-metrics.jsonl` | One record per historical run × editorial stage, with every raw metric. |
-| `run-metrics.csv` | The same records flattened (the free-text reason is omitted). |
+| `run-metrics.csv` | The same records flattened (the free-text summary is omitted). |
 | `stage-summary.csv` | Aggregates by digest style, stage and language. |
-| `semantic-reasons.json` | Semantic score and judge reason per evaluated stage. |
+| `section-metrics.json` | Per-section structural metrics and per-stage change from the previous stage. |
+| `semantic-reasons.json` | Structured per-section assessments, issues and revision priorities. |
+| `comparison.json` | Before/after regression verdicts when `--comparison` is used. |
 | `report.md` | The human-readable diagnostic report. |
-| `analysis.json` | Transitions, verdicts, correlations, reason clusters, regression examples. |
-| `noise.json` | The repeated-evaluation stability experiment. |
+| `analysis.json` | Transitions, verdicts, correlations, the structured issue summary, regression examples. |
+| `noise.json` | The repeated-evaluation stability experiment, including qualitative agreement. |
+| `calibration-report.md` | How the evaluator scored the human-labelled sections. |
 | `corpus.json` | The discovered corpus and its usability. |
 | `evaluation-config.json` | Versions, judge identity, selections, skipped artifacts. |
 | `semantic-preview.json` | Written by the `semantic` smoke command. |
-| `drill-down.json` | Written only when `--drill-down` is used. |
 | `archive/<evaluation_id>/` | Results from a superseded evaluation definition, kept for reference. |
 
 Every record carries `evaluated`. Non-prose stages (`analyze`, `frame`,

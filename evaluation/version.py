@@ -7,8 +7,9 @@ and all of them are stamped onto every produced record.
 Bump the relevant constant whenever the thing it names changes:
 
 * ``EVALUATION_ID`` — the whole definition changes incompatibly.
-* ``EVALUATION_STEPS_VERSION`` — the G-Eval evaluation steps change.
-* ``RUBRIC_VERSION`` — the G-Eval score bands change.
+* ``EVALUATION_STEPS_VERSION`` — the judge instructions change.
+* ``RUBRIC_VERSION`` — the score bands change.
+* ``SCHEMA_VERSION`` — the structured response schema changes.
 * ``PREPROCESSING_VERSION`` — the prose normalization changes.
 * ``DETERMINISTIC_VERSION`` — the deterministic metric definitions change.
 """
@@ -18,16 +19,18 @@ from __future__ import annotations
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
-EVALUATION_ID = "reader_quality_v2"
-EVALUATION_STEPS_VERSION = "v1"
-RUBRIC_VERSION = "v2"
-PREPROCESSING_VERSION = "v1"
+EVALUATION_ID = "reader_quality_v3"
+EVALUATION_STEPS_VERSION = "v3"
+RUBRIC_VERSION = "v3"
+SCHEMA_VERSION = "v1"
+PREPROCESSING_VERSION = "v2"
 DETERMINISTIC_VERSION = "v1"
 
-#: Decimal places the judge is asked to use. v1 asked for an integer on a 0-10
-#: scale, which after DeepEval's normalization gave a resolution of 0.10 equal to
-#: the measured G-Eval noise. v2 asks for one decimal place, so the resolution is
-#: 0.01 and the metric can express differences well below its own noise.
+#: Decimal places the judge is asked to use for its 0-10 scores. v1 asked for an
+#: integer, which after DeepEval's normalization gave a resolution of 0.10 equal
+#: to the measured G-Eval noise. v2 asked for one decimal place. v3 returns a
+#: Pydantic float, so the resolution is set by this instruction rather than by a
+#: prompt template.
 SCORE_DECIMAL_PLACES = 1
 
 #: The smallest non-zero semantic delta the current rubric can express, on the
@@ -52,6 +55,7 @@ def evaluation_definition() -> dict[str, Any]:
         "metric_name": METRIC_NAME,
         "evaluation_steps_version": EVALUATION_STEPS_VERSION,
         "rubric_version": RUBRIC_VERSION,
+        "schema_version": SCHEMA_VERSION,
         "preprocessing_version": PREPROCESSING_VERSION,
         "deterministic_version": DETERMINISTIC_VERSION,
         "semantic_scope": SEMANTIC_SCOPE,

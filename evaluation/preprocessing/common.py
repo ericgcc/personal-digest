@@ -33,6 +33,17 @@ DEFAULT_CATALOG_HEADINGS: tuple[str, ...] = (
 _FRONTMATTER = re.compile(r"\A---[ \t]*\n(.*?)\n---[ \t]*(?:\n|$)", re.DOTALL)
 _FENCED_CODE = re.compile(r"^[ \t]*(`{3,}|~{3,}).*?^[ \t]*\1[ \t]*$", re.DOTALL | re.MULTILINE)
 _HEADING = re.compile(r"^(#{1,6})[ \t]*(.+?)[ \t]*#*[ \t]*$", re.MULTILINE)
+
+#: A heading-shaped line with no ATX marker, e.g. a bare ``Sources`` or
+#: ``TODAY'S EDIT``. Some historical artifacts write the catalog heading and the
+#: editorial preamble as plain text, and an ATX-only reader misses them
+#: entirely — which previously made the structural catalog fallback cut at the
+#: last *ATX* heading and silently delete a real section. Only short,
+#: unpunctuated lines qualify.
+_BARE_HEADING = re.compile(r"^(?P<text>[^\s#*_>\-|].{0,79})$", re.MULTILINE)
+_BARE_HEADING_STOP = re.compile(r"[.:;,·—–]$")
+_BARE_HEADING_LINK = re.compile(r"\[[^\]]*\]\(")
+
 _COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 _RAW_ELEMENT = re.compile(r"<(script|style)\b.*?</\1\s*>", re.DOTALL | re.IGNORECASE)
 _BLOCK_BREAK_TAG = re.compile(r"</?(?:br|p|div|li|ul|ol|tr|h[1-6]|section|article|blockquote)\b[^>]*>", re.IGNORECASE)
@@ -77,13 +88,38 @@ def count_html_tags(text: str) -> int:
 
 
 def iter_headings(text: str) -> list[tuple[int, int, str]]:
-    """Yield ``(start, end, heading_text)`` for headings outside fenced code."""
+    """Yield ``(start, end, heading_text)`` for ATX headings outside fenced code."""
     masked = _mask_fenced_code(text)
     results: list[tuple[int, int, str]] = []
     for match in _HEADING.finditer(masked):
         raw = match.group(2)
         cleaned = _INLINE_MARKUP.sub("", raw).strip()
         results.append((match.start(), match.end(), cleaned))
+    return results
+
+
+def iter_bare_heading_lines(text: str) -> list[tuple[int, int, str]]:
+    """Yield ``(start, end, text)`` for heading-shaped lines with no ATX marker.
+
+    Only lines that could plausibly be a document heading qualify: short, not
+    ending in sentence punctuation, not a Markdown link row, and not inside a
+    fenced code block. The caller decides which of them are real headings.
+    """
+    masked = _mask_fenced_code(text)
+    results: list[tuple[int, int, str]] = []
+    for match in _BARE_HEADING.finditer(masked):
+        raw = match.group("text")
+        stripped = raw.strip()
+        if not stripped or len(stripped) > 80:
+            continue
+        if _BARE_HEADING_STOP.search(stripped):
+            continue
+        if _BARE_HEADING_LINK.search(stripped):
+            continue
+        # A line indented in the source is inside a block, not a heading.
+        if raw != raw.lstrip():
+            continue
+        results.append((match.start(), match.start() + len(raw.rstrip()), stripped))
     return results
 
 
@@ -114,6 +150,22 @@ class CatalogSpan:
         return self.end - self.start
 
 
+def iter_all_headings(text: str) -> list[tuple[int, int, str, str]]:
+    """Yield ``(start, end, heading_text, kind)`` for every heading form.
+
+    ``kind`` is ``"atx"``, ``"bold"`` or ``"bare"``. Ordering is by position, so
+    callers can reason about document structure regardless of which syntax the
+    artifact happened to use.
+    """
+    entries: list[tuple[int, int, str, str]] = []
+    for start, end, heading in iter_headings(text):
+        entries.append((start, end, heading, "atx"))
+    for start, end, heading in iter_bare_heading_lines(text):
+        entries.append((start, end, heading, "bare"))
+    entries.sort(key=lambda item: item[0])
+    return entries
+
+
 def detect_source_catalog(
     text: str,
     headings: Sequence[str] = DEFAULT_CATALOG_HEADINGS,
@@ -122,29 +174,39 @@ def detect_source_catalog(
 ) -> CatalogSpan | None:
     """Locate the trailing bibliographic source catalog, if present.
 
-    Detection prefers an explicit catalog heading (the last matching heading in
-    the document) and otherwise falls back to a structural test: a heading
-    followed by several catalog-shaped rows. Returns ``None`` when nothing looks
-    like a catalog, so the caller never silently deletes prose.
+    Detection prefers an explicit catalog heading — searched in *every* heading
+    form, including the bare ``Sources`` line some artifacts use — and otherwise
+    falls back to a structural test: a heading followed by several
+    catalog-shaped rows. Returns ``None`` when nothing looks like a catalog, so
+    the caller never silently deletes prose.
+
+    The exact heading is always preferred over the structural fallback. Cutting
+    at the last heading that merely *precedes* several catalog rows is how a real
+    editorial section (``## Discoveries``) once got deleted along with the
+    bibliography it sits above.
     """
     wanted = {_normalize_heading(item) for item in headings}
-    candidates = iter_headings(text)
+    candidates = iter_all_headings(text)
 
-    for start, end, heading_text in reversed(candidates):
+    for start, end, heading_text, _kind in reversed(candidates):
         if _normalize_heading(heading_text) in wanted:
+            # A named catalog heading is authoritative. Cut from its heading
+            # line so the heading itself is excluded too.
+            line_start = text.rfind("\n", 0, start) + 1
             return CatalogSpan(
-                start=start,
+                start=line_start,
                 end=len(text),
                 heading=heading_text,
                 detection="heading",
             )
 
-    for start, _end, heading_text in reversed(candidates):
+    for start, _end, heading_text, _kind in reversed(candidates):
         remainder = text[start:]
         rows = sum(1 for line in remainder.splitlines() if _CATALOG_ROW.match(line))
         if rows >= minimum_rows:
+            line_start = text.rfind("\n", 0, start) + 1
             return CatalogSpan(
-                start=start,
+                start=line_start,
                 end=len(text),
                 heading=heading_text,
                 detection="structure",

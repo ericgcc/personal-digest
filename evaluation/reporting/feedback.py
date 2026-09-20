@@ -13,7 +13,7 @@ never an indiscriminate dump of every formula.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 from ..quality import QualityComparison, QualitySnapshot
 
@@ -91,6 +91,13 @@ def format_revision_feedback(
     if after.semantic is not None and after.semantic.reason:
         lines.append(f"- Main issue: {after.semantic.reason}")
 
+    # v3: when a before/after regression verdict is available it carries the
+    # specific editorial loss, so it is reported instead of a generic score
+    # movement. One judge call produced both this and the absolute assessment.
+    regression = getattr(after.semantic, "regression", None) if after.semantic else None
+    if regression is not None:
+        lines.extend(_format_regression(regression))
+
     for delta in comparison.deterministic_regressions:
         line = (
             f"- {delta.label}: {_format_number(delta.before)} \u2192 "
@@ -126,9 +133,60 @@ def format_revision_feedback(
     return "\n".join(lines)
 
 
+def _format_regression(regression: Any) -> list[str]:
+    """Render the v3 before/after verdict in the shape a reviser needs.
+
+    Deliberately narrow: the material loss, the affected sections, the absolute
+    dimensions that moved, and the structural signals that changed. This is not
+    a metric dump — the reviser is told what broke, not everything measured.
+    """
+    lines: list[str] = []
+    label = {
+        "improved": "improved",
+        "preserved": "preserved",
+        "regressed": "regressed",
+    }.get(regression.status, regression.status)
+    marker = "**material regression**" if regression.material_regression else "no material regression"
+    lines.append(f"- Regression check: {label} ({marker}).")
+
+    if regression.affected_sections:
+        lines.append(f"- Affected sections: {', '.join(regression.affected_sections)}.")
+
+    for name, items in (
+        ("Lost context", regression.lost_context),
+        ("Lost explanation", regression.lost_explanations),
+        ("New ambiguity", regression.new_ambiguities),
+        ("Broken connection", regression.broken_connections),
+    ):
+        if items:
+            lines.append(f"- {name}: {'; '.join(items[:3])}")
+
+    after = regression.after
+    if after is not None:
+        weakest = after.computed_weakest
+        if weakest is not None:
+            lines.append(
+                f"- Weakest section: {weakest.section_id or weakest.title} at "
+                f"{weakest.mean_score:.1f}/10."
+            )
+        if after.critical_failure_count:
+            lines.append(
+                f"- Critical failures in the revised text: {after.critical_failure_count}."
+            )
+    return lines
+
+
 def _revision_objective(comparison: QualityComparison, after: QualitySnapshot) -> str:
     """Derive a short objective from the measured movement."""
     problems: list[str] = []
+
+    # A v3 regression verdict states the objective directly, so prefer it over
+    # inferring one from the score movement.
+    regression = getattr(after.semantic, "regression", None) if after.semantic else None
+    if regression is not None and regression.retry_instructions:
+        objective = " ".join(regression.retry_instructions)
+        return objective[:1].upper() + objective[1:]
+
     if comparison.semantic_delta is not None and comparison.semantic_delta < 0:
         problems.append("Restore the understanding that was present before this stage")
     elif after.semantic is not None and after.semantic.error:

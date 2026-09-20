@@ -18,8 +18,8 @@ from ..version import SCORE_DECIMAL_PLACES, SCORE_RESOLUTION
 from . import analysis
 from .analysis import (
     Correlation,
+    IssueSummary,
     RegressionExample,
-    ReasonCluster,
     StageTransition,
     StageVerdict,
 )
@@ -65,8 +65,7 @@ class ReportInputs:
     transitions: Mapping[str, Sequence[StageTransition]]
     verdicts: Sequence[StageVerdict]
     correlations: Sequence[Correlation]
-    clusters: Sequence[ReasonCluster]
-    unmatched_reasons: int
+    issues: IssueSummary
     noise: NoiseReport | None
     examples: Sequence[RegressionExample]
     runs: Sequence[HistoricalRun]
@@ -78,6 +77,7 @@ class ReportInputs:
     semantic_run_ids: Sequence[str] = field(default=())
     deterministic_artifact_count: int = 0
     positive_reason_count: int = 0
+    calibration_section: str = ""
     notes: Sequence[str] = field(default=())
 
 
@@ -823,57 +823,67 @@ def _answer_b_c_d(inputs: ReportInputs) -> str:
 
 
 def _answer_e(inputs: ReportInputs) -> str:
-    lines = [_heading("## E. What type of failure is repeatedly mentioned?"), ""]
-    if not inputs.clusters or all(cluster.total == 0 for cluster in inputs.clusters):
-        return "\n".join(lines + ["No semantic reasons were available to analyse."])
-    total = inputs.clusters[0].total
-    rows = [
-        [
-            cluster.category,
-            cluster.count,
-            f"{cluster.share * 100:.0f}%",
-            ", ".join(cluster.stages[:4]) or "-",
-        ]
-        for cluster in inputs.clusters
-    ]
-    lines.append(_table(["failure pattern", "reasons mentioning it", "share", "stages"], rows))
-    lines.append("")
-    lines.append(
-        f"Across **{total}** semantic reasons, **{inputs.unmatched_reasons}** mentioned none "
-        "of the tracked patterns. A reason can mention more than one pattern, so the counts "
-        "sum above the total. The `stages` column shows which stage outputs the mentions "
-        "came from."
-    )
-
-    positive = inputs.positive_reason_count
-    if positive:
-        lines.extend(
-            [
-                "",
-                f"**Read this table with care.** {positive} of {total} reasons describe the "
-                "output as clear or well synthesized, and a reason that opens with praise can "
-                "still mention a shortcoming later. The excerpts below are the sentence the "
-                "category matched on, not the reason's overall verdict, so a match means "
-                "\"this phrase appears somewhere in the reason\" and not \"the judge judged "
-                "the output a failure here\". On a corpus where the score is saturated, "
-                "keyword matches over largely positive reasons are directional at best.",
-            ]
+    lines = [_heading("## E. Which reader-facing problems recur, and where?"), ""]
+    summary = inputs.issues
+    if not summary.types:
+        return "\n".join(
+            lines + ["No structured reader-facing issues were recorded."]
         )
 
-    lines.append("")
-    lines.append("Matching excerpts:")
-    lines.append("")
-    for cluster in inputs.clusters:
-        if not cluster.examples:
-            continue
-        lines.append(f"- **{cluster.category}** ({cluster.count} reason(s))")
-        for example in cluster.examples:
-            lines.append(f"  - \"{example}\"")
+    rows = [
+        [
+            item.label,
+            item.count,
+            item.documents,
+            ", ".join(
+                f"{name} {count}" for name, count in item.severities
+            )
+            or "-",
+            ", ".join(f"{name}: {count}" for name, count in item.styles) or "-",
+            ", ".join(item.stages[:4]) or "-",
+        ]
+        for item in summary.types
+    ]
+    lines.append(
+        _table(
+            [
+                "issue type",
+                "occurrences",
+                "documents",
+                "severity",
+                "style",
+                "stages",
+            ],
+            rows,
+        )
+    )
     lines.append("")
     lines.append(
-        "Categories are matched by failure-specific keywords over the English judge reasons. "
-        "This is a coarse triage aid, not a taxonomy; read the excerpts before drawing "
-        "conclusions."
+        f"**{summary.total_issues}** structured issues across "
+        f"**{summary.documents_with_issues}** of **{summary.documents}** evaluated "
+        f"artifacts. **{summary.critical_failure_documents}** artifact(s) contained at "
+        "least one section the judge marked as a critical failure."
+    )
+    lines.append("")
+    lines.append(
+        "Issue types are fields the judge returns, not keywords matched against its prose. "
+        "The counts are therefore a real taxonomy: one issue is one recorded problem, and "
+        "the same issue is never counted twice."
+    )
+
+    lines.extend(["", "Representative issues:", ""])
+    for item in summary.types:
+        if not item.examples:
+            continue
+        lines.append(f"- **{item.label}** ({item.count} occurrence(s))")
+        for example in item.examples:
+            lines.append(f"  - \"{example}\"")
+        if item.titles:
+            lines.append(f"  - sections: {', '.join(item.titles)}")
+    lines.append("")
+    lines.append(
+        f"{inputs.positive_reason_count} artifact(s) were reported with no issue of any "
+        "type and no critical failure."
     )
     return "\n".join(lines)
 
@@ -1073,6 +1083,7 @@ def render_report(inputs: ReportInputs) -> str:
         _answer_f(inputs),
         _answer_g(inputs),
         _examples_section(inputs),
+        inputs.calibration_section,
         _limitations_section(inputs),
         "",
     ]
@@ -1089,13 +1100,14 @@ def build_report_inputs(
     semantic_run_ids: Sequence[str] = (),
     deterministic_artifact_count: int = 0,
     min_correlation_samples: int = 6,
+    calibration_section: str = "",
     notes: Sequence[str] = (),
 ) -> ReportInputs:
     """Derive every analysis artefact the report needs from the raw records."""
     band: NoiseBand | None = noise.band if noise is not None else None
     transitions = analysis.build_transitions(records)
     verdicts = analysis.classify_transitions(transitions, band)
-    clusters, unmatched = analysis.cluster_reasons(records)
+    issues = analysis.aggregate_issue_types(records)
     correlation_rows = analysis.correlations(records, min_samples=min_correlation_samples)
     examples = analysis.collect_regression_examples(records=records, runs=runs, band=band)
     trajectory = analysis.build_trajectory_analysis(records, band)
@@ -1104,8 +1116,7 @@ def build_report_inputs(
         transitions=transitions,
         verdicts=verdicts,
         correlations=correlation_rows,
-        clusters=clusters,
-        unmatched_reasons=unmatched,
+        issues=issues,
         noise=noise,
         examples=examples,
         runs=runs,
@@ -1115,5 +1126,6 @@ def build_report_inputs(
         semantic_run_ids=semantic_run_ids,
         deterministic_artifact_count=deterministic_artifact_count,
         positive_reason_count=analysis.count_positive_reasons(records),
+        calibration_section=calibration_section,
         notes=notes,
     )

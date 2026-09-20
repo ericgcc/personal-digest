@@ -22,7 +22,7 @@ from typing import Any, Mapping, Sequence
 from .deterministic.evaluator import DeterministicMetrics, evaluate_deterministic
 from .preprocessing.deterministic import PreprocessOptions
 from .deterministic.structure import StructureThresholds
-from .semantic.metric import SemanticResult, evaluate_semantic
+from .semantic.metric import SemanticResult, evaluate_reader_quality
 
 
 @dataclass(frozen=True)
@@ -32,6 +32,7 @@ class QualitySnapshot:
     label: str
     language: str | None
     deterministic: DeterministicMetrics
+    style: str | None = None
     semantic: SemanticResult | None = None
 
     @property
@@ -56,22 +57,29 @@ def evaluate_quality(
     language: str | None,
     *,
     label: str = "text",
+    style: str | None = None,
     judge: Any | None = None,
-    metric: Any | None = None,
     semantic: bool = True,
     preprocess_options: PreprocessOptions | None = None,
     thresholds: StructureThresholds | None = None,
 ) -> QualitySnapshot:
-    """Measure text deterministically, and semantically unless disabled."""
+    """Measure text deterministically, and semantically unless disabled.
+
+    The semantic pass costs exactly one judge call and returns the full v3
+    structured assessment (dimensions, sections, critical failures, issues).
+    """
     deterministic = evaluate_deterministic(
         text, language, preprocess_options=preprocess_options, thresholds=thresholds
     )
     semantic_result: SemanticResult | None = None
     if semantic:
-        semantic_result = evaluate_semantic(text, judge=judge, metric=metric)
+        semantic_result = evaluate_reader_quality(
+            text, style=style, language=language, judge=judge
+        )
     return QualitySnapshot(
         label=label,
         language=language,
+        style=style,
         deterministic=deterministic,
         semantic=semantic_result,
     )

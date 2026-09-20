@@ -33,9 +33,61 @@ def _stub_judge(scores: list[float]) -> DeepSeekJudge:
     )
     remaining = list(scores)
 
-    def _chat(_prompt: str) -> dict:
-        score = remaining.pop(0) if remaining else 5
-        return {"score": score, "reason": f"stub reason for raw score {score}"}
+    def _section(section_id: str, title: str, score: float) -> dict:
+        return {
+            "section_id": section_id,
+            "title": title,
+            "reader_reconstruction": {
+                "subject": "The section's subject.",
+                "main_claim": "The section's claim.",
+                "why_it_matters": "Why a reader should care.",
+            },
+            "first_pass_comprehension": score,
+            "context_sufficiency": score,
+            "explanatory_clarity": score,
+            "logical_progression": score,
+            "understandable_on_first_read": score >= 5.0,
+            "reader_can_explain_why_it_matters": score >= 5.0,
+            "requires_rereading": score < 5.0,
+            "headline_sets_expectation": True,
+            "body_fulfills_expectation": True,
+            "takeaway_is_explicit": True,
+            "missing_context": [],
+            "unexplained_concepts": [],
+            "unclear_referents": [],
+            "broken_logical_links": [],
+            "narrative_problem": None,
+            "critical_failure": False,
+            "critical_failure_reason": None,
+        }
+
+    def _chat(prompt: str) -> dict:
+        score = remaining.pop(0) if remaining else 5.0
+        # One section per heading in the fixture; titles are not needed for the
+        # merge guard, only stable ids.
+        count = max(1, prompt.count("SECTION "))
+        sections = [
+            _section(f"{index + 1:02d}", f"Section {index + 1}", score)
+            for index in range(count)
+        ]
+        return {
+            "overall_score": score,
+            "overall_summary": f"stub reason for overall score {score}",
+            "dimensions": {
+                "first_pass_comprehension": score,
+                "context_sufficiency": score,
+                "explanatory_clarity": score,
+                "synthesis_quality": score,
+                "narrative_coherence": score,
+                "reader_orientation": score,
+            },
+            "section_evaluations": sections,
+            "weakest_section_id": sections[0]["section_id"],
+            "weakest_section_score": score,
+            "critical_failure_count": 0,
+            "issues": [],
+            "revision_priorities": ["No revision required for this stub."],
+        }
 
     judge._chat = _chat  # type: ignore[method-assign]
     return judge
@@ -65,36 +117,37 @@ def test_semantic_results_merge_into_records_and_survive_persistence(tmp_path) -
     evaluated = [record for record in det.records if record.evaluated]
     scored = [record for record in evaluated if record.semantic_score is not None]
     assert len(scored) == 6
-    # Normalized from the 0-10 rubric.
+    # v3 keeps the judge's own 0-10 scale in the record.
     assert [record.semantic_score for record in scored] == [
-        0.9,
-        0.8,
-        0.8,
-        0.7,
-        0.7,
-        0.7,
+        9.0,
+        8.0,
+        8.0,
+        7.0,
+        7.0,
+        7.0,
     ]
     # First stage has no predecessor, so no semantic delta.
     assert scored[0].deltas.get("semantic_score") is None
-    assert scored[1].deltas["semantic_score"] == pytest.approx(-0.1)
+    assert scored[1].deltas["semantic_score"] == pytest.approx(-1.0)
 
     bundle = write_records(tmp_path / "out", det.records)
     assert bundle.written
 
     reloaded = load_records(tmp_path / "out")
     restored = [record for record in reloaded if record.semantic_score is not None]
-    assert [record.semantic_score for record in restored] == [0.9, 0.8, 0.8, 0.7, 0.7, 0.7]
-    assert "stub reason" in (restored[0].semantic.get("semantic_reason") or "")
-    assert restored[1].deltas["semantic_score"] == pytest.approx(-0.1)
+    assert [record.semantic_score for record in restored] == [9.0, 8.0, 8.0, 7.0, 7.0, 7.0]
+    assert "stub reason" in (restored[0].semantic.get("semantic_summary") or "")
+    assert restored[1].deltas["semantic_score"] == pytest.approx(-1.0)
 
     # Aggregation still works with semantic data present.
     summary = stage_summary_rows(det.records)
     draft = next(row for row in summary if row["stage_name"] == "draft")
     assert draft["semantic_sample_count"] == 1
-    assert draft["semantic_mean"] == pytest.approx(0.9)
+    assert draft["semantic_mean"] == pytest.approx(9.0)
     assert draft["semantic_delta_mean"] is None  # first stage
 
     final = next(row for row in summary if row["stage_name"] == "final-polish")
+    # final-polish scored the same as compression-edit, so its own delta is zero.
     assert final["semantic_delta_mean"] == pytest.approx(0.0)
     assert final["semantic_delta_median"] == pytest.approx(0.0)
 
@@ -113,7 +166,7 @@ def test_semantic_results_merge_into_records_and_survive_persistence(tmp_path) -
         deterministic_artifact_count=det.artifact_count,
     )
     text = report_path.read_text(encoding="utf-8")
-    assert "0.900" in text
+    assert "9.000" in text
     assert "stub reason" in text
     assert "No semantic scores were collected" not in text
-    assert "## E. What type of failure is repeatedly mentioned?" in text
+    assert "## E. Which reader-facing problems recur, and where?" in text

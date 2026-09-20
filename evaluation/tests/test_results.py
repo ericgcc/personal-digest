@@ -177,7 +177,7 @@ def test_csv_omits_only_the_long_reason(pass_result, tmp_path) -> None:
     _runs, result = pass_result
     bundle = write_records(tmp_path, result.records)
     header = (tmp_path / "run-metrics.csv").read_text(encoding="utf-8").splitlines()[0]
-    assert "semantic_reason" not in header
+    assert "semantic_summary" not in header
     assert "formula_lix" in header
     assert "delta_word_count" in header
     assert "evaluated" in header
@@ -244,7 +244,7 @@ def test_report_renders_without_semantic_scores(pass_result, tmp_path) -> None:
         "## B. Which stage creates the largest improvement?",
         "## C. Which stages do almost nothing?",
         "## D. Which stages regress quality?",
-        "## E. What type of failure is repeatedly mentioned?",
+        "## E. Which reader-facing problems recur, and where?",
         "## F. Are Synthesis MAX and Curated Discovery behaving differently?",
         "## G. Which deterministic metrics appear to track semantic quality?",
         "## Score range and resolution",
@@ -260,10 +260,31 @@ def test_report_renders_without_semantic_scores(pass_result, tmp_path) -> None:
 def _noise_report() -> NoiseReport:
     scores = iter([0.60, 0.63, 0.57])
 
+    class StubDimensions:
+        def to_dict(self) -> dict[str, float]:
+            return {
+                "dim_first_pass_comprehension": 7.0,
+                "dim_context_sufficiency": 7.0,
+                "dim_explanatory_clarity": 7.0,
+                "dim_synthesis_quality": 7.0,
+                "dim_narrative_coherence": 7.0,
+                "dim_reader_orientation": 7.0,
+            }
+
+    class StubEvaluation:
+        def __init__(self) -> None:
+            self.dimensions = StubDimensions()
+            self.issues: list[object] = []
+            self.section_evaluations: list[object] = []
+            self.critical_failure_count = 0
+            self.computed_weakest = None
+            self.sections_understood_ratio = 1.0
+
     class StubResult:
         def __init__(self, score: float) -> None:
             self.score = score
             self.error = None
+            self.evaluation = StubEvaluation()
 
     return run_stability_experiment(
         [
@@ -276,7 +297,7 @@ def _noise_report() -> NoiseReport:
                 text="body",
             )
         ],
-        lambda _text: StubResult(next(scores)),
+        lambda _artifact: StubResult(next(scores)),
         repeats=3,
     )
 

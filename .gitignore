@@ -7,7 +7,7 @@ node_modules/
 
 # Generated evaluation output (derived from .digest-runs, reproducible)
 evaluation-results/
-
+evaluation-results-*/
 # Local Python environment
 .venv/
 venv/

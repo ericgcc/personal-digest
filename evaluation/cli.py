@@ -1,4 +1,4 @@
-"""Command-line entry point for the historical evaluation harness.
+﻿"""Command-line entry point for the historical evaluation harness.
 
     python -m evaluation discover
     python -m evaluation deterministic
@@ -23,20 +23,31 @@ from .deterministic.structure import StructureThresholds
 from .historical.run_loader import describe_corpus
 from .historical.run_loader import discover_runs, select_runs
 from .pipeline import (
+    load_comparison_results,
     load_noise,
     load_records,
     recompute_deltas,
+    run_comparison_pass,
     run_deterministic_pass,
-    run_drill_down,
     run_noise_pass,
+    run_section_metrics_pass,
     run_semantic_pass,
+    stage_comparison_pairs,
+    write_calibration_report,
+    write_comparison_results,
     write_json,
     write_records,
     write_report,
+    write_section_metrics,
 )
 from .preprocessing.deterministic import PreprocessOptions
 from .preprocessing.semantic import SemanticOptions
 from .quality import evaluate_quality
+from .calibration import (
+    build_calibration_report,
+    check_calibration,
+    load_calibration_set,
+)
 from .reporting.feedback import DEFAULT_TOLERANCES, format_feedback_pair
 from .semantic.judge import DeepSeekJudge
 from .semantic.metric import describe_evaluation, utc_now
@@ -51,13 +62,39 @@ def _add_common_options(parser: argparse.ArgumentParser) -> None:
     """Options accepted both before and after the subcommand.
 
     They are defined on the root parser and repeated on each subparser via
-    ``parents`` so either position works.
+    ``parents`` so either position works. ``default=SUPPRESS`` is essential:
+    ``_SubParsersAction`` parses into a fresh namespace and copies *every*
+    attribute onto the main one, so a plain default on the subparser copy would
+    overwrite a value the user supplied before the subcommand.
     """
-    parser.add_argument("--root", help="Project root (defaults to the repository root).")
-    parser.add_argument("--results-dir", help="Where reports are written.")
-    parser.add_argument("--digest", action="append", default=[], help="Limit to a digest ID.")
-    parser.add_argument("--run", action="append", default=[], help="Limit to a run ID.")
-    parser.add_argument("--quiet", action="store_true", help="Suppress progress output.")
+    parser.add_argument(
+        "--root",
+        default=argparse.SUPPRESS,
+        help="Project root (defaults to the repository root).",
+    )
+    parser.add_argument(
+        "--results-dir",
+        default=argparse.SUPPRESS,
+        help="Where reports are written.",
+    )
+    parser.add_argument(
+        "--digest",
+        action="append",
+        default=argparse.SUPPRESS,
+        help="Limit to a digest ID.",
+    )
+    parser.add_argument(
+        "--run",
+        action="append",
+        default=argparse.SUPPRESS,
+        help="Limit to a run ID.",
+    )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Suppress progress output.",
+    )
 
 
 def _common_parent() -> argparse.ArgumentParser:
@@ -157,20 +194,48 @@ def _add_semantic_options(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--judge-verbose", action="store_true")
     parser.add_argument(
-        "--drill-down",
+        "--comparison",
         action="store_true",
-        help="Also evaluate substantive sections of the selected runs (diagnostic only).",
+        help=(
+            "Also run comparison mode over the closing stages (one extra judge call "
+            "per run). Not used in production."
+        ),
     )
-    parser.add_argument("--drill-down-stage", action="append", default=[])
-    parser.add_argument("--drill-down-min-words", type=int, default=80)
+    parser.add_argument("--comparison-from", default="voice-edit")
+    parser.add_argument("--comparison-to", default="final-polish")
+    parser.add_argument(
+        "--calibration",
+        action="store_true",
+        help="Check the human calibration set against the v3 results (no extra judge calls).",
+    )
 
 
 def _paths(args: argparse.Namespace) -> ProjectPaths:
-    return default_paths(args.root)
+    return default_paths(_option(args, "root"))
 
 
 def _progress(args: argparse.Namespace):
-    return (lambda _message: None) if args.quiet else _log
+    return (lambda _message: None) if _flag(args, "quiet") else _log
+
+
+def _flag(args: argparse.Namespace, name: str) -> bool:
+    """Read a flag whose default is suppressed, so absence must be tolerated."""
+    return bool(getattr(args, name, False))
+
+
+def _option(args: argparse.Namespace, name: str):
+    """Read a value option whose subparser default is suppressed."""
+    return getattr(args, name, None)
+
+
+def _selection(args: argparse.Namespace, name: str) -> list[str]:
+    """Read a repeatable selection option, which may never have been set."""
+    values = getattr(args, name, None)
+    return list(values) if values else []
+
+
+def _results_dir(paths: ProjectPaths, args: argparse.Namespace) -> Path:
+    return paths.results_dir(_option(args, "results_dir"))
 
 
 def _det_options(args: argparse.Namespace) -> tuple[StructureThresholds, PreprocessOptions]:
@@ -193,8 +258,8 @@ def _semantic_options(args: argparse.Namespace) -> SemanticOptions:
 def _selected(runs, args: argparse.Namespace, *, complete_only: bool, last_runs: int | None):
     return select_runs(
         runs,
-        run_ids=args.run or None,
-        digest_ids=args.digest or None,
+        run_ids=_selection(args, "run") or None,
+        digest_ids=_selection(args, "digest") or None,
         last_runs=last_runs,
         complete_only=complete_only,
     )
@@ -218,7 +283,7 @@ def cmd_discover(args: argparse.Namespace, paths: ProjectPaths) -> int:
         "summary": summary,
         "runs": [run.to_dict() for run in runs],
     }
-    results_dir = paths.results_dir(args.results_dir)
+    results_dir = _results_dir(paths, args)
     write_json(results_dir / "corpus.json", payload)
 
     print(f"Runs discovered: {summary['run_count']}")
@@ -249,7 +314,7 @@ def cmd_deterministic(args: argparse.Namespace, paths: ProjectPaths) -> int:
     result = run_deterministic_pass(
         selected, thresholds=thresholds, preprocess_options=options, progress=progress
     )
-    results_dir = paths.results_dir(args.results_dir)
+    results_dir = _results_dir(paths, args)
     bundle = write_records(results_dir, result.records)
     write_json(
         results_dir / "evaluation-config.json",
@@ -300,7 +365,7 @@ def cmd_semantic(args: argparse.Namespace, paths: ProjectPaths) -> int:
         progress=progress,
     )
 
-    results_dir = paths.results_dir(args.results_dir)
+    results_dir = _results_dir(paths, args)
     write_json(
         results_dir / "semantic-preview.json",
         {
@@ -362,7 +427,7 @@ def cmd_noise(args: argparse.Namespace, paths: ProjectPaths) -> int:
         threshold=args.threshold,
         progress=progress,
     )
-    results_dir = paths.results_dir(args.results_dir)
+    results_dir = _results_dir(paths, args)
     write_json(
         results_dir / "noise.json",
         {"generated_at": utc_now(), "repeats": report.repeats,
@@ -388,7 +453,7 @@ def cmd_noise(args: argparse.Namespace, paths: ProjectPaths) -> int:
 
 
 def cmd_report(args: argparse.Namespace, paths: ProjectPaths) -> int:
-    results_dir = paths.results_dir(args.results_dir)
+    results_dir = _results_dir(paths, args)
     records = load_records(results_dir)
     if not records:
         print(f"No records found in {results_dir / 'run-metrics.jsonl'}.")
@@ -432,7 +497,7 @@ def cmd_report(args: argparse.Namespace, paths: ProjectPaths) -> int:
 
 def cmd_all(args: argparse.Namespace, paths: ProjectPaths) -> int:
     progress = _progress(args)
-    results_dir = paths.results_dir(args.results_dir)
+    results_dir = _results_dir(paths, args)
     runs = discover_runs(paths)
 
     thresholds, det_options = _det_options(args)
@@ -508,21 +573,53 @@ def cmd_all(args: argparse.Namespace, paths: ProjectPaths) -> int:
     else:
         sem = None
 
-    if args.drill_down and sem is not None:
-        drill_runs = args.run or semantic_run_ids
-        progress("Drill-down pass (diagnostic only).")
-        sections = run_drill_down(
-            semantic_selection,
-            run_ids=drill_runs,
-            stage_names=args.drill_down_stage,
-            min_section_words=args.drill_down_min_words,
-            judge=judge,
+    # Per-section deterministic metrics: cheap, local, and additive.
+    progress("Section-level deterministic metrics (no judge calls).")
+    write_section_metrics(
+        results_dir,
+        run_section_metrics_pass(
+            deterministic_selection,
+            thresholds=thresholds,
             semantic_options=_semantic_options(args),
+            progress=progress,
+        ),
+    )
+
+    comparison_results: list[dict] = []
+    if args.comparison and semantic_selection:
+        progress(
+            "Comparison pass over the closing stages (one extra judge call per run; "
+            "not used in production)."
+        )
+        comparison_results = run_comparison_pass(
+            stage_comparison_pairs(
+                semantic_selection,
+                from_stage=args.comparison_from,
+                to_stage=args.comparison_to,
+            ),
+            judge=judge,
             threshold=args.threshold,
             progress=progress,
         )
-        write_json(results_dir / "drill-down.json", {"sections": sections})
-        print(f"Drill-down sections evaluated: {len(sections)}")
+        write_comparison_results(results_dir, comparison_results)
+        print(f"Comparison evaluations: {len(comparison_results)}")
+
+    calibration_section = ""
+    calibration = load_calibration_set()
+    if calibration.available:
+        payloads = {
+            (record.run_id, record.stage_name): record.semantic
+            for record in det.records
+            if record.semantic
+        }
+        checks = check_calibration(calibration, payloads)
+        calibration_section = build_calibration_report(checks, calibration)
+        write_calibration_report(results_dir, calibration_section)
+        satisfied = sum(1 for check in checks if check.passed)
+        print(
+            f"Human calibration: {satisfied}/{len(checks)} expectation(s) satisfied "
+            f"({len(calibration.labeled)} labeled)"
+        )
 
     write_json(
         results_dir / "evaluation-config.json",
@@ -571,6 +668,7 @@ def cmd_all(args: argparse.Namespace, paths: ProjectPaths) -> int:
         semantic_run_ids=semantic_run_ids,
         deterministic_artifact_count=det.artifact_count,
         notes=notes,
+        calibration_section=calibration_section,
     )
 
     print(f"Deterministic artifacts: {det.artifact_count}")
@@ -611,7 +709,7 @@ def cmd_feedback(args: argparse.Namespace, paths: ProjectPaths) -> int:
         after_stage.read_text(), run.language.code, label=args.to_stage,
         semantic=not args.no_semantic, judge=judge,
     )
-    noise = load_noise(paths.results_dir(args.results_dir))
+    noise = load_noise(_results_dir(paths, args))
     band = args.band if args.band is not None else (noise.band.max_spread if noise else None)
     print(
         format_feedback_pair(

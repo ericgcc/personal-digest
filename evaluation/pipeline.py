@@ -10,14 +10,16 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from .config import load_judge_config
 from .deterministic.evaluator import DeterministicMetrics, evaluate_deterministic
+from .deterministic.section_metrics import evaluate_section_metrics
 from .deterministic.structure import StructureThresholds
 from .historical.run_model import HistoricalRun
 from .preprocessing.deterministic import PreprocessOptions, prepare_deterministic
 from .preprocessing.semantic import SemanticOptions
+from .sections import SectionOptions, parse_sections
 from .reporting.report import build_report_inputs, render_report
 from .reporting.results import (
     StageMetricRecord,
@@ -33,10 +35,12 @@ from .reporting.results import (
 )
 from .semantic.judge import DeepSeekJudge
 from .semantic.metric import (
+    MODE_ABSOLUTE,
+    MODE_COMPARISON,
     SemanticResult,
-    build_reader_quality_metric,
     describe_evaluation,
-    evaluate_semantic,
+    evaluate_reader_quality,
+    evaluate_regression,
     utc_now,
 )
 from .semantic.noise import (
@@ -192,14 +196,16 @@ def run_semantic_pass(
     max_artifacts: int | None = None,
     progress: ProgressCallback = _noop,
 ) -> SemanticPass:
-    """Run one G-Eval call per complete stage output, in stage order."""
+    """Run exactly one v3 judge call per complete stage output, in stage order."""
     active_judge = judge or DeepSeekJudge(load_judge_config())
-    metric = build_reader_quality_metric(active_judge, threshold=threshold, verbose=verbose)
     pass_result = SemanticPass()
 
     records_by_key: dict[tuple[str, str], StageMetricRecord] = {
         (record.run_id, record.stage_name): record for record in records
     }
+    section_options = SectionOptions(
+        semantic_options=semantic_options or SemanticOptions()
+    )
 
     for run in runs:
         if not run.complete or not run.usable:
@@ -218,11 +224,12 @@ def run_semantic_pass(
                 )
                 break
             progress(f"  semantic {run.run_id} [{stage.stage_name}]")
-            result = evaluate_semantic(
+            result = evaluate_reader_quality(
                 stage.read_text(),
+                style=run.style,
+                language=run.language.code or run.language.requested,
                 judge=active_judge,
-                metric=metric,
-                options=semantic_options,
+                section_options=section_options,
                 threshold=threshold,
                 verbose=verbose,
             )
@@ -252,6 +259,90 @@ def run_semantic_pass(
     return pass_result
 
 
+def run_comparison_pass(
+    pairs: Sequence[tuple[str, str, str, str | None]],
+    *,
+    judge: DeepSeekJudge | None = None,
+    language: str | None = None,
+    threshold: float | None = None,
+    progress: ProgressCallback = _noop,
+) -> list[dict[str, Any]]:
+    """Comparison mode over before/after pairs, one judge call per pair.
+
+    Built now for the future production gate but deliberately **not** wired into
+    production. Each pair is ``(before_text, after_text, label, style)``.
+
+    Returns one record per pair. A single call yields both the regression verdict
+    and the AFTER artifact's absolute assessment, so a production gate never
+    needs two judge calls.
+    """
+    active_judge = judge or DeepSeekJudge(load_judge_config())
+    results: list[dict[str, Any]] = []
+    for before_text, after_text, label, style in pairs:
+        progress(f"  comparison {label}")
+        result = evaluate_regression(
+            before_text,
+            after_text,
+            style=style,
+            language=language,
+            judge=active_judge,
+            before_label=f"{label} before",
+            after_label=f"{label} after",
+            threshold=threshold,
+        )
+        results.append({"label": label, "style": style, **result.to_dict()})
+    return results
+
+
+def run_section_metrics_pass(
+    runs: Sequence[HistoricalRun],
+    *,
+    language_overrides: Mapping[str, str] | None = None,
+    thresholds: StructureThresholds | None = None,
+    semantic_options: SemanticOptions | None = None,
+    progress: ProgressCallback = _noop,
+) -> dict[str, Any]:
+    """Cheap per-section deterministic metrics, plus per-stage section deltas.
+
+    Purely additive and free: no judge call is made. Used to explain which part
+    of an artifact moved when a semantic regression is found.
+    """
+    overrides = dict(language_overrides or {})
+    section_options = SectionOptions(
+        semantic_options=semantic_options or SemanticOptions()
+    )
+    per_run: dict[str, Any] = {}
+
+    for run in runs:
+        if not run.usable:
+            continue
+        language = overrides.get(run.run_id) or run.language.code or run.language.requested
+        previous = None
+        stages: dict[str, Any] = {}
+        for stage in run.stages:
+            if not stage.is_evaluable:
+                continue
+            metrics = evaluate_section_metrics(
+                stage.read_text(),
+                language=language,
+                style=run.style,
+                section_options=section_options,
+                thresholds=thresholds,
+            )
+            entry: dict[str, Any] = metrics.to_dict()
+            if previous is not None:
+                entry["changes_from_previous_stage"] = metrics.compare(previous)
+            stages[stage.stage_name] = entry
+            previous = metrics
+        per_run[run.run_id] = {
+            "digest_id": run.digest_id,
+            "digest_style": run.style,
+            "stages": stages,
+        }
+        progress(f"  section metrics {run.run_id}: {len(stages)} stage(s)")
+    return {"runs": per_run}
+
+
 def run_noise_pass(
     runs: Sequence[HistoricalRun],
     *,
@@ -264,12 +355,17 @@ def run_noise_pass(
 ) -> tuple[NoiseReport, dict[str, int]]:
     """Run the stability experiment on a very small representative sample."""
     active_judge = judge or DeepSeekJudge(load_judge_config())
-    metric = build_reader_quality_metric(active_judge, threshold=threshold)
     sample = list(artifacts) if artifacts is not None else select_noise_artifacts(runs)
+    section_options = SectionOptions(
+        semantic_options=semantic_options or SemanticOptions()
+    )
 
-    def _measure(text: str) -> SemanticResult:
-        return evaluate_semantic(
-            text, judge=active_judge, metric=metric, options=semantic_options,
+    def _measure(artifact: NoiseArtifact) -> SemanticResult:
+        return evaluate_reader_quality(
+            artifact.text,
+            style=artifact.style,
+            judge=active_judge,
+            section_options=section_options,
             threshold=threshold,
         )
 
@@ -278,67 +374,40 @@ def run_noise_pass(
 
 
 # --------------------------------------------------------------------------- #
-# Drill-down
+# Comparison helper for the future production gate
 # --------------------------------------------------------------------------- #
 
 
-def run_drill_down(
+def stage_comparison_pairs(
     runs: Sequence[HistoricalRun],
     *,
-    run_ids: Sequence[str],
-    stage_names: Sequence[str] = (),
-    min_section_words: int = 80,
-    judge: DeepSeekJudge | None = None,
-    semantic_options: SemanticOptions | None = None,
-    threshold: float | None = None,
-    progress: ProgressCallback = _noop,
-) -> list[dict[str, Any]]:
-    """Optional diagnostic: evaluate substantive sections of selected stages.
+    from_stage: str = "voice-edit",
+    to_stage: str = "final-polish",
+) -> list[tuple[str, str, str, str | None]]:
+    """Build before/after text pairs across the closing stages of each run.
 
-    This is never the default. It exists for investigating a specific stage-level
-    regression without multiplying calls across the whole corpus.
+    Pure preparation: no judge call is made here. Used to feed
+    :func:`run_comparison_pass` when calibrating a future gate.
     """
-    active_judge = judge or DeepSeekJudge(load_judge_config())
-    metric = build_reader_quality_metric(active_judge, threshold=threshold)
-    wanted_runs = set(run_ids)
-    wanted_stages = set(stage_names)
-    results: list[dict[str, Any]] = []
-
+    pairs: list[tuple[str, str, str, str | None]] = []
     for run in runs:
-        if run.run_id not in wanted_runs:
+        if not run.complete or not run.usable:
             continue
-        for stage in run.stages:
-            if not stage.is_evaluable:
-                continue
-            if wanted_stages and stage.stage_name not in wanted_stages:
-                continue
-            prepared = prepare_deterministic(stage.read_text())
-            for index, section in enumerate(prepared.sections):
-                if section.word_count < min_section_words:
-                    continue
-                progress(
-                    f"  drill-down {run.run_id} [{stage.stage_name}] section {index + 1}"
-                )
-                result = evaluate_semantic(
-                    section.text,
-                    judge=active_judge,
-                    metric=metric,
-                    options=semantic_options,
-                    threshold=threshold,
-                )
-                results.append(
-                    {
-                        "run_id": run.run_id,
-                        "digest_id": run.digest_id,
-                        "digest_style": run.style,
-                        "stage_name": stage.stage_name,
-                        "section_index": index,
-                        "section_heading": section.heading,
-                        "section_words": section.word_count,
-                        **result.to_dict(),
-                    }
-                )
-    return results
+        before = run.stage(from_stage)
+        after = run.stage(to_stage)
+        if before is None or not before.available:
+            continue
+        if after is None or not after.available:
+            continue
+        pairs.append(
+            (
+                before.read_text(),
+                after.read_text(),
+                f"{run.run_id} {from_stage}->{to_stage}",
+                run.style,
+            )
+        )
+    return pairs
 
 
 # --------------------------------------------------------------------------- #
@@ -434,7 +503,11 @@ def load_noise(results_dir: Path) -> NoiseReport | None:
     path = results_dir / "noise.json"
     if not path.is_file():
         return None
-    from .semantic.noise import NoiseSample
+    from .semantic.noise import (
+        NoiseSample,
+        QualitativeStability,
+        build_qualitative_stability,
+    )
 
     payload = json.loads(path.read_text(encoding="utf-8"))
     samples = tuple(
@@ -446,10 +519,67 @@ def load_noise(results_dir: Path) -> NoiseReport | None:
             stage_name=item["stage_name"],
             scores=tuple(float(score) for score in item.get("scores", ())),
             errors=tuple(item.get("errors", ())),
+            dimension_scores={
+                name: tuple(float(value) for value in values)
+                for name, values in (item.get("dimension_scores") or {}).items()
+            },
+            critical_failure_counts=tuple(
+                int(value) for value in item.get("critical_failure_counts", ())
+            ),
+            weakest_section_scores=tuple(
+                float(value) for value in item.get("weakest_section_scores", ())
+            ),
+            understood_ratios=tuple(
+                float(value) for value in item.get("understood_ratios", ())
+            ),
+            issue_type_sets=tuple(
+                frozenset(values) for values in item.get("issue_type_sets", ())
+            ),
+            understandable_flags=tuple(
+                int(value) for value in item.get("understandable_flags", ())
+            ),
         )
         for item in payload.get("samples", [])
     )
-    return NoiseReport(repeats=int(payload.get("repeats", 0)), samples=samples)
+    qualitative = (
+        build_qualitative_stability(samples) if samples else None
+    )
+    return NoiseReport(
+        repeats=int(payload.get("repeats", 0)),
+        samples=samples,
+        qualitative=qualitative,
+    )
+
+
+def write_section_metrics(results_dir: Path, payload: Mapping[str, Any]) -> Path:
+    """Persist the cheap per-section deterministic metrics."""
+    path = results_dir / "section-metrics.json"
+    write_json(path, payload)
+    return path
+
+
+def write_comparison_results(results_dir: Path, payload: Sequence[Mapping[str, Any]]) -> Path:
+    """Persist comparison-mode results. Comparison mode is not used in production."""
+    path = results_dir / "comparison.json"
+    write_json(path, {"results": list(payload)})
+    return path
+
+
+def load_comparison_results(results_dir: Path) -> list[dict[str, Any]]:
+    path = results_dir / "comparison.json"
+    if not path.is_file():
+        return []
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    results = payload.get("results", [])
+    return [dict(item) for item in results if isinstance(item, Mapping)]
+
+
+def write_calibration_report(results_dir: Path, text: str) -> Path:
+    """Persist the human calibration check as its own markdown file."""
+    path = results_dir / "calibration-report.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
 
 
 def write_report(
@@ -462,6 +592,7 @@ def write_report(
     semantic_run_ids: Sequence[str] = (),
     deterministic_artifact_count: int = 0,
     notes: Sequence[str] = (),
+    calibration_section: str = "",
 ) -> Path:
     """Render and write report.md plus the machine-readable analysis."""
     inputs = build_report_inputs(
@@ -476,7 +607,10 @@ def write_report(
     )
     report_path = results_dir / "report.md"
     report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(render_report(inputs), encoding="utf-8")
+    rendered = render_report(inputs)
+    if calibration_section:
+        rendered = rendered.rstrip() + "\n\n" + calibration_section.strip() + "\n"
+    report_path.write_text(rendered, encoding="utf-8")
 
     write_json(
         results_dir / "analysis.json",
@@ -488,8 +622,7 @@ def write_report(
             },
             "verdicts": [item.to_dict() for item in inputs.verdicts],
             "correlations": [item.to_dict() for item in inputs.correlations],
-            "reason_clusters": [item.to_dict() for item in inputs.clusters],
-            "unmatched_reasons": inputs.unmatched_reasons,
+            "issue_summary": inputs.issues.to_dict(),
             "regression_examples": [item.to_dict() for item in inputs.examples],
             "noise": inputs.noise.to_dict() if inputs.noise else None,
         },
@@ -502,14 +635,20 @@ __all__ = [
     "ResultsBundle",
     "SemanticPass",
     "SkippedArtifact",
+    "load_comparison_results",
     "load_noise",
     "load_records",
     "recompute_deltas",
+    "run_comparison_pass",
     "run_deterministic_pass",
-    "run_drill_down",
     "run_noise_pass",
+    "run_section_metrics_pass",
     "run_semantic_pass",
     "semantic_targets",
+    "stage_comparison_pairs",
+    "write_calibration_report",
+    "write_comparison_results",
     "write_records",
     "write_report",
+    "write_section_metrics",
 ]

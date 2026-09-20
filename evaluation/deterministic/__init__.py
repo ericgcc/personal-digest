@@ -11,6 +11,13 @@ from .readability import (
     evaluate_readsight,
     supported_formulas,
 )
+from .section_metrics import (
+    MIN_FORMULA_WORDS,
+    DigestSectionMetrics,
+    SectionMetrics,
+    evaluate_section,
+    evaluate_section_metrics,
+)
 from .structure import (
     ParagraphDistribution,
     SectionStructure,
@@ -27,12 +34,15 @@ from .structure import (
 )
 
 __all__ = [
+    "MIN_FORMULA_WORDS",
     "UNIVERSAL_FORMULAS",
     "DeterministicMetrics",
+    "DigestSectionMetrics",
     "FormulaScore",
     "ParagraphDistribution",
     "ReadabilityResult",
     "ReadabilityStatistics",
+    "SectionMetrics",
     "SectionStructure",
     "SentenceDistribution",
     "StructuralMetrics",
@@ -42,6 +52,8 @@ __all__ = [
     "count_identifiers",
     "evaluate_deterministic",
     "evaluate_readsight",
+    "evaluate_section",
+    "evaluate_section_metrics",
     "evaluate_structure",
     "longest_sentences",
     "percentile",

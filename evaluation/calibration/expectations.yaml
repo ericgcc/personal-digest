@@ -1,0 +1,90 @@
+# Human calibration set for reader_quality_v3.
+#
+# Each expectation records a judgment a human reader actually made about a
+# specific section of a specific historical artifact. The prose is NOT duplicated
+# here: the section is resolved from `.digest-runs` at check time, so this file
+# cannot drift away from the artifact it describes.
+#
+# Labels:
+#   not_publication_quality  - a human read this and judged it below the bar
+#   difficult_framing        - a human reported the framing/title as hard to parse
+#   context_dependent        - understandable only with outside knowledge
+#   acceptable               - a human considered it fine
+#   unlabeled_control        - not yet reviewed by a human; never counted as a pass
+#
+# Do not add "human approved" examples that were not actually reviewed.
+# Expected issue types use the v3 issue taxonomy:
+#   missing_context, unexplained_domain_concept, unclear_referent,
+#   dense_or_overcompressed, weak_causal_connection, abrupt_transition,
+#   headline_body_disconnect, missing_significance,
+#   source_reporting_without_synthesis, reader_orientation_loss,
+#   unsupported_analogy_or_connection, other
+
+version: 1
+
+expectations:
+  # ---------------------------------------------------------------------------
+  # The known asyncio.gather case. A human reader reported that this section is
+  # not publication-quality first-pass explanation: it opens on failure semantics
+  # before establishing what operation is being coordinated, and expects the
+  # reader to already know what gather does.
+  # ---------------------------------------------------------------------------
+  - id: python-decisions-asyncio-gather
+    run_id: medium-bi-daily-20260917-110013-r2
+    stage: final-polish
+    section: "02"
+    style: curated-discovery
+    human_label: not_publication_quality
+    human_notes: >
+      Reported by the reader as not publication-quality first-pass explanation.
+      The explanation begins with asyncio.gather's failure behaviour before
+      establishing what operation is being coordinated or why continued sibling
+      execution matters, so the operational significance has to be inferred.
+      Domain behaviour is compressed and the reader is expected to know what
+      gather is doing. This should not receive exceptional clarity.
+    expected_issue_types:
+      - missing_context
+      - unexplained_domain_concept
+      - dense_or_overcompressed
+    must_not_exceed: 8.5
+
+  # ---------------------------------------------------------------------------
+  # The "Test the exit before you need it" framing. A human reader reported that
+  # the title/framing was initially difficult to understand — clever, but not
+  # immediately clear.
+  # ---------------------------------------------------------------------------
+  - id: test-the-exit-framing
+    run_id: medium-bi-daily-20260917-110013-r2
+    stage: final-polish
+    section: "03"
+    style: curated-discovery
+    human_label: difficult_framing
+    human_notes: >
+      Reported by the reader as having framing/title that was initially
+      difficult to understand. The heading reads as a slogan rather than
+      establishing what the section is about, so the reader cannot tell what to
+      expect until well into the body.
+    expected_issue_types:
+      - headline_body_disconnect
+      - reader_orientation_loss
+
+  # ---------------------------------------------------------------------------
+  # Controls. These are the same artifact's other sections, kept unlabeled. They
+  # exist so the calibration report can show the full context without claiming
+  # any human verdict that was not actually given.
+  # ---------------------------------------------------------------------------
+  - id: mcp-laptop-control
+    run_id: medium-bi-daily-20260917-110013-r2
+    stage: final-polish
+    section: "01"
+    style: curated-discovery
+    human_label: unlabeled_control
+    human_notes: "Not reviewed by a human. Present for context only."
+
+  - id: definition-layer-control
+    run_id: medium-bi-daily-20260917-110013-r2
+    stage: final-polish
+    section: "05"
+    style: curated-discovery
+    human_label: unlabeled_control
+    human_notes: "Not reviewed by a human. Present for context only."

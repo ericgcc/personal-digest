@@ -52,132 +52,241 @@ CORRELATION_LABELS: dict[str, str] = {
     "parenthetical_density": "parenthetical density",
 }
 
-#: Coarse keyword categories for the G-Eval reasons. Simple category analysis is
-#: sufficient for this first version; no second model clusters the reasons.
+#: Reader-facing issue taxonomy, mirroring ``evaluation.semantic.schema.IssueType``.
 #:
-#: Keywords are deliberately failure-specific. Broad words such as
-#: "connection", "significance" or "relevance" appear in *positive* judge
-#: reasons ("connects claims logically") and would produce clusters that
-#: describe praise as a defect.
-REASON_CATEGORIES: tuple[tuple[str, tuple[str, ...]], ...] = (
-    (
-        "missing context",
-        (
-            "missing context",
-            "lacks context",
-            "lack context",
-            "insufficient context",
-            "without context",
-            "no context",
-            "requires prior knowledge",
-            "assumes the reader",
-            "unfamiliar background",
-            "no definition",
-        ),
-    ),
-    (
-        "unexplained technical concepts",
-        (
-            "unexplained",
-            "undefined acronym",
-            "undefined term",
-            "not defined",
-            "without defining",
-            "without explaining what",
-            "assumes familiarity",
-            "obscure term",
-        ),
-    ),
-    (
-        "source-by-source reporting",
-        (
-            "source-by-source",
-            "source by source",
-            "instead of synthesi",
-            "rather than synthesi",
-            "merely enumerat",
-            "simply lists",
-            "listing sources",
-            "summary of each",
-            "reports each",
-            "rather than explaining",
-        ),
-    ),
-    (
-        "weak causal connection",
-        (
-            # Bare "causal link" / "causal connection" appears in praise
-            # ("causal links are explicit"), so only explicitly negative
-            # phrasing counts.
-            "weak causal",
-            "does not explain why",
-            "does not explain how",
-            "without explaining why",
-            "unclear why",
-            "no explanation of why",
-            "no clear connection between",
-            "causal link is unclear",
-            "causal links are not",
-            "causal relationship is unclear",
-            "significance is not explained",
-            "relevance is not explained",
-            "lacks a causal",
-        ),
-    ),
-    (
-        "abrupt transitions",
-        (
-            "abrupt transition",
-            "transitions are abrupt",
-            "jumps abruptly",
-            "disjointed",
-            "shifts abruptly",
-            "abruptly shift",
-            "no transition",
-        ),
-    ),
-    (
-        "dense sentences",
-        (
-            "dense",
-            "long sentence",
-            "longer sentence",
-            "complex sentence",
-            "run-on",
-            "overloaded sentence",
-            "packed sentence",
-            "requires rereading",
-            "requires re-reading",
-            "reread",
-            "re-read",
-        ),
-    ),
-    (
-        "unclear referents",
-        (
-            "unclear referent",
-            "referent is unclear",
-            "ambiguous pronoun",
-            "pronoun is unclear",
-            "unclear what it refers",
-            "antecedent",
-            "unclear which",
-        ),
-    ),
-    (
-        "lack of reader orientation",
-        (
-            "does not establish",
-            "no framing",
-            "without framing",
-            "no overview",
-            "lacks an introduction",
-            "hard to tell what",
-            "unclear what the piece",
-            "reader is not oriented",
-        ),
-    ),
+#: The judge returns the type as a field of the structured response, so problem
+#: classification is a dictionary lookup, never a keyword match over its prose.
+#: v2 inferred categories by scanning the judge's free-text reason for phrases
+#: such as "missing context"; that is fragile (praise reads like a defect) and is
+#: deliberately gone.
+ISSUE_TYPE_LABELS: dict[str, str] = {
+    "missing_context": "Missing context",
+    "unexplained_domain_concept": "Unexplained domain concept",
+    "unclear_referent": "Unclear referent",
+    "dense_or_overcompressed": "Dense or over-compressed",
+    "weak_causal_connection": "Weak causal connection",
+    "abrupt_transition": "Abrupt transition",
+    "headline_body_disconnect": "Headline/body disconnect",
+    "missing_significance": "Missing significance",
+    "source_reporting_without_synthesis": "Source reporting without synthesis",
+    "reader_orientation_loss": "Reader-orientation loss",
+    "unsupported_analogy_or_connection": "Unsupported analogy or connection",
+    "other": "Other",
+}
+
+#: Section-level list fields that carry an issue type implicitly.
+_SECTION_LIST_ISSUES: tuple[tuple[str, str], ...] = (
+    ("missing_context", "missing_context"),
+    ("unexplained_concepts", "unexplained_domain_concept"),
+    ("unclear_referents", "unclear_referent"),
+    ("broken_logical_links", "weak_causal_connection"),
 )
+
+SEVERITY_ORDER: tuple[str, ...] = ("critical", "major", "minor")
+
+
+@dataclass(frozen=True)
+class IssueTypeCount:
+    """How often one reader-facing issue type appears, and where it shows up."""
+
+    issue_type: str
+    count: int
+    documents: int
+    sections: int
+    critical_sections: int
+    severities: tuple[tuple[str, int], ...]
+    styles: tuple[tuple[str, int], ...]
+    stages: tuple[str, ...]
+    titles: tuple[str, ...]
+    examples: tuple[str, ...] = ()
+
+    @property
+    def label(self) -> str:
+        return ISSUE_TYPE_LABELS.get(self.issue_type, self.issue_type.replace("_", " "))
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "issue_type": self.issue_type,
+            "label": self.label,
+            "count": self.count,
+            "documents": self.documents,
+            "sections": self.sections,
+            "critical_sections": self.critical_sections,
+            "severities": dict(self.severities),
+            "styles": dict(self.styles),
+            "stages": list(self.stages),
+            "titles": list(self.titles),
+            "examples": list(self.examples),
+        }
+
+
+@dataclass(frozen=True)
+class IssueSummary:
+    """The structured replacement for v2's keyword reason clusters."""
+
+    total_issues: int
+    documents_with_issues: int
+    documents: int
+    types: tuple[IssueTypeCount, ...]
+    critical_failure_documents: int
+    undocumented_issues: int = 0
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "total_issues": self.total_issues,
+            "documents_with_issues": self.documents_with_issues,
+            "documents": self.documents,
+            "critical_failure_documents": self.critical_failure_documents,
+            "undocumented_issues": self.undocumented_issues,
+            "types": [item.to_dict() for item in self.types],
+        }
+
+
+def _issue_observations(
+    records: Sequence[StageMetricRecord],
+) -> tuple[list[dict[str, Any]], int, int, int]:
+    """Flatten every structured issue into one observation record.
+
+    Returns the observations plus the number of evaluated documents, the number
+    of documents carrying at least one issue, and the number of documents
+    containing a critical section. Nothing is inferred from prose.
+    """
+    observations: list[dict[str, Any]] = []
+    documents = 0
+    with_issues = 0
+    with_critical = 0
+
+    for record in records:
+        semantic = record.semantic or {}
+        if "semantic_issue_counts" not in semantic and "semantic_sections" not in semantic:
+            continue
+        documents += 1
+
+        before = len(observations)
+        base = {
+            "run_id": record.run_id,
+            "stage_name": record.stage_name,
+            "style": record.digest_style,
+        }
+
+        sections = semantic.get("semantic_sections") or []
+        for section in sections:
+            if not isinstance(section, Mapping):
+                continue
+            block = {
+                **base,
+                "section_id": section.get("section_id"),
+                "title": section.get("title"),
+                "critical": bool(section.get("critical_failure")),
+            }
+            for field, issue_type in _SECTION_LIST_ISSUES:
+                items = section.get(field) or []
+                if not isinstance(items, (list, tuple)):
+                    continue
+                for item in items:
+                    observations.append(
+                        {**block, "issue_type": issue_type, "severity": None, "text": str(item)}
+                    )
+
+        for issue in semantic.get("semantic_issues") or []:
+            if not isinstance(issue, Mapping):
+                continue
+            severity = issue.get("severity")
+            observations.append(
+                {
+                    **base,
+                    "section_id": issue.get("section_id"),
+                    "title": None,
+                    "critical": severity == "critical",
+                    "issue_type": str(issue.get("type") or "other"),
+                    "severity": severity,
+                    "text": str(issue.get("description") or ""),
+                }
+            )
+
+        if len(observations) > before:
+            with_issues += 1
+
+        has_critical = bool(semantic.get("semantic_critical_failure_count")) or any(
+            isinstance(section, Mapping) and section.get("critical_failure")
+            for section in sections
+        )
+        if has_critical:
+            with_critical += 1
+
+    return observations, documents, with_issues, with_critical
+
+
+def aggregate_issue_types(records: Sequence[StageMetricRecord]) -> IssueSummary:
+    """Aggregate the judge's structured issues by type, style, severity and stage."""
+    observations, documents, with_issues, with_critical = _issue_observations(records)
+
+    by_type: dict[str, list[dict[str, Any]]] = {}
+    for item in observations:
+        by_type.setdefault(str(item["issue_type"]), []).append(item)
+
+    types: list[IssueTypeCount] = []
+    for issue_type, items in by_type.items():
+        severity_tally: dict[str, int] = {}
+        style_tally: dict[str, int] = {}
+        for item in items:
+            severity = item.get("severity")
+            if isinstance(severity, str):
+                severity_tally[severity] = severity_tally.get(severity, 0) + 1
+            style = item.get("style")
+            if isinstance(style, str):
+                style_tally[style] = style_tally.get(style, 0) + 1
+
+        section_keys = {
+            (item["run_id"], item["stage_name"], item["section_id"])
+            for item in items
+            if item.get("section_id")
+        }
+        critical_sections = len(
+            {
+                (item["run_id"], item["stage_name"], item["section_id"])
+                for item in items
+                if item.get("critical") or item.get("severity") == "critical"
+            }
+        )
+        types.append(
+            IssueTypeCount(
+                issue_type=issue_type,
+                count=len(items),
+                documents=len({(item["run_id"], item["stage_name"]) for item in items}),
+                sections=len(section_keys),
+                critical_sections=critical_sections,
+                severities=tuple(
+                    (name, severity_tally[name])
+                    for name in SEVERITY_ORDER
+                    if name in severity_tally
+                ),
+                styles=tuple(sorted(style_tally.items(), key=lambda pair: -pair[1])),
+                stages=tuple(
+                    sorted({str(item["stage_name"]) for item in items})
+                ),
+                titles=tuple(
+                    sorted({str(item["title"]) for item in items if item.get("title")})
+                )[:4],
+                examples=tuple(
+                    text[:220] + ("..." if len(text) > 220 else "")
+                    for text in (
+                        str(item.get("text") or "").strip() for item in items
+                    )
+                    if text
+                )[:2],
+            )
+        )
+
+    types.sort(key=lambda item: (-item.count, item.issue_type))
+    return IssueSummary(
+        total_issues=len(observations),
+        documents_with_issues=with_issues,
+        documents=documents,
+        types=tuple(types),
+        critical_failure_documents=with_critical,
+    )
+
 
 
 @dataclass(frozen=True)
@@ -647,180 +756,32 @@ def correlations(
 
 
 # --------------------------------------------------------------------------- #
-# Reason clustering
+# Reader-facing problem aggregation
 # --------------------------------------------------------------------------- #
 
 
-#: Phrases that indicate the judge's overall verdict was positive. Used to keep
-#: the reason-cluster table honest: on a saturated corpus most reasons are
-#: largely positive, and a keyword match inside them is an incidental mention.
-POSITIVE_VERDICT_MARKERS: tuple[str, ...] = (
-    "immediately understandable",
-    "self-contained",
-    "well synthesized",
-    "well synthesised",
-    "highly clear",
-    "clear and coherent",
-    "mostly clear",
-    "largely clear",
-    "clear and well",
-    "exceptionally clear",
-    "highly readable",
-    "very clear",
-)
-
-#: Phrases that immediately precede a keyword when the judge is describing what
-#: the text did *right* — "connects cause and contrast rather than merely
-#: listing sources", "synthesized ... instead of source-by-source reporting".
-#: A match inside these constructions is praise, not a defect, so it is skipped.
-NEGATED_MATCH_MARKERS: tuple[str, ...] = (
-    "rather than",
-    "instead of",
-    "not ",
-    "no ",
-    "never ",
-    "without ",
-    "avoids ",
-    "avoided ",
-    "free of",
-    "absent",
-    "does not",
-    "do not",
-    "isn't",
-    "aren't",
-)
-
-#: How far before a keyword to look for a negating construction.
-_NEGATION_LOOKBACK = 70
-
-
-def _is_negated_match(sentence: str, index: int) -> bool:
-    """Return whether a keyword match sits inside a praising construction."""
-    window = sentence[max(0, index - _NEGATION_LOOKBACK) : index].lower()
-    return any(marker in window for marker in NEGATED_MATCH_MARKERS)
-
-
-def _find_defect_match(reason: str, keywords: Sequence[str]) -> str | None:
-    """Return the first sentence in which a keyword describes an actual defect.
-
-    A keyword match is only counted when it is not part of a negating or
-    praising construction. On a corpus where most reasons are positive, this is
-    what separates "the text reports source by source" from "synthesized rather
-    than source-by-source reporting".
-    """
-    for sentence in _sentences(reason):
-        lowered = sentence.lower()
-        for keyword in keywords:
-            start = lowered.find(keyword)
-            while start != -1:
-                if not _is_negated_match(lowered, start):
-                    return sentence
-                start = lowered.find(keyword, start + 1)
-    return None
-
-
 def count_positive_reasons(records: Sequence[StageMetricRecord]) -> int:
-    """Count reasons whose overall verdict reads as positive."""
+    """Count artifacts the judge reported without any reader-facing problem.
+
+    v2 scanned the judge's prose for phrases such as "immediately
+    understandable". v3 reads the structured verdict instead: a document counts
+    as clean when it has no critical failure and no issue of any type.
+    """
     count = 0
     for record in records:
-        reason = record.semantic.get("semantic_reason")
-        if not isinstance(reason, str):
+        semantic = record.semantic or {}
+        if (
+            "semantic_issue_counts" not in semantic
+            and "semantic_critical_failure_count" not in semantic
+        ):
             continue
-        lowered = reason.lower()
-        if any(marker in lowered for marker in POSITIVE_VERDICT_MARKERS):
+        has_issue = any(
+            isinstance(value, (int, float)) and value > 0
+            for value in (semantic.get("semantic_issue_counts") or {}).values()
+        )
+        if not has_issue and not semantic.get("semantic_critical_failure_count"):
             count += 1
     return count
-
-
-@dataclass(frozen=True)
-class ReasonCluster:
-    """How often a failure pattern is mentioned across semantic reasons."""
-
-    category: str
-    count: int
-    total: int
-    examples: tuple[str, ...] = ()
-    stages: tuple[str, ...] = ()
-
-    @property
-    def share(self) -> float:
-        return round(self.count / self.total, 4) if self.total else 0.0
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "category": self.category,
-            "count": self.count,
-            "share": self.share,
-            "stages": list(self.stages),
-            "examples": list(self.examples),
-        }
-
-
-def _sentences(text: str) -> list[str]:
-    cleaned = re.sub(r"\s+", " ", text).strip()
-    if not cleaned:
-        return []
-    parts = re.split(r"(?<=[.!?])\s+", cleaned)
-    return [part.strip() for part in parts if part.strip()]
-
-
-def _matching_excerpt(reason: str, keywords: Sequence[str], limit: int = 260) -> str:
-    """Return the sentence that actually contains the matched keyword."""
-    match = _find_defect_match(reason, keywords)
-    if match is None:
-        sentences = _sentences(reason)
-        match = sentences[0] if sentences else re.sub(r"\s+", " ", reason).strip()
-    return match[:limit] + ("..." if len(match) > limit else "")
-
-
-def cluster_reasons(
-    records: Sequence[StageMetricRecord], *, examples_per_category: int = 2
-) -> tuple[list[ReasonCluster], int]:
-    """Bucket G-Eval reasons into coarse failure categories.
-
-    A reason counts toward a category only when a keyword appears in a
-    defect-describing context, so praise such as "connects claims logically
-    rather than merely listing sources" is not counted as a failure.
-
-    Returns the clusters (most frequent first) and the number of reasons that
-    matched no category, so unmatched reasons stay visible instead of being
-    silently dropped.
-    """
-    reasons = [
-        (record, reason)
-        for record in records
-        if isinstance(reason := record.semantic.get("semantic_reason"), str) and reason.strip()
-    ]
-    total = len(reasons)
-    clusters: list[ReasonCluster] = []
-    matched_records: set[tuple[str, str]] = set()
-    for category, keywords in REASON_CATEGORIES:
-        hits: list[tuple[StageMetricRecord, str, str]] = []
-        for record, reason in reasons:
-            excerpt = _find_defect_match(reason, keywords)
-            if excerpt is None:
-                continue
-            hits.append((record, reason, excerpt))
-            matched_records.add((record.run_id, record.stage_name))
-        clusters.append(
-            ReasonCluster(
-                category=category,
-                count=len(hits),
-                total=total,
-                examples=tuple(
-                    excerpt[:260] + ("..." if len(excerpt) > 260 else "")
-                    for _record, _reason, excerpt in hits[:examples_per_category]
-                ),
-                stages=tuple(sorted({record.stage_name for record, _reason, _excerpt in hits})),
-            )
-        )
-    clusters.sort(key=lambda item: item.count, reverse=True)
-    unmatched = sum(
-        1
-        for record, _reason in reasons
-        if (record.run_id, record.stage_name) not in matched_records
-    )
-    return clusters, unmatched
 
 
 # --------------------------------------------------------------------------- #
@@ -905,7 +866,7 @@ def collect_regression_examples(
                     else None
                 ),
                 delta=round(delta, 6),
-                reason=record.semantic.get("semantic_reason"),
+                reason=record.semantic.get("semantic_summary"),
                 longest_sentences=sentences,
             )
         )

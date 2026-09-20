@@ -61,7 +61,8 @@ UNIVERSAL_FORMULA_COLUMNS: tuple[str, ...] = (
 SEMANTIC_RECORD_KEYS: frozenset[str] = frozenset(
     {
         "semantic_score",
-        "semantic_reason",
+        "semantic_mode",
+        "semantic_summary",
         "semantic_error",
         "semantic_metric_name",
         "semantic_scope",
@@ -69,9 +70,44 @@ SEMANTIC_RECORD_KEYS: frozenset[str] = frozenset(
         "semantic_words",
         "semantic_source_catalog_removed",
         "semantic_evaluated_at",
+        "semantic_section_count",
+        "semantic_substantive_section_count",
+        "semantic_sections",
+        # v3: the absolute assessment, carried by both modes.
+        "semantic_overall_score",
+        "semantic_weakest_section_id",
+        "semantic_weakest_section_score",
+        "semantic_critical_failure_count",
+        "semantic_sections_understood",
+        "semantic_sections_total",
+        "semantic_sections_understood_ratio",
+        "semantic_issue_counts",
+        "semantic_issues",
+        "semantic_revision_priorities",
+        # v3: the six reader-facing dimensions.
+        "dim_first_pass_comprehension",
+        "dim_context_sufficiency",
+        "dim_explanatory_clarity",
+        "dim_synthesis_quality",
+        "dim_narrative_coherence",
+        "dim_reader_orientation",
+        # v3: comparison mode only.
+        "regression_status",
+        "regression_material",
+        "regression_lost_context",
+        "regression_lost_explanations",
+        "regression_new_ambiguities",
+        "regression_broken_connections",
+        "regression_improvements",
+        "regression_affected_sections",
+        "regression_retry_instructions",
+        "before_artifact",
+        "after_artifact",
         "judge_provider",
         "judge_model",
+        "judge_requests",
         "judge_calls",
+        "judge_attempts",
         "judge_prompt_tokens",
         "judge_completion_tokens",
         "judge_total_tokens",
@@ -80,6 +116,7 @@ SEMANTIC_RECORD_KEYS: frozenset[str] = frozenset(
         "evaluation_id",
         "evaluation_steps_version",
         "rubric_version",
+        "schema_version",
         "preprocessing_version",
         "deepeval_version",
         "readsight_version",
@@ -182,13 +219,9 @@ def build_record(
     """Assemble one record."""
     semantic_payload: dict[str, Any] = {}
     if semantic is not None:
-        semantic_payload = {
-            key: value
-            for key, value in semantic.to_dict().items()
-            if key != "semantic_reason"
-        }
-        # The reason is preserved in full but kept out of the wide CSV.
-        semantic_payload["semantic_reason"] = semantic.reason
+        semantic_payload = dict(semantic.to_dict())
+        # The judge's own verdict is preserved but kept out of the wide CSV.
+        semantic_payload.setdefault("semantic_summary", semantic.reason)
 
     return StageMetricRecord(
         run_id=run.run_id,
@@ -367,6 +400,17 @@ def _median(rows: Sequence[Mapping[str, Any]], key: str) -> float | None:
     return _series_median(_numeric_values(rows, key))
 
 
+#: The six reader-facing dimensions v3 reports instead of one blended score.
+DIMENSION_KEYS: tuple[str, ...] = (
+    "first_pass_comprehension",
+    "context_sufficiency",
+    "explanatory_clarity",
+    "synthesis_quality",
+    "narrative_coherence",
+    "reader_orientation",
+)
+
+
 def _mean(rows: Sequence[Mapping[str, Any]], key: str) -> float | None:
     return _series_mean(_numeric_values(rows, key))
 
@@ -383,6 +427,13 @@ SUMMARY_COLUMNS: tuple[str, ...] = (
     "semantic_max",
     "semantic_delta_mean",
     "semantic_delta_median",
+    # v3 reader-facing signals. The mean alone cannot show a digest that reads
+    # well on average but fails locally, which is the effect v3 exists to expose.
+    "semantic_weakest_mean",
+    "semantic_critical_failure_total",
+    "semantic_critical_failure_documents",
+    "semantic_sections_understood_ratio_mean",
+    *[f"dim_{key}_mean" for key in DIMENSION_KEYS],
     "readability_median_word_count",
     *[f"formula_{key}_median" for key in UNIVERSAL_FORMULA_COLUMNS],
     "readability_avg_words_per_sentence_median",
@@ -445,6 +496,24 @@ def stage_summary_rows(records: Sequence[StageMetricRecord]) -> list[dict[str, A
             "semantic_max": _round(max(scores)) if scores else None,
             "semantic_delta_mean": _mean(rows, delta_key),
             "semantic_delta_median": _median(rows, delta_key),
+            "semantic_weakest_mean": _mean(rows, "semantic_weakest_section_score"),
+            "semantic_critical_failure_total": sum(
+                int(value)
+                for value in _numeric_values(rows, "semantic_critical_failure_count")
+            ),
+            "semantic_critical_failure_documents": sum(
+                1
+                for row in rows
+                if isinstance(row.get("semantic_critical_failure_count"), (int, float))
+                and row["semantic_critical_failure_count"] > 0
+            ),
+            "semantic_sections_understood_ratio_mean": _mean(
+                rows, "semantic_sections_understood_ratio"
+            ),
+            **{
+                f"dim_{key}_mean": _mean(rows, f"dim_{key}")
+                for key in DIMENSION_KEYS
+            },
             "readability_median_word_count": _median(rows, "word_count"),
             "readability_avg_words_per_sentence_median": _median(
                 rows, "readability_avg_words_per_sentence"
@@ -488,7 +557,7 @@ def write_stage_summary(path: Path, records: Sequence[StageMetricRecord]) -> int
 
 
 def write_semantic_reasons(path: Path, records: Sequence[StageMetricRecord]) -> int:
-    """Persist the semantic scores and reasons, which CSV cannot carry well."""
+    """Persist the structured semantic verdicts, which CSV cannot carry well."""
     payload = [
         {
             "run_id": record.run_id,
@@ -499,7 +568,23 @@ def write_semantic_reasons(path: Path, records: Sequence[StageMetricRecord]) -> 
             "language_code": record.deterministic.get("language_code"),
             "semantic_score": record.semantic.get("semantic_score"),
             "semantic_delta": record.deltas.get("semantic_score"),
-            "semantic_reason": record.semantic.get("semantic_reason"),
+            "semantic_summary": record.semantic.get("semantic_summary"),
+            "semantic_weakest_section_id": record.semantic.get("semantic_weakest_section_id"),
+            "semantic_weakest_section_score": record.semantic.get(
+                "semantic_weakest_section_score"
+            ),
+            "semantic_critical_failure_count": record.semantic.get(
+                "semantic_critical_failure_count"
+            ),
+            "semantic_sections_understood_ratio": record.semantic.get(
+                "semantic_sections_understood_ratio"
+            ),
+            "semantic_issue_counts": record.semantic.get("semantic_issue_counts"),
+            "semantic_issues": record.semantic.get("semantic_issues"),
+            "semantic_sections": record.semantic.get("semantic_sections"),
+            "semantic_revision_priorities": record.semantic.get(
+                "semantic_revision_priorities"
+            ),
             "semantic_error": record.semantic.get("semantic_error"),
         }
         for record in records

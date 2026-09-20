@@ -13,6 +13,7 @@ from evaluation.pipeline import (
 )
 from evaluation.reporting import promote_formulas
 from evaluation.reporting.results import DELTA_KEYS, compute_deltas
+from evaluation.tests.conftest import stub_evaluation_payload
 
 
 def test_promote_formulas_exposes_the_cross_language_formulas() -> None:
@@ -116,7 +117,9 @@ def test_recompute_restores_semantic_deltas(populated_project, tmp_path) -> None
         )
     )
     scores = iter([9, 8, 9, 8, 9, 8])
-    judge._chat = lambda _prompt: {"score": next(scores), "reason": "stub"}  # type: ignore[method-assign]
+    payloads = [stub_evaluation_payload(next(scores)) for _ in range(6)]
+    remaining = iter(payloads)
+    judge._chat = lambda _prompt: next(remaining)  # type: ignore[method-assign]
 
     runs = [run for run in discover_runs(populated_project) if run.run_id == "tech-bi-daily-20260101"]
     result = run_deterministic_pass(runs)
@@ -129,4 +132,4 @@ def test_recompute_restores_semantic_deltas(populated_project, tmp_path) -> None
     recompute_deltas(reloaded)
     scored = [record for record in reloaded if record.semantic_score is not None]
     assert scored[0].deltas.get("semantic_score") is None
-    assert scored[1].deltas["semantic_score"] == pytest.approx(-0.1)
+    assert scored[1].deltas["semantic_score"] == pytest.approx(-1.0)

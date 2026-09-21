@@ -6,9 +6,15 @@
     python -m evaluation semantic --last-runs 3
     python -m evaluation report
     python -m evaluation all --last-runs 3
+    python -m evaluation feedback --run-id R --from-stage voice-edit --to-stage final-polish
 
 Every command is read-only with respect to ``.digest-runs`` and the production
 pipeline. Outputs are written under ``evaluation-results/``.
+
+Argument parsing and validation are handled by Typer. The command handlers are
+unchanged: each still receives one attribute bag and returns an exit code, and
+the Typer layer only resolves options and turns that code into an exit status.
+``argparse`` is still imported, but only for ``Namespace`` — see ``_resolve``.
 """
 
 from __future__ import annotations
@@ -16,7 +22,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from typing import Any, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Annotated, Any, Callable, List, Optional, Sequence
+
+import typer
 
 from .config import ProjectPaths, default_paths, load_judge_config
 from .deterministic.structure import StructureThresholds
@@ -58,156 +68,160 @@ def _log(message: str) -> None:
     print(message, file=sys.stderr, flush=True)
 
 
-def _add_common_options(parser: argparse.ArgumentParser) -> None:
-    """Options accepted both before and after the subcommand.
+# --------------------------------------------------------------------------- #
+# Option declarations and option resolution
+# --------------------------------------------------------------------------- #
+#
+# Typer parses and validates the arguments. The command bodies below are
+# unchanged: each still receives a single attribute bag and returns an exit code.
+#
+# The common options are declared twice on purpose — once on the group callback,
+# so they may precede the subcommand, and once on each command, so they may
+# follow it — and ``_resolve`` lets the command-level value win. Both positions
+# have to keep working, because ``evaluation --results-dir X semantic`` is the
+# documented invocation and a single declaration can only support one of them.
 
-    They are defined on the root parser and repeated on each subparser via
-    ``parents`` so either position works. ``default=SUPPRESS`` is essential:
-    ``_SubParsersAction`` parses into a fresh namespace and copies *every*
-    attribute onto the main one, so a plain default on the subparser copy would
-    overwrite a value the user supplied before the subcommand.
-    """
-    parser.add_argument(
-        "--root",
-        default=argparse.SUPPRESS,
-        help="Project root (defaults to the repository root).",
-    )
-    parser.add_argument(
-        "--results-dir",
-        default=argparse.SUPPRESS,
-        help="Where reports are written.",
-    )
-    parser.add_argument(
-        "--digest",
-        action="append",
-        default=argparse.SUPPRESS,
-        help="Limit to a digest ID.",
-    )
-    parser.add_argument(
-        "--run",
-        action="append",
-        default=argparse.SUPPRESS,
-        help="Limit to a run ID.",
-    )
-    parser.add_argument(
-        "--quiet",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Suppress progress output.",
-    )
+Handler = Callable[[argparse.Namespace, ProjectPaths], int]
 
-
-def _common_parent() -> argparse.ArgumentParser:
-    parent = argparse.ArgumentParser(add_help=False)
-    _add_common_options(parent)
-    return parent
-
-
-def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="python -m evaluation",
-        description=(
-            "Measure historical digest stage artifacts. Read-only: no production "
-            "prompt, stage order, retry or threshold is modified."
-        ),
-    )
-    _add_common_options(parser)
-    common = _common_parent()
-
-    sub = parser.add_subparsers(dest="command", required=True)
-
-    sub.add_parser("discover", parents=[common], help="List the historical corpus and its usability.")
-
-    det = sub.add_parser(
-        "deterministic",
-        parents=[common],
-        help="Run deterministic metrics over all usable artifacts.",
-    )
-    _add_threshold_options(det)
-    _add_selection_options(det, None)
-    det.add_argument("--keep-source-catalog", action="store_true")
-
-    sem = sub.add_parser(
-        "semantic",
-        parents=[common],
-        help="Run one G-Eval call per complete stage output.",
-    )
-    _add_semantic_options(sem)
-
-    noise = sub.add_parser(
-        "noise",
-        parents=[common],
-        help="Repeat G-Eval on a small sample to measure noise.",
-    )
-    _add_semantic_options(noise)
-    noise.add_argument("--repeats", type=int, default=3)
-
-    sub.add_parser("report", parents=[common], help="Render report.md from previously written results.")
-
-    everything = sub.add_parser(
-        "all", parents=[common], help="deterministic + noise + semantic + report."
-    )
-    _add_threshold_options(everything)
-    _add_semantic_options(everything)
-    everything.add_argument("--keep-source-catalog", action="store_true")
-    everything.add_argument("--repeats", type=int, default=3)
-
-    fb = sub.add_parser(
-        "feedback",
-        parents=[common],
-        help="Compare two stage artifacts with the production-shaped quality API.",
-    )
-    fb.add_argument("--run-id", required=True)
-    fb.add_argument("--from-stage", required=True)
-    fb.add_argument("--to-stage", required=True)
-    fb.add_argument("--no-semantic", action="store_true")
-    fb.add_argument("--band", type=float, default=None)
-
-    return parser
-
-
-def _add_threshold_options(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--long-sentence-threshold", type=int, default=25)
-    parser.add_argument("--very-long-sentence-threshold", type=int, default=35)
-
-
-def _add_selection_options(parser: argparse.ArgumentParser, default: int | None) -> None:
-    parser.add_argument(
-        "--last-runs",
-        type=int,
-        default=default,
-        help=(
-            "Only the latest N complete runs per digest "
-            f"({'all available' if default is None else f'default {default}'})."
-        ),
-    )
-
-
-def _add_semantic_options(parser: argparse.ArgumentParser) -> None:
-    _add_selection_options(parser, 3)
-    parser.add_argument("--limit", type=int, default=None, help="Cap the number of artifacts evaluated.")
-    parser.add_argument("--threshold", type=float, default=None, help="G-Eval threshold (leave unset).")
-    parser.add_argument(
+RootOption = Annotated[
+    Optional[str],
+    typer.Option("--root", help="Project root (defaults to the repository root)."),
+]
+ResultsDirOption = Annotated[
+    Optional[str],
+    typer.Option("--results-dir", help="Where reports are written."),
+]
+DigestOption = Annotated[
+    Optional[List[str]],
+    typer.Option("--digest", help="Limit to a digest ID. Repeatable."),
+]
+RunOption = Annotated[
+    Optional[List[str]],
+    typer.Option("--run", help="Limit to a run ID. Repeatable."),
+]
+QuietOption = Annotated[bool, typer.Option("--quiet", help="Suppress progress output.")]
+LongSentenceOption = Annotated[
+    int,
+    typer.Option("--long-sentence-threshold", help="Words in a sentence counted as long."),
+]
+VeryLongSentenceOption = Annotated[
+    int,
+    typer.Option("--very-long-sentence-threshold", help="Words counted as very long."),
+]
+KeepCatalogOption = Annotated[
+    bool,
+    typer.Option(
+        "--keep-source-catalog",
+        help="Keep the source catalog in the deterministic metrics.",
+    ),
+]
+LastRunsOption = Annotated[
+    Optional[int],
+    typer.Option("--last-runs", help="Only the latest N complete runs per digest."),
+]
+LimitOption = Annotated[
+    Optional[int],
+    typer.Option("--limit", help="Cap the number of artifacts evaluated."),
+]
+ThresholdOption = Annotated[
+    Optional[float],
+    typer.Option("--threshold", help="G-Eval threshold. Leave unset."),
+]
+IncludeCatalogOption = Annotated[
+    bool,
+    typer.Option(
         "--include-source-catalog",
-        action="store_true",
-        help="Include the bibliographic source catalog in the semantic input.",
-    )
-    parser.add_argument("--judge-verbose", action="store_true")
-    parser.add_argument(
-        "--comparison",
-        action="store_true",
-        help=(
-            "Also run comparison mode over the closing stages (one extra judge call "
-            "per run). Not used in production."
-        ),
-    )
-    parser.add_argument("--comparison-from", default="voice-edit")
-    parser.add_argument("--comparison-to", default="final-polish")
-    parser.add_argument(
-        "--calibration",
-        action="store_true",
-        help="Check the human calibration set against the v3 results (no extra judge calls).",
-    )
+        help="Include the source catalog in the semantic input.",
+    ),
+]
+JudgeVerboseOption = Annotated[
+    bool,
+    typer.Option("--judge-verbose", help="Log each judge request."),
+]
+ComparisonOption = Annotated[
+    bool,
+    typer.Option("--comparison", help="Also run comparison mode over the closing stages."),
+]
+ComparisonFromOption = Annotated[
+    str,
+    typer.Option("--comparison-from", help="Stage to compare from."),
+]
+ComparisonToOption = Annotated[
+    str,
+    typer.Option("--comparison-to", help="Stage to compare to."),
+]
+CalibrationOption = Annotated[
+    bool,
+    typer.Option("--calibration", help="Check the human calibration set. No extra judge calls."),
+]
+RepeatsOption = Annotated[
+    int,
+    typer.Option("--repeats", help="Repeat each sampled artifact this many times."),
+]
+BandOption = Annotated[
+    Optional[float],
+    typer.Option("--band", help="Noise band used by the feedback comparison."),
+]
+
+
+@dataclass(frozen=True)
+class GlobalOptions:
+    """Options supplied before the subcommand."""
+
+    root: str | None = None
+    results_dir: str | None = None
+    digest: tuple[str, ...] = ()
+    run: tuple[str, ...] = ()
+    quiet: bool = False
+
+
+def _resolve(
+    given: GlobalOptions | None,
+    *,
+    root: str | None = None,
+    results_dir: str | None = None,
+    digest: Sequence[str] = (),
+    run: Sequence[str] = (),
+    quiet: bool = False,
+    **extra: Any,
+) -> argparse.Namespace:
+    """Merge the pre-subcommand options with the command's own into one bag.
+
+    A command-level value wins; otherwise the global one is used. ``argparse``'s
+    parser is gone, but ``Namespace`` is kept as the container because that is
+    exactly what it is — a plain attribute bag — and reusing it keeps every
+    handler and helper below byte-identical.
+    """
+    base = given or GlobalOptions()
+    values: dict[str, Any] = {
+        "root": root if root is not None else base.root,
+        "results_dir": results_dir if results_dir is not None else base.results_dir,
+        # ``or ()`` twice: a repeatable option is None when unset, and an empty
+        # list means "not given here", so either source can end up empty and the
+        # bag must still hold a list rather than None.
+        "digest": list(digest or base.digest or ()),
+        "run": list(run or base.run or ()),
+        "quiet": bool(quiet) or base.quiet,
+    }
+    values.update(extra)
+    return argparse.Namespace(**values)
+
+
+def _dispatch(handler: Handler, args: argparse.Namespace) -> int:
+    """Apply the shared preconditions, then run the handler.
+
+    These checks used to run in ``main``. With Typer the subcommand executes
+    before ``main`` regains control, so they move here to keep the same ordering
+    and the same exit code.
+    """
+    paths = _paths(args)
+    if not paths.runner_path.is_file():
+        print(f"Pipeline definition not found: {paths.runner_path}", file=sys.stderr)
+        return 2
+    if not paths.runs_dir.is_dir():
+        print(f"No historical runs found at {paths.runs_dir}", file=sys.stderr)
+        return 2
+    return handler(args, paths)
 
 
 def _paths(args: argparse.Namespace) -> ProjectPaths:
@@ -726,29 +740,299 @@ def cmd_feedback(args: argparse.Namespace, paths: ProjectPaths) -> int:
     return 0
 
 
-COMMANDS = {
-    "discover": cmd_discover,
-    "deterministic": cmd_deterministic,
-    "semantic": cmd_semantic,
-    "noise": cmd_noise,
-    "report": cmd_report,
-    "all": cmd_all,
-    "feedback": cmd_feedback,
-}
+# --------------------------------------------------------------------------- #
+# Typer surface
+# --------------------------------------------------------------------------- #
+#
+# Each command resolves its options into the bag its handler expects and then
+# raises ``typer.Exit`` carrying the handler's return value, so the exit codes the
+# handlers already produce reach the shell.
+#
+# There is no ``COMMANDS`` mapping any more: the registry below is the list of
+# commands, and Typer uses it to build ``--help``.
+
+app = typer.Typer(
+    name="evaluation",
+    help=(
+        "Measure historical digest stage artifacts. Read-only: no production "
+        "prompt, stage order, retry or threshold is modified."
+    ),
+    no_args_is_help=True,
+    add_completion=False,
+    # The judge configuration holds the API key, and it sits in the locals of any
+    # frame that fails a judge call. Never render locals in a traceback.
+    pretty_exceptions_show_locals=False,
+)
+
+
+def _globals(ctx: typer.Context) -> GlobalOptions:
+    """The options captured by the group callback, if it ran."""
+    return ctx.obj if isinstance(ctx.obj, GlobalOptions) else GlobalOptions()
+
+
+@app.callback()
+def _group(
+    ctx: typer.Context,
+    root: RootOption = None,
+    results_dir: ResultsDirOption = None,
+    digest: DigestOption = None,
+    run: RunOption = None,
+    quiet: QuietOption = False,
+) -> None:
+    """Capture the options given before the subcommand."""
+    ctx.obj = GlobalOptions(
+        root=root,
+        results_dir=results_dir,
+        digest=tuple(digest or ()),
+        run=tuple(run or ()),
+        quiet=quiet,
+    )
+
+
+@app.command()
+def discover(
+    ctx: typer.Context,
+    root: RootOption = None,
+    results_dir: ResultsDirOption = None,
+    digest: DigestOption = None,
+    run: RunOption = None,
+    quiet: QuietOption = False,
+) -> None:
+    """List the historical corpus and its usability."""
+    args = _resolve(
+        _globals(ctx),
+        root=root,
+        results_dir=results_dir,
+        digest=digest or (),
+        run=run or (),
+        quiet=quiet,
+    )
+    raise typer.Exit(_dispatch(cmd_discover, args))
+
+
+@app.command()
+def deterministic(
+    ctx: typer.Context,
+    root: RootOption = None,
+    results_dir: ResultsDirOption = None,
+    digest: DigestOption = None,
+    run: RunOption = None,
+    quiet: QuietOption = False,
+    long_sentence_threshold: LongSentenceOption = 25,
+    very_long_sentence_threshold: VeryLongSentenceOption = 35,
+    last_runs: LastRunsOption = None,
+    keep_source_catalog: KeepCatalogOption = False,
+) -> None:
+    """Run deterministic metrics over all usable artifacts."""
+    args = _resolve(
+        _globals(ctx),
+        root=root,
+        results_dir=results_dir,
+        digest=digest or (),
+        run=run or (),
+        quiet=quiet,
+        long_sentence_threshold=long_sentence_threshold,
+        very_long_sentence_threshold=very_long_sentence_threshold,
+        last_runs=last_runs,
+        keep_source_catalog=keep_source_catalog,
+    )
+    raise typer.Exit(_dispatch(cmd_deterministic, args))
+
+
+@app.command()
+def semantic(
+    ctx: typer.Context,
+    root: RootOption = None,
+    results_dir: ResultsDirOption = None,
+    digest: DigestOption = None,
+    run: RunOption = None,
+    quiet: QuietOption = False,
+    last_runs: LastRunsOption = 3,
+    limit: LimitOption = None,
+    threshold: ThresholdOption = None,
+    include_source_catalog: IncludeCatalogOption = False,
+    judge_verbose: JudgeVerboseOption = False,
+    comparison: ComparisonOption = False,
+    comparison_from: ComparisonFromOption = "voice-edit",
+    comparison_to: ComparisonToOption = "final-polish",
+    calibration: CalibrationOption = False,
+) -> None:
+    """Run one G-Eval call per complete stage output."""
+    args = _resolve(
+        _globals(ctx),
+        root=root,
+        results_dir=results_dir,
+        digest=digest or (),
+        run=run or (),
+        quiet=quiet,
+        last_runs=last_runs,
+        limit=limit,
+        threshold=threshold,
+        include_source_catalog=include_source_catalog,
+        judge_verbose=judge_verbose,
+        comparison=comparison,
+        comparison_from=comparison_from,
+        comparison_to=comparison_to,
+        calibration=calibration,
+    )
+    raise typer.Exit(_dispatch(cmd_semantic, args))
+
+
+@app.command()
+def noise(
+    ctx: typer.Context,
+    root: RootOption = None,
+    results_dir: ResultsDirOption = None,
+    digest: DigestOption = None,
+    run: RunOption = None,
+    quiet: QuietOption = False,
+    last_runs: LastRunsOption = 3,
+    limit: LimitOption = None,
+    threshold: ThresholdOption = None,
+    include_source_catalog: IncludeCatalogOption = False,
+    judge_verbose: JudgeVerboseOption = False,
+    comparison: ComparisonOption = False,
+    comparison_from: ComparisonFromOption = "voice-edit",
+    comparison_to: ComparisonToOption = "final-polish",
+    calibration: CalibrationOption = False,
+    repeats: RepeatsOption = 3,
+) -> None:
+    """Repeat G-Eval on a small sample to measure noise."""
+    args = _resolve(
+        _globals(ctx),
+        root=root,
+        results_dir=results_dir,
+        digest=digest or (),
+        run=run or (),
+        quiet=quiet,
+        last_runs=last_runs,
+        limit=limit,
+        threshold=threshold,
+        include_source_catalog=include_source_catalog,
+        judge_verbose=judge_verbose,
+        comparison=comparison,
+        comparison_from=comparison_from,
+        comparison_to=comparison_to,
+        calibration=calibration,
+        repeats=repeats,
+    )
+    raise typer.Exit(_dispatch(cmd_noise, args))
+
+
+@app.command()
+def report(
+    ctx: typer.Context,
+    root: RootOption = None,
+    results_dir: ResultsDirOption = None,
+    digest: DigestOption = None,
+    run: RunOption = None,
+    quiet: QuietOption = False,
+) -> None:
+    """Render report.md from previously written results."""
+    args = _resolve(
+        _globals(ctx),
+        root=root,
+        results_dir=results_dir,
+        digest=digest or (),
+        run=run or (),
+        quiet=quiet,
+    )
+    raise typer.Exit(_dispatch(cmd_report, args))
+
+
+@app.command()
+def all(
+    ctx: typer.Context,
+    root: RootOption = None,
+    results_dir: ResultsDirOption = None,
+    digest: DigestOption = None,
+    run: RunOption = None,
+    quiet: QuietOption = False,
+    long_sentence_threshold: LongSentenceOption = 25,
+    very_long_sentence_threshold: VeryLongSentenceOption = 35,
+    last_runs: LastRunsOption = 3,
+    limit: LimitOption = None,
+    threshold: ThresholdOption = None,
+    include_source_catalog: IncludeCatalogOption = False,
+    judge_verbose: JudgeVerboseOption = False,
+    comparison: ComparisonOption = False,
+    comparison_from: ComparisonFromOption = "voice-edit",
+    comparison_to: ComparisonToOption = "final-polish",
+    calibration: CalibrationOption = False,
+    keep_source_catalog: KeepCatalogOption = False,
+    repeats: RepeatsOption = 3,
+) -> None:
+    """Deterministic metrics, noise, semantic scoring, calibration and the report."""
+    args = _resolve(
+        _globals(ctx),
+        root=root,
+        results_dir=results_dir,
+        digest=digest or (),
+        run=run or (),
+        quiet=quiet,
+        long_sentence_threshold=long_sentence_threshold,
+        very_long_sentence_threshold=very_long_sentence_threshold,
+        last_runs=last_runs,
+        limit=limit,
+        threshold=threshold,
+        include_source_catalog=include_source_catalog,
+        judge_verbose=judge_verbose,
+        comparison=comparison,
+        comparison_from=comparison_from,
+        comparison_to=comparison_to,
+        calibration=calibration,
+        keep_source_catalog=keep_source_catalog,
+        repeats=repeats,
+    )
+    raise typer.Exit(_dispatch(cmd_all, args))
+
+
+@app.command()
+def feedback(
+    ctx: typer.Context,
+    run_id: Annotated[str, typer.Option("--run-id", help="Run to compare within.")],
+    from_stage: Annotated[str, typer.Option("--from-stage", help="Stage to compare from.")],
+    to_stage: Annotated[str, typer.Option("--to-stage", help="Stage to compare to.")],
+    no_semantic: Annotated[
+        bool,
+        typer.Option("--no-semantic", help="Skip the judge call; deterministic metrics only."),
+    ] = False,
+    band: BandOption = None,
+    root: RootOption = None,
+    results_dir: ResultsDirOption = None,
+    digest: DigestOption = None,
+    run: RunOption = None,
+    quiet: QuietOption = False,
+) -> None:
+    """Compare two stage artifacts with the production-shaped quality API."""
+    args = _resolve(
+        _globals(ctx),
+        root=root,
+        results_dir=results_dir,
+        digest=digest or (),
+        run=run or (),
+        quiet=quiet,
+        run_id=run_id,
+        from_stage=from_stage,
+        to_stage=to_stage,
+        no_semantic=no_semantic,
+        band=band,
+    )
+    raise typer.Exit(_dispatch(cmd_feedback, args))
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = _build_parser()
-    args = parser.parse_args(argv)
-    paths = _paths(args)
-    if not paths.runner_path.is_file():
-        print(f"Pipeline definition not found: {paths.runner_path}", file=sys.stderr)
-        return 2
-    if not paths.runs_dir.is_dir():
-        print(f"No historical runs found at {paths.runs_dir}", file=sys.stderr)
-        return 2
-    handler = COMMANDS[args.command]
-    return handler(args, paths)
+    """Run the CLI and return its exit code.
+
+    Click is left in standalone mode so it renders usage errors and exits with
+    the documented codes; ``SystemExit`` is converted back into a return value so
+    ``python -m evaluation`` and programmatic callers keep the old contract.
+    """
+    try:
+        app(args=list(argv) if argv is not None else None)
+    except SystemExit as exc:  # pragma: no cover - click always exits standalone
+        return int(exc.code) if isinstance(exc.code, int) else 0
+    return 0
 
 
 if __name__ == "__main__":  # pragma: no cover

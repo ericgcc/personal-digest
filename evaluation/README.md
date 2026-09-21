@@ -79,8 +79,12 @@ Common options work before or after the subcommand:
 python -m evaluation all --digest tech-bi-daily --last-runs 2
 python -m evaluation all --run tech-bi-daily-20260918-1104
 python -m evaluation all --last-runs 1 --limit 12        # cap judge spend
-python -m evaluation all --drill-down --drill-down-stage clarity-edit
+python -m evaluation all --comparison --comparison-from voice-edit --comparison-to final-polish
 ```
+
+The interface is built with Typer, so `python -m evaluation <command> --help` is
+the authoritative list of a command's options. Follow a subcommand with `--help`
+to see exactly what it accepts, including which options it ignores.
 
 | Option | Effect |
 | --- | --- |

@@ -67,10 +67,11 @@ requires the reader to silently supply missing context.
 - A section that requires the reader's own domain knowledge to reconstruct the writer's \
 intended explanation is not fully self-contained.
 - **"Understandable eventually" is not the same as "understandable on first read."**
-- Do **not** use your own domain knowledge to silently fill explanatory gaps. You probably \
-already know what asyncio.gather, MCP, embeddings, a semantic layer, or a task group are. \
-That knowledge is not evidence that the text explained them. Evaluate whether the text \
-itself establishes the context its claims depend on.
+- Do **not** use your own domain knowledge to silently fill explanatory gaps. Whatever \
+specialised subject matter you already know is **not** evidence that the text explained \
+it. Evaluate whether the text itself establishes the context its claims depend on. This \
+instruction names no domain on purpose: apply it to whatever the artifact in front of you \
+is about.
 - Specialized vocabulary, domain specificity, a long sentence, and normal intellectual \
 effort are **not** defects. The defect is missing explanation, not sophistication."""
 
@@ -156,10 +157,43 @@ Citation markers such as `[12]` are normal reader-facing navigation and are **no
 defect. Do not penalize citation syntax unless it genuinely makes a sentence confusing."""
 
 
+#: Used when the caller supplies no reader contract. Callers in the v2 pipeline
+#: pass the canonical ``system/contracts/reader-contract.md`` text instead, so the
+#: reader definition lives in the Digest System rather than being duplicated here.
+DEFAULT_READER_CONTRACT = """\
+You are an intelligent, well-read generalist reader who has **not** read any of the source \
+articles this digest was built from. You cannot consult them. Judge only what the digest \
+itself tells you. Do not assume a domain, a profession, a field of study, a seniority \
+level, a toolchain, or familiarity with any particular institution, product, or debate \
+unless the digest itself establishes it."""
+
+
 def _style_rubric(style: str | None) -> str:
     if not style:
         return DEFAULT_STYLE_RUBRIC
     return STYLE_RUBRICS.get(style.strip().lower(), DEFAULT_STYLE_RUBRIC)
+
+
+def _role_section(role_contract: str | None) -> str:
+    """Render the caller-supplied role contract, when there is one.
+
+    The production pipeline owns the role instruction for each stage; supplying it
+    here keeps the stage contract in one canonical place instead of duplicating it
+    into the prompt templates.
+    """
+    if role_contract and role_contract.strip():
+        return f"## Your role in this review\n\n{role_contract.strip()}\n"
+    return ""
+
+
+def _reader_section(reader_contract: str | None) -> str:
+    """Render the reader definition the caller supplied, or the neutral default."""
+    text = (
+        reader_contract.strip()
+        if reader_contract and reader_contract.strip()
+        else DEFAULT_READER_CONTRACT
+    )
+    return f"## Your reader\n\n{text}"
 
 
 def render_sections(sections: list[DigestSection], *, max_words_per_section: int | None = None) -> str:
@@ -191,6 +225,8 @@ def absolute_prompt(
     sections: list[DigestSection],
     style: str | None,
     language: str | None = None,
+    role_contract: str | None = None,
+    reader_contract: str | None = None,
 ) -> str:
     """Build the absolute-mode prompt: assess one artifact."""
     style_block = _style_rubric(style)
@@ -205,12 +241,8 @@ def absolute_prompt(
 
     return f"""\
 You are evaluating a personal digest as a demanding but fair editorial reader.
-
-## Your reader
-
-You are an intelligent, well-read generalist reader who has **not** read any of the source \
-articles this digest was built from. You cannot consult them. Judge only what the digest \
-itself tells you.
+{_role_section(role_contract)}
+{_reader_section(reader_contract)}
 {language_note}
 
 {style_block}
@@ -309,6 +341,8 @@ def comparison_prompt(
     language: str | None = None,
     before_label: str = "BEFORE",
     after_label: str = "AFTER",
+    role_contract: str | None = None,
+    reader_contract: str | None = None,
 ) -> str:
     """Build the comparison-mode prompt: one call, before and after."""
     style_block = _style_rubric(style)
@@ -322,11 +356,8 @@ def comparison_prompt(
     return f"""\
 You are evaluating whether an editorial edit improved, preserved, or damaged a digest's \
 reader-facing quality.
-
-## Your reader
-
-You are an intelligent, well-read generalist reader who has **not** read any of the source \
-articles. You cannot consult them.
+{_role_section(role_contract)}
+{_reader_section(reader_contract)}
 {language_note}
 
 {style_block}

@@ -31,6 +31,16 @@ DEFAULT_JUDGE_TEMPERATURE = 0.0
 DEFAULT_RETRY_ATTEMPTS = 3
 DEFAULT_RETRY_BASE_DELAY_MS = 2000
 
+#: Output ceiling for one judge request.
+#:
+#: The provider counts reasoning tokens against this ceiling, exactly as the stage runner
+#: learned the hard way. A large structured assessment — a full developmental review of a
+#: multi-unit digest — can spend ten thousand tokens reasoning and then have none left for
+#: the answer, which arrives as *empty content* rather than as an error. The ceiling must
+#: therefore cover reasoning plus the whole response. The model still emits only what it
+#: needs; this is a ceiling, not a target, so headroom costs nothing.
+DEFAULT_JUDGE_MAX_TOKENS = 32_768
+
 
 def _disable_telemetry() -> None:
     """Opt out of DeepEval telemetry; historical analysis must not phone home."""
@@ -140,6 +150,7 @@ class JudgeConfig:
     retry_attempts: int
     retry_base_delay_ms: int
     key_source: str
+    max_tokens: int = DEFAULT_JUDGE_MAX_TOKENS
 
     @property
     def configured(self) -> bool:
@@ -153,6 +164,7 @@ class JudgeConfig:
             "judge_endpoint": self.endpoint,
             "judge_configured": self.configured,
             "judge_key_source": self.key_source,
+            "judge_max_tokens": self.max_tokens,
         }
 
 
@@ -216,5 +228,6 @@ def load_judge_config(
         retry_base_delay_ms=lookup_int(
             "DIGEST_EVAL_JUDGE_RETRY_BASE_DELAY_MS", DEFAULT_RETRY_BASE_DELAY_MS
         ),
+        max_tokens=lookup_int("DIGEST_EVAL_JUDGE_MAX_TOKENS", DEFAULT_JUDGE_MAX_TOKENS),
         key_source=key_source,
     )

@@ -271,7 +271,9 @@ conda run -n digest-eval python -m pytest evaluation/tests/test_integration_smok
 
 ## Production reuse
 
-`evaluation/quality.py` is the seam for later:
+There are now two seams, and they are different in kind.
+
+**In-process** (`evaluation/quality.py`) is for a Python caller:
 
 ```python
 before = evaluate_quality(input_text, language)
@@ -280,11 +282,42 @@ after = evaluate_quality(output, language)
 feedback = format_revision_feedback(compare_quality(before, after, band=band))
 ```
 
-`evaluate_deterministic` and `evaluate_quality` accept any text and have no
-dependency on `.digest-runs`. `evaluation/reporting/feedback.py` renders concise
-revision feedback — the semantic reason, the meaningful regressions, the outliers
-and targets derived from historically good outputs — rather than dumping every
-formula. Neither is called by the production pipeline.
+**Cross-process** (`evaluation/adapters/`) is for the Node orchestrator. The editorial
+pipeline is orchestrated in JavaScript, so the evaluator is reached through a JSON command
+surface rather than an import:
+
+```powershell
+python -m evaluation.adapters evaluate-developmental-review --input request.json --output result.json
+python -m evaluation.adapters compare-reader-quality       --input request.json --output result.json
+python -m evaluation.adapters capabilities
+```
+
+`evaluation/adapters/cli.py` documents the request and result shapes. Requests name
+artifacts by path (preferred, because the run directory is then the audit trail) or inline
+by value. The `capabilities` command reports the interpreter, the installed evaluation
+libraries, the judge configuration **without the credential**, the versioned definitions,
+and the canonical problem-type vocabulary with its source.
+
+Two properties of that boundary are deliberate:
+
+* **Exit codes separate "ran" from "succeeded."** A command that ran but could not produce
+  an assessment exits 0 with `ok: false`. An unavailable judge is a degraded condition the
+  pipeline handles by carrying the last valid artifact forward, not a crash, and collapsing
+  the two would make a routine degradation look like an infrastructure failure.
+* **`--prompt-output` writes the exact prompt sent to the judge.** The orchestrator stores
+  it beside the request and result, so an evaluation is reproducible from its own artifacts
+  without a second call.
+
+`evaluation/semantic/developmental.py` is the developmental reviewer: it diagnoses a draft
+against its frame and returns typed, located issues in canonical writing-operation problem
+types. Its response schema has **no prose field**, so a stage defined by not rewriting
+cannot leak a rewrite. `evaluation/adapters/taxonomy.py` owns the vocabulary resolution and
+the mapping from the reader-quality evaluator's own issue types onto it.
+
+The reader-quality prompts are **corpus-neutral**: they no longer name any example
+technology, and the reader definition and stage role are supplied by the caller
+(`system/contracts/reader-contract.md` and the stage contract) rather than hardcoded.
+`EVALUATION_STEPS_VERSION` records that change.
 
 ## Module layout
 
@@ -293,14 +326,26 @@ evaluation/
   version.py          versioned evaluation definition
   languages.py        project language labels ⇄ ReadSight codes
   config.py           paths, .env loading, judge configuration
+  adapters/           JSON command surface and problem-type taxonomy for the Node
+                      orchestrator; developmental-review entry point
   historical/         run discovery, stage model, run-summary/frontmatter parsing
   preprocessing/      deterministic and reader-facing prose normalization
   deterministic/      ReadSight integration and structural metrics
   semantic/           G-Eval definition, DeepSeek adapter, noise experiment,
-                      fractional-score prompt template
+                      fractional-score prompt template, developmental reviewer
   reporting/          records, aggregation, analysis, report, feedback formatter
   quality.py          production-shaped evaluate_quality / compare_quality
   pipeline.py         deterministic / semantic / noise / drill-down passes
   cli.py              command line
   tests/              unit tests plus an opt-in integration smoke test
 ```
+
+### Stage discovery and the two pipelines
+
+`historical/run_loader.parse_stage_specs` reads the ordered `STAGES` declaration out of
+`tools/digest_runner.mjs`. That declaration is the **v1** pipeline and is deliberately
+unchanged, so the historical corpus keeps its meaning. v2's stages live in
+`tools/pipeline/v2.mjs` and are not in that declaration: a v2 run is discovered through its
+own `pipeline.json` and `stage-records.json`, while the historical evaluator continues to
+reason about the v1 corpus it was built for. `tools/verify-run.mjs --pipeline v2` validates
+a v2 run's stage set.

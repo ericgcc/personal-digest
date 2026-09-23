@@ -30,7 +30,7 @@ import asyncio
 import traceback
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, TypeVar
+from typing import Any, Callable, TypeVar
 
 from deepeval.metrics import BaseMetric
 from deepeval.test_case import LLMTestCase, SingleTurnParams
@@ -271,6 +271,8 @@ class ReaderQualityMetric(BaseMetric):
         sections: list[DigestSection] | None = None,
         threshold: float | None = None,
         verbose_mode: bool = False,
+        role_contract: str | None = None,
+        reader_contract: str | None = None,
     ) -> None:
         self.judge = judge
         self.style = style
@@ -278,6 +280,10 @@ class ReaderQualityMetric(BaseMetric):
         self.sections = list(sections or [])
         self.threshold = threshold
         self.verbose_mode = verbose_mode
+        # Production supplies the canonical stage contract and reader contract; the
+        # defaults in ``prompts`` keep the evaluator usable standalone.
+        self.role_contract = role_contract
+        self.reader_contract = reader_contract
         self.score: float | None = None
         self.reason: str | None = None
         self.success: bool | None = None
@@ -292,6 +298,8 @@ class ReaderQualityMetric(BaseMetric):
             sections=self.sections,
             style=self.style,
             language=self.language,
+            role_contract=self.role_contract,
+            reader_contract=self.reader_contract,
         )
 
     def measure(self, test_case: LLMTestCase, *args: Any, **kwargs: Any) -> float:
@@ -436,6 +444,9 @@ def evaluate_reader_quality(
     section_options: SectionOptions | None = None,
     threshold: float | None = None,
     verbose: bool = False,
+    role_contract: str | None = None,
+    reader_contract: str | None = None,
+    on_prompt: Callable[[str], None] | None = None,
 ) -> SemanticResult:
     """Absolute mode: assess one digest artifact with exactly one judge request."""
     active_judge = judge or DeepSeekJudge(load_judge_config())
@@ -459,7 +470,14 @@ def evaluate_reader_quality(
         sections=sections,
         threshold=threshold,
         verbose_mode=verbose,
+        role_contract=role_contract,
+        reader_contract=reader_contract,
     )
+    # ``on_prompt`` exists so the orchestrator can persist the exact request that
+    # was sent. The prompt is rebuilt from the same inputs ``measure`` will use,
+    # by the same function, so the audit copy cannot drift from the real one.
+    if on_prompt is not None:
+        on_prompt(metric.build_prompt(digest.to_prompt_text()))
     try:
         metric.measure(
             LLMTestCase(
@@ -512,6 +530,9 @@ def evaluate_regression(
     before_label: str = "BEFORE",
     after_label: str = "AFTER",
     threshold: float | None = None,
+    role_contract: str | None = None,
+    reader_contract: str | None = None,
+    on_prompt: Callable[[str], None] | None = None,
 ) -> SemanticResult:
     """Comparison mode: before/after regression detection in **one** judge request.
 
@@ -541,7 +562,11 @@ def evaluate_regression(
         language=language,
         before_label=before_label,
         after_label=after_label,
+        role_contract=role_contract,
+        reader_contract=reader_contract,
     )
+    if on_prompt is not None:
+        on_prompt(prompt)
 
     try:
         regression = active_judge.generate(prompt, schema=RegressionEvaluation)

@@ -12,6 +12,15 @@ Bump the relevant constant whenever the thing it names changes:
 * ``SCHEMA_VERSION`` — the structured response schema changes.
 * ``PREPROCESSING_VERSION`` — the prose normalization changes.
 * ``DETERMINISTIC_VERSION`` — the deterministic metric definitions change.
+* ``DEVELOPMENTAL_*`` — the developmental-review definition changes.
+
+``EVALUATION_STEPS_VERSION`` is ``v3.1`` rather than ``v3`` because the
+instruction text changed: the domain examples were removed so the production
+evaluator is corpus-neutral, and the reader definition and the stage's role
+instruction are now supplied by the caller instead of being hardcoded here. The
+schema, rubric, metric identity, and score scale are unchanged, so scores
+produced before and after this change remain comparable — but the change is
+recorded rather than silent, exactly as this module exists to guarantee.
 """
 
 from __future__ import annotations
@@ -20,11 +29,15 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 EVALUATION_ID = "reader_quality_v3"
-EVALUATION_STEPS_VERSION = "v3"
+EVALUATION_STEPS_VERSION = "v3.1-neutral-contracts"
 RUBRIC_VERSION = "v3"
 SCHEMA_VERSION = "v1"
 PREPROCESSING_VERSION = "v2"
 DETERMINISTIC_VERSION = "v1"
+
+DEVELOPMENTAL_REVIEW_ID = "developmental_review_v1"
+DEVELOPMENTAL_STEPS_VERSION = "v1"
+DEVELOPMENTAL_SCHEMA_VERSION = "v1"
 
 #: Decimal places the judge is asked to use for its 0-10 scores. v1 asked for an
 #: integer, which after DeepEval's normalization gave a resolution of 0.10 equal
@@ -65,6 +78,16 @@ def evaluation_definition() -> dict[str, Any]:
         "deterministic_version": DETERMINISTIC_VERSION,
         "semantic_scope": SEMANTIC_SCOPE,
         "score_decimal_places": SCORE_DECIMAL_PLACES,
+    }
+
+
+def developmental_definition() -> dict[str, Any]:
+    """Return the versioned definition of the developmental review."""
+    return {
+        "evaluation_id": DEVELOPMENTAL_REVIEW_ID,
+        "evaluation_steps_version": DEVELOPMENTAL_STEPS_VERSION,
+        "schema_version": DEVELOPMENTAL_SCHEMA_VERSION,
+        "preprocessing_version": PREPROCESSING_VERSION,
     }
 
 

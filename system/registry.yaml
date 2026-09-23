@@ -1,9 +1,14 @@
-version: 7
+version: 8
 
 defaults:
   workflow: system/workflow.md
   style_contract: system/style-contract.md
   editorial_process: system/editorial-process.md
+  editorial_pipeline: system/editorial-pipeline-v2.md
+  stage_contracts: system/contracts
+  reader_contract: system/contracts/reader-contract.md
+  naturalness_contract: system/naturalness-contract.md
+  runtime_config: system/runtime.json
   editorial_base: styles/editorial-base.md
   html_rendering: system/html-rendering.md
   visual_theme: templates/email-theme.html

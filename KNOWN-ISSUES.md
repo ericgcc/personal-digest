@@ -165,3 +165,118 @@ Either have the orchestrator emit a direct Gmail message/thread deep link when n
 ## Resolution notes
 
 *(Move entries here when closed, with the commit and the evidence that closed them.)*
+
+---
+
+## KI-005 — A judge response containing a raw control character was discarded
+
+**Status:** resolved during the v2 migration
+**Component:** evaluator (`evaluation/semantic/judge.py`)
+**Severity:** high — silently loses a whole assessment and misreports the cause
+
+### Observation
+
+Found while running the first v2 historical replay. `developmental-review` degraded with:
+
+```
+JudgeUnavailableError: Judge request failed after 3 attempt(s):
+Expecting ',' delimiter: line 1 column 1264 (char 1263)
+```
+
+The model had responded, and had responded quickly; it emitted a literal newline inside a
+JSON **string value** instead of the `\n` escape. `parse_json_object` tried the text as
+returned, then tried slicing the outermost `{...}`, and both failed — so the response was
+thrown away and reported as an unavailable judge after three identical retries.
+
+### Why it mattered more than it looked
+
+Two compounding faults:
+
+1. **The response was recoverable.** A single unescaped `\n` inside a string is valid-JSON-
+   with-one-character-wrong. The parser had no repair step, so a formatting detail the model
+   cannot see cost the entire assessment.
+2. **The error named the wrong cause.** "Judge request failed after 3 attempt(s)" reads as a
+   connectivity or credential problem, which sends an investigation to the network, the key,
+   and the endpoint. The artifact recorded nothing about what the model actually sent, so
+   the parse failure was indistinguishable from an outage after the fact.
+
+A third, quieter effect: because the retry loop treats `json.JSONDecodeError` as retryable,
+the same malformed request was sent three times at full cost and produced the same result.
+
+### Resolution
+
+* `repair_control_characters` walks the response with a small state machine and escapes raw
+  control characters **inside string literals only**, leaving structural whitespace
+  untouched. `parse_json_object` now tries: as-returned, repaired, then the brace-sliced
+  slice and its repair.
+* `DeepSeekJudge.last_raw_content` retains the response, and a final parse failure raises
+  with the first 300 characters as received. A parse failure now names itself.
+* `evaluation/tests/test_judge_parsing.py` covers the repairs, the cases that must **not** be
+  altered (already-escaped newlines, escaped quotes, pretty-printed JSON), and the excerpt.
+
+### Evidence
+
+The same draft that degraded now returns a full review:
+
+```
+ok: true | issues: 10
+problem types: ["unsupported_connection","overstated_claim","miscalibrated_depth",
+                "unexplained_concept","structural_uniformity","unclear_referent",
+                "missing_context","unclear_sequence","missing_significance"]
+vocabulary source: wops | judge tokens: 30479
+```
+
+### What would settle whether it recurs
+
+Any future `JudgeUnavailableError` should be checked against the recorded excerpt before
+being treated as an outage. If the excerpt shows well-formed JSON, the parser has a new gap;
+if it shows a truncated response, the cause is the output ceiling rather than the parser.
+
+---
+
+## KI-006 — `resume` discarded the earlier stages' audit record
+
+**Status:** resolved during the v2 migration
+**Component:** runner (`tools/pipeline/v2.mjs`)
+**Severity:** medium — the artifacts and the cost record stayed correct, but the audit trail did not
+
+### Observation
+
+After re-running only the `render` stage of a completed v2 replay, `stage-records.json`
+listed one stage instead of ten. The verifier reported the other nine as missing:
+
+```
+ERROR stage:analyze: the stage has no record in stage-records.json
+ERROR stage:frame: the stage has no record in stage-records.json
+...
+```
+
+### Why it mattered
+
+`stage-records.json` is the run's per-stage audit: status, provenance, the context manifest,
+the corpus projection, and any warnings. A resumed run executes part of the pipeline and then
+wrote its own records as the whole file, so the earlier stages' records were replaced by
+nothing. Every artifact was still on disk and the cost accounting was unaffected, because
+both are read from the attempt directories — which is precisely what made the loss easy to
+miss. The record that answers *what did each stage receive, and did it degrade* was gone.
+
+### Resolution
+
+`stage-records.json` is now merged rather than replaced. Executed stages take their new
+record; stages that did not re-run keep the record already on disk; warnings are unioned,
+because a warning from a stage that did not re-run is still true of the artifact being
+described. The file also records the `modes` it has been written in (`run`, `resume`,
+`replay`), so a record assembled across several invocations says so.
+
+### Contributing factor: the verifier read the wrong source first
+
+The defect was found because `verify-replay.mjs` reads `stage-records.json` while
+`verify-run.mjs` reads the attempt directories. The two disagreeing is what surfaced it. That
+disagreement is deliberate and worth keeping: the attempt directories are the primary
+artifact, and the record is a derived summary that must therefore be checked against them.
+
+### What would settle whether it recurs
+
+Any resumed v2 run should show the same stage count in `stage-records.json` as the stage list
+in `pipeline.json`. A mismatch means a record was lost, not that a stage was skipped — a
+skipped stage still has a record, with `status: "skipped"`.

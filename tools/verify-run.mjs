@@ -26,10 +26,27 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const RUNS = ".digest-runs";
-const STAGES = [
-  "analyze", "frame", "draft", "structural-edit", "clarity-edit",
-  "voice-edit", "compression-edit", "final-polish", "render",
-];
+
+// The two pipelines produce different stage sets and artifact names, so the check has to
+// know which one produced the run. The runner writes `pipeline.json`, so the pipeline is
+// recorded rather than inferred from which directories happen to exist; `--pipeline`
+// overrides it for runs that predate the record.
+const PIPELINE_STAGES = {
+  "editorial-pipeline-v1": [
+    ["analyze", "analysis.json"], ["frame", "frame.json"], ["draft", "draft.md"],
+    ["structural-edit", "structural-edit.md"], ["clarity-edit", "clarity-edit.md"],
+    ["voice-edit", "voice-edit.md"], ["compression-edit", "compression-edit.md"],
+    ["final-polish", "final.md"], ["render", "email.html"],
+  ],
+  "editorial-pipeline-v2": [
+    ["analyze", "analysis.json"], ["frame", "frame.json"], ["draft", "draft.md"],
+    ["developmental-review", "review.json"], ["writer-revision", "revision.md"],
+    ["line-edit", "line-edit.md"], ["reader-review", "review.json"],
+    ["copy-verify", "final.md"], ["render", "email.html"],
+  ],
+};
+// `targeted-repair` is optional in v2 and is validated separately.
+const OPTIONAL_STAGE = "targeted-repair";
 
 // Body-length targets, mirroring the Depth model in styles/<style>.md. Word-count styles
 // only; per-entry styles are measured per source and are not budgeted here.
@@ -131,6 +148,26 @@ const runDir = path.join(ROOT, RUNS, runId);
 const stagePath = (stage, ...parts) => path.join(runDir, stage, ...parts);
 const readJson = async (p) => JSON.parse(await readFile(p, "utf8"));
 const readText = async (p) => readFile(p, "utf8");
+const fileExists = async (p) => readFile(p).then(() => true).catch(() => false);
+
+// Resolve which pipeline produced this run before any stage-shaped check runs.
+const pipelineRecord = await readJson(path.join(runDir, "pipeline.json")).catch(() => null);
+const pipeline =
+  option("--pipeline") === "v2" || option("--pipeline") === "editorial-pipeline-v2"
+    ? "editorial-pipeline-v2"
+    : option("--pipeline") === "v1" || option("--pipeline") === "editorial-pipeline-v1"
+      ? "editorial-pipeline-v1"
+      : (pipelineRecord?.pipeline ?? "editorial-pipeline-v1");
+if (pipelineRecord?.pipeline === "editorial-pipeline-v2") {
+  add(OK, "pipeline", `recorded as ${pipelineRecord.pipeline} ${pipelineRecord.pipeline_version ?? ""}`.trim());
+} else if (pipelineRecord) {
+  add(OK, "pipeline", `recorded as ${pipelineRecord.pipeline}`);
+} else {
+  add(SKIP, "pipeline", `no pipeline.json; assuming ${pipeline} (override with --pipeline)`);
+}
+const STAGE_SPECS = PIPELINE_STAGES[pipeline] ?? PIPELINE_STAGES["editorial-pipeline-v1"];
+const STAGES = STAGE_SPECS.map(([name]) => name);
+const declaredArtifact = (stage) => STAGE_SPECS.find(([name]) => name === stage)?.[1] ?? null;
 
 const firstArtifact = async (stage) =>
   (await readdir(stagePath(stage, "output")).catch(() => [])).filter((f) => !f.startsWith("."))[0];
@@ -191,19 +228,39 @@ if (corpus) {
 const artifactNames = {};
 for (const stage of STAGES) {
   try {
+    const expected = declaredArtifact(stage);
     const name = await firstArtifact(stage);
     if (!name) { add(ERROR, `artifact:${stage}`, "output directory is empty"); continue; }
     const info = await stat(stagePath(stage, "output", name));
     if (info.size === 0) { add(ERROR, `artifact:${stage}`, "artifact is empty"); continue; }
     artifactNames[stage] = name;
-    add(OK, `artifact:${stage}`, `${name} (${info.size} bytes)`);
+    add(
+      expected && name !== expected ? WARN : OK,
+      `artifact:${stage}`,
+      expected && name !== expected
+        ? `${name} (${info.size} bytes); ${pipeline} expects ${expected}`
+        : `${name} (${info.size} bytes)`,
+    );
   } catch {
     add(ERROR, `artifact:${stage}`, "missing output directory");
+  }
+}
+// v2's optional repair is validated only when it ran.
+if (pipeline === "editorial-pipeline-v2") {
+  const attempts = await readdir(stagePath(OPTIONAL_STAGE, "attempts")).catch(() => []);
+  if (attempts.length > 1) {
+    add(ERROR, `artifact:${OPTIONAL_STAGE}`, `${attempts.length} attempts recorded; at most one repair pass is permitted`);
+  } else if (await fileExists(stagePath(OPTIONAL_STAGE, "output", "repair.md"))) {
+    add(OK, `artifact:${OPTIONAL_STAGE}`, "one repair pass was produced");
+  } else if (await fileExists(stagePath(OPTIONAL_STAGE, "skipped.json"))) {
+    const skip = await readJson(stagePath(OPTIONAL_STAGE, "skipped.json")).catch(() => null);
+    add(OK, `artifact:${OPTIONAL_STAGE}`, `no repair was needed: ${skip?.reason ?? "recorded as skipped"}`);
   }
 }
 
 // ------------------------------------------------------------------ stage completion
 let fallbacks = 0;
+let degraded = 0;
 for (const stage of STAGES) {
   try {
     const c = await readJson(stagePath(stage, "attempts", "attempt-1", "completed.json"));
@@ -211,19 +268,31 @@ for (const stage of STAGES) {
       add(ERROR, `finish:${stage}`, `finish_reason=${c.finish_reason} (output truncated)`);
     }
   } catch {
-    if (await readFile(stagePath(stage, "fallback-provenance.json"), "utf8").then(() => true).catch(() => false)) {
+    if (await fileExists(stagePath(stage, "fallback-provenance.json"))) {
       fallbacks += 1;
       add(WARN, `finish:${stage}`, "stage was completed by the agent fallback, not the runner");
+    } else if (await fileExists(stagePath(stage, "degraded.json"))) {
+      // v2 degradation is expected behaviour, not a defect: the last valid artifact was
+      // carried forward and reported. It is worth surfacing, not worth failing on.
+      degraded += 1;
+      const detail = await readJson(stagePath(stage, "degraded.json")).catch(() => null);
+      add(WARN, `finish:${stage}`, `stage was degraded and carried forward from ${detail?.carried_forward_from ?? "an earlier stage"}: ${detail?.reason ?? "no reason recorded"}`);
     } else {
       add(WARN, `finish:${stage}`, "no completed.json; stage may have been retried or fallback-completed");
     }
   }
 }
-if (fallbacks === 0) add(OK, "stage-completion", "all nine stages completed through the runner");
+if (fallbacks === 0 && degraded === 0) {
+  add(OK, "stage-completion", `all ${STAGES.length} mandatory stages completed through the runner`);
+}
 
 // ------------------------------------------------------------------ JSON validity
-for (const stage of ["analyze", "frame"]) {
-  const name = artifactNames[stage];
+// Every stage that declares a JSON artifact must have produced parseable JSON.
+const jsonStages = STAGE_SPECS.filter(([name]) =>
+  ["analyze", "frame", "developmental-review", "reader-review"].includes(name),
+).map(([name]) => name);
+for (const stage of jsonStages) {
+  const name = artifactNames[stage] ?? declaredArtifact(stage);
   if (!name) continue;
   try {
     await readJson(stagePath(stage, "output", name));
@@ -232,12 +301,102 @@ for (const stage of ["analyze", "frame"]) {
     add(ERROR, `json:${stage}`, error.message);
   }
 }
+if (pipeline === "editorial-pipeline-v2") {
+  for (const artifact of ["verification.json", "wops.json"]) {
+    const stage = artifact === "wops.json" ? "developmental-review" : "copy-verify";
+    try {
+      await readJson(stagePath(stage, "output", artifact));
+      add(OK, `json:${stage}/${artifact}`, "parses");
+    } catch (error) {
+      add(ERROR, `json:${stage}/${artifact}`, error.message);
+    }
+  }
+
+  // The v2 run's own per-stage record. It is the only place that says whether a stage
+  // delivered or was carried forward, and the only place that carries the stage-level
+  // warnings a "completed" run can still have.
+  const stageRecords = await readJson(path.join(runDir, "stage-records.json")).catch(() => null);
+  if (!stageRecords) {
+    add(WARN, "v2:stage-records", "stage-records.json is missing, so stage-level warnings cannot be read");
+  } else {
+    const statuses = (stageRecords.stages ?? []).reduce((counts, record) => {
+      counts[record.status] = (counts[record.status] ?? 0) + 1;
+      return counts;
+    }, {});
+    add(OK, "v2:stage-records", `${(stageRecords.stages ?? []).length} stage record(s): ${JSON.stringify(statuses)}`);
+    const declared = stageRecords.degraded_stages ?? [];
+    if (declared.length) {
+      add(WARN, "v2:degraded", `stage(s) carried an earlier artifact forward: ${declared.join(", ")}`);
+    }
+    for (const warning of stageRecords.warnings ?? []) {
+      add(WARN, "v2:stage-warning", String(warning).slice(0, 300));
+    }
+  }
+
+  // Did FRAME's evidence selection actually reach the draft, or did the projection fall
+  // back? A fallback still produces a digest, so nothing else in the pipeline reports it.
+  const projection = await readJson(stagePath("draft", "frame-projection.json")).catch(() => null);
+  if (!projection) {
+    add(WARN, "v2:evidence-projection", "draft/frame-projection.json is missing, so the evidence projection cannot be checked");
+  } else {
+    const policy = projection.policy ?? "(unrecorded)";
+    const declaredCount = (projection.declared_source_numbers ?? []).length;
+    const projectedCount = (projection.projected_source_numbers ?? []).length;
+    if (projection.recovery || policy !== "frame-selection") {
+      add(
+        WARN,
+        "v2:evidence-projection",
+        `the draft did not receive FRAME's declared selection: policy ${policy}` +
+          (projection.recovery ? `, recovery ${projection.recovery}` : "") +
+          ` (${declaredCount} declared, ${projectedCount} projected)` +
+          (projection.warning ? ` — ${projection.warning}` : ""),
+      );
+    } else {
+      add(
+        OK,
+        "v2:evidence-projection",
+        `draft received FRAME's declared selection (${projectedCount} source(s))`,
+      );
+    }
+    const missing = projection.missing_source_numbers ?? [];
+    if (missing.length) {
+      add(WARN, "v2:evidence-missing", `FRAME declared source number(s) absent from the corpus: ${missing.join(", ")}`);
+    }
+  }
+
+  // Was writing-operation retrieval available? Without it the revision and line edit still
+  // run, but with no operations at all, which is a material quality difference that would
+  // otherwise look like a clean run.
+  const retrieval = await readJson(stagePath("developmental-review", "output", "wops.json")).catch(() => null);
+  if (!retrieval) {
+    add(WARN, "v2:retrieval", "wops.json is missing, so retrieval availability cannot be checked");
+  } else if (!retrieval.available) {
+    add(
+      WARN,
+      "v2:retrieval",
+      `writing-operation retrieval was unavailable (${retrieval.reason ?? "no reason recorded"}); ` +
+        "the revision and line edit ran without operations. Set WOPS_ROOT to enable it.",
+    );
+  } else {
+    const selected = (retrieval.selected ?? []).length;
+    const candidates = (retrieval.candidates ?? []).length;
+    add(OK, "v2:retrieval", `retrieval available, ${candidates} candidate(s), ${selected} operation(s) selected`);
+    if (selected === 0) {
+      add(WARN, "v2:retrieval-empty", "retrieval ran but selected no operation(s); the revision used reviewer feedback alone");
+    }
+  }
+}
 
 // ------------------------------------------------------------------ final prose
 let finalText = "";
 try {
-  finalText = await readText(stagePath("final-polish", "output", "final.md"));
-} catch { /* reported under artifacts */ }
+  finalText = await readText(stagePath("copy-verify", "output", "final.md"));
+} catch {
+  // v1 names this artifact after its own final stage.
+  try {
+    finalText = await readText(stagePath("final-polish", "output", "final.md"));
+  } catch { /* reported under artifacts */ }
+}
 
 const citations = new Set([...finalText.matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1])));
 const corpusNumbers = corpus

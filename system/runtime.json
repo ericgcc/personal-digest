@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "pipeline": {
+    "active": "editorial-pipeline-v2",
+    "supported": ["editorial-pipeline-v1", "editorial-pipeline-v2"],
+    "_note": "v2 became the default after both historical replays passed acceptance with no degraded stage: replay-v2-medium-20260917-r2 and replay-v2-tech-20260918. See MIGRATION-v2.md. Selection order is --pipeline, then DIGEST_PIPELINE, then this value, then editorial-pipeline-v1. Set active back to editorial-pipeline-v1 for a rollback, or pass --pipeline v1 per run."
+  },
+  "components": {
+    "wops_root": null,
+    "wops_python": null,
+    "evaluation_python": "C:\\Users\\ericg\\.conda\\envs\\digest-eval\\python.exe",
+    "_note": "External component locations for this installation. Each can be overridden by an environment variable, which wins over this file: WOPS_ROOT, WOPS_PYTHON, DIGEST_EVAL_PYTHON. WOPS_ROOT may also be set in .env, which Node loads with --env-file. When wops_root is set and wops_python is not, the WOPS project's own .venv interpreter is used if it exists. Nothing in tools/ hard-codes a machine path: this file is the configuration seam."
+  },
+  "adapters": {
+    "_note": "Both adapters degrade rather than fail. A missing WOPS root, an unusable interpreter, an unconfigured credential, or a judge error is recorded as a degraded stage and the pipeline continues with the last valid artifact.",
+    "wops_timeout_ms": 120000,
+    "evaluation_timeout_ms": 600000
+  }
+}

@@ -7,7 +7,10 @@ A digest is assembled from separate layers with different responsibilities:
 | Layer | Location | Responsibility |
 | --- | --- | --- |
 | Workflow | `system/workflow.md` | Shared execution, state, safety, routing, precedence, and delivery. |
-| Editorial process | `system/editorial-process.md` | Shared autonomous production method: SELECT → ANALYZE → FRAME → DRAFT → structural/clarity/voice-and-naturalness/compression edits → FINAL POLISH. |
+| Editorial process | `system/editorial-process.md` | Shared autonomous production method: SELECT → ANALYZE → FRAME → DRAFT → DEVELOPMENTAL REVIEW → WRITER REVISION → LINE EDIT → READER REVIEW → [TARGETED REPAIR] → COPY & VERIFY. |
+| Editorial pipeline v2 | `system/editorial-pipeline-v2.md` | The v2 stages, the per-stage context matrix, evidence projection, adapters, and failure semantics. |
+| Stage contracts | `system/contracts/` | What each v2 stage receives, decides, and must not do. |
+| Runtime configuration | `system/runtime.json` | Active pipeline, the WOPS project root, and the Python interpreter per component. |
 | Style contract | `system/style-contract.md` | Interface every canonical style must implement; validates architectural completeness without imposing one output shape. |
 | Editorial base | `styles/editorial-base.md` | Shared prose quality floor: clarity, specificity, rhythm, naturalness, honesty, economy, reader interest, and editing standard. |
 | Writing references | `system/writing-*.md` | Shared reasoning, source-fidelity, editorial-prose, naturalness, and style-application guidance used by the editorial process; these refine craft without redefining the selected style. |
@@ -150,6 +153,7 @@ Prefer material that teaches a reusable technique or explains an engineering tra
 Custom instructions must not redefine the selected style. In particular, do not use them to:
 
 * weaken the shared editorial-base quality floor or skip/reorder mandatory stages in `system/editorial-process.md`;
+* weaken `system/contracts/reader-contract.md`, which defines what the reader must be able to understand;
 * turn `concise` or `detailed` into cross-source synthesis;
 * force `curated-discovery` to search for connections or themes merely because they exist;
 * remove a required `Sources` catalog from a style that requires one;
@@ -256,6 +260,8 @@ A new style is a new editorial implementation, not just a prompt variant.
 Before registering it, read `system/style-contract.md` and create `styles/<style>.md` with a complete `## Style interface`. Every style must explicitly declare its purpose, composition unit, source relationship, selection/depth/organization models, **progression model**, opening/body behavior, provenance, source catalog, ending behavior, Writing character, and optional extension points.
 
 Then add a dedicated `## Writing character` section and style-specific `## Quality control`. The style automatically inherits `styles/editorial-base.md` and uses `system/editorial-process.md`; do not copy the base/process wholesale or create a separate competing production method. Add only what makes this style's voice and editorial behavior distinct.
+
+A v2 stage receives only the `##` sections of a style file it needs — drafting receives the composition sections, the prose stages receive `## Writing character`, and evaluation stages receive `## Style interface`. A section named in the v2 context matrix but absent from the style file is recorded as a missing section in that stage's context manifest rather than silently omitted, so keep the canonical section names.
 
 A style may legitimately declare `Opening behavior: None`, `Source catalog: None`, or `Optional extension points: None`. The interface standardizes the questions, not the answers.
 

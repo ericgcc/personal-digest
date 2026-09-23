@@ -1,18 +1,57 @@
-import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const RUNS_DIRECTORY = ".digest-runs";
-const DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions";
-const DEEPSEEK_MODEL = "deepseek-flash";
-// Reasoning tokens count against max_tokens on this model. A measured replay showed
-// edit stages spending 28-31K reasoning tokens on a small corpus, which left only
-// ~1.5K for the artifact and silently truncated it. The cap must therefore cover
-// reasoning plus the full artifact. The model still generates only what it needs;
-// this is a ceiling, not a target, so headroom is free. DeepSeek's maximum is 384K.
-const MAX_OUTPUT_TOKENS = Number(process.env.DIGEST_MAX_OUTPUT_TOKENS ?? 262_144);
+// ---------------------------------------------------------------------------------------
+// This file is the orchestrator. It declares both pipelines and executes one of them.
+//
+//   v1  analyze -> frame -> draft -> structural-edit -> clarity-edit -> voice-edit
+//       -> compression-edit -> final-polish -> render
+//   v2  analyze -> frame -> draft -> developmental-review (+ wops) -> writer-revision
+//       -> line-edit -> reader-review -> [targeted-repair] -> copy-verify -> render
+//
+// v1's declaration below is deliberately unchanged and is parsed by
+// `evaluation/historical/run_loader.parse_stage_specs`, so it must keep its exact
+// four-string-per-entry shape. v2 lives in `tools/pipeline/v2.mjs`.
+//
+// Everything the two pipelines share — attempt bookkeeping, context inlining, the
+// DeepSeek transport, retry policy, and cost arithmetic — lives in `tools/lib/shared.mjs`
+// so their audit records stay comparable.
+// ---------------------------------------------------------------------------------------
+
+import {
+  ROOT,
+  RUNS_DIRECTORY,
+  RunnerError,
+  billingBand,
+  buildRunSummary,
+  callDeepSeek,
+  copyFile,
+  costForBand,
+  exists,
+  formatCostSummary,
+  nextAttemptDirectory,
+  option,
+  readContextFiles,
+  requiredOption,
+  resolveTimeoutMs,
+  validateArtifactText,
+  validateRunId,
+  withRetry,
+  wrapBlock,
+} from "./lib/shared.mjs";
+import { PIPELINE_V1, loadRuntimeConfig, resolvePipeline } from "./adapters/runtime.mjs";
+import {
+  PIPELINE_ID as PIPELINE_V2_ID,
+  executePipelineV2,
+  prepareReplay,
+  readMeasuredStagesV2,
+  readStageRecordsV2,
+} from "./pipeline/v2.mjs";
+
+// Reasoning-token headroom and its rationale are documented in `tools/lib/shared.mjs`,
+// which owns the ceiling. `DIGEST_MAX_OUTPUT_TOKENS` still overrides it.
+
 const STAGES = [
   ["analyze", "analysis.json", "JSON", "SELECT -> ANALYZE: evaluate the complete reviewed corpus, source fidelity, relationships, qualifications, and candidates."],
   ["frame", "frame.json", "JSON", "FRAME: establish editorial units, reader promises, narrative spines, support, and branches to omit before prose."],
@@ -70,34 +109,10 @@ const STAGES_ENFORCING_BUDGET = new Set(["draft", "compression-edit", "final-pol
 // ---------------------------------------------------------------------------------------
 // Cost accounting
 // ---------------------------------------------------------------------------------------
-
-// DeepSeek prices in USD per 1,000,000 tokens. Off-peak is exactly half of peak.
-// Source: api-docs.deepseek.com/quick_start/pricing, read 2026-09-14.
-const PRICING = {
-  cacheHit:  { offPeak: 0.003, peak: 0.006 },
-  cacheMiss: { offPeak: 0.15,  peak: 0.30  },
-  output:    { offPeak: 0.60,  peak: 1.20  },
-};
-
-// Peak hours are 01:00-04:00 and 06:00-10:00 UTC, Monday-Friday. Every other hour is
-// off-peak. Billing band is decided per stage from that stage's own start time, because a
-// long run can span a boundary.
-const PEAK_UTC_HOURS = [[1, 4], [6, 10]];
-
-function billingBand(isoTimestamp) {
-  const at = new Date(isoTimestamp);
-  const weekday = at.getUTCDay() >= 1 && at.getUTCDay() <= 5;
-  const hour = at.getUTCHours();
-  const inPeakWindow = PEAK_UTC_HOURS.some(([from, to]) => hour >= from && hour < to);
-  return weekday && inPeakWindow ? "peak" : "off-peak";
-}
-
-function costForBand(band, { hit = 0, miss = 0, output = 0 }) {
-  const key = band === "peak" ? "peak" : "offPeak";
-  return (hit / 1e6) * PRICING.cacheHit[key]
-    + (miss / 1e6) * PRICING.cacheMiss[key]
-    + (output / 1e6) * PRICING.output[key];
-}
+//
+// Pricing, the billing-band rule, and the cost arithmetic live in `tools/lib/shared.mjs`.
+// The ledger lives here because it is a property of the runs directory, not of one
+// pipeline, and both pipelines must write to the same one.
 
 // The ledger is the cross-run record used for cost analysis over time. It lives beside the
 // run directories rather than inside one, so a single run's cleanup cannot lose history.
@@ -177,33 +192,8 @@ const PROVENANCE_FIELDS = [
   "reading_outcome",
 ];
 
-class RunnerError extends Error {}
-
-function option(name) {
-  const index = process.argv.indexOf(name);
-  return index === -1 ? undefined : process.argv[index + 1];
-}
-
-function requiredOption(name) {
-  const value = option(name);
-  if (!value || value.startsWith("--")) throw new RunnerError(`Missing required option: ${name}`);
-  return value;
-}
-
-function validateRunId(runId) {
-  if (path.basename(runId) !== runId || ["", ".", ".."].includes(runId)) {
-    throw new RunnerError("Run ID must be a single directory name");
-  }
-}
-
-async function exists(filePath) {
-  try {
-    await readFile(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
+// `RunnerError`, `option`, `requiredOption`, `validateRunId`, and `exists` are shared with
+// v2; see `tools/lib/shared.mjs`.
 
 async function frontmatterValue(configPath, key) {
   const lines = (await readFile(configPath, "utf8")).split(/\r?\n/);
@@ -246,36 +236,8 @@ async function importSources(runId, temporarySourcePath) {
   return destination;
 }
 
-async function copyFile(source, destination) {
-  await mkdir(path.dirname(destination), { recursive: true });
-  await cp(source, destination);
-}
-
-// Resolve the per-request abort budget. The stage budget is authoritative; the
-// environment variable exists only as an explicit override.
-function resolveTimeoutMs(timeoutSeconds) {
-  const override = Number(process.env.DIGEST_REQUEST_TIMEOUT_MS);
-  return Number.isFinite(override) && override > 0 ? override : timeoutSeconds * 1000;
-}
-
-// Read canonical instruction files into one delimited block. The path list is sorted
-// so the block is byte-identical across stages and runs, which is required for
-// DeepSeek prefix-cache hits.
-async function readContextFiles(relativePaths) {
-  const parts = [];
-  for (const relativePath of [...new Set(relativePaths)].sort()) {
-    const absolute = path.join(ROOT, relativePath);
-    const content = await readFile(absolute, "utf8").catch(() => {
-      throw new RunnerError(`Required canonical context is missing: ${relativePath}`);
-    });
-    parts.push(`<document path="${relativePath}">\n${content}\n</document>`);
-  }
-  return parts.join("\n\n");
-}
-
-function wrapBlock(tag, payload) {
-  return `<${tag}>\n${payload}\n</${tag}>`;
-}
+// `copyFile`, `resolveTimeoutMs`, `readContextFiles`, and `wrapBlock` are shared with v2;
+// see `tools/lib/shared.mjs`.
 
 // Collect every source number referenced anywhere in analysis.json. Used to build the
 // draft-stage shortlist so draft receives the sources it may actually write about.
@@ -348,35 +310,8 @@ function stageIndex(stageName) {
   return index;
 }
 
-async function nextAttemptDirectory(workDir) {
-  const attemptsDir = path.join(workDir, "attempts");
-  await mkdir(attemptsDir, { recursive: true });
-  const entries = await readdir(attemptsDir, { withFileTypes: true });
-  const numbers = entries
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => /^attempt-(\d+)$/.exec(entry.name))
-    .filter(Boolean)
-    .map((match) => Number(match[1]));
-  const attemptNumber = (numbers.length ? Math.max(...numbers) : 0) + 1;
-  const attemptDir = path.join(attemptsDir, `attempt-${attemptNumber}`);
-  await mkdir(attemptDir, { recursive: true });
-  return { attemptDir, attemptNumber };
-}
-
-async function validateArtifactText(stage, text, sourceDescription) {
-  const [name, , outputFormat] = stage;
-  let artifact = text.trim();
-  if (!artifact) throw new RunnerError(`${sourceDescription} is empty for stage ${name}`);
-  if (outputFormat === "JSON") {
-    artifact = removeCodeFence(artifact);
-    try {
-      JSON.parse(artifact);
-    } catch (error) {
-      throw new RunnerError(`${sourceDescription} is not valid JSON for stage ${name}: ${error.message}`);
-    }
-  }
-  return artifact;
-}
+// `nextAttemptDirectory` and `validateArtifactText` are shared with v2; see
+// `tools/lib/shared.mjs`.
 
 async function prepareStage(runId, digestId, configPath, style, stage, inputPath, sourcePath) {
   const [name, outputName] = stage;
@@ -497,154 +432,9 @@ async function prepareStage(runId, digestId, configPath, style, stage, inputPath
   return { workDir, attemptDir, attemptNumber, outputPath: path.join(outputDir, outputName), systemText, userText };
 }
 
-function removeCodeFence(text) {
-  const match = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-  return match ? match[1] : text;
-}
-
-// Transient transport problems are retried inside a single stage attempt so a
-// momentary network hiccup does not consume one of the two stage-level attempts.
-// Configuration and payload errors are never retried.
-const RETRYABLE_STATUS = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
-const RETRY_ATTEMPTS = Number(process.env.DIGEST_RETRY_ATTEMPTS ?? 3);
-const RETRY_BASE_DELAY_MS = Number(process.env.DIGEST_RETRY_BASE_DELAY_MS ?? 2_000);
-
-async function withRetry(operation, { stageName }) {
-  let lastError;
-  for (let attempt = 1; attempt <= RETRY_ATTEMPTS; attempt += 1) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error;
-      const status = Number(/HTTP (\d{3})/.exec(error.message ?? "")?.[1]);
-      // A timeout is not retried: it would multiply the stage wall time by the
-      // attempt count, and the stage-level retry already covers it.
-      const retryable =
-        /fetch failed|ECONNRESET|ETIMEDOUT|socket hang up|EAI_AGAIN/i.test(error.message ?? "") ||
-        RETRYABLE_STATUS.has(status);
-      if (!retryable || attempt === RETRY_ATTEMPTS) break;
-      await new Promise((resolve) => setTimeout(resolve, RETRY_BASE_DELAY_MS * 2 ** (attempt - 1)));
-    }
-  }
-  throw new RunnerError(`${stageName} failed after ${RETRY_ATTEMPTS} transport attempt(s): ${lastError.message}`);
-}
-
-async function callDeepSeek({ systemText, userText, stageName, timeoutMs }) {
-  const key = process.env.DEEPSEEK_API_KEY;
-  if (!key) throw new RunnerError("DEEPSEEK_API_KEY is not set");
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(DEEPSEEK_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        messages: [
-          { role: "system", content: systemText },
-          { role: "user", content: userText },
-        ],
-        max_tokens: MAX_OUTPUT_TOKENS,
-        stream: false,
-        thinking: STAGE_THINKING[stageName],
-        reasoning_effort: STAGE_REASONING_EFFORT[stageName],
-      }),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      const detail = await response.text().catch(() => "");
-      throw new RunnerError(`DeepSeek HTTP ${response.status} for ${stageName}: ${detail.slice(0, 500)}`);
-    }
-
-    const payload = await response.json();
-    const choice = payload?.choices?.[0] ?? {};
-    const message = choice.message ?? {};
-    return {
-      text: String(message.content ?? "").trim(),
-      finishReason: choice.finish_reason ?? null,
-      usage: payload?.usage ?? null,
-      raw: payload,
-    };
-  } catch (error) {
-    if (error.name === "AbortError") {
-      throw new RunnerError(`DeepSeek exceeded the ${Math.round(timeoutMs / 1000)}-second stage timeout for ${stageName}`);
-    }
-    throw error;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-// Build the per-run cost record from the measured usage of each stage, and derive the
-// counterfactuals that tell us whether scheduling and caching are pulling their weight.
-function buildRunSummary({ runId, digestId, style, corpusPolicy, stages }) {
-  let hit = 0, miss = 0, output = 0, reasoning = 0, seconds = 0;
-  let actual = 0, allOffPeak = 0, allPeak = 0;
-  const perStage = [];
-
-  for (const s of stages) {
-    hit += s.hit; miss += s.miss; output += s.output;
-    reasoning += s.reasoning; seconds += s.seconds;
-
-    const band = billingBand(s.startedAt);
-    const stageCost = costForBand(band, s);
-    actual += stageCost;
-    allOffPeak += costForBand("off-peak", s);
-    allPeak += costForBand("peak", s);
-
-    perStage.push({
-      stage: s.name,
-      started_at: s.startedAt,
-      completed_at: s.completedAt,
-      seconds: Number(s.seconds.toFixed(2)),
-      billing_band: band,
-      cache_hit_tokens: s.hit,
-      cache_miss_tokens: s.miss,
-      output_tokens: s.output,
-      reasoning_tokens: s.reasoning,
-      cache_hit_ratio: s.hit + s.miss ? Number((s.hit / (s.hit + s.miss)).toFixed(4)) : null,
-      cost_usd: Number(stageCost.toFixed(6)),
-    });
-  }
-
-  const billedBands = [...new Set(perStage.map((s) => s.billing_band))];
-
-  return {
-    schema_version: 1,
-    run_id: runId,
-    digest_id: digestId,
-    style,
-    corpus_policy: corpusPolicy ?? null,
-    started_at: perStage[0]?.started_at ?? null,
-    completed_at: perStage[perStage.length - 1]?.completed_at ?? null,
-    // Recorded explicitly so a later analysis never has to re-derive the band, and so a
-    // run that straddles a boundary is visible rather than silently averaged.
-    billing_band: billedBands.length === 1 ? billedBands[0] : "mixed",
-    total_seconds: Number(seconds.toFixed(2)),
-    tokens: {
-      cache_hit: hit,
-      cache_miss: miss,
-      output,
-      reasoning,
-      total_input: hit + miss,
-      total: hit + miss + output,
-    },
-    cost_usd: {
-      actual: Number(actual.toFixed(6)),
-      // Same work, priced entirely in the cheaper or the dearer band.
-      if_all_off_peak: Number(allOffPeak.toFixed(6)),
-      if_all_peak: Number(allPeak.toFixed(6)),
-      // Same work with no cache reuse at all, priced off-peak.
-      if_nothing_cached: Number((((hit + miss) / 1e6) * PRICING.cacheMiss.offPeak + (output / 1e6) * PRICING.output.offPeak).toFixed(6)),
-    },
-    stages: perStage,
-  };
-}
+// `removeCodeFence`, `withRetry`, `callDeepSeek`, and `buildRunSummary` are shared with v2;
+// see `tools/lib/shared.mjs`. The v1 per-stage thinking and reasoning policy stays here,
+// because it is a property of this pipeline.
 
 // Read the measured usage back from disk rather than accumulating it in memory. A resumed
 // run only executes part of the pipeline, but the cost record must still describe the whole
@@ -674,10 +464,37 @@ async function readMeasuredStages(runId) {
   return measured;
 }
 
-async function writeRunSummary(runId, digestId, style, corpusPolicy) {
-  const stages = await readMeasuredStages(runId);
+async function writeRunSummary(runId, digestId, style, { pipeline = PIPELINE_V1, corpusPolicy = null } = {}) {
+  const stages = pipeline === PIPELINE_V2_ID
+    ? await readMeasuredStagesV2(runId)
+    : await readMeasuredStages(runId);
   if (stages.length === 0) return null;
-  const summary = buildRunSummary({ runId, digestId, style, corpusPolicy, stages });
+  const stageRecords = pipeline === PIPELINE_V2_ID ? await readStageRecordsV2(runId) : null;
+  const summary = buildRunSummary({
+    runId,
+    digestId,
+    style,
+    corpusPolicy,
+    stages,
+    extra: {
+      // Which pipeline produced this run, so an artifact set is never ambiguous, and so a
+      // degraded run is visible in the ledger rather than only in a stage directory.
+      pipeline,
+      ...(stageRecords
+        ? {
+            degraded_stages: stageRecords.degraded_stages ?? [],
+            editorial_warnings: stageRecords.warnings ?? [],
+            stage_status: (stageRecords.stages ?? []).map((record) => ({
+              stage: record.stage,
+              status: record.status,
+              provenance: record.provenance,
+              corpus_policy: record.corpus_policy,
+              context_bytes: record.context_bytes,
+            })),
+          }
+        : {}),
+    },
+  });
   // A run with no recorded tokens predates cost accounting or never reached the model.
   // Such a run must not enter the ledger, or it would drag every average and ratio toward
   // zero while looking like a genuinely cheap run.
@@ -688,13 +505,7 @@ async function writeRunSummary(runId, digestId, style, corpusPolicy) {
 }
 
 function logCostSummary(summary) {
-  const c = summary.cost_usd;
-  const t = summary.tokens;
-  console.error(
-    `run cost: $${c.actual.toFixed(4)} (${summary.billing_band}, ${summary.total_seconds.toFixed(0)}s) | ` +
-    `tokens ${t.total.toLocaleString()} = ${t.cache_hit.toLocaleString()} hit + ${t.cache_miss.toLocaleString()} miss + ${t.output.toLocaleString()} out | ` +
-    `off-peak would be $${c.if_all_off_peak.toFixed(4)}, all-peak $${c.if_all_peak.toFixed(4)}, no-cache $${c.if_nothing_cached.toFixed(4)}`
-  );
+  console.error(formatCostSummary(summary));
 }
 
 async function run() {
@@ -705,11 +516,59 @@ async function run() {
   if (!Number.isInteger(timeoutSeconds) || timeoutSeconds <= 0) throw new RunnerError("--timeout must be a positive whole number");
   validateRunId(runId);
   const { configPath, style } = await resolveDigest(digestId);
+  const runtimeConfig = await loadRuntimeConfig();
+  const selection = resolvePipeline({ explicit: option("--pipeline"), config: runtimeConfig });
   const sourcePath = await importSources(runId, temporarySourcePath);
-  await executeStages(digestId, runId, configPath, style, sourcePath, 0, timeoutSeconds);
-  const summary = await writeRunSummary(runId, digestId, style, null);
+  await executePipeline({
+    pipeline: selection.pipeline,
+    digestId,
+    runId,
+    configPath,
+    style,
+    sourcePath,
+    runtimeConfig,
+    timeoutSeconds,
+  });
+  const summary = await writeRunSummary(runId, digestId, style, { pipeline: selection.pipeline });
   if (summary) logCostSummary(summary);
   console.log(path.join(stageDirectory(runId, "render"), "output", "email.html"));
+}
+
+// Execute either pipeline. The digest language is read from the digest config here so both
+// pipelines receive the same value from the same place.
+async function executePipeline({
+  pipeline,
+  digestId,
+  runId,
+  configPath,
+  style,
+  sourcePath,
+  runtimeConfig,
+  timeoutSeconds,
+  startStage = null,
+  mode = "run",
+}) {
+  const language = await frontmatterValue(configPath, "language");
+  // The display name is authoritative and belongs to the digest configuration, not to the
+  // rendering stage's imagination.
+  const digestName = await frontmatterValue(configPath, "name").catch(() => null);
+  if (pipeline === PIPELINE_V2_ID) {
+    return await executePipelineV2({
+      runId,
+      digestId,
+      configPath,
+      style,
+      language,
+      digestName,
+      sourcePath,
+      timeoutSeconds,
+      runtimeConfig,
+      startStage,
+      mode,
+    });
+  }
+  await executeStages(digestId, runId, configPath, style, sourcePath, startStage ? stageIndex(startStage) : 0, timeoutSeconds);
+  return null;
 }
 
 async function executeStages(digestId, runId, configPath, style, sourcePath, startIndex, timeoutSeconds) {
@@ -733,6 +592,8 @@ async function executeStages(digestId, runId, configPath, style, sourcePath, sta
           userText: prepared.userText,
           stageName: name,
           timeoutMs: resolveTimeoutMs(timeoutSeconds),
+          thinking: STAGE_THINKING[name],
+          reasoningEffort: STAGE_REASONING_EFFORT[name],
         }),
         { stageName: name }
       );
@@ -779,13 +640,92 @@ async function resume() {
   const { configPath, style } = await resolveDigest(digestId);
   const sourcePath = sourceArtifact(runId);
   if (!(await exists(sourcePath))) throw new RunnerError(`Canonical source artifact does not exist: ${sourcePath}`);
+  const runtimeConfig = await loadRuntimeConfig();
+  const selection = resolvePipeline({ explicit: option("--pipeline"), config: runtimeConfig });
+
+  if (selection.pipeline === PIPELINE_V2_ID) {
+    await executePipeline({
+      pipeline: PIPELINE_V2_ID,
+      digestId,
+      runId,
+      configPath,
+      style,
+      sourcePath,
+      runtimeConfig,
+      timeoutSeconds,
+      startStage: fromStage,
+      mode: "resume",
+    });
+    const summary = await writeRunSummary(runId, digestId, style, { pipeline: PIPELINE_V2_ID });
+    if (summary) logCostSummary(summary);
+    console.log(path.join(stageDirectory(runId, "render"), "output", "email.html"));
+    return;
+  }
+
   const startIndex = stageIndex(fromStage);
   const [stageName, outputName] = STAGES[startIndex];
   const outputPath = path.join(stageDirectory(runId, stageName), "output", outputName);
   if (await exists(outputPath)) throw new RunnerError(`Canonical stage output already exists: ${outputPath}`);
   await executeStages(digestId, runId, configPath, style, sourcePath, startIndex, timeoutSeconds);
-  const summary = await writeRunSummary(runId, digestId, style, null);
+  const summary = await writeRunSummary(runId, digestId, style, { pipeline: PIPELINE_V1 });
   if (summary) logCostSummary(summary);
+  console.log(path.join(stageDirectory(runId, "render"), "output", "email.html"));
+}
+
+// Which pipeline a run directory belongs to. Recorded by the runner at start, so it is
+// never inferred from which stage directories happen to exist.
+async function pipelineOfRun(runId) {
+  try {
+    const record = JSON.parse(await readFile(path.join(ROOT, RUNS_DIRECTORY, runId, "pipeline.json"), "utf8"));
+    return record.pipeline ?? PIPELINE_V1;
+  } catch {
+    return PIPELINE_V1;
+  }
+}
+
+/**
+ * Replay a historical corpus through a pipeline.
+ *
+ * The replay is a *new run*: it reuses a historical `source-acquisition/sources.json` and
+ * performs no acquisition, no delivery, and no state mutation. The runner contains no
+ * delivery or state code at all, which is what makes that guarantee structural rather
+ * than a promise made in a comment.
+ */
+async function replay() {
+  const fromRun = requiredOption("--from-run");
+  const runId = requiredOption("--run-id");
+  const timeoutSeconds = Number(option("--timeout") ?? 900);
+  if (!Number.isInteger(timeoutSeconds) || timeoutSeconds <= 0) throw new RunnerError("--timeout must be a positive whole number");
+  validateRunId(fromRun);
+  validateRunId(runId);
+  if (fromRun === runId) throw new RunnerError("--from-run and --run-id must differ; a replay never overwrites its corpus");
+
+  const runtimeConfig = await loadRuntimeConfig();
+  const selection = resolvePipeline({ explicit: option("--pipeline"), config: runtimeConfig });
+  const prepared = await prepareReplay({ fromRun, runId, pipeline: selection.pipeline });
+  const { configPath, style: configuredStyle } = await resolveDigest(prepared.digestId);
+  const style = prepared.style ?? configuredStyle;
+
+  const result = await executePipeline({
+    pipeline: selection.pipeline,
+    digestId: prepared.digestId,
+    runId,
+    configPath,
+    style,
+    sourcePath: prepared.sourcePath,
+    runtimeConfig,
+    timeoutSeconds,
+    mode: "replay",
+  });
+  const summary = await writeRunSummary(runId, prepared.digestId, style, { pipeline: selection.pipeline });
+  console.error(
+    `replay ${fromRun} -> ${runId} (${selection.pipeline}): ` +
+    `digest ${prepared.digestId}, style ${style}, corpus replayed from history`
+  );
+  if (summary) logCostSummary(summary);
+  if (result?.degraded?.length) {
+    console.error(`degraded stages: ${result.degraded.join(", ")}`);
+  }
   console.log(path.join(stageDirectory(runId, "render"), "output", "email.html"));
 }
 
@@ -822,7 +762,10 @@ async function rebuildLedger() {
     try {
       ({ style } = await resolveDigest(digestId));
     } catch { skipped.push(`${runId} (unknown digest ${digestId})`); continue; }
-    const summary = await writeRunSummary(runId, digestId, style, null);
+    // Each run records the pipeline it executed. A v1 run and a v2 run both have
+    // run-summary.json, so the pipeline is read rather than assumed.
+    const pipeline = await pipelineOfRun(runId);
+    const summary = await writeRunSummary(runId, digestId, style, { pipeline });
     if (summary) rebuilt.push(summary);
     else skipped.push(`${runId} (no token usage recorded)`);
   }
@@ -844,6 +787,15 @@ async function materialize() {
   const temporaryArtifactPath = path.resolve(requiredOption("--input"));
   validateRunId(runId);
   await resolveDigest(digestId);
+  // `materialize` is the v1 controlled fallback: an editor supplies an artifact after two
+  // failed runner attempts. v2 has no equivalent handoff — a failing v2 stage carries the
+  // last valid artifact forward by itself — so this command is v1-only and says so.
+  if ((await pipelineOfRun(runId)) === PIPELINE_V2_ID) {
+    throw new RunnerError(
+      `Run ${runId} executed ${PIPELINE_V2_ID}, which does not use fallback materialization. ` +
+      "A v2 stage that fails carries the last valid artifact forward and records the degradation.",
+    );
+  }
   const sourcePath = sourceArtifact(runId);
   if (!(await exists(sourcePath))) throw new RunnerError(`Canonical source artifact does not exist: ${sourcePath}`);
   const index = stageIndex(requestedStage);
@@ -884,27 +836,40 @@ async function materialize() {
   console.log(outputPath);
 }
 
+function reportFailure(error) {
+  console.error(`digest_runner: ${error.message}`);
+  // Stack traces are noisy in normal operation and essential when a failure happens
+  // outside a stage, where there is no attempt directory to hold the evidence.
+  if (process.env.DIGEST_DEBUG) console.error(error.stack ?? "");
+  process.exitCode = 1;
+}
+
 if (process.argv[2] === "run") {
-  run().catch((error) => {
-    console.error(`digest_runner: ${error.message}`);
-    process.exitCode = 1;
-  });
+  run().catch(reportFailure);
 } else if (process.argv[2] === "resume") {
-  resume().catch((error) => {
-    console.error(`digest_runner: ${error.message}`);
-    process.exitCode = 1;
-  });
+  resume().catch(reportFailure);
+} else if (process.argv[2] === "replay") {
+  replay().catch(reportFailure);
 } else if (process.argv[2] === "materialize") {
-  materialize().catch((error) => {
-    console.error(`digest_runner: ${error.message}`);
-    process.exitCode = 1;
-  });
+  materialize().catch(reportFailure);
 } else if (process.argv[2] === "ledger") {
-  rebuildLedger().catch((error) => {
-    console.error(`digest_runner: ${error.message}`);
-    process.exitCode = 1;
-  });
+  rebuildLedger().catch(reportFailure);
 } else {
-  console.error("Usage: node tools/digest_runner.mjs run --digest <id> --run-id <id> --input <temporary-sources.json> [--timeout <seconds>]\n       node tools/digest_runner.mjs resume --digest <id> --run-id <id> --from-stage <stage> [--timeout <seconds>]\n       node tools/digest_runner.mjs materialize --digest <id> --run-id <id> --stage <stage> --input <temporary-artifact>\n       node tools/digest_runner.mjs ledger");
+  console.error(
+    [
+      "Usage:",
+      "  node tools/digest_runner.mjs run --digest <id> --run-id <id> --input <temporary-sources.json> [--pipeline <id>] [--timeout <seconds>]",
+      "  node tools/digest_runner.mjs resume --digest <id> --run-id <id> --from-stage <stage> [--pipeline <id>] [--timeout <seconds>]",
+      "  node tools/digest_runner.mjs replay --from-run <historical-run-id> --run-id <new-run-id> [--pipeline <id>] [--timeout <seconds>]",
+      "  node tools/digest_runner.mjs materialize --digest <id> --run-id <id> --stage <stage> --input <temporary-artifact>   (v1 only)",
+      "  node tools/digest_runner.mjs ledger",
+      "",
+      `Pipelines: ${PIPELINE_V1}, ${PIPELINE_V2_ID}. Selection order: --pipeline, DIGEST_PIPELINE,`,
+      "system/runtime.json (pipeline.active), then v1.",
+      "",
+      "replay reuses a historical source-acquisition/sources.json as a new run. It performs no",
+      "acquisition, no delivery, and no state mutation.",
+    ].join("\n"),
+  );
   process.exitCode = 1;
 }

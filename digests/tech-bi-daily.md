@@ -54,12 +54,11 @@ Keep generic advice, clickbait, minor updates, job posts, low-signal AI hype, an
 
 Prefer omission over completeness. Optimize for useful knowledge, practical ideas, deeper understanding, and a clear sense of what—if anything—is worth reading in full.
 
-## Optional editorial signals
-Use these only when genuinely warranted:
+## Optional editorial signals callouts
+Use these only when genuinely warranted, as a callout:
 
 * `🔥 TREND`—an emerging pattern supported by meaningful evidence.
 * `🛠 PRACTICAL`—a concrete technique, workflow, checklist, or experiment worth applying.
-* `📖 READ`—a source whose full detail offers unusually high additional value.
 * `✍️ WRITE`—an idea or connection with potential for a thoughtful technical or professional post.
 
-Integrate signals inside the relevant selection. Do not create a signals appendix. Use no more than four or five in total.
+Integrate signal callouts inside the relevant selection. Do not create a signals appendix. Use no more than four or five in total.

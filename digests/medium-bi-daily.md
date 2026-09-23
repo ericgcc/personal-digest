@@ -73,11 +73,11 @@ When several candidates have comparable value, prefer some diversity of usefulne
 
 With a small source set, a shorter edition containing only genuinely strong material is preferable to lowering the selection threshold.
 
-## Optional editorial signals
-Use these only when genuinely warranted:
+## Optional editorial signal callouts
+Use these only when genuinely warranted, as a callout:
 
 * `🔥 TREND`—an emerging pattern supported by meaningful evidence.
 * `🛠 PRACTICAL`—a concrete technique, workflow, checklist, or experiment worth applying.
 * `✍️ WRITE`—an idea or connection with potential for a thoughtful technical or professional post.
 
-Integrate signals inside the relevant selection. Do not create a signals appendix. Use no more than three or four in total.
+Integrate signal callouts inside the relevant selection. Do not create a signals appendix. Use no more than three or four in total.

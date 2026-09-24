@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "digest:run": "node tools/digest_runner.mjs run"
+    "digest:run": "node tools/digest_runner.mjs run",
+    "test": "node --test \"tools/**/*.test.mjs\""
   }
 }

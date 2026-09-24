@@ -11,6 +11,9 @@
     "evaluation_python": "C:\\Users\\ericg\\.conda\\envs\\digest-eval\\python.exe",
     "_note": "External component locations for this installation. Each can be overridden by an environment variable, which wins over this file: WOPS_ROOT, WOPS_PYTHON, DIGEST_EVAL_PYTHON. WOPS_ROOT may also be set in .env, which Node loads with --env-file. When wops_root is set and wops_python is not, the WOPS project's own .venv interpreter is used if it exists. Nothing in tools/ hard-codes a machine path: this file is the configuration seam."
   },
+  "style_profiles": {
+    "_note": "Optional per-style default for the editorial style profile a v2 run executes. Keys are canonical style names; values are profile ids from tools/pipeline/style-profiles.mjs. An entry here is the configured default for that style, overridden by DIGEST_STYLE_PROFILE and then by --style-profile on the command line. This block is intentionally empty: every style currently defaults to its `<style>-legacy` profile, which reproduces the pre-profile behaviour. Add an entry only to promote a profile that has passed a historical replay and an editorial review of the finished digest. See system/editorial-pipeline-v2.md 3.1."
+  },
   "adapters": {
     "_note": "Both adapters degrade rather than fail. A missing WOPS root, an unusable interpreter, an unconfigured credential, or a judge error is recorded as a degraded stage and the pipeline continues with the last valid artifact.",
     "wops_timeout_ms": 120000,

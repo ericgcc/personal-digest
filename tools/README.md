@@ -15,6 +15,84 @@ Two pipelines are declared, and both are runnable.
 
 Selection order: `--pipeline`, then `DIGEST_PIPELINE`, then `pipeline.active` in `system/runtime.json`, then v1. `--pipeline v2` and `--pipeline v1` are accepted as aliases. `system/editorial-pipeline-v2.md` describes v2 in full; `MIGRATION-v2.md` records why it replaced the four rewriting stages.
 
+## Style profiles (v2)
+
+Which part of a style a stage receives is declared by an explicit, versioned **style profile**, not by the stage table. The registry is `tools/pipeline/style-profiles.mjs`; a style's stage-specific operational instructions live in `system/style-pipelines/<style>/`.
+
+| Profile | Style | Status | Notes |
+| --- | --- | --- | --- |
+| `<style>-legacy` | all four | active | The default for every style. Reproduces the pre-profile *routing* for that style, and is the rollback option. |
+| `synthesis-max-v1` | `synthesis-max` | **experimental** | Delivers the style's selection and relationship model to `analyze`, routes every stage through the style's own section set instead of the cross-style union, adds the four `system/style-pipelines/synthesis-max/` stage documents, and enforces the style's framing constraints. |
+
+A profile controls **routing** — which part of the style each stage receives, which stage documents are added, and which constraints are validated. It does not control the style's own contract: `styles/<style>.md` is the single source of truth and every profile of that style reads it. Rolling back to `<style>-legacy` therefore restores the routing, not the style's content; reverting a style-file revision means reverting the style file. `system/editorial-pipeline-v2.md` §3.1 states this in full.
+
+A profile also declares two things beyond its per-stage documents:
+
+* **`frame_failure_policy`** — `fail` (stop the run; a derived plan cannot satisfy the contract) or `recovery-frame` (derive the documented recovery frame and continue degraded). `synthesis-max-v1` fails; every legacy profile recovers.
+* **The `review` contract** for the two evaluation stages. The Python adapter reads a fixed request vocabulary — `role`, `reader`, `style`, `review` — and `review` is what carries a style's review obligations to the judge. A name outside that set is silently dropped, so a test asserts the adapter reads every contract a profile declares.
+
+## Measuring assembled context
+
+```powershell
+node tools/pipeline/measure-context.mjs          # human-readable
+node tools/pipeline/measure-context.mjs --json   # machine-readable
+```
+
+Assembles every stage's canonical documents exactly as the runner does, per profile, and reports the byte counts. No model call, no network. This is how a change to a runtime document is shown to have saved context rather than assumed to, and `phase2-corrections.test.mjs` asserts the other half of the same claim: that no substantive requirement disappeared in the trimming.
+
+```powershell
+# Opt a replay into the new Synthesis MAX profile
+node --env-file=.env tools/digest_runner.mjs replay --from-run tech-bi-daily-20260921-1109 --run-id synthmax-v1-r1 --style-profile synthesis-max-v1
+
+# Validate one stage range with real model calls, without paying for the rest
+node --env-file=.env tools/digest_runner.mjs replay --from-run tech-bi-daily-20260921-1109 --run-id synthmax-analysis-frame --style-profile synthesis-max-v1 --until-stage frame
+
+# List the profiles available for one style
+node -e "import('./tools/pipeline/style-profiles.mjs').then(m => console.log(m.profilesForStyle('synthesis-max').map(p => p.id + ' (' + p.status + ')').join('\n')))"
+```
+
+`--until-stage` stops the run after that stage. It produces no rendered artifact, records `partial_run: true` and the executed stage range in `pipeline.json`, and reports itself as partial rather than printing a render path that does not exist. An unusable stage name is rejected before any run directory is created.
+
+Selection order: `--style-profile`, then `DIGEST_STYLE_PROFILE`, then `style_profiles.<style>` in `system/runtime.json`, then the style's own default. The aliases `legacy`, `current`, `default` and `v1` resolve within the digest's own style, so `--style-profile v1` means `synthesis-max-v1` for a Synthesis MAX digest and fails for any other style.
+
+There is no cross-style fallback. An unknown profile, or one belonging to a different style, stops the run with an error that names the valid profiles — before any run directory is created. Before the first model call, every document and every declared section is preflighted; a missing document, a section its style does not declare, or a style file missing a mandated section is reported as a configuration error. Each run records `style_profile_id`, `style_profile_version` and the full profile body in `pipeline.json`, and the id in `run-summary.json` and the cost ledger.
+
+## Artifact validation (v2)
+
+Two stages produce structured artifacts carrying decisions no later stage can re-derive: `analyze` decides what deserves space, and `frame` decides what the draft may see and how much room it has. A structural requirement that lives only in prose is a requirement nothing measures, so the active profile's composition constraints are checked deterministically.
+
+| Piece | Where |
+| --- | --- |
+| The checks | `tools/pipeline/editorial-validation.mjs` |
+| The thresholds (unit count, sources per unit, opening band, words per source, headroom) | the profile's `composition` block |
+| The body budget | the profile's `budget` policy, from `tools/pipeline/budgets.mjs` |
+| Whether a profile acts on them | that profile's `composition.enforced` list |
+
+A rejected artifact gets **one correction attempt** with the specific violations fed back (`DIGEST_VALIDATION_ATTEMPTS`, default 2 attempts total). The attempt is recorded like any other, so its cost is measured like any other.
+
+Failure is handled by what the artifact is worth downstream:
+
+* **`frame` is a gate.** A plan that still violates the style's constraints fails the stage, and the documented recovery frame is derived from the analysis. An invalid plan never reaches the writer, which is instructed to follow the plan it is given.
+* **`analyze` is advisory.** The findings are recorded and the run continues. Whether a proposed synthesis is illuminating is not something a schema can establish.
+
+A profile whose `composition.enforced` is empty — every `<style>-legacy` profile — is validated against nothing, so the validators change nothing about a run under the default.
+
+`frame.json` also declares `mode`: `threads`, or `catalog_only` for the deliberate edition in which no cross-source thread qualified. A catalog-only edition projects no evidence by design (`intended-none`, not a degradation) and its published length is reported as `exempt` by the deterministic checks, still measured and still stated. `system/editorial-pipeline-v2.md` §3.2 is the authoritative description.
+
+## Tests
+
+```powershell
+npm test
+```
+
+Runs the Node test suites under `tools/`. They need no API key, no network and no run directory:
+
+* `tools/pipeline/style-profiles.test.mjs` — the registry, profile resolution, and preflight failure modes.
+* `tools/pipeline/style-context-isolation.test.mjs` — the style-isolation guarantee: that each profile reproduces the historical section sets byte for byte, that editing one style's instructions changes only that style's assembled contexts, and that the operational part of every stage's context is identical across all four styles. It also cross-checks two of the recorded historical context manifests when `.digest-runs/` is present, and skips that check when it is not.
+* `tools/pipeline/editorial-validation.test.mjs` — the validators, including the regression that points them at the recorded historical frames. `node --test tools/pipeline/editorial-validation.test.mjs` therefore reports, with no model call, exactly which constraints the September 21 and September 22 plans violate and by how much. Both of those checks skip cleanly when `.digest-runs/` is absent.
+* `tools/pipeline/phase2-corrections.test.mjs` — one test set per defect the Phase 2 review identified, each named for the failure it reproduces: the analysis severity split, retained-unit-only framing constraints, the narrative/catalogue projection split, profile-gated gates and exact arithmetic, the recovery-frame and frame-failure policy, per-attempt measurement, the absence of runtime rationale, and the `review` contract reaching both evaluators.
+* `tools/pipeline/stage-wiring.test.mjs` — the stage-table declarations a stage's behaviour depends on and that nothing else would notice losing.
+
 ## Prerequisites
 
 * Node.js 24 or later.
@@ -83,7 +161,7 @@ v1 is unchanged, including its stage declaration, which the evaluation harness p
 
 ## Context assembly
 
-The runner does not ask the model to read files. It inlines canonical Markdown directly into the request, and no editorial stage receives the entire instruction stack: each stage declares the documents it needs, and where it needs only part of a style file, only those `##` sections are extracted and inlined. `system/editorial-pipeline-v2.md` carries the full v2 matrix; `system/workflow.md` carries the v1 one.
+The runner does not ask the model to read files. It inlines canonical Markdown directly into the request, and no editorial stage receives the entire instruction stack: each stage declares the documents it needs, and where it needs only part of a style file, only those `##` sections are extracted and inlined. Which sections a stage receives is declared by its active **style profile** (`tools/pipeline/style-profiles.mjs`); no stage names a style section itself, which is why adding a `##` heading to one style file cannot change another style's prompt. `system/editorial-pipeline-v2.md` carries the full v2 matrix; `system/workflow.md` carries the v1 one.
 
 Two documented additions to the strictest reading of the matrix: `draft` also receives `styles/editorial-base.md`, the quality floor every style inherits; and `frame` also receives `system/style-contract.md`, which defines the vocabulary the style's `## Style interface` section uses.
 
@@ -113,7 +191,7 @@ The corpus block is tiered per stage rather than sent whole to every call. The r
 
 Block order within each request is deliberate. The invariant system block and the corpus block come first and are kept byte-identical so the provider can reuse a cached prefix; the stage-specific task block always comes last so it never fragments that prefix.
 
-An optional style body-length target is injected into the task block for the stages that establish or enforce length. Under v2 those stages are `draft`, `writer-revision`, and `line-edit`; under v1 they are `draft`, `compression-edit`, and `final-polish`. The prose form is used in the request and the numeric range in `tools/pipeline/budgets.mjs` is used by the deterministic length check; both must be kept in step with the `Depth model` and `Length and density` sections of `styles/<style>.md`, which remain the source of truth.
+An optional style body-length target is injected into the task block for the stages that establish or enforce length. Under v2 the target comes from the active profile's budget policy, which references `tools/pipeline/budgets.mjs`; the same policy supplies the numeric range the deterministic length check measures against. The prose form is used in the request and the numeric range in the check; both must be kept in step with the `Depth model` and `Length and density` sections of `styles/<style>.md`, which remain the source of truth.
 
 ## Reasoning effort
 

@@ -130,6 +130,28 @@ async function main() {
 
   const stageRecordByName = new Map((stageRecords?.stages ?? []).map((record) => [record.stage, record]));
 
+  // A partial run is a legitimate shape, not a failed full run: `--until-stage` exists so a
+  // stage range can be exercised with real model calls without paying for the stages after it,
+  // and it records what it executed in pipeline.json. Verifying it against the full stage list
+  // would report every unexecuted stage as an error and make the run look broken when it did
+  // exactly what it was asked to do. The stage list, the render check and the cost-record check
+  // are therefore all scoped to what the run set out to execute.
+  const stopAfter = pipelineRecord?.partial_run ? pipelineRecord?.stop_after ?? null : null;
+  const stopIndex = stopAfter === null ? -1 : MANDATORY_V2_STAGES.indexOf(stopAfter);
+  const executedStages = stopAfter === null
+    ? MANDATORY_V2_STAGES
+    : MANDATORY_V2_STAGES.slice(0, stopIndex === -1 ? MANDATORY_V2_STAGES.length : stopIndex + 1);
+  const isPartial = stopAfter !== null;
+  if (isPartial) {
+    add(
+      stopIndex === -1 ? WARN : OK,
+      "pipeline:partial",
+      stopIndex === -1
+        ? `pipeline.json reports a partial run stopping after ${stopAfter}, which is not a mandatory stage`
+        : `partial run: executed ${executedStages.join(" -> ")}, stopped after ${stopAfter}`,
+    );
+  }
+
   // ---------------------------------------------------------------- pipeline identity
   if (!pipelineRecord) {
     add(ERROR, "pipeline:record", "pipeline.json is missing; the run's pipeline is ambiguous");
@@ -145,7 +167,7 @@ async function main() {
   }
 
   // ---------------------------------------------------------------- stage completion
-  for (const stage of MANDATORY_V2_STAGES) {
+  for (const stage of executedStages) {
     const record = stageRecordByName.get(stage);
     const attemptDir = path.join(runDirectory, stage, "attempts", "attempt-1");
     const completed = await tryJson(path.join(attemptDir, "completed.json"));
@@ -183,6 +205,7 @@ async function main() {
 
   // ---------------------------------------------------------------- structured artifacts
   for (const [stage, artifact] of STRUCTURED_ARTIFACTS) {
+    if (!executedStages.includes(stage)) continue;
     const result = await tryJson(path.join(runDirectory, stage, "output", artifact));
     if (!result.ok) add(ERROR, `json:${stage}/${artifact}`, result.error);
     else add(OK, `json:${stage}/${artifact}`, "parses");
@@ -398,8 +421,16 @@ async function main() {
   }
 
   // ---------------------------------------------------------------- render
-  const html = (await tryText(path.join(runDirectory, "render", "output", "email.html"))).value;
-  if (!html) {
+  //
+  // A partial run produces no rendered artifact by design, so its absence is correct rather
+  // than a finding. Checking for one would turn the intended outcome into the reported defect.
+  const html = isPartial ? null : (await tryText(path.join(runDirectory, "render", "output", "email.html"))).value;
+  if (isPartial) {
+    // Ids for facts about the run's shape are prefixed `partial:` so the scoping filter below
+    // cannot attribute them to a stage that did not execute and suppress the very finding that
+    // explains why stages are missing.
+    add(OK, "partial:no-render", `a partial run stops after ${stopAfter} and renders nothing, as intended`);
+  } else if (!html) {
     add(ERROR, "render:output", "email.html is missing or empty");
   } else {
     const lower = html.toLowerCase();
@@ -481,12 +512,12 @@ async function main() {
       `run-summary.json records pipeline ${summary.pipeline ?? "(none)"}`,
     );
     const measured = new Set((summary.stages ?? []).map((stage) => stage.stage));
-    const missing = MANDATORY_V2_STAGES.filter((stage) => !measured.has(stage));
+    const missing = executedStages.filter((stage) => !measured.has(stage));
     add(
       missing.length === 0 ? OK : ERROR,
       "summary:stages",
       missing.length === 0
-        ? `all ${MANDATORY_V2_STAGES.length} mandatory stages are in the cost record`
+        ? `all ${executedStages.length} executed stage(s) are in the cost record`
         : `stages missing from the cost record: ${missing.join(", ")}`,
     );
   }
@@ -497,7 +528,7 @@ async function main() {
   // summary field, so the report measures the primary artifact. A stage whose context came
   // from a different assembly path is then still measured correctly.
   const contextTable = [];
-  for (const stage of [...MANDATORY_V2_STAGES, ...OPTIONAL_V2_STAGES]) {
+  for (const stage of [...executedStages, ...OPTIONAL_V2_STAGES]) {
     const attemptDir = path.join(runDirectory, stage, "attempts", "attempt-1");
     const record = stageRecordByName.get(stage);
     const manifest =
@@ -517,6 +548,15 @@ async function main() {
         .map((entry) => `${entry.path} (${(entry.sections ?? []).length} sections)`),
       not_applicable_sections: manifest.flatMap((entry) => entry.not_applicable_sections ?? []),
       missing_sections: manifest.flatMap((entry) => entry.missing_sections ?? []),
+      // Sections the style declares that the active profile deliberately withheld from this
+      // stage. `not_applicable_sections` can only report a union heading a style lacks; this
+      // reports a heading the style *has* and a stage was not given, which is the decision a
+      // profile actually makes.
+      excluded_sections: manifest.flatMap((entry) => entry.excluded_sections ?? []),
+      // The artifact-level validation outcome for stages whose profile declares constraints.
+      validation: record?.validation ?? null,
+      validation_attempts: record?.validation_attempts ?? null,
+      edition_mode: record?.edition_mode ?? null,
       corpus_policy: corpusContext?.effective_policy ?? record?.corpus_policy ?? null,
       corpus_recovery: corpusContext?.recovery ?? null,
       corpus_source_count: corpusContext?.source_count ?? null,
@@ -552,6 +592,65 @@ async function main() {
       `${notApplicable.length} requested section(s) do not belong to this style and were correctly omitted`,
     );
   }
+  // What each stage's profile withheld on purpose. This is the record that makes a profile's
+  // selectivity auditable rather than a matter of trust.
+  const excluded = [...new Set(
+    contextTable.flatMap((row) => row.excluded_sections.map((section) => `${row.stage}: ${section}`)),
+  )];
+  const profileId = pipelineRecord.style_profile_id ?? null;
+  if (profileId) {
+    add(
+      OK,
+      "context:style-profile",
+      `style profile ${profileId} v${pipelineRecord.style_profile_version ?? "?"} ` +
+      `(${pipelineRecord.style_profile?.status ?? "status unknown"}, ` +
+      `${pipelineRecord.runtime?.style_profile_selection ?? "source unknown"}) governed this run`,
+      {
+        style_profile: pipelineRecord.style_profile ?? null,
+        excluded_sections: excluded,
+        excluded_count: excluded.length,
+      },
+    );
+  }
+  // The artifact validators. A stage whose profile declares constraints either satisfies them
+  // or says why it could not; either way the outcome is on the record rather than inferred
+  // from whether the run finished.
+  const validations = contextTable.filter((row) => row.validation);
+  if (validations.length) {
+    const rejected = validations.filter((row) => row.validation.ok === false);
+    const corrected = validations.filter((row) => row.validation.ok && (row.validation_attempts ?? 1) > 1);
+    add(
+      rejected.length ? WARN : OK,
+      "validation:constraints",
+      validations
+        .map((row) => `${row.stage} ${row.validation.ok ? "ok" : "unmet"}${(row.validation_attempts ?? 1) > 1 ? ` (after ${row.validation_attempts} attempts)` : ""}`)
+        .join(" | ") +
+        (corrected.length ? ` — ${corrected.map((row) => row.stage).join(", ")} was corrected on a second attempt` : ""),
+      {
+        validations: validations.map((row) => ({
+          stage: row.stage,
+          ok: row.validation.ok,
+          severity: row.validation.severity,
+          attempts: row.validation_attempts,
+          counts: row.validation.counts,
+          arithmetic: row.validation.arithmetic ?? null,
+          unmet: (row.validation.violations ?? []).map((item) => ({ code: item.code, unit: item.unit, message: item.message })),
+          recorded: (row.validation.warnings ?? []).map((item) => ({ code: item.code, unit: item.unit, message: item.message })),
+        })),
+      },
+    );
+  }
+  const editionModes = [...new Set(contextTable.map((row) => row.edition_mode).filter(Boolean))];
+  if (editionModes.length) {
+    add(
+      OK,
+      "validation:edition-mode",
+      `the frame declared edition mode ${editionModes.join(", ")}` +
+        (editionModes.includes("catalog_only")
+          ? "; the published length is exempt from the style's minimum for this edition"
+          : ""),
+    );
+  }
   if (corpusSize) {
     add(
       OK,
@@ -570,19 +669,64 @@ async function main() {
     );
   }
 
+  // ---------------------------------------------------------------- scope to what ran
+  //
+  // Most of this file reads artifacts the later stages write, so a partial run produces findings
+  // about documents that were never going to exist. Those findings are not evidence about the
+  // run — they are the absence of the stages the run deliberately stopped before — and reporting
+  // them would make a correct partial run indistinguishable from a broken one.
+  //
+  // So each finding is attributed to the stage it is evidence about, and findings about stages
+  // outside the executed range are dropped. The count is reported rather than silently discarded,
+  // because a check that quietly evaluates nothing is the failure mode this whole exercise has
+  // now hit twice: a validator at `ok` on an unread document, and a key list that matched the
+  // wrong array. Suppression here is visible in the report and named in the console output.
+  const stageForFinding = (id) => {
+    const artifact = /^json:([a-z-]+)\//.exec(id);
+    if (artifact) return artifact[1];
+    // The frame's declared evidence is checked through the draft's projection, so the draft is
+    // the stage whose execution decides whether the check can run at all.
+    if (id.startsWith("frame:")) return "draft";
+    if (id.startsWith("wops:")) return "developmental-review";
+    const stage = /^([a-z-]+):/.exec(id);
+    return stage && MANDATORY_V2_STAGES.includes(stage[1]) ? stage[1] : null;
+  };
+  const suppressed = isPartial
+    ? findings.filter((finding) => {
+        const stage = stageForFinding(finding.id);
+        return stage !== null && !executedStages.includes(stage);
+      })
+    : [];
+  const scoped = isPartial
+    ? findings.filter((finding) => !suppressed.includes(finding))
+    : findings;
+  if (isPartial) {
+    // Pushed onto `scoped` rather than `findings`, because this describes the suppression and
+    // is therefore not itself subject to it.
+    scoped.push({
+      status: OK,
+      id: "verification:scope",
+      note:
+        `${suppressed.length} finding(s) about stages outside the executed range were not evaluated: ` +
+        `${[...new Set(suppressed.map((finding) => stageForFinding(finding.id)))].sort().join(", ") || "none"}`,
+    });
+  }
+
   // ---------------------------------------------------------------- write and report
   const report = {
     schema_version: 1,
     run_id: runId,
     pipeline: pipelineRecord?.pipeline ?? null,
+    partial: isPartial,
+    executed_stages: executedStages,
     generated_at: new Date().toISOString(),
     counts: {
-      ok: findings.filter((finding) => finding.status === OK).length,
-      warn: findings.filter((finding) => finding.status === WARN).length,
-      error: findings.filter((finding) => finding.status === ERROR).length,
+      ok: scoped.filter((finding) => finding.status === OK).length,
+      warn: scoped.filter((finding) => finding.status === WARN).length,
+      error: scoped.filter((finding) => finding.status === ERROR).length,
     },
     context_table: contextTable,
-    findings,
+    findings: scoped,
   };
   const outputPath = path.join(runDirectory, "verification-replay.json");
   await writeFile(outputPath, JSON.stringify(report, null, 2), "utf8");
@@ -591,7 +735,7 @@ async function main() {
     console.log(JSON.stringify(report, null, 2));
   } else {
     const order = { [ERROR]: 0, [WARN]: 1, [OK]: 2 };
-    const sorted = [...findings].sort((a, b) => order[a.status] - order[b.status]);
+    const sorted = [...scoped].sort((a, b) => order[a.status] - order[b.status]);
     for (const finding of sorted) {
       const label = finding.status === ERROR ? "ERROR" : finding.status === WARN ? "WARN " : "OK   ";
       console.log(`${label} ${finding.id}: ${finding.note}`);
@@ -606,7 +750,9 @@ async function main() {
     }
     console.log("");
     console.log(
-      `replay verification: ${report.counts.ok} ok, ${report.counts.warn} warn, ${report.counts.error} error — ${path.relative(ROOT, outputPath)}`,
+      `replay verification: ${report.counts.ok} ok, ${report.counts.warn} warn, ${report.counts.error} error` +
+        (isPartial ? ` (partial run: ${executedStages.join(" -> ")})` : "") +
+        ` — ${path.relative(ROOT, outputPath)}`,
     );
   }
   if (report.counts.error > 0) process.exitCode = 1;

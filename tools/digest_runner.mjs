@@ -46,8 +46,20 @@ import {
   executePipelineV2,
   prepareReplay,
   readMeasuredStagesV2,
+  readReplaySource,
   readStageRecordsV2,
+  stageV2,
 } from "./pipeline/v2.mjs";
+import { resolveStyleProfile, styleProfileIds, profilesForStyle } from "./pipeline/style-profiles.mjs";
+
+// Reject an unusable stage range before anything is created. `executePipelineV2` validates the
+// same range again — it is a library function and must not depend on its caller — but by then
+// `prepareReplay` has already written a run directory, and a typo in a command line should not
+// leave one behind to be mistaken for a real run.
+function validateStageRange({ fromStage = null, untilStage = null }) {
+  if (fromStage) stageV2(fromStage);
+  if (untilStage) stageV2(untilStage);
+}
 
 // Reasoning-token headroom and its rationale are documented in `tools/lib/shared.mjs`,
 // which owns the ceiling. `DIGEST_MAX_OUTPUT_TOKENS` still overrides it.
@@ -123,6 +135,9 @@ function ledgerRow(summary) {
     run_id: summary.run_id,
     digest_id: summary.digest_id,
     style: summary.style,
+    // The editorial profile is what makes two runs of the same style comparable, so cost
+    // analysis can separate a profile change from scheduling or cache variation.
+    style_profile_id: summary.style_profile_id ?? null,
     started_at: summary.started_at,
     completed_at: summary.completed_at,
     billing_band: summary.billing_band,
@@ -470,6 +485,9 @@ async function writeRunSummary(runId, digestId, style, { pipeline = PIPELINE_V1,
     : await readMeasuredStages(runId);
   if (stages.length === 0) return null;
   const stageRecords = pipeline === PIPELINE_V2_ID ? await readStageRecordsV2(runId) : null;
+  // Read back from pipeline.json rather than passed in, so `ledger` can rebuild a profile
+  // attribution for a run it did not execute.
+  const profile = pipeline === PIPELINE_V2_ID ? await styleProfileOfRun(runId) : null;
   const summary = buildRunSummary({
     runId,
     digestId,
@@ -480,6 +498,7 @@ async function writeRunSummary(runId, digestId, style, { pipeline = PIPELINE_V1,
       // Which pipeline produced this run, so an artifact set is never ambiguous, and so a
       // degraded run is visible in the ledger rather than only in a stage directory.
       pipeline,
+      ...(profile ?? {}),
       ...(stageRecords
         ? {
             degraded_stages: stageRecords.degraded_stages ?? [],
@@ -518,8 +537,14 @@ async function run() {
   const { configPath, style } = await resolveDigest(digestId);
   const runtimeConfig = await loadRuntimeConfig();
   const selection = resolvePipeline({ explicit: option("--pipeline"), config: runtimeConfig });
+  // Validate the style-profile selection before a run directory or any state is touched. A
+  // bad profile is a configuration error, and it must not leave a half-created run behind.
+  if (selection.pipeline === PIPELINE_V2_ID) {
+    resolveStyleProfile({ style, explicit: option("--style-profile"), config: runtimeConfig });
+    validateStageRange({ untilStage: option("--until-stage") });
+  }
   const sourcePath = await importSources(runId, temporarySourcePath);
-  await executePipeline({
+  const result = await executePipeline({
     pipeline: selection.pipeline,
     digestId,
     runId,
@@ -528,10 +553,11 @@ async function run() {
     sourcePath,
     runtimeConfig,
     timeoutSeconds,
+    stopAfter: option("--until-stage"),
   });
   const summary = await writeRunSummary(runId, digestId, style, { pipeline: selection.pipeline });
   if (summary) logCostSummary(summary);
-  console.log(path.join(stageDirectory(runId, "render"), "output", "email.html"));
+  reportOutput(result, runId);
 }
 
 // Execute either pipeline. The digest language is read from the digest config here so both
@@ -546,13 +572,32 @@ async function executePipeline({
   runtimeConfig,
   timeoutSeconds,
   startStage = null,
+  stopAfter = null,
   mode = "run",
+  // Set by `resume` so a resumed run keeps the profile its earlier stages executed.
+  recordedStyleProfileId = null,
 }) {
   const language = await frontmatterValue(configPath, "language");
   // The display name is authoritative and belongs to the digest configuration, not to the
   // rendering stage's imagination.
   const digestName = await frontmatterValue(configPath, "name").catch(() => null);
   if (pipeline === PIPELINE_V2_ID) {
+    // Resolve the style profile here, before the pipeline writes anything and long before
+    // the first model call. An unknown profile, a profile belonging to another style, or a
+    // malformed one is a configuration error and stops the run, rather than falling back to
+    // some other style's instructions.
+    //
+    // Precedence: the CLI flag, then the profile a resumed run already recorded, then
+    // DIGEST_STYLE_PROFILE, then system/runtime.json, then the style's default. A resumed
+    // run must not silently re-plan its remaining stages under a different profile from the
+    // ones that produced its earlier artifacts.
+    const explicitProfile = option("--style-profile");
+    const profileSelection = resolveStyleProfile({
+      style,
+      explicit: explicitProfile ?? recordedStyleProfileId,
+      explicitSource: explicitProfile ? "--style-profile" : "recorded-by-this-run",
+      config: runtimeConfig,
+    });
     return await executePipelineV2({
       runId,
       digestId,
@@ -564,7 +609,10 @@ async function executePipeline({
       timeoutSeconds,
       runtimeConfig,
       startStage,
+      stopAfter,
       mode,
+      styleProfile: profileSelection.profile,
+      styleProfileSource: profileSelection.source,
     });
   }
   await executeStages(digestId, runId, configPath, style, sourcePath, startStage ? stageIndex(startStage) : 0, timeoutSeconds);
@@ -644,7 +692,8 @@ async function resume() {
   const selection = resolvePipeline({ explicit: option("--pipeline"), config: runtimeConfig });
 
   if (selection.pipeline === PIPELINE_V2_ID) {
-    await executePipeline({
+    validateStageRange({ fromStage, untilStage: option("--until-stage") });
+    const v2Result = await executePipeline({
       pipeline: PIPELINE_V2_ID,
       digestId,
       runId,
@@ -654,11 +703,13 @@ async function resume() {
       runtimeConfig,
       timeoutSeconds,
       startStage: fromStage,
+      stopAfter: option("--until-stage"),
       mode: "resume",
+      recordedStyleProfileId: (await styleProfileOfRun(runId))?.style_profile_id ?? null,
     });
     const summary = await writeRunSummary(runId, digestId, style, { pipeline: PIPELINE_V2_ID });
     if (summary) logCostSummary(summary);
-    console.log(path.join(stageDirectory(runId, "render"), "output", "email.html"));
+    reportOutput(v2Result, runId);
     return;
   }
 
@@ -683,6 +734,24 @@ async function pipelineOfRun(runId) {
   }
 }
 
+// The style profile a run executed, read from its own pipeline.json. Returns null for a v1
+// run or for a v2 run recorded before profiles existed, which is why callers spread the
+// result rather than requiring it.
+async function styleProfileOfRun(runId) {
+  try {
+    const record = JSON.parse(await readFile(path.join(ROOT, RUNS_DIRECTORY, runId, "pipeline.json"), "utf8"));
+    if (record.pipeline !== PIPELINE_V2_ID || !record.style_profile_id) return null;
+    return {
+      style_profile_id: record.style_profile_id,
+      style_profile_version: record.style_profile_version ?? null,
+      style_profile_source: record.runtime?.style_profile_selection ?? null,
+      style_profile_status: record.style_profile?.status ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Replay a historical corpus through a pipeline.
  *
@@ -702,9 +771,17 @@ async function replay() {
 
   const runtimeConfig = await loadRuntimeConfig();
   const selection = resolvePipeline({ explicit: option("--pipeline"), config: runtimeConfig });
+  // Read the historical run's identity without creating anything, so the digest, the style
+  // and the style profile are all resolved — and a bad profile selection rejected — before a
+  // replay directory exists.
+  const source = await readReplaySource({ fromRun });
+  const { configPath, style: configuredStyle } = await resolveDigest(source.digestId);
+  const style = source.style ?? configuredStyle;
+  if (selection.pipeline === PIPELINE_V2_ID) {
+    resolveStyleProfile({ style, explicit: option("--style-profile"), config: runtimeConfig });
+    validateStageRange({ untilStage: option("--until-stage") });
+  }
   const prepared = await prepareReplay({ fromRun, runId, pipeline: selection.pipeline });
-  const { configPath, style: configuredStyle } = await resolveDigest(prepared.digestId);
-  const style = prepared.style ?? configuredStyle;
 
   const result = await executePipeline({
     pipeline: selection.pipeline,
@@ -716,6 +793,7 @@ async function replay() {
     runtimeConfig,
     timeoutSeconds,
     mode: "replay",
+    stopAfter: option("--until-stage"),
   });
   const summary = await writeRunSummary(runId, prepared.digestId, style, { pipeline: selection.pipeline });
   console.error(
@@ -725,6 +803,20 @@ async function replay() {
   if (summary) logCostSummary(summary);
   if (result?.degraded?.length) {
     console.error(`degraded stages: ${result.degraded.join(", ")}`);
+  }
+  reportOutput(result, runId);
+}
+
+// Where a completed run's deliverable is, or — for a partial run — what it executed instead.
+// Printing a `render/output/email.html` path that a partial run never produced would be a lie
+// that a downstream script could act on.
+function reportOutput(result, runId) {
+  if (result?.partial) {
+    console.error(
+      `partial run: executed ${result.partial.executed.join(" -> ")}, stopped after ${result.partial.stop_after}. ` +
+      "No rendered artifact exists and this run must not be delivered.",
+    );
+    return;
   }
   console.log(path.join(stageDirectory(runId, "render"), "output", "email.html"));
 }
@@ -858,14 +950,25 @@ if (process.argv[2] === "run") {
   console.error(
     [
       "Usage:",
-      "  node tools/digest_runner.mjs run --digest <id> --run-id <id> --input <temporary-sources.json> [--pipeline <id>] [--timeout <seconds>]",
-      "  node tools/digest_runner.mjs resume --digest <id> --run-id <id> --from-stage <stage> [--pipeline <id>] [--timeout <seconds>]",
-      "  node tools/digest_runner.mjs replay --from-run <historical-run-id> --run-id <new-run-id> [--pipeline <id>] [--timeout <seconds>]",
+      "  node tools/digest_runner.mjs run --digest <id> --run-id <id> --input <temporary-sources.json> [--pipeline <id>] [--style-profile <id>] [--until-stage <stage>] [--timeout <seconds>]",
+      "  node tools/digest_runner.mjs resume --digest <id> --run-id <id> --from-stage <stage> [--pipeline <id>] [--style-profile <id>] [--until-stage <stage>] [--timeout <seconds>]",
+      "  node tools/digest_runner.mjs replay --from-run <historical-run-id> --run-id <new-run-id> [--pipeline <id>] [--style-profile <id>] [--until-stage <stage>] [--timeout <seconds>]",
       "  node tools/digest_runner.mjs materialize --digest <id> --run-id <id> --stage <stage> --input <temporary-artifact>   (v1 only)",
       "  node tools/digest_runner.mjs ledger",
       "",
+      "--until-stage stops the run after that stage, producing no rendered artifact. It exists so a",
+      "stage range can be validated with real model calls without paying for the stages after it.",
+      "The run records `partial_run: true` in pipeline.json and must not be delivered.",
+      "",
       `Pipelines: ${PIPELINE_V1}, ${PIPELINE_V2_ID}. Selection order: --pipeline, DIGEST_PIPELINE,`,
       "system/runtime.json (pipeline.active), then v1.",
+      "",
+      `Style profiles (v2 only): ${styleProfileIds().join(", ")}.`,
+      "Selection order: --style-profile, DIGEST_STYLE_PROFILE, system/runtime.json",
+      "(style_profiles.<style>), then the style's default. Short aliases `legacy`, `current`,",
+      "`default` and `v1` resolve within the digest's own style. There is no cross-style",
+      "fallback: an unknown profile, or one belonging to another style, stops the run.",
+      "Profiles for one style: node -e \"import('./tools/pipeline/style-profiles.mjs').then(m => console.log(m.profilesForStyle(process.argv[1]).map(p => p.id + ' (' + p.status + ')').join('\\n')))\" <style>",
       "",
       "replay reuses a historical source-acquisition/sources.json as a new run. It performs no",
       "acquisition, no delivery, and no state mutation.",

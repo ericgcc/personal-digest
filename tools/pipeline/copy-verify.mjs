@@ -174,6 +174,8 @@ export function runDeterministicChecks({
   language = "English",
   style = null,
   catalogueRequired = null,
+  budget = null,
+  exemptLength = false,
 }) {
   const checks = [];
   const document = normalizeNewlines(stripFrontmatter(normalizeNewlines(prose)));
@@ -292,28 +294,50 @@ export function runDeterministicChecks({
   );
 
   // --- frame authority ------------------------------------------------------------
-  const declared = declaredEvidenceNumbers(frame);
+  //
+  // Compared against the **narrative** citations only. The catalogue legitimately lists every
+  // reviewed source, including the ones no thread cites, so a citation extracted from the whole
+  // document would report the catalogue as undeclared narrative. The body is where a citation
+  // makes a claim, so the body is what this check reads.
+  const declared = narrativeEvidenceNumbers(frame);
   if (declared.size) {
-    const undeclared = [...citations].filter((value) => !declared.has(value) && corpusNumbers.has(value));
+    const bodyCitations = extractCitations(body);
+    const undeclared = [...bodyCitations].filter((value) => !declared.has(value) && corpusNumbers.has(value));
     checks.push(
       undeclared.length === 0
-        ? check("frame:citations-declared", "pass", "every citation was declared by the frame")
+        ? check("frame:citations-declared", "pass", "every narrative citation was declared by a retained frame unit")
         : check(
             "frame:citations-declared",
             "warn",
-            `cited source(s) the frame did not declare: ${undeclared.join(", ")}`,
-            { undeclared },
+            `narrative source(s) not declared by any retained frame unit: ${undeclared.join(", ")}`,
+            { undeclared, declared: [...declared].sort((a, b) => a - b) },
           ),
     );
   }
 
   // --- length ---------------------------------------------------------------------
-  const budget = style ? STYLE_BUDGET[style] : null;
-  if (!budget) {
+  // The active style profile owns the budget policy. `style` is the fallback for callers
+  // that have no profile (the offline evaluation adapters, and historical analysis of runs
+  // recorded before profiles existed).
+  //
+  // A catalog-only edition is exempt: the style's minimum assumes narrative threads exist, and
+  // when none qualified the honest digest is short. The measurement still runs and is still
+  // reported, so the exemption is a recorded decision rather than a suppressed check.
+  const effectiveBudget = budget ?? (style ? STYLE_BUDGET[style] : null);
+  if (exemptLength) {
+    const measured = effectiveBudget && effectiveBudget.unit === "document"
+      ? `${wordCount(body)} body words against a ${effectiveBudget.min}-${effectiveBudget.max} target`
+      : "no document budget applies to this style";
+    checks.push(check(
+      "length:budget",
+      "exempt",
+      `exempt: FRAME declared a catalog-only edition, so the body is intentionally short (${measured})`,
+    ));
+  } else if (!effectiveBudget) {
     checks.push(check("length:budget", "warn", `no length budget is defined for style ${style ?? "(none)"}`));
-  } else if (budget.unit === "document") {
+  } else if (effectiveBudget.unit === "document") {
     const words = wordCount(body);
-    const { min, max } = budget;
+    const { min, max } = effectiveBudget;
     checks.push(
       words >= min * 0.75 && words <= max * 1.25
         ? check("length:budget", "pass", `${words} body words against a ${min}-${max} target`)
@@ -321,14 +345,14 @@ export function runDeterministicChecks({
     );
   } else {
     const entries = splitSourceEntries(body);
-    const outside = entries.filter((entry) => entry.words < budget.min * 0.6 || entry.words > budget.max * 1.6);
+    const outside = entries.filter((entry) => entry.words < effectiveBudget.min * 0.6 || entry.words > effectiveBudget.max * 1.6);
     checks.push(
       outside.length === 0
-        ? check("length:budget", "pass", `${entries.length} entries within the ${budget.min}-${budget.max} word band`)
+        ? check("length:budget", "pass", `${entries.length} entries within the ${effectiveBudget.min}-${effectiveBudget.max} word band`)
         : check(
             "length:budget",
             "warn",
-            `${outside.length} of ${entries.length} entries fall outside the ${budget.min}-${budget.max} word band`,
+            `${outside.length} of ${entries.length} entries fall outside the ${effectiveBudget.min}-${effectiveBudget.max} word band`,
             { entries: outside.slice(0, 8) },
           ),
     );
@@ -391,6 +415,7 @@ export function runDeterministicChecks({
     pass: checks.filter((item) => item.status === "pass").length,
     warn: checks.filter((item) => item.status === "warn").length,
     fail: checks.filter((item) => item.status === "fail").length,
+    exempt: checks.filter((item) => item.status === "exempt").length,
   };
   return {
     checks,
@@ -510,73 +535,140 @@ const UNIT_KEYS = [
 ];
 const UNIT_SOURCE_KEYS = ["selected_source_numbers", "source_numbers", "sources"];
 
-/**
- * Every source number the frame explicitly declared.
- *
- * This is the authoritative selection, not an inference over `analysis.json`. Three
- * declarations are honoured, each one written by FRAME itself: the per-unit selection,
- * the frame's own citation map, and the sources it recorded as selected.
- */
-export function declaredEvidenceNumbers(frame) {
-  const numbers = new Set();
-  if (!frame || typeof frame !== "object") return numbers;
+//: Dispositions that mean the unit is not part of the narrative the draft stage writes.
+const NON_NARRATIVE_DISPOSITIONS = ["split", "demote", "cut"];
 
-  const add = (value) => {
-    const number = Number(value);
-    if (Number.isInteger(number) && number > 0) numbers.add(number);
-  };
-
+function collectUnits(frame) {
   const units = [];
   for (const key of UNIT_KEYS) {
-    if (Array.isArray(frame[key])) {
-      units.push(...frame[key]);
-    }
+    if (Array.isArray(frame?.[key])) units.push(...frame[key]);
   }
-  const nested = frame.editorial_frame;
+  const nested = frame?.editorial_frame;
   if (nested && typeof nested === "object") {
     for (const key of UNIT_KEYS) {
       if (Array.isArray(nested[key])) units.push(...nested[key]);
     }
   }
-  for (const unit of units) {
-    if (!unit || typeof unit !== "object") continue;
-    for (const key of UNIT_SOURCE_KEYS) {
-      if (Array.isArray(unit[key])) unit[key].forEach(add);
-    }
-    if (Array.isArray(unit.evidence_refs)) {
-      for (const reference of unit.evidence_refs) {
-        if (reference && typeof reference === "object") add(reference.source_number);
-      }
-    }
-  }
+  return units.filter((unit) => unit && typeof unit === "object");
+}
 
-  if (frame.citation_map && typeof frame.citation_map === "object") {
-    Object.keys(frame.citation_map).forEach(add);
-  }
-  const catalogOnly = frame.catalog_only;
-  if (catalogOnly && typeof catalogOnly === "object" && Array.isArray(catalogOnly.selected)) {
-    catalogOnly.selected.forEach(add);
+function unitSourceNumbers(unit) {
+  const numbers = new Set();
+  const add = (value) => {
+    const number = Number(value);
+    if (Number.isInteger(number) && number > 0) numbers.add(number);
+  };
+  for (const key of UNIT_SOURCE_KEYS) {
+    if (Array.isArray(unit[key])) unit[key].forEach(add);
   }
   return numbers;
 }
 
+/**
+ * The sources the narrative is allowed to use: the union of the **retained** units'
+ * `selected_source_numbers`.
+ *
+ * This is the whole of what the draft stage receives, and it is deliberately the only
+ * declaration that counts. Three things it excludes, each for a reason:
+ *
+ *   * **units that were set aside.** A `demote` or `cut` unit is not written, so its sources are
+ *     not narrative evidence. Including them is what let a fixture with two retained sources
+ *     project five.
+ *   * **the citation map.** It is a description of what each source supports across the whole
+ *     edition, including the catalogue, so it authorises nothing. A map that independently
+ *     widened the projection would make `selected_source_numbers` advisory.
+ *   * **`catalog_only.selected`.** That is catalogue provenance: the sources the catalogue must
+ *     list, whether or not the narrative cites them. Conflating the two is what makes a
+ *     projection look like a selection.
+ *
+ * `evidence_refs` is cross-checked rather than merged. A reference outside the declared
+ * selection describes evidence the writer will not receive — that is an inconsistency, reported
+ * by the frame validator as `unit:roles-outside-selection` and recorded on the projection, not a
+ * second way to authorise a source.
+ */
+export function narrativeEvidenceNumbers(frame) {
+  const numbers = new Set();
+  if (!frame || typeof frame !== "object") return numbers;
+  for (const unit of collectUnits(frame)) {
+    const disposition = unit.disposition ?? "keep";
+    if (NON_NARRATIVE_DISPOSITIONS.includes(disposition)) continue;
+    for (const number of unitSourceNumbers(unit)) numbers.add(number);
+  }
+  return numbers;
+}
+
+/**
+ * Source numbers a retained unit's `evidence_refs` names but its `selected_source_numbers` does
+ * not. Reported so the projection can say that the two halves of a unit's account disagree.
+ */
+export function evidenceRefsOutsideSelection(frame) {
+  const outside = new Set();
+  if (!frame || typeof frame !== "object") return outside;
+  for (const unit of collectUnits(frame)) {
+    if (NON_NARRATIVE_DISPOSITIONS.includes(unit.disposition ?? "keep")) continue;
+    const declared = unitSourceNumbers(unit);
+    if (!Array.isArray(unit.evidence_refs)) continue;
+    for (const reference of unit.evidence_refs) {
+      const number = Number(reference?.source_number);
+      if (Number.isInteger(number) && number > 0 && !declared.has(number)) outside.add(number);
+    }
+  }
+  return outside;
+}
+
+/**
+ * Every source number the frame records catalogue provenance for.
+ *
+ * Separate from the narrative selection because the two answer different questions: the
+ * narrative projection is "what may the writer cite", and this is "what must the catalogue
+ * list". The catalogue is required to cover every reviewed source, so its provenance is wider
+ * than the narrative by design — and a check that conflated them would either starve the
+ * catalogue or over-feed the writer.
+ */
+export function catalogProvenanceNumbers(frame) {
+  const numbers = new Set();
+  if (!frame || typeof frame !== "object") return numbers;
+  for (const unit of collectUnits(frame)) {
+    for (const number of unitSourceNumbers(unit)) numbers.add(number);
+  }
+  if (frame.citation_map && typeof frame.citation_map === "object") {
+    for (const key of Object.keys(frame.citation_map)) {
+      const number = Number(key);
+      if (Number.isInteger(number) && number > 0) numbers.add(number);
+    }
+  }
+  const catalogOnly = frame.catalog_only;
+  if (catalogOnly && typeof catalogOnly === "object") {
+    if (Array.isArray(catalogOnly.selected)) {
+      for (const value of catalogOnly.selected) {
+        const number = Number(value);
+        if (Number.isInteger(number) && number > 0) numbers.add(number);
+      }
+    }
+    if (Array.isArray(catalogOnly.entries)) {
+      for (const entry of catalogOnly.entries) {
+        const number = Number(entry?.source_number ?? entry);
+        if (Number.isInteger(number) && number > 0) numbers.add(number);
+      }
+    }
+  }
+  return numbers;
+}
+
+/**
+ * Retained units, with the evidence each declares. Used by the projection record so a reader can
+ * see which unit contributed which source rather than only the union.
+ */
 export function summarizeFrameUnitDeclarations(frame) {
   const units = [];
-  for (const key of UNIT_KEYS) {
-    if (Array.isArray(frame?.[key])) {
-      for (const unit of frame[key]) {
-        if (!unit || typeof unit !== "object") continue;
-        const declared = new Set();
-        for (const sourceKey of UNIT_SOURCE_KEYS) {
-          if (Array.isArray(unit[sourceKey])) unit[sourceKey].forEach((value) => declared.add(Number(value)));
-        }
-        units.push({
-          unit_id: unit.unit_id ?? unit.label ?? unit.id ?? null,
-          selected_source_numbers: [...declared].filter((value) => Number.isInteger(value)),
-        });
-      }
-      break;
-    }
+  for (const unit of collectUnits(frame)) {
+    const disposition = unit.disposition ?? "keep";
+    units.push({
+      unit_id: unit.unit_id ?? unit.label ?? unit.id ?? null,
+      disposition,
+      retained: !NON_NARRATIVE_DISPOSITIONS.includes(disposition),
+      selected_source_numbers: [...unitSourceNumbers(unit)].filter((value) => Number.isInteger(value)).sort((a, b) => a - b),
+    });
   }
   return units;
 }

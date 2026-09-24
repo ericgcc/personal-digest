@@ -9,7 +9,7 @@
 // Anything moved here was previously defined inline in digest_runner.mjs and is
 // byte-for-byte the same logic, so v1 behaviour is unchanged by the extraction.
 
-import { cp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -45,9 +45,16 @@ export function validateRunId(runId) {
   }
 }
 
+// Whether a path exists, for a file *or* a directory.
+//
+// This used `readFile`, which fails on a directory. Two guards therefore never fired:
+// `prepareReplay`'s refusal to replay into an existing run directory, and `verify-replay`'s
+// missing-run check. The first is a data-loss path — a replay into an existing run id would
+// have copied over that run's recorded corpus — so the helper now asks the filesystem a
+// question that has an answer for both kinds of path.
 export async function exists(filePath) {
   try {
-    await readFile(filePath);
+    await stat(filePath);
     return true;
   } catch {
     return false;
@@ -321,20 +328,66 @@ export function buildRunSummary({ runId, digestId, style, corpusPolicy, stages, 
 
   for (const s of stages) {
     hit += s.hit; miss += s.miss; output += s.output;
-    reasoning += s.reasoning; seconds += s.seconds;
 
-    const band = billingBand(s.startedAt);
-    const stageCost = costForBand(band, s);
+    // Price each model call in its own billing band. A stage that made a second attempt can
+    // straddle a peak boundary, so banding the aggregate by the stage's start would misprice it;
+    // the per-attempt measurement is preferred whenever the caller supplies one, and the stage
+    // aggregate is the fallback for a single-attempt stage or a historical run.
+    const pricedCalls = (Array.isArray(s.attempts) ? s.attempts : []).filter(
+      (attempt) => attempt.completed && attempt.started_at,
+    );
+    const calls = pricedCalls.length
+      ? pricedCalls.map((attempt) => ({
+          startedAt: attempt.started_at,
+          seconds: attempt.seconds ?? 0,
+          hit: attempt.cache_hit_tokens ?? 0,
+          miss: attempt.cache_miss_tokens ?? 0,
+          output: attempt.output_tokens ?? 0,
+          reasoning: attempt.reasoning_tokens ?? 0,
+        }))
+      : [{ startedAt: s.startedAt, seconds: s.seconds, hit: s.hit, miss: s.miss, output: s.output, reasoning: s.reasoning }];
+
+    let stageCost = 0;
+    let stageOffPeak = 0;
+    let stagePeak = 0;
+    for (const call of calls) {
+      const band = billingBand(call.startedAt);
+      stageCost += costForBand(band, call);
+      stageOffPeak += costForBand("off-peak", call);
+      stagePeak += costForBand("peak", call);
+    }
     actual += stageCost;
-    allOffPeak += costForBand("off-peak", s);
-    allPeak += costForBand("peak", s);
+    allOffPeak += stageOffPeak;
+    allPeak += stagePeak;
+    reasoning += s.reasoning;
+    seconds += s.seconds;
+
+    const bands = [...new Set(calls.map((call) => billingBand(call.startedAt)))];
 
     perStage.push({
       stage: s.name,
       started_at: s.startedAt,
       completed_at: s.completedAt,
       seconds: Number(s.seconds.toFixed(2)),
-      billing_band: band,
+      // The sum of this stage's model calls, when the caller reports it separately. The stage's
+      // wall time above includes any validation between attempts, so the two differ by the cost
+      // of the checks — which is what a reviewer wants to see when a stage retries.
+      ...(typeof s.model_seconds === "number" ? { model_seconds: Number(s.model_seconds.toFixed(2)) } : {}),
+      ...(typeof s.attempt_count === "number" ? { attempt_count: s.attempt_count } : {}),
+      ...(calls.length > 1 ? { attempts: calls.map((call, index) => ({
+        attempt: index + 1,
+        started_at: call.startedAt,
+        seconds: Number(call.seconds.toFixed(2)),
+        billing_band: billingBand(call.startedAt),
+        cache_hit_tokens: call.hit,
+        cache_miss_tokens: call.miss,
+        output_tokens: call.output,
+        reasoning_tokens: call.reasoning,
+        cost_usd: Number(costForBand(billingBand(call.startedAt), call).toFixed(6)),
+      })) } : {}),
+      // `mixed` for a stage whose attempts landed in different bands, so a run that straddles a
+      // boundary is visible rather than silently averaged.
+      billing_band: bands.length === 1 ? bands[0] : "mixed",
       cache_hit_tokens: s.hit,
       cache_miss_tokens: s.miss,
       output_tokens: s.output,

@@ -273,6 +273,7 @@ class ReaderQualityMetric(BaseMetric):
         verbose_mode: bool = False,
         role_contract: str | None = None,
         reader_contract: str | None = None,
+        review_contract: str | None = None,
     ) -> None:
         self.judge = judge
         self.style = style
@@ -284,6 +285,9 @@ class ReaderQualityMetric(BaseMetric):
         # defaults in ``prompts`` keep the evaluator usable standalone.
         self.role_contract = role_contract
         self.reader_contract = reader_contract
+        # The active style profile's review obligations, when it declares any. Absent for every
+        # style whose profile does not, which leaves the prompt unchanged for those styles.
+        self.review_contract = review_contract
         self.score: float | None = None
         self.reason: str | None = None
         self.success: bool | None = None
@@ -300,6 +304,7 @@ class ReaderQualityMetric(BaseMetric):
             language=self.language,
             role_contract=self.role_contract,
             reader_contract=self.reader_contract,
+            review_contract=self.review_contract,
         )
 
     def measure(self, test_case: LLMTestCase, *args: Any, **kwargs: Any) -> float:
@@ -446,6 +451,7 @@ def evaluate_reader_quality(
     verbose: bool = False,
     role_contract: str | None = None,
     reader_contract: str | None = None,
+    review_contract: str | None = None,
     on_prompt: Callable[[str], None] | None = None,
 ) -> SemanticResult:
     """Absolute mode: assess one digest artifact with exactly one judge request."""
@@ -472,6 +478,7 @@ def evaluate_reader_quality(
         verbose_mode=verbose,
         role_contract=role_contract,
         reader_contract=reader_contract,
+        review_contract=review_contract,
     )
     # ``on_prompt`` exists so the orchestrator can persist the exact request that
     # was sent. The prompt is rebuilt from the same inputs ``measure`` will use,
@@ -532,6 +539,7 @@ def evaluate_regression(
     threshold: float | None = None,
     role_contract: str | None = None,
     reader_contract: str | None = None,
+    review_contract: str | None = None,
     on_prompt: Callable[[str], None] | None = None,
 ) -> SemanticResult:
     """Comparison mode: before/after regression detection in **one** judge request.
@@ -564,6 +572,7 @@ def evaluate_regression(
         after_label=after_label,
         role_contract=role_contract,
         reader_contract=reader_contract,
+        review_contract=review_contract,
     )
     if on_prompt is not None:
         on_prompt(prompt)

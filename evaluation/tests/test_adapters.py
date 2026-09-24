@@ -25,12 +25,14 @@ from evaluation.semantic.developmental import (
     BUILTIN_PROBLEM_TYPES,
     DevelopmentalReview,
     coerce_problem_types,
+    developmental_prompt,
     evaluate_developmental_review,
     parse_json_document,
     render_frame,
     summarize_frame,
 )
 from evaluation.semantic.judge import DeepSeekJudge
+from evaluation.semantic.prompts import absolute_prompt, comparison_prompt
 from evaluation.version import DEVELOPMENTAL_REVIEW_ID, EVALUATION_STEPS_VERSION
 
 # --------------------------------------------------------------------------- #
@@ -375,6 +377,127 @@ def test_the_reader_definition_is_supplied_by_the_caller() -> None:
 def test_the_steps_version_records_the_neutralization() -> None:
     assert EVALUATION_STEPS_VERSION != "v3"
     assert "neutral" in EVALUATION_STEPS_VERSION
+
+
+# --------------------------------------------------------------------------- #
+# The style's review contract
+# --------------------------------------------------------------------------- #
+#
+# The three contracts this evaluator accepted before — role, reader and style interface —
+# establish who is judging and what the artifact claims to be, but none of them states what a
+# reviewer of a particular style must look for and must not ask for. Without that, a
+# style-specific diagnostic could not be delivered to the judge at all, so a Phase 3 review
+# requirement would have been inert no matter how well it was written.
+
+
+REVIEW_MARKER = "REVIEW-OBLIGATIONS-MARKER"
+REVIEW_HEADING = "## What this style's review must check"
+
+
+@pytest.mark.parametrize("builder", ["absolute", "comparison", "developmental"])
+def test_the_review_contract_reaches_every_prompt_builder(builder: str) -> None:
+    from evaluation.sections import parse_sections
+
+    parsed = parse_sections(DRAFT, style="synthesis-max", prepare=True)
+    prompts = {
+        "absolute": lambda: absolute_prompt(
+            digest_text=DRAFT,
+            sections=list(parsed.sections),
+            style="synthesis-max",
+            review_contract=REVIEW_MARKER,
+        ),
+        "comparison": lambda: comparison_prompt(
+            before_text=DRAFT,
+            after_text=DRAFT,
+            before_sections=list(parsed.sections),
+            after_sections=list(parsed.sections),
+            style="synthesis-max",
+            review_contract=REVIEW_MARKER,
+        ),
+        "developmental": lambda: developmental_prompt(
+            draft_text=DRAFT,
+            frame_text="",
+            frame_json=None,
+            sections=list(parsed.sections),
+            problem_types=BUILTIN_PROBLEM_TYPES,
+            review_contract=REVIEW_MARKER,
+        ),
+    }
+    prompt = prompts[builder]()
+    assert REVIEW_MARKER in prompt, f"the {builder} prompt dropped the review contract"
+    assert REVIEW_HEADING in prompt, f"the {builder} prompt has no section for it"
+
+
+@pytest.mark.parametrize("builder", ["absolute", "comparison", "developmental"])
+def test_an_absent_review_contract_leaves_the_prompt_unchanged(builder: str) -> None:
+    # Every style whose profile declares no review obligations must produce exactly the prompt it
+    # produced before this contract existed, so nothing is added and no empty heading appears.
+    from evaluation.sections import parse_sections
+
+    parsed = parse_sections(DRAFT, style="synthesis-max", prepare=True)
+    prompts = {
+        "absolute": lambda: absolute_prompt(digest_text=DRAFT, sections=list(parsed.sections), style="synthesis-max"),
+        "comparison": lambda: comparison_prompt(
+            before_text=DRAFT,
+            after_text=DRAFT,
+            before_sections=list(parsed.sections),
+            after_sections=list(parsed.sections),
+            style="synthesis-max",
+        ),
+        "developmental": lambda: developmental_prompt(
+            draft_text=DRAFT,
+            frame_text="",
+            frame_json=None,
+            sections=list(parsed.sections),
+            problem_types=BUILTIN_PROBLEM_TYPES,
+        ),
+    }
+    prompt = prompts[builder]()
+    assert REVIEW_HEADING not in prompt, f"the {builder} prompt emitted an empty review heading"
+    assert REVIEW_MARKER not in prompt
+
+
+def test_the_adapter_reads_the_review_contract_from_a_request() -> None:
+    # The adapter's request vocabulary is the only path by which a style's review obligations can
+    # reach the judge, so the name must be one the CLI actually reads.
+    assert cli._contract({"contracts": {"review": REVIEW_MARKER}}, "review") == REVIEW_MARKER
+    assert cli._contract({"contracts": {"review": "   "}}, "review") is None
+    assert cli._contract({"contracts": {}}, "review") is None
+    assert cli._contract({}, "review") is None
+    assert cli._contract({"contracts": {"review": 42}}, "review") is None
+
+
+def test_the_developmental_command_forwards_the_review_contract(monkeypatch, tmp_path: Path) -> None:
+    # End to end through the CLI handler, so a handler that forgot to read the key fails here
+    # rather than silently judging without the style's obligations.
+    captured: dict[str, object] = {}
+
+    class StubOutcome:
+        prompt = ""
+        error = None
+        ok = True
+        usage: dict[str, object] = {}
+
+        def to_dict(self) -> dict[str, object]:
+            return {"stage": "developmental-review"}
+
+    def fake_evaluate(draft_text, **kwargs):  # noqa: ANN001, ANN003 - test double
+        captured["draft_text"] = draft_text
+        captured.update(kwargs)
+        return StubOutcome()
+
+    monkeypatch.setattr(cli, "evaluate_developmental_review", fake_evaluate)
+    (tmp_path / "draft.md").write_text(DRAFT, encoding="utf-8")
+    request = {
+        "stage": "developmental-review",
+        "contracts": {"role": "r", "reader": "d", "style": "s", "review": REVIEW_MARKER},
+        "artifacts": {"draft": str(tmp_path / "draft.md")},
+    }
+    cli._cmd_developmental(request, lambda _prompt: None)
+    assert captured.get("review_contract") == REVIEW_MARKER
+    assert captured.get("role_contract") == "r"
+    assert captured.get("style_contract") == "s"
+    assert captured.get("reader_contract") == "d"
 
 
 # --------------------------------------------------------------------------- #

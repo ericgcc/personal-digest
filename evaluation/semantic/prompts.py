@@ -196,6 +196,24 @@ def _reader_section(reader_contract: str | None) -> str:
     return f"## Your reader\n\n{text}"
 
 
+def _review_section(review_contract: str | None) -> str:
+    """Render the style's review obligations, when the caller supplied them.
+
+    The three contracts this evaluator already accepted — role, reader and style interface —
+    establish *who is judging* and *what style the artifact claims to be*. None of them states
+    what a reviewer of this particular style must look for and must not ask for, so a
+    style-specific diagnostic could not be delivered to the judge at all. This renders the
+    active profile's review document, which is where those obligations live.
+
+    Absent is the normal case for every style whose profile does not declare one, and it emits
+    nothing rather than an empty heading, so the prompt is unchanged for those styles.
+    """
+    if review_contract and review_contract.strip():
+        return f"\n\n## What this style's review must check\n\n{review_contract.strip()}"
+    return ""
+
+
+
 def render_sections(sections: list[DigestSection], *, max_words_per_section: int | None = None) -> str:
     """Render the section list the judge will evaluate.
 
@@ -227,9 +245,11 @@ def absolute_prompt(
     language: str | None = None,
     role_contract: str | None = None,
     reader_contract: str | None = None,
+    review_contract: str | None = None,
 ) -> str:
     """Build the absolute-mode prompt: assess one artifact."""
     style_block = _style_rubric(style)
+    review_block = _review_section(review_contract)
     language_note = (
         f"\nThe digest is written in **{language}**. Judge it in its own language and do not "
         "penalize non-English writing, but write your JSON string values in English so "
@@ -245,7 +265,7 @@ You are evaluating a personal digest as a demanding but fair editorial reader.
 {_reader_section(reader_contract)}
 {language_note}
 
-{style_block}
+{style_block}{review_block}
 
 {ANTI_LENIENCY}
 
@@ -343,9 +363,11 @@ def comparison_prompt(
     after_label: str = "AFTER",
     role_contract: str | None = None,
     reader_contract: str | None = None,
+    review_contract: str | None = None,
 ) -> str:
     """Build the comparison-mode prompt: one call, before and after."""
     style_block = _style_rubric(style)
+    review_block = _review_section(review_contract)
     language_note = (
         f"\nBoth versions are written in **{language}**. Judge them in their own language, "
         "but write your JSON string values in English."
@@ -360,7 +382,7 @@ reader-facing quality.
 {_reader_section(reader_contract)}
 {language_note}
 
-{style_block}
+{style_block}{review_block}
 
 {ANTI_LENIENCY}
 

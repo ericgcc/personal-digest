@@ -446,10 +446,11 @@ def developmental_prompt(
     style_contract: str | None = None,
     role_contract: str | None = None,
     reader_contract: str | None = None,
+    review_contract: str | None = None,
     language: str | None = None,
 ) -> str:
     """Build the developmental-review prompt."""
-    from .prompts import _reader_section, _role_section, render_sections
+    from .prompts import _reader_section, _review_section, _role_section, render_sections
 
     style_block = (
         "## The style this draft must implement\n\n" + style_contract.strip()
@@ -458,6 +459,7 @@ def developmental_prompt(
         "The draft's composition must follow the style it was written in: its "
         "composition unit, its required structure, and its progression model."
     )
+    review_block = _review_section(review_contract)
     vocabulary = ", ".join(f"`{value}`" for value in problem_types)
     language_note = (
         f"\nThe digest is written in **{language}**. Judge it in its own language. "
@@ -472,6 +474,7 @@ You are the developmental editor of a personal digest. You diagnose; you do not 
 {language_note}
 
 {style_block}
+{review_block}
 
 {DISCIPLINE}
 
@@ -515,6 +518,7 @@ def evaluate_developmental_review(
     style_contract: str | None = None,
     role_contract: str | None = None,
     reader_contract: str | None = None,
+    review_contract: str | None = None,
     judge: DeepSeekJudge | None = None,
     section_options: SectionOptions | None = None,
 ) -> DevelopmentalResult:
@@ -551,6 +555,7 @@ def evaluate_developmental_review(
         style_contract=style_contract,
         role_contract=role_contract,
         reader_contract=reader_contract,
+        review_contract=review_contract,
         language=language,
     )
 

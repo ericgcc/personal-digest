@@ -123,6 +123,13 @@ def _artifact_text(request: Mapping[str, Any], name: str, *, required: bool = Tr
 
 
 def _contract(request: Mapping[str, Any], name: str) -> str | None:
+    """One caller-supplied contract, or ``None``.
+
+    The names are the adapter's request vocabulary: ``role``, ``reader``, ``style`` and
+    ``review``. A caller that supplies a key outside it is not warned — the request is data, and
+    an unknown key is not an error — but it is also never silently forwarded, which is why the
+    set is small and each name has exactly one consumer.
+    """
     contracts = request.get("contracts")
     if isinstance(contracts, Mapping) and isinstance(contracts.get(name), str):
         value = str(contracts[name]).strip()
@@ -193,6 +200,7 @@ def _cmd_developmental(request: Mapping[str, Any], capture: Callable[[str], None
         style_contract=_contract(request, "style"),
         role_contract=_contract(request, "role"),
         reader_contract=_contract(request, "reader"),
+        review_contract=_contract(request, "review"),
     )
     if outcome.prompt:
         capture(outcome.prompt)
@@ -232,6 +240,7 @@ def _cmd_reader_quality(request: Mapping[str, Any], capture: Callable[[str], Non
         language=_string(request, "language"),
         role_contract=_contract(request, "role"),
         reader_contract=_contract(request, "reader"),
+        review_contract=_contract(request, "review"),
         on_prompt=capture,
     )
     return _reader_payload(outcome)
@@ -247,6 +256,7 @@ def _cmd_compare(request: Mapping[str, Any], capture: Callable[[str], None]) -> 
         language=_string(request, "language"),
         role_contract=_contract(request, "role"),
         reader_contract=_contract(request, "reader"),
+        review_contract=_contract(request, "review"),
         before_label=_string(request, "before_label") or "BEFORE",
         after_label=_string(request, "after_label") or "AFTER",
         on_prompt=capture,

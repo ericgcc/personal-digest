@@ -17,17 +17,33 @@
 // 5. **Degradation, not suppression.** A stage that cannot run is recorded and
 //    skipped; the last valid artifact continues.
 
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
 import { createEvaluationAdapter } from "../adapters/evaluation_adapter.mjs";
 import { PIPELINE_V2, loadRuntimeConfig } from "../adapters/runtime.mjs";
 import { createWopsAdapter } from "../adapters/wops_adapter.mjs";
-import { budgetFor, budgetProse } from "./budgets.mjs";
+import { budgetProse } from "./budgets.mjs";
 import {
+  ANALYSIS_EDITORIAL_CODES,
+  ANALYSIS_GROUPING_FALLBACK_KEYS,
+  formatValidationFeedback,
+  validateAnalysisSelection,
+  validateFrame,
+} from "./editorial-validation.mjs";import {
+  MANDATED_STYLE_SECTIONS,
+  describeStyleProfile,
+  excludedSections,
+  preflightStyleProfile,
+  resolveStyleProfile,
+  validateStyleProfile,
+} from "./style-profiles.mjs";
+import {
+  catalogProvenanceNumbers,
   catalogRequired,
-  declaredEvidenceNumbers,
+  evidenceRefsOutsideSelection,
+  narrativeEvidenceNumbers,
   guardCopyPass,
   runDeterministicChecks,
   splitCatalog,
@@ -53,52 +69,35 @@ import {
 } from "../lib/shared.mjs";
 
 export const PIPELINE_ID = PIPELINE_V2;
-export const PIPELINE_VERSION = "2.0.0";
+export const PIPELINE_VERSION = "2.1.0";
+
+//: How many times a stage may be asked to produce an artifact that satisfies its profile's
+//: constraints. A transport failure is retried inside one attempt by `withRetry`; a *contract*
+//: failure gets its own attempts, because the model can only fix a structural problem if it is
+//: told what the problem is. Two attempts means one correction, matching this pipeline's
+//: discipline elsewhere of allowing a single repair pass rather than iterating.
+const VALIDATION_ATTEMPTS = Math.max(1, Number(process.env.DIGEST_VALIDATION_ATTEMPTS ?? 2));
 
 // ---------------------------------------------------------------------------------------
-// Style section sets
+// Style profiles
 // ---------------------------------------------------------------------------------------
 
-// Sections that describe what the style composes and how it is structured. Chosen by
-// name from the style file, which stays the single source of truth.
+// This module no longer names a style section. `tools/pipeline/style-profiles.mjs` owns
+// every style-derived instruction document a stage receives, and resolves the active
+// profile before assembly. Two defects the profiles remove are recorded in
+// `docs/style-isolation-baseline.md` as D12 and D13:
 //
-// The list is a **union across styles**: `## Synthesis mode` belongs to a synthesized style
-// and `## Summary mode` to a compact one, and neither should exist in the other. Absence is
-// therefore normal and is recorded, not reported as a defect. Only the sections
-// `system/style-contract.md` requires every style to declare are treated as mandated, and a
-// missing mandated section is a real problem because the stage is then writing against an
-// incomplete contract.
-const COMPOSITION_SECTIONS = [
-  "## Style interface",
-  "## Synthesis mode",
-  "## Curation process",
-  "## Core principle: Digest-first reading",
-  "## Relationship between sources",
-  "## Editorial depth",
-  "## Understanding over extraction",
-  "## Organization",
-  "## Required structure",
-  "## Summary mode",
-  "## Multiple items within one source",
-  "## Cross-source overlap",
-  "## Selection and filtering",
-  "## Fidelity",
-  "## Fidelity and nuance",
-  "## Optional depth cue",
-  "## Length and density",
-  "## Citations",
-  "## Section-level source lines",
-  "## Final source catalog",
-  "## Ending rules",
-];
-
-const CHARACTER_SECTIONS = ["## Writing character"];
-const INTERFACE_SECTIONS = ["## Style interface"];
-const EXPECTATION_SECTIONS = ["## Style interface", "## Required structure"];
-const FULL_STYLE_SECTIONS = [...COMPOSITION_SECTIONS, ...CHARACTER_SECTIONS];
-
-//: Required of every canonical style by `system/style-contract.md`.
-const MANDATED_STYLE_SECTIONS = ["## Style interface", "## Writing character"];
+//   * the old `COMPOSITION_SECTIONS` union asked every style for all 21 possible
+//     composition headings, so a stage's actual context was only discoverable from the
+//     run's manifest, and adding one heading to the union silently changed what every
+//     **other** style's stages were told;
+//   * `analyze` received no style document at all, so selection was style-blind even
+//     though the style's composition unit is a cross-source grouping (D1).
+//
+// A stage now declares only its universal documents and splices in whatever the active
+// profile supplies for it. `MANDATED_STYLE_SECTIONS` is still enforced, at preflight and
+// at assembly, because a stage writing against a style file that has lost its interface
+// or its writing character is writing against no standard at all.
 
 // ---------------------------------------------------------------------------------------
 // Stage table
@@ -120,8 +119,17 @@ export const STAGES_V2 = [
     onFailure: "fatal",
     effort: "high",
     purpose: "SELECT -> ANALYZE: evaluate the complete reviewed corpus, source fidelity, relationships, qualifications, and candidates.",
+    // Advisory: a structurally imperfect selection is still usable material, and whether a
+    // proposed synthesis is illuminating cannot be established by a schema. The retry gives
+    // the model one chance to supply the fields Frame and the selection audit depend on; a
+    // persistent gap is recorded loudly and the run continues.
+    validation: {
+      severity: "advisory",
+      run: ({ artifact, context }) => validateAnalysisSelection({ analysis: artifact, profile: context.profile }),
+    },
     documents: (ctx) => [
       { path: "system/contracts/analyze.md" },
+      ...ctx.styleDocuments("analyze"),
       { path: "system/writing-research-basis.md" },
       { path: "system/writing-reasoning-and-source-fidelity.md" },
       { path: ctx.digestConfigRelative },
@@ -136,12 +144,24 @@ export const STAGES_V2 = [
     corpus: "none",
     onFailure: "recoverable",
     effort: "high",
+    // Frame plans the edition's length, so it receives the target. Without it the plan's
+    // arithmetic is written against the style file's prose description, and the September 21
+    // and September 22 runs both planned to their ceiling and then overshot it.
+    budget: true,
     purpose: "FRAME: turn the analysis into explicit editorial units, each with one focus, one reader promise, one spine, and the sources it needs.",
+    // Gate: this stage is the authority on what the draft may see and how much of it, so an
+    // invalid plan must not reach the writer. The violations are fed back for one correction
+    // attempt; if the plan is still invalid the stage fails and the documented recovery frame
+    // takes over, which is why this is a gate rather than a fatal run error.
+    validation: {
+      severity: "gate",
+      run: ({ artifact, context }) => validateFrame({ frame: artifact, corpus: context.corpus, profile: context.profile }),
+    },
     documents: (ctx) => [
       { path: "system/contracts/frame.md" },
       { path: "system/style-contract.md" },
       { path: "system/contracts/reader-contract.md" },
-      { path: ctx.styleRelative, sections: COMPOSITION_SECTIONS },
+      ...ctx.styleDocuments("frame"),
       { path: ctx.digestConfigRelative },
     ],
     blocks: (ctx) => [ctx.artifactBlock("analyze", "analysis", "analysis.json")],
@@ -160,7 +180,7 @@ export const STAGES_V2 = [
       { path: "system/contracts/draft.md" },
       { path: "styles/editorial-base.md" },
       { path: "system/contracts/reader-contract.md" },
-      { path: ctx.styleRelative, sections: FULL_STYLE_SECTIONS },
+      ...ctx.styleDocuments("draft"),
       { path: ctx.digestConfigRelative },
     ],
     blocks: (ctx) => [ctx.artifactBlock("frame", "approved_frame")],
@@ -178,10 +198,10 @@ export const STAGES_V2 = [
     // Evaluation stages are executed by the Python adapter, which owns the prompt.
     // The same role, reader, and style contracts are still supplied to it, and are
     // recorded in the stage manifest.
-    contracts: () => ({
+    contracts: (ctx) => ({
       role: { path: "system/contracts/developmental-review.md" },
       reader: { path: "system/contracts/reader-contract.md" },
-      style: { path: "styles/<style>.md", sections: INTERFACE_SECTIONS },
+      ...ctx.styleContracts("developmental-review"),
     }),
     blocks: () => [],
   },
@@ -197,7 +217,7 @@ export const STAGES_V2 = [
     purpose: "WRITER REVISION: revise the draft against the developmental review using the retrieved writing operations.",
     documents: (ctx) => [
       { path: "system/contracts/writer-revision.md" },
-      { path: ctx.styleRelative, sections: CHARACTER_SECTIONS },
+      ...ctx.styleDocuments("writer-revision"),
     ],
     blocks: (ctx) => [
       ctx.artifactBlock("draft", "previous_stage_artifact"),
@@ -219,7 +239,7 @@ export const STAGES_V2 = [
     documents: (ctx) => [
       { path: "system/contracts/line-edit.md" },
       { path: "system/naturalness-contract.md" },
-      { path: ctx.styleRelative, sections: CHARACTER_SECTIONS },
+      ...ctx.styleDocuments("line-edit"),
     ],
     blocks: (ctx) => [
       ctx.artifactBlock("writer-revision", "previous_stage_artifact"),
@@ -235,10 +255,10 @@ export const STAGES_V2 = [
     onFailure: "recoverable",
     purpose: "READER REVIEW: assess the line-edited prose as a reader, and detect anything the line edit materially regressed.",
     documents: () => [],
-    contracts: () => ({
+    contracts: (ctx) => ({
       role: { path: "system/contracts/reader-review.md" },
       reader: { path: "system/contracts/reader-contract.md" },
-      style: { path: "styles/<style>.md", sections: EXPECTATION_SECTIONS },
+      ...ctx.styleContracts("reader-review"),
     }),
     blocks: () => [],
   },
@@ -258,7 +278,7 @@ export const STAGES_V2 = [
     documents: (ctx) => [
       { path: "system/contracts/targeted-repair.md" },
       { path: "system/contracts/reader-contract.md" },
-      { path: ctx.styleRelative, sections: CHARACTER_SECTIONS },
+      ...ctx.styleDocuments("targeted-repair"),
     ],
     blocks: (ctx) => [
       ctx.artifactBlock("line-edit", "previous_stage_artifact"),
@@ -278,7 +298,7 @@ export const STAGES_V2 = [
     purpose: "COPY / VERIFY: verify citations, provenance, structure, language, Markdown, and length; correct copy only. Never rewrite editorially.",
     documents: (ctx) => [
       { path: "system/contracts/copy-verify.md" },
-      { path: ctx.styleRelative, sections: COMPOSITION_SECTIONS },
+      ...ctx.styleDocuments("copy-verify"),
       { path: ctx.digestConfigRelative },
     ],
     blocks: () => [],
@@ -295,8 +315,7 @@ export const STAGES_V2 = [
     documents: (ctx) => [
       { path: "system/contracts/render.md" },
       { path: "system/html-rendering.md" },
-      { path: `system/rendering-${ctx.style}.md` },
-      { path: `templates/${ctx.style}-email-v1.html` },
+      ...ctx.renderingDocuments(),
       { path: ctx.digestConfigRelative },
     ],
     // The run key is a `{{RUN_KEY}}` placeholder in the template, not a value the
@@ -531,6 +550,10 @@ async function assembleDocuments(stage, ctx) {
   const manifest = [];
   const warnings = [];
   const seen = new Set();
+  // What the active profile withholds from this stage, out of the sections the style
+  // declares. Recorded because the profile's selectivity is the thing this architecture
+  // is trusted to get right, and a record of what was *not* sent is how that is audited.
+  const excluded = ctx.stageExcludedSections(stage.name);
   for (const descriptor of descriptors) {
     const key = descriptor.sections?.length ? `${descriptor.path}::${descriptor.sections.join("|")}` : descriptor.path;
     if (seen.has(key)) continue;
@@ -544,13 +567,21 @@ async function assembleDocuments(stage, ctx) {
       if (unexpectedlyMissing.length) {
         warnings.push(`${descriptor.path}: mandated section(s) missing: ${unexpectedlyMissing.join(", ")}`);
       }
-      parts.push(`<document path="${descriptor.path}" sections="${descriptor.sections.join(", ")}">\n${extracted.text}\n</document>`);
+      const delivered = descriptor.sections.filter((heading) => !missing.has(heading));
+      // The tag states the sections that were inlined, not the sections that were asked
+      // for. Those differ whenever a request names a heading a style does not declare, and
+      // the prompt must not claim to have supplied a section it did not.
+      parts.push(`<document path="${descriptor.path}" sections="${delivered.join(", ")}">\n${extracted.text}\n</document>`);
       manifest.push({
         path: descriptor.path,
         mode: "sections",
-        sections: descriptor.sections.filter((heading) => !missing.has(heading)),
+        requested_sections: descriptor.sections,
+        sections: delivered,
         not_applicable_sections: notApplicable,
         missing_sections: unexpectedlyMissing,
+        // Retained (normally empty) so a reader of the manifest can tell "this style does
+        // not declare it" from "this profile withheld it".
+        excluded_sections: descriptor.sections.includes("## Style interface") ? excluded : [],
         bytes: extracted.text.length,
       });
     } else {
@@ -591,9 +622,11 @@ async function assembleEvaluationContracts(stage, ctx) {
       manifest.push({
         path: relativePath,
         mode: "contract-sections",
+        requested_sections: descriptor.sections,
         sections: descriptor.sections.filter((heading) => !extracted.missing.includes(heading)),
         not_applicable_sections: extracted.missing.filter((heading) => !MANDATED_STYLE_SECTIONS.includes(heading)),
         missing_sections: unexpectedlyMissing,
+        excluded_sections: descriptor.sections.includes("## Style interface") ? ctx.stageExcludedSections(stage.name) : [],
         bytes: extracted.text.length,
       });
     } else {
@@ -605,6 +638,47 @@ async function assembleEvaluationContracts(stage, ctx) {
     }
   }
   return { contracts, manifest, warnings, text: "" };
+}
+
+/**
+ * Assemble one stage's instruction context under one profile, without running the stage.
+ *
+ * This is the isolation seam made callable. The property the style-isolation project has to
+ * guarantee — that changing one style's instructions cannot change another style's assembled
+ * context — is a statement about this function's output, and proving it by running four paid
+ * pipelines would be both slow and unfalsifiable. Exported so a test can assemble every
+ * (style, stage) pair, byte for byte, with no model call and no network.
+ *
+ * Evidence projection and data blocks are deliberately excluded: they depend on a corpus and
+ * on artifacts, and neither is style-derived.
+ */
+export async function assembleStageContext({ stageName, profile, digestConfigRelative = null }) {
+  const preflight = await preflightStyleProfile(profile);
+  const style = profile.style;
+  const ctx = {
+    style,
+    profile,
+    styleHeadings: preflight.style_headings,
+    digestConfigRelative: digestConfigRelative ?? `digests/${style}.md`,
+    styleDocuments(name) {
+      return (preflight.stages[name]?.documents ?? []).map((entry) => entry.descriptor);
+    },
+    styleContracts(name) {
+      const resolved = preflight.stages[name]?.contracts ?? {};
+      return Object.fromEntries(Object.entries(resolved).map(([key, entry]) => [key, entry.descriptor]));
+    },
+    renderingDocuments() {
+      return [{ path: profile.rendering.rules }, { path: profile.rendering.template }];
+    },
+    stageExcludedSections(name) {
+      return excludedSections({ profile, stage: name, styleHeadings: preflight.style_headings });
+    },
+  };
+  const stage = stageV2(stageName);
+  const assembled = stage.executor === "evaluation"
+    ? await assembleEvaluationContracts(stage, ctx)
+    : await assembleDocuments(stage, ctx);
+  return { ...assembled, excluded_sections: ctx.stageExcludedSections(stageName) };
 }
 
 // ---------------------------------------------------------------------------------------
@@ -657,11 +731,42 @@ export function projectEvidence({ corpus, stage, frame, analysis }) {
   }
 
   if (stage.corpus === "frame") {
-    const declared = declaredEvidenceNumbers(frame);
+    const declared = narrativeEvidenceNumbers(frame);
     const available = new Set(sources.map((source) => Number(source.source_number)));
     record.declared_source_numbers = [...declared].sort((a, b) => a - b);
+    // The frame's catalogue provenance is wider than its narrative selection by design: the
+    // catalogue must cover every reviewed source. Recorded beside the projection so an audit can
+    // tell "the writer could not cite it" from "the catalogue does not list it".
+    record.catalog_provenance_numbers = [...catalogProvenanceNumbers(frame)].sort((a, b) => a - b);
+    record.units = summarizeFrameUnitDeclarations(frame);
+    const outside = [...evidenceRefsOutsideSelection(frame)].sort((a, b) => a - b);
+    if (outside.length) {
+      record.evidence_refs_outside_selection = outside;
+    }
 
     if (declared.size === 0) {
+      // A frame may declare a catalog-only edition: no thread qualified, and the digest is
+      // deliberately the catalogue plus an orientation. That is an editorial decision, not a
+      // projection failure, so it must not be recorded as a degradation — otherwise a valid
+      // run reports itself degraded and every downstream reading of `recovery` is polluted.
+      const editionMode = frame?.mode === "catalog_only" ? "catalog_only" : null;
+      if (editionMode) {
+        return {
+          text: "",
+          record: {
+            ...record,
+            effective_policy: "intended-none",
+            recovery: null,
+            source_count: 0,
+            source_numbers: [],
+            bytes: 0,
+            warning: null,
+            note:
+              "FRAME declared a catalog-only edition. No narrative thread was planned, so the draft stage " +
+              "receives no source corpus and writes the opening and the catalogue from the frame's own catalog records.",
+          },
+        };
+      }
       // Deliberate recovery: the frame declared nothing usable. Widen to the analysis
       // shortlist rather than to the whole corpus, and record that this happened.
       const fallback = analysis ? analysisSourceNumbers(analysis) : new Set();
@@ -726,9 +831,19 @@ export function projectEvidence({ corpus, stage, frame, analysis }) {
         source_numbers: filtered.map((source) => source.source_number),
         missing_source_numbers: missing.sort((a, b) => a - b),
         bytes: text.length,
-        warning: missing.length
-          ? `FRAME declared ${missing.length} source number(s) that do not exist in the corpus: ${missing.join(", ")}`
-          : null,
+        // Both things can be true at once, and the earlier of them was being overwritten by the
+        // later: a declared number that does not exist in the corpus, and an evidence reference
+        // outside the selection. A projection warning is how a reviewer learns that what the
+        // writer received is not exactly what the frame asked for, so neither may be dropped.
+        warning: [
+          missing.length
+            ? `FRAME declared ${missing.length} source number(s) that do not exist in the corpus: ${missing.join(", ")}`
+            : null,
+          record.evidence_refs_outside_selection?.length
+            ? `FRAME declared evidence_refs for source number(s) outside the retained selection: ${record.evidence_refs_outside_selection.join(", ")}. ` +
+              "Those sources were not projected, because the selection is what the writer receives."
+            : null,
+        ].filter(Boolean).join(" ") || null,
       },
     };
   }
@@ -736,13 +851,51 @@ export function projectEvidence({ corpus, stage, frame, analysis }) {
   throw new RunnerError(`Unknown corpus policy: ${stage.corpus}`);
 }
 
-// Any source number referenced anywhere in analysis.json. Used only by the documented
-// degradation path, never during normal operation.
+// Any source number referenced by the analysis's *candidate groupings*.
+//
+// Used only by the documented degradation path, never during normal operation. It reads the
+// candidate arrays rather than the whole serialized document, because the per-source
+// assessments each carry a `source_number` field — so a scan for every occurrence returns the
+// entire corpus and a "shortlist" that is not shorter than what it was meant to narrow. What
+// the caller wants is the sources the analysis proposed grouping, which is what the candidate
+// arrays hold. The key lists live in `editorial-validation.mjs` so this path and the validator
+// cannot recognize different array names; this path uses the wider fallback list on purpose.
+function candidateClustersOf(analysis, keys = ANALYSIS_GROUPING_FALLBACK_KEYS) {
+  const clusters = [];
+  for (const key of keys) {
+    if (!Array.isArray(analysis?.[key])) continue;
+    for (const entry of analysis[key]) {
+      if (!entry || typeof entry !== "object") continue;
+      const numbers = sourceNumbersFromCluster(entry);
+      if (numbers.length) clusters.push({ source: key, entry, numbers });
+    }
+  }
+  return clusters;
+}
+
+function sourceNumbersFromCluster(entry) {
+  const candidates = [entry.source_numbers, entry.sources, entry.selected_source_numbers];
+  for (const value of candidates) {
+    if (!Array.isArray(value) || value.length === 0) continue;
+    const numbers = value
+      .map((item) => Number(item && typeof item === "object" ? item.source_number ?? item.number : item))
+      .filter((number) => Number.isInteger(number) && number > 0);
+    if (numbers.length) return [...new Set(numbers)];
+  }
+  // A contributions list is the last resort: it names the same members in another shape.
+  if (Array.isArray(entry.source_contributions)) {
+    const numbers = entry.source_contributions
+      .map((item) => Number(item?.source_number))
+      .filter((number) => Number.isInteger(number) && number > 0);
+    if (numbers.length) return [...new Set(numbers)];
+  }
+  return [];
+}
+
 function analysisSourceNumbers(analysis) {
   const numbers = new Set();
-  if (!analysis) return numbers;
-  for (const match of JSON.stringify(analysis).matchAll(/"source_number"\s*:\s*(\d+)/g)) {
-    numbers.add(Number(match[1]));
+  for (const cluster of candidateClustersOf(analysis)) {
+    for (const number of cluster.numbers) numbers.add(number);
   }
   return numbers;
 }
@@ -752,53 +905,80 @@ function analysisSourceNumbers(analysis) {
 // ---------------------------------------------------------------------------------------
 
 /**
- * Derive a frame from the analysis when FRAME itself could not run.
+ * Derive a frame from the analysis when FRAME itself could not produce an acceptable plan.
  *
- * This exists so the documented degradation path keeps the evidence projection
- * meaningful instead of falling through to the whole corpus. It is deliberately
- * minimal: it declares units and their sources, and says nothing about promises or
- * spines, because inventing those would be a writing decision this stage cannot make.
+ * Two things this is careful about.
+ *
+ * **It reads the analysis's actual candidate groupings.** The earlier version looked for key
+ * names the analysis does not use — `candidate_ideas_and_clusters`, `candidate_threads` — so
+ * against a real `analysis.json` it produced no units at all, which then tripped the
+ * shortlist recovery and sent much of the corpus to the writer. The key list now lives in
+ * `editorial-validation.mjs`, so this path and the validator cannot drift onto different
+ * names, and the array actually read is reported as `provenance_key`.
+ *
+ * **It declares what it is.** `mode` is declared explicitly, `provenance` names the derivation,
+ * and `degraded` is set, so nothing downstream can mistake a derived plan for a planned one. It
+ * still says nothing about reader promises, spines or allocations, because inventing those is a
+ * planning decision this path is not entitled to make.
+ *
+ * A profile can decline this recovery entirely — `frame_failure_policy: "fail"` — which is what
+ * the rebuilt Synthesis MAX profile does, because a derived plan cannot satisfy that style's
+ * narrative contract and passing one to the writer would be worse than stopping.
  */
 export function deriveRecoveryFrame({ analysis, digestId, style, language }) {
-  const clusters = [];
-  for (const key of ["candidate_ideas_and_clusters", "candidate_threads", "cross_source_relationships"]) {
-    if (Array.isArray(analysis?.[key])) {
-      for (const entry of analysis[key]) {
-        if (!entry || typeof entry !== "object") continue;
-        const numbers = entry.sources ?? entry.source_numbers;
-        if (Array.isArray(numbers) && numbers.length) {
-          clusters.push({
-            order: clusters.length + 1,
-            label: String(clusters.length + 1).padStart(2, "0"),
-            type: key,
-            selected_source_numbers: numbers.map(Number).filter((value) => Number.isInteger(value)),
-            central_focus: entry.best_units?.[0] ?? entry.cluster ?? entry.relationship ?? null,
-            reader_promise: null,
-            evidence_refs: [],
-            disposition: "keep",
-            degraded: true,
-          });
-        }
-      }
-    }
-  }
+  const groups = candidateClustersOf(analysis);
+  const units = groups.map((cluster, index) => ({
+    unit_id: `R${index + 1}`,
+    intended_order: index + 1,
+    label: String(index + 1).padStart(2, "0"),
+    derived_from: cluster.source,
+    working_title: nonEmptyText(cluster.entry.concrete_subject)
+      ?? nonEmptyText(cluster.entry.title_direction)
+      ?? nonEmptyText(cluster.entry.cluster)
+      ?? nonEmptyText(cluster.entry.relationship)
+      ?? null,
+    selected_source_numbers: cluster.numbers,
+    central_focus: nonEmptyText(cluster.entry.concrete_subject)
+      ?? nonEmptyText(cluster.entry.title_direction)
+      ?? null,
+    reader_promise: null,
+    narrative_spine: [],
+    evidence_refs: [],
+    branches_to_cut: [],
+    disposition: "keep",
+    degraded: true,
+  }));
+
   const selected = new Set();
-  clusters.forEach((unit) => unit.selected_source_numbers.forEach((value) => selected.add(value)));
+  units.forEach((unit) => unit.selected_source_numbers.forEach((value) => selected.add(value)));
+  const ordered = [...selected].sort((a, b) => a - b);
+
   return {
     digest_id: digestId,
     style,
     language,
     stage: "frame",
+    mode: "threads",
     provenance: "runner-derived-recovery-frame",
+    provenance_key: groups[0]?.source ?? null,
     degraded: true,
     frame_summary: {
-      note: "FRAME did not complete. This frame was derived deterministically from analysis.json so that the evidence projection stays explicit. It declares units and sources only.",
+      note:
+        "FRAME did not complete. This frame was derived deterministically from the analysis's candidate groupings so that the " +
+        "evidence projection stays explicit. It declares units and sources only: no reader promise, progression or allocation was established.",
     },
-    editorial_units: clusters,
-    selected_source_numbers: [...selected].sort((a, b) => a - b),
-    catalog_only: { worth_reading: [], reviewed: [], selected: [...selected].sort((a, b) => a - b) },
-    framing_constraints: ["Derived recovery frame: no reader promise or narrative spine was established."],
+    editorial_units: units,
+    selected_source_numbers: ordered,
+    catalog_only: { worth_reading: [], reviewed: [], selected: ordered },
+    framing_constraints: [
+      "Derived recovery frame: no reader promise, narrative spine or word allocation was established.",
+      "The draft stage must not treat these units as an approved editorial plan.",
+    ],
   };
+}
+
+function nonEmptyText(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -936,7 +1116,8 @@ function stageTaskBlock(stage, ctx) {
     `Purpose: ${stage.purpose}`,
   ];
   if (stage.budget) {
-    const prose = budgetProse(ctx.style);
+    // The active profile owns the budget policy; `budgets.mjs` is the value it declares.
+    const prose = ctx.profile?.budget?.prose ?? budgetProse(ctx.style);
     if (prose) lines.push(`Length target: ${prose}. Treat this as a binding constraint, not a suggestion.`);
   }
   lines.push(
@@ -998,13 +1179,39 @@ export async function executePipelineV2({
   timeoutSeconds,
   runtimeConfig = null,
   startStage = null,
+  stopAfter = null,
   mode = "run",
   dryRun = false,
+  styleProfile = null,
+  styleProfileSource = null,
 }) {
   const runDirectory = path.join(ROOT, RUNS_DIRECTORY, runId);
   process.chdir(runDirectory);
 
   const config = runtimeConfig ?? (await loadRuntimeConfig());
+
+  // Resolve the active style profile first, then prove every file and section it declares
+  // exists. Both happen before the adapters are created and before any stage runs, so a
+  // misconfigured profile fails as a configuration error rather than as a silently thinner
+  // prompt halfway through a paid run. This is also where "never fall back to a different
+  // style's instructions" is enforced: an unknown or wrong-style profile throws.
+  const resolvedProfile = styleProfile
+    ? { profile: styleProfile, profileId: styleProfile.id, source: styleProfileSource ?? "explicit" }
+    : resolveStyleProfile({ style, config });
+  const profile = resolvedProfile.profile;
+  if (profile.style !== style) {
+    throw new RunnerError(
+      `Style profile ${profile.id} belongs to style ${profile.style}, but this run is style ${style}.`,
+    );
+  }
+  const structural = validateStyleProfile(profile);
+  if (!structural.ok) {
+    throw new RunnerError(
+      `Style profile ${profile.id} is invalid:\n  - ${structural.problems.join("\n  - ")}`,
+    );
+  }
+  const preflight = await preflightStyleProfile(profile);
+
   const wops = await createWopsAdapter({ config });
   const evaluation = await createEvaluationAdapter({ config });
 
@@ -1022,6 +1229,32 @@ export async function executePipelineV2({
     runKey: runKeyRecord.runKey,
     runKeySource: runKeyRecord.source,
     digestName,
+    // The active profile, its provenance, and the style headings its stages are measured
+    // against. `styleDocuments`/`styleContracts` are the only way a stage obtains a
+    // style-derived instruction, so no stage can name one directly. Both read the
+    // preflighted resolution, so a path is normalized and known to exist before assembly.
+    profile,
+    styleProfileId: resolvedProfile.profileId,
+    styleProfileSource: resolvedProfile.source,
+    styleHeadings: preflight.style_headings,
+    styleDocuments(stageName) {
+      return (preflight.stages[stageName]?.documents ?? []).map((entry) => entry.descriptor);
+    },
+    styleContracts(stageName) {
+      const resolved = preflight.stages[stageName]?.contracts ?? {};
+      return Object.fromEntries(Object.entries(resolved).map(([name, entry]) => [name, entry.descriptor]));
+    },
+    // The rendering profile is style-scoped, not profile-scoped: an editorial profile
+    // version never changes how the digest looks.
+    renderingDocuments() {
+      return [
+        { path: this.profile.rendering.rules },
+        { path: this.profile.rendering.template },
+      ];
+    },
+    stageExcludedSections(stageName) {
+      return excludedSections({ profile: this.profile, stage: stageName, styleHeadings: this.styleHeadings });
+    },
     renderingValues() {
       // Computed lazily: the digest reading time depends on the approved prose, which does
       // not exist until copy/verify has produced it.
@@ -1042,7 +1275,9 @@ export async function executePipelineV2({
       return this.rendering?.notes ?? [];
     },
     digestConfigRelative: path.relative(ROOT, configPath).split(path.sep).join("/"),
-    styleRelative: `styles/${style}.md`,
+    // `styles/<style>.md` is deliberately not on the context. A stage obtains its part of
+    // the style only through `styleDocuments`/`styleContracts`, which read the active
+    // profile; there is no path by which a stage can name a style section itself.
     corpus,
     styleText,
     artifacts: new Map(),
@@ -1087,17 +1322,42 @@ export async function executePipelineV2({
     run_key: runKeyRecord.runKey,
     run_key_source: runKeyRecord.source,
     stage_order: stageNamesV2(),
+    // The exact profile, at the exact version, whose instructions this run executed. Both
+    // the identity and the body are recorded: the id alone would leave a later profile
+    // edit invisible to an audit of this artifact set.
+    style_profile_id: profile.id,
+    style_profile_version: profile.version,
+    style_profile: describeStyleProfile(profile, { source: resolvedProfile.source }),
     runtime: {
       wops: wops.describe(),
       evaluation: { python: evaluation.python, python_source: evaluation.python_source },
       pipeline_selection: config?.pipeline?.active ?? null,
       pipeline_selection_source: "system/runtime.json",
+      style_profile_selection: resolvedProfile.source,
     },
   };
   await writeFile(path.join(runDirectory, "pipeline.json"), JSON.stringify(pipelineRecord, null, 2), "utf8");
 
   const startIndex = startStage ? stageNamesV2().indexOf(startStage) : 0;
   if (startIndex === -1) throw new RunnerError(`Unknown v2 stage: ${startStage}`);
+
+  // A partial run executes a prefix of the pipeline and stops. This exists so a stage range can
+  // be validated against real model calls without paying for the stages after it: comparing two
+  // Analyze and Frame artifacts does not require drafting, reviewing and rendering a document.
+  // `stopIndex` is inclusive, and `null` means run to the end.
+  const stopIndex = stopAfter ? stageNamesV2().indexOf(stopAfter) : null;
+  if (stopAfter && stopIndex === -1) throw new RunnerError(`Unknown v2 stage: ${stopAfter}`);
+  if (stopIndex !== null && stopIndex < startIndex) {
+    throw new RunnerError(`--until-stage ${stopAfter} precedes --from-stage ${startStage}; nothing would execute`);
+  }
+  if (stopIndex !== null) {
+    pipelineRecord.stop_after = stopAfter;
+    pipelineRecord.partial_run = true;
+    pipelineRecord.partial_run_note =
+      `Executed stages ${startIndex + 1}-${stopIndex + 1} of ${stageNamesV2().length}. ` +
+      "This run has no rendered artifact and must not be delivered.";
+    await writeFile(path.join(runDirectory, "pipeline.json"), JSON.stringify(pipelineRecord, null, 2), "utf8");
+  }
 
   // A resumed run starts mid-pipeline, so the artifacts the remaining stages read must be
   // rehydrated from disk. Each one is registered with the same shape a completed stage
@@ -1118,7 +1378,8 @@ export async function executePipelineV2({
     }
   }
 
-  for (const stage of STAGES_V2.slice(startIndex)) {
+  const executedStages = stopIndex === null ? STAGES_V2.slice(startIndex) : STAGES_V2.slice(startIndex, stopIndex + 1);
+  for (const stage of executedStages) {
     const outcome = await executeStage({ stage, ctx, wops, evaluation });
     records.push(outcome.record);
     if (outcome.record.warnings?.length) warnings.push(...outcome.record.warnings.map((note) => `${stage.name}: ${note}`));
@@ -1153,6 +1414,8 @@ export async function executePipelineV2({
     schema_version: 1,
     pipeline: PIPELINE_ID,
     pipeline_version: PIPELINE_VERSION,
+    style_profile_id: profile.id,
+    style_profile_version: profile.version,
     run_id: runId,
     completed_at: new Date().toISOString(),
     modes: [...new Set([...(existingRecords?.modes ?? []), mode])],
@@ -1169,6 +1432,19 @@ export async function executePipelineV2({
     skipped_stages: merged.filter((record) => record.status === "skipped").map((record) => record.stage),
   };
   await writeFile(path.join(runDirectory, "stage-records.json"), JSON.stringify(stageRecord, null, 2), "utf8");
+
+  // A partial run has no rendered artifact by definition, and that is its purpose rather than a
+  // failure. The record says so explicitly, so nothing downstream mistakes it for a digest.
+  if (stopIndex !== null) {
+    return {
+      runId,
+      pipeline: PIPELINE_ID,
+      emailPath: null,
+      partial: { stop_after: stopAfter, executed: executedStages.map((stage) => stage.name) },
+      stageRecord,
+      degraded: stageRecord.degraded_stages,
+    };
+  }
 
   const renderArtifact = ctx.artifacts.get("render");
   if (!renderArtifact) {
@@ -1195,6 +1471,8 @@ export async function executePipelineV2({
       started_at: new Date().toISOString(),
       executor: stage.executor,
       corpus_policy: stage.corpus,
+      style_profile_id: profile.id,
+      style_profile_version: profile.version,
       output: null,
       warnings: [],
       provenance: "runner",
@@ -1252,51 +1530,162 @@ export async function executePipelineV2({
       if (projection.record.warning) record.warnings.push(projection.record.warning);
     }
 
-    const { attemptDir, attemptNumber } = await nextAttemptDirectory(workDir);    const attemptRecord = {
-      attempt: attemptNumber,
-      stage: stage.name,
-      pipeline: PIPELINE_ID,
-      started_at: new Date().toISOString(),
-      provenance: "runner",
-      executor: stage.executor,
-      corpus_policy: projection?.record.effective_policy ?? "none",
-      corpus_sources: projection?.record.source_count ?? 0,
-      corpus_bytes: projection?.record.bytes ?? 0,
-      corpus_warning: projection?.record.warning ?? null,
-      context_bytes: contextBytes(documents),
-      context_documents: documents.manifest.map((entry) => entry.path),
-      inputs: stage
-        .blocks(context)
-        .filter(Boolean)
-        .map((block) => block.source),
-    };
-    await writeFile(path.join(attemptDir, "attempt.json"), JSON.stringify(attemptRecord, null, 2), "utf8");
-    await writeFile(path.join(attemptDir, "context-manifest.json"), JSON.stringify({ documents: documents.manifest }, null, 2), "utf8");
-    if (projection) {
-      await writeFile(path.join(attemptDir, "corpus-context.json"), JSON.stringify(projection.record, null, 2), "utf8");
-      if (stage.name === "draft") {
-        await writeFile(path.join(workDir, "frame-projection.json"), JSON.stringify({
-          frame_declarations: summarizeFrameUnitDeclarations(frame),
-          declared_source_numbers: projection.record.declared_source_numbers,
-          projected_source_numbers: projection.record.source_numbers,
-          missing_source_numbers: projection.record.missing_source_numbers,
-          policy: projection.record.effective_policy,
-          recovery: projection.record.recovery,
-          warning: projection.record.warning,
-        }, null, 2), "utf8");
-      }
-    }
+    // ---------------------------------------------------------------------------------
+    // Attempts
+    // ---------------------------------------------------------------------------------
+    //
+    // A stage makes one attempt, unless it declares a `validation` and that validation
+    // rejects the artifact: then it makes another, with the specific violations fed back.
+    // This reuses the attempt mechanism rather than adding a stage, so a corrected attempt is
+    // recorded exactly like any other attempt and `readMeasuredStagesV2` counts its cost.
+    const maxAttempts = stage.validation && stage.executor === "llm" ? VALIDATION_ATTEMPTS : 1;
+    let attemptCount = 0;
+    let feedback = null;
+    let validation = null;
 
     try {
-      if (stage.executor === "evaluation") {
-        await runEvaluationStage({ stage, context, record, workDir, attemptDir, documents, evaluation: evaluationAdapter, wops: wopsAdapter, projection });
-      } else if (stage.executor === "copy-verify") {
-        await runCopyVerifyStage({ stage, context, record, workDir, attemptDir, documents, projection });
-      } else {
-        await runLlmStage({ stage, context, record, workDir, attemptDir, documents, projection });
+      while (true) {
+        attemptCount += 1;
+        const { attemptDir } = await nextAttemptDirectory(workDir);
+        const attemptNumber = attemptCount;
+        const attemptRecord = {
+          attempt: attemptNumber,
+          stage: stage.name,
+          pipeline: PIPELINE_ID,
+          started_at: new Date().toISOString(),
+          provenance: "runner",
+          executor: stage.executor,
+          corpus_policy: projection?.record.effective_policy ?? "none",
+          corpus_sources: projection?.record.source_count ?? 0,
+          corpus_bytes: projection?.record.bytes ?? 0,
+          corpus_warning: projection?.record.warning ?? null,
+          context_bytes: contextBytes(documents),
+          context_documents: documents.manifest.map((entry) => entry.path),
+          style_profile_id: profile.id,
+          style_profile_version: profile.version,
+          style_profile_source: resolvedProfile.source,
+          // Of the sections this style declares, the ones this stage's profile deliberately
+          // withheld. The profile's selectivity is the property this architecture is trusted
+          // to get right, so it is stated per attempt rather than inferred from the manifest.
+          style_sections_excluded: context.stageExcludedSections(stage.name),
+          // Present only on a correction attempt, so an attempt record says whether the model
+          // was answering the stage's own instruction or a validator's findings.
+          validation_correction: attemptCount > 1,
+          inputs: stage
+            .blocks(context)
+            .filter(Boolean)
+            .map((block) => block.source),
+        };
+        await writeFile(path.join(attemptDir, "attempt.json"), JSON.stringify(attemptRecord, null, 2), "utf8");
+        await writeFile(path.join(attemptDir, "context-manifest.json"), JSON.stringify({ documents: documents.manifest }, null, 2), "utf8");
+        if (projection) {
+          await writeFile(path.join(attemptDir, "corpus-context.json"), JSON.stringify(projection.record, null, 2), "utf8");
+          if (stage.name === "draft") {
+            await writeFile(path.join(workDir, "frame-projection.json"), JSON.stringify({
+              frame_declarations: summarizeFrameUnitDeclarations(frame),
+              declared_source_numbers: projection.record.declared_source_numbers,
+              projected_source_numbers: projection.record.source_numbers,
+              missing_source_numbers: projection.record.missing_source_numbers,
+              policy: projection.record.effective_policy,
+              recovery: projection.record.recovery,
+              warning: projection.record.warning,
+            }, null, 2), "utf8");
+          }
+        }
+
+        if (stage.executor === "evaluation") {
+          await runEvaluationStage({ stage, context, record, workDir, attemptDir, documents, evaluation: evaluationAdapter, wops: wopsAdapter, projection });
+          break;
+        }
+        if (stage.executor === "copy-verify") {
+          await runCopyVerifyStage({ stage, context, record, workDir, attemptDir, documents, projection });
+          break;
+        }
+        await runLlmStage({ stage, context, record, workDir, attemptDir, attemptNumber, documents, projection, validationFeedback: feedback });
+
+        // Keep the artifact where it was produced. Only the stage's canonical `output/` copy
+        // survives a retry, so an artifact a later attempt replaced existed only inside
+        // `model-response.json` — unreadable to anything that expects an artifact. That matters
+        // when the rejection was wrong: the second replay's first Analyze attempt was valid and
+        // was rejected by a validator defect, and recovering it meant parsing a raw API response
+        // by hand. One file per attempt makes a correction loop auditable after the fact.
+        const produced = context.artifacts.get(stage.name)?.text;
+        if (typeof produced === "string" && produced.length) {
+          await writeArtifact(path.join(attemptDir, stage.artifact), produced);
+        }
+
+        if (!stage.validation) break;
+
+        const artifact = context.artifacts.get(stage.name)?.json ?? null;
+        validation = {
+          stage: stage.name,
+          attempt: attemptCount,
+          severity: stage.validation.severity,
+          profile: profile.id,
+          ...stage.validation.run({ artifact, context, attemptDir }),
+        };
+        await writeArtifact(path.join(attemptDir, "validation.json"), JSON.stringify(validation, null, 2));
+        record.validation_attempts = attemptCount;
+
+        if (validation.ok) {
+          record.validation = {
+            ok: true,
+            severity: validation.severity,
+            warnings: validation.warnings,
+            counts: validation.counts,
+          };
+          break;
+        }
+
+        const codes = validation.violations.map((item) => item.code);
+        if (attemptCount >= maxAttempts) {
+          record.validation = {
+            ok: false,
+            severity: validation.severity,
+            violations: validation.violations,
+            warnings: validation.warnings,
+            counts: validation.counts,
+          };
+          if (stage.validation.severity === "gate") {
+            throw new RunnerError(
+              `${stage.name} failed its profile's constraints after ${attemptCount} attempt(s): ` +
+              validation.violations.map((item) => `[${item.code}] ${item.message}`).join(" | "),
+            );
+          }
+          // Advisory severity, but the violations are structural rather than editorial: the
+          // artifact is usable and it does not satisfy its own contract. Recorded as a
+          // degradation so the run summary says so, instead of the artifact passing as valid.
+          const structural = validation.violations.filter((item) => !ANALYSIS_EDITORIAL_CODES.includes(item.code));
+          if (structural.length) {
+            record.status = "degraded";
+            record.degraded = true;
+            record.validation_structural_failure = {
+              codes: structural.map((item) => item.code),
+              attempts: attemptCount,
+              note:
+                "The artifact does not satisfy its contract and the correction attempt did not fix it. " +
+                "The run continues because this stage's findings do not invalidate the artifact for later stages.",
+            };
+          }
+          record.warnings.push(
+            `Artifact does not satisfy ${codes.length} constraint(s) after ${attemptCount} attempt(s): ${codes.join(", ")}. ` +
+            "Recorded and carried forward, because this stage's contract problems do not invalidate the artifact for later stages.",
+          );
+          break;
+        }
+
+        record.warnings.push(
+          `Validation attempt ${attemptCount} rejected (${codes.join(", ")}); the stage was asked to correct it.`,
+        );
+        feedback = formatValidationFeedback({ stageName: stage.name, result: validation });
       }
     } catch (error) {
-      await writeArtifact(path.join(attemptDir, "stage-error.log"), `${error.stack ?? error}\n`);
+      // The correction attempt's feedback belongs in the error log when the failure is a
+      // validation failure, otherwise the reason the plan was rejected is lost.
+      await writeArtifact(
+        path.join(workDir, "stage-error.log"),
+        `${error.stack ?? error}\n${validation && !validation.ok ? `\nvalidation findings:\n${JSON.stringify(validation, null, 2)}\n` : ""}`,
+      );
       const carry = stage.onFailure !== "fatal";
       if (!carry) {
         record.status = "failed";
@@ -1304,6 +1693,84 @@ export async function executePipelineV2({
         record.completed_at = new Date().toISOString();
         throw new RunnerError(`${stage.name} failed: ${error.message}`);
       }
+
+      // The frame's recovery is profile-controlled, because "carry something forward" and "carry
+      // something *valid* forward" are different promises.
+      //
+      //   * `"fail"` — the profile's narrative contract cannot be satisfied by a derived plan, so
+      //     the run stops. Draft is instructed to follow the plan it is given, and the review
+      //     stages diagnose prose rather than plans, so a rejected plan that reached the writer
+      //     would be published. Stopping is the smaller failure.
+      //   * `"recovery-frame"` — derive the documented recovery frame from the analysis's
+      //     candidate groupings and continue degraded, which is the behaviour the pipeline
+      //     specified before style profiles existed and what the legacy rollback must keep.
+      //
+      // Either way the derived plan is validated before it is registered. A recovery path that
+      // can introduce an invalid artifact is not a recovery path.
+      if (stage.name === "frame" && analysis && profile.frame_failure_policy !== "fail") {
+        const derived = deriveRecoveryFrame({ analysis, digestId, style, language });
+        const derivedPath = path.join(workDir, "output", stage.artifact);
+        const derivedText = JSON.stringify(derived, null, 2);
+        const derivedValidation = validateFrame({ frame: derived, corpus: context.corpus, profile });
+        await writeArtifact(derivedPath, derivedText);
+        await writeArtifact(path.join(workDir, "recovery-frame-validation.json"), JSON.stringify({
+          policy: profile.frame_failure_policy,
+          // Name the array that was actually read, not the one the contract prefers. A recovery
+          // frame derived from a near-miss key is a different provenance fact, and an audit that
+          // reports the preferred name would hide the mismatch it should surface.
+          derived_from: `analysis.${derived.provenance_key}`,
+          validation: { ok: derivedValidation.ok, counts: derivedValidation.counts, violations: derivedValidation.violations },
+        }, null, 2));
+        record.status = "degraded";
+        record.degraded = true;
+        record.error = error.message;
+        record.provenance = "runner-derived-recovery-frame";
+        record.output = path.relative(ROOT, derivedPath);
+        record.recovery_validation = { ok: derivedValidation.ok, counts: derivedValidation.counts };
+        record.completed_at = new Date().toISOString();
+        await writeArtifact(path.join(workDir, "degraded.json"), JSON.stringify({
+          stage: stage.name,
+          reason: error.message,
+          recovery: "runner-derived-recovery-frame",
+          recovery_units: derived.editorial_units.length,
+          recovery_validation: { ok: derivedValidation.ok, counts: derivedValidation.counts },
+          at: record.completed_at,
+        }, null, 2));
+        context.artifacts.set(stage.name, {
+          path: derivedPath,
+          text: derivedText,
+          json: derived,
+          provenance: "runner-derived-recovery-frame",
+          degraded: true,
+        });
+        if (!derivedValidation.ok) {
+          record.warnings.push(
+            `The derived recovery frame does not satisfy this profile's constraints (${derivedValidation.violations.map((item) => item.code).join(", ")}). ` +
+            "It is registered because the profile permits recovery, and the run is degraded.",
+          );
+        }
+        return { record };
+      }
+
+      if (stage.name === "frame" && profile.frame_failure_policy === "fail") {
+        record.status = "failed";
+        record.error = error.message;
+        record.completed_at = new Date().toISOString();
+        await writeArtifact(path.join(workDir, "frame-failure.json"), JSON.stringify({
+          stage: stage.name,
+          policy: "fail",
+          profile: profile.id,
+          reason: error.message,
+          note:
+            "This profile stops rather than deriving a recovery frame, because a derived plan cannot satisfy its narrative contract " +
+            "and an unvalidated plan must not reach the draft stage.",
+          validation: validation && !validation.ok ? { counts: validation.counts, violations: validation.violations } : null,
+        }, null, 2));
+        throw new RunnerError(
+          `${stage.name} failed and the active style profile (${profile.id}) does not permit a derived recovery frame: ${error.message}`,
+        );
+      }
+
       const carried = lastValidArtifact(context, stage);
       if (!carried) {
         record.status = "failed";
@@ -1341,6 +1808,12 @@ export async function executePipelineV2({
       record.rendering_notes = context.renderingNotes?.() ?? [];
       for (const note of record.rendering_notes) record.warnings.push(note);
     }
+    // The edition mode the frame declared is a property of the whole run, not of one stage,
+    // and it changes how the published length is judged. Recorded here so a reader of the
+    // stage record can see why the length check was or was not applied.
+    if (stage.name === "frame") {
+      record.edition_mode = context.artifacts.get("frame")?.json?.mode ?? "threads";
+    }
     return { record };
   }
 
@@ -1348,11 +1821,20 @@ export async function executePipelineV2({
   // Executors
   // -------------------------------------------------------------------------------------
 
-  async function runLlmStage({ stage, context, record, workDir, attemptDir, documents, projection }) {
+  async function runLlmStage({ stage, context, record, workDir, attemptDir, attemptNumber, documents, projection, validationFeedback = null }) {
     const blocks = requiredBlock(stage.blocks(context));
     const corpusBlock = projection?.text ? wrapBlock("source_corpus", projection.text) : "";
     const systemText = systemPreamble(stage, documents.text);
-    const userText = [corpusBlock, ...blocks, stageTaskBlock(stage, context)].filter(Boolean).join("\n\n");
+    // A correction attempt receives the previous artifact's violations as the last thing it
+    // reads, after the stage's own instruction and its data.
+    const correctionBlock = validationFeedback
+      ? { tag: "validation_feedback", payload: validationFeedback }
+      : null;
+    const userText = [corpusBlock, ...blocks, correctionBlock, stageTaskBlock(stage, context)]
+      .filter(Boolean)
+      .map((entry) => (typeof entry === "string" ? entry : wrapBlock(entry.tag, entry.payload)))
+      .filter(Boolean)
+      .join("\n\n");
 
     await writeFile(path.join(attemptDir, "prompt.txt"), `${systemText}\n\n=== USER ===\n\n${userText}`, "utf8");
     await copyFile(path.join(attemptDir, "prompt.txt"), path.join(workDir, "prompt.txt")).catch(() => {});
@@ -1379,7 +1861,7 @@ export async function executePipelineV2({
     const artifact = await validateArtifactText([stage.name, stage.artifact, stage.format, stage.purpose], text, "DeepSeek response");
     const outputPath = path.join(workDir, "output", stage.artifact);
     await writeFile(outputPath, artifact, "utf8");
-    await writeCompleted({ attemptDir, stage, outputPath, finishReason, usage });
+    await writeCompleted({ attemptDir, attemptNumber, stage, outputPath, finishReason, usage });
     await registerArtifact({ stage, context, outputPath, text: artifact, record });
     if (stage.name === "render") {
       record.warnings.push(...leakFindings(artifact));
@@ -1467,6 +1949,11 @@ export async function executePipelineV2({
     const prose = context.artifacts.get("targeted-repair") ?? requireArtifact(context, "line-edit");
     const frame = context.artifacts.get("frame")?.json ?? null;
     const catalogueRequired = catalogRequired(styleText);
+    // A catalog-only edition is deliberately short: the style exempts it from the minimum
+    // body expectation, and the exemption is recorded in the check rather than applied
+    // silently, so a reader of `verification.json` can see that the length was measured and
+    // deliberately not held to the range.
+    const catalogOnlyEdition = frame?.mode === "catalog_only";
     const checks = runDeterministicChecks({
       prose: prose.text,
       corpus: context.corpus,
@@ -1475,6 +1962,8 @@ export async function executePipelineV2({
       style,
       language,
       catalogueRequired,
+      budget: context.profile.budget,
+      exemptLength: catalogOnlyEdition,
     });
     record.deterministic_checks = checks.counts;
 
@@ -1484,7 +1973,10 @@ export async function executePipelineV2({
       wrapBlock("previous_stage_artifact", prose.text),
       wrapBlock("deterministic_check_findings", JSON.stringify(checks, null, 2)),
       wrapBlock("approved_frame_citations", JSON.stringify({
-        declared_source_numbers: [...declaredEvidenceNumbers(frame)].sort((a, b) => a - b),
+        declared_source_numbers: [...narrativeEvidenceNumbers(frame)].sort((a, b) => a - b),
+        note:
+          "These are the sources the narrative may cite: the union of the retained units' selected_source_numbers. " +
+          "The catalogue lists every reviewed source; it is not narrative evidence.",
       }, null, 2)),
       stageTaskBlock(stage, context),
     ].filter(Boolean).join("\n\n");
@@ -1525,7 +2017,7 @@ export async function executePipelineV2({
       guard = guardCopyPass({
         before: prose.text,
         after: copyPass.markdown,
-        budget: budgetFor(style),
+        budget: context.profile.budget,
         catalogueRequired,
       });
       if (guard.accepted) {
@@ -1549,6 +2041,8 @@ export async function executePipelineV2({
       style,
       language,
       catalogueRequired,
+      budget: context.profile.budget,
+      exemptLength: catalogOnlyEdition,
     });
     record.deterministic_checks = published.counts;
 
@@ -1634,12 +2128,18 @@ export async function executePipelineV2({
     }
   }
 
-  async function writeCompleted({ attemptDir, stage, outputPath, finishReason, usage }) {
+  async function writeCompleted({ attemptDir, attemptNumber = null, stage, outputPath, finishReason, usage }) {
     const cacheHit = usage?.prompt_cache_hit_tokens ?? 0;
     const cacheMiss = usage?.prompt_cache_miss_tokens ?? 0;
     const cacheTotal = cacheHit + cacheMiss;
+    // Derived from the directory rather than trusted from the caller, so a call site that forgets
+    // to pass the number cannot mislabel a second attempt as the first.
+    const number = Number(attemptNumber) || Number(/^attempt-(\d+)$/.exec(path.basename(attemptDir))?.[1]) || 1;
     await writeFile(path.join(attemptDir, "completed.json"), JSON.stringify({
-      attempt: 1,
+      // The attempt's real number, not `1`. A stage may make several attempts, and every reader
+      // of this file — the measurement pass, an audit, a cost reconstruction from the run
+      // directory — needs to know which call it is describing.
+      attempt: number,
       stage: stage.name,
       pipeline: PIPELINE_ID,
       completed_at: new Date().toISOString(),
@@ -1754,28 +2254,87 @@ export function shouldRunOptionalStage(stage, context) {
 // Measurement
 // ---------------------------------------------------------------------------------------
 
+/**
+ * Read one stage's measured usage, aggregating **every** attempt it made.
+ *
+ * A stage can now make more than one model call, because a validation failure earns one
+ * correction attempt. Reading only `attempt-1` would therefore report the cost and duration of
+ * the rejected call and silently omit the call that produced the artifact — so the run summary,
+ * the cost ledger and every later cost comparison would understate exactly the stages whose
+ * instructions are being tuned. Each attempt's own measurement is preserved alongside the
+ * aggregate, and the stage's wall time is kept distinct from the sum of its model calls, since
+ * the difference is the time spent validating between them.
+ */
+async function readStageAttempts(runId, stage) {
+  const attemptsDir = path.join(stageDirectory(runId, stage.name), "attempts");
+  const entries = await readdir(attemptsDir, { withFileTypes: true }).catch(() => []);
+  const numbers = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => /^attempt-(\d+)$/.exec(entry.name))
+    .filter(Boolean)
+    .map((match) => Number(match[1]))
+    .sort((a, b) => a - b);
+
+  const attempts = [];
+  for (const number of numbers) {
+    const attemptDir = path.join(attemptsDir, `attempt-${number}`);
+    let attempt;
+    let completed;
+    try {
+      attempt = await readJson(path.join(attemptDir, "attempt.json"));
+      completed = await readJson(path.join(attemptDir, "completed.json"));
+    } catch {
+      // An attempt that did not complete contributes no measurement, but it is still recorded
+      // as an attempt so a reviewer can see that a call was made and failed.
+      attempts.push({ attempt: number, completed: false });
+      continue;
+    }
+    const usage = completed.usage ?? {};
+    attempts.push({
+      attempt: number,
+      completed: true,
+      started_at: attempt.started_at,
+      completed_at: completed.completed_at,
+      seconds: (new Date(completed.completed_at) - new Date(attempt.started_at)) / 1000,
+      cache_hit_tokens: completed.cache_hit_tokens ?? 0,
+      cache_miss_tokens: completed.cache_miss_tokens ?? 0,
+      output_tokens: usage.completion_tokens ?? 0,
+      reasoning_tokens: usage.completion_tokens_details?.reasoning_tokens ?? 0,
+      finish_reason: completed.finish_reason ?? null,
+      validation_correction: Boolean(attempt.validation_correction),
+    });
+  }
+  return attempts;
+}
+
 export async function readMeasuredStagesV2(runId) {
   const measured = [];
   for (const stage of STAGES_V2) {
-    const attemptDir = path.join(stageDirectory(runId, stage.name), "attempts", "attempt-1");
-    try {
-      const attempt = await readJson(path.join(attemptDir, "attempt.json"));
-      const completed = await readJson(path.join(attemptDir, "completed.json"));
-      const usage = completed.usage ?? {};
-      measured.push({
-        name: stage.name,
-        startedAt: attempt.started_at,
-        completedAt: completed.completed_at,
-        seconds: (new Date(completed.completed_at) - new Date(attempt.started_at)) / 1000,
-        hit: completed.cache_hit_tokens ?? 0,
-        miss: completed.cache_miss_tokens ?? 0,
-        output: usage.completion_tokens ?? 0,
-        reasoning: usage.completion_tokens_details?.reasoning_tokens ?? 0,
-        provenance: stage.executor === "evaluation" ? "python-adapter" : "runner",
-      });
-    } catch {
-      // The stage did not run or did not complete; it contributes nothing to cost.
-    }
+    const attempts = await readStageAttempts(runId, stage);
+    const completed = attempts.filter((attempt) => attempt.completed);
+    if (completed.length === 0) continue;
+
+    const first = completed[0];
+    const last = completed[completed.length - 1];
+    const sum = (key) => completed.reduce((total, attempt) => total + (attempt[key] ?? 0), 0);
+    const modelSeconds = sum("seconds");
+
+    measured.push({
+      name: stage.name,
+      startedAt: first.started_at,
+      completedAt: last.completed_at,
+      // The stage's wall time, from its first attempt starting to its last one finishing. This
+      // includes the validation between attempts, so it is not the same as `model_seconds`.
+      seconds: (new Date(last.completed_at) - new Date(first.started_at)) / 1000,
+      model_seconds: modelSeconds,
+      attempt_count: completed.length,
+      attempts,
+      hit: sum("cache_hit_tokens"),
+      miss: sum("cache_miss_tokens"),
+      output: sum("output_tokens"),
+      reasoning: sum("reasoning_tokens"),
+      provenance: stage.executor === "evaluation" ? "python-adapter" : "runner",
+    });
   }
   return measured;
 }
@@ -1793,15 +2352,12 @@ export async function readStageRecordsV2(runId) {
 // ---------------------------------------------------------------------------------------
 
 /**
- * Replay a historical corpus through a pipeline.
+ * Read a historical run's identity and corpus path without creating anything.
  *
- * The replay reuses a historical `source-acquisition/sources.json` and nothing else.
- * It performs no acquisition, no delivery, and no state mutation: the runner has no
- * delivery or state code at all, so the guarantee is structural rather than a promise.
- * The digest identity and style come from the corpus and the digest configuration,
- * never from the run directory name.
+ * Separated from `prepareReplay` so a caller can resolve the digest, the style and the style
+ * profile — and fail on a bad selection — before a replay directory exists.
  */
-export async function prepareReplay({ fromRun, runId, pipeline }) {
+export async function readReplaySource({ fromRun }) {
   const sourceRunDirectory = path.join(ROOT, RUNS_DIRECTORY, fromRun);
   const sourcePath = path.join(sourceRunDirectory, "source-acquisition", "sources.json");
   if (!(await exists(sourcePath))) {
@@ -1813,17 +2369,32 @@ export async function prepareReplay({ fromRun, runId, pipeline }) {
     throw new RunnerError(`Historical corpus records no digest_id: ${path.relative(ROOT, sourcePath)}`);
   }
   let style = corpus.style ?? null;
+  let styleSource = "corpus";
   if (!style) {
     const summary = await readJson(path.join(sourceRunDirectory, "run-summary.json")).catch(() => null);
     style = summary?.style ?? null;
+    styleSource = summary?.style ? "historical run-summary" : "digest config";
   }
+  return { sourceRunDirectory, sourcePath, corpus, digestId, style, styleSource };
+}
+
+/**
+ * Replay a historical corpus through a pipeline.
+ *
+ * The replay reuses a historical `source-acquisition/sources.json` and nothing else.
+ * It performs no acquisition, no delivery, and no state mutation: the runner has no
+ * delivery or state code at all, so the guarantee is structural rather than a promise.
+ * The digest identity and style come from the corpus and the digest configuration,
+ * never from the run directory name.
+ */
+export async function prepareReplay({ fromRun, runId, pipeline }) {
+  const { sourcePath, corpus, digestId, style, styleSource } = await readReplaySource({ fromRun });
   const destination = path.join(ROOT, RUNS_DIRECTORY, runId);
   if (await exists(destination)) {
     throw new RunnerError(`Replay run directory already exists: ${path.relative(ROOT, destination)}`);
   }
   await mkdir(path.dirname(path.join(destination, "source-acquisition", "sources.json")), { recursive: true });
   await copyFile(sourcePath, path.join(destination, "source-acquisition", "sources.json"));
-  const historicalSummary = await readJson(path.join(sourceRunDirectory, "run-summary.json")).catch(() => null);
   await writeFile(path.join(destination, "replay.json"), JSON.stringify({
     schema_version: 1,
     replay_of: fromRun,
@@ -1831,7 +2402,7 @@ export async function prepareReplay({ fromRun, runId, pipeline }) {
     pipeline,
     digest_id: digestId,
     style,
-    style_source: corpus.style ? "corpus" : historicalSummary?.style ? "historical run-summary" : "digest config",
+    style_source: styleSource,
     source_artifact: path.relative(ROOT, path.join(destination, "source-acquisition", "sources.json")),
     created_at: new Date().toISOString(),
     note:

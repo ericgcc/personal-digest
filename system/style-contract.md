@@ -25,6 +25,14 @@ Every canonical `styles/<style>.md` file must contain a `## Style interface` sec
 
 A style must also contain a dedicated `## Writing character` section that develops the interface declaration into concrete prose guidance, plus a `## Quality control` section appropriate to that style. The style must cooperate with `system/editorial-process.md`; it may specialize the scale or shape of framing/progression but may not bypass the shared sequence.
 
+### This file is authoritative for a style's identity, not for what each stage is told
+
+Which part of a style a given pipeline stage receives is declared by the active **style profile** in `tools/pipeline/style-profiles.mjs`, and a style's stage-specific operational instructions live in `system/style-pipelines/<style>/`. See `system/editorial-pipeline-v2.md` §3.1.
+
+A style file remains the single source of truth for what the style *is* and must produce: its interface, its composition and progression models, its structure, its citation and provenance rules, and its voice. A `system/style-pipelines/<style>/` document supplies the operational routing a stage needs and must not restate, contradict or weaken the style file. Where the two disagree about the style's identity or output requirements, the style file wins and the stage document is a defect.
+
+A stage-pipeline document is part of a stage's runtime prompt, so it states **requirements**: executable responsibilities, required fields, decision rules and prohibited behaviours. Why a rule exists, and the historical evidence for it, belongs in `docs/style-pipeline-rationale.md`, which is delivered to no model. A stage document that argues for its own rules costs context on every run and risks anchoring the stage to a past example.
+
 The interface is a concise architectural declaration; the rest of the style file is the implementation. They must not contradict one another. If they do, the style is invalid and execution must stop safely rather than guessing which definition wins.
 
 ## What the interface does not require
@@ -67,6 +75,7 @@ A new style is runnable only when all of the following are true:
 6. The referenced `templates/<style>-email-v1.html` exists.
 7. The rendering profile and template implement the style's actual structure rather than silently borrowing another style's composition.
 8. The style obeys the shared provenance, state, delivery, HTML-safety, and complete-output localization contracts; its template contains no hard-coded reader-facing English labels.
+9. `tools/pipeline/style-profiles.mjs` contains an entry for the style, with a declared default, and `system/style-pipelines/<style>/` holds the stage documents that entry names. A style whose profile cannot be preflighted is not runnable.
 
 If any requirement is missing, the style is not a valid canonical deliverable and the workflow must stop before source processing or delivery.
 

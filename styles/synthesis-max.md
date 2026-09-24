@@ -1,21 +1,24 @@
 # Synthesis MAX
 One selective cross-source explanatory briefing: no separate article summaries and no single-source threads. Integrate the strongest material around concrete topics, questions, mechanisms, developments, or tensions that at least two sources make easier to understand together, with links back to every source.
 
+This file is authoritative for what Synthesis MAX *is* and must produce. Which stage receives which part of it is declared by the `synthesis-max` style profiles in `tools/pipeline/style-profiles.mjs`; the stage-specific operational instructions those profiles name live in `system/style-pipelines/synthesis-max/`. See `system/editorial-pipeline-v2.md` §3.1.
+
+
 ## Style interface
 | Dimension | Declaration |
 | --- | --- |
 | **Purpose** | Help the reader understand the strongest material through meaningful relationships between sources. The synthesis must improve explanation, not merely produce a higher-level interpretation. |
 | **Composition unit** | A reader-understandable concrete topic, question, mechanism, development, or tension explained through at least two substantively contributing sources. |
-| **Source relationship** | Cross-source synthesis is mandatory in every narrative thread. Prefer two or three sources when sufficient; use four or more only when all contribute to the same concrete subject without requiring a broad abstraction to hold them together. Single-source threads are not permitted. |
+| **Source relationship** | Cross-source synthesis is mandatory in every narrative thread. Prefer two or three sources. Four are permitted only when each one has a distinct, explainable role in the same concrete subject. No thread may declare more than four contributing sources. Single-source threads are not permitted. |
 | **Selection model** | Highly selective: include material that contributes enough information, explanatory power, practical significance, novelty, or relationship value to justify space. |
 | **Depth model** | Variable-high depth across a dense three-to-five-minute body, normally 700–1,200 words excluding the catalog. |
-| **Organization model** | Big Picture opening → one to five numbered synthesized threads determined by the evidence; use fewer when the corpus cannot support honest multi-source grouping. |
+| **Organization model** | Big Picture opening → one to four numbered synthesized threads determined by the evidence; use fewer when the corpus cannot support honest multi-source grouping, and when no thread qualifies at all publish the explicit catalog-only edition. |
 | **Progression model** | Each thread develops from concrete orientation → integrated explanation and source contributions → supported synthesis or implication, with material ordered by the explanation rather than by source. |
 | **Opening behavior** | Required `THE BIG PICTURE` opening whose first duty is clear orientation; add cross-source interpretation only when it makes the picture easier to understand. |
 | **Body behavior** | Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes. |
 | **Citation / provenance** | Permanent global numerical citations attached to supported claims/inferences plus thread-level source notes. |
 | **Source catalog** | Required complete catalog of the substantively reviewed corpus, with stable numbering, canonical statuses, per-source reading time, and grouping controlled by `source_catalog_grouping` (`source-identity` by default; `editorial-topic` when explicitly configured). |
-| **Ending behavior** | Stop immediately after the final source catalog. |
+| **Ending behavior** | Stop immediately after the final source catalog. In the catalog-only edition, stop immediately after the catalog and its orientation. |
 | **Writing character** | Explanatory, domain-accessible, and analytical; connective, authoritative but restrained, precise, and intellectually alive. |
 | **Optional extension points** | Zero or one digest-authorized callout inside a thread when the rendering profile supports it. |
 
@@ -102,7 +105,9 @@ Aim for a dense three-to-five-minute briefing.
 
 Target roughly 700–1,200 words for the briefing body, excluding the final source catalog.
 
-Use one to five thematic sections depending on the structure genuinely supported by the material. This is a permitted range, not a coverage target. Prefer a smaller number of developed insights over many shallow observations; when the evidence can support either shape, three well-developed threads are preferable to five compressed ones.
+Use one to four thematic sections depending on the structure genuinely supported by the material. This is a permitted range, not a coverage target. Prefer a smaller number of developed insights over many shallow observations; when the evidence can support either shape, three well-developed threads are preferable to four compressed ones.
+
+Every thread's reading budget must be large enough to explain what it is about. A thread that names many sources without enough space to state what each contributes has stopped explaining and started cataloguing; reduce its sources, split it, or move its least essential material to the source catalog. A source needs at least roughly one explanatory sentence of space, and a thread needs room beyond that for the orientation and the relationship it exists to explain.
 
 Let information density determine length. Never create, split or expand a section merely to satisfy a target count or reading time.
 
@@ -129,7 +134,7 @@ Use numbered thematic sections. Their renderer-visible numbering and fixed compo
 
 Each section should normally contain:
 
-* Material from at least two substantively contributing sources.
+* Material from at least two substantively contributing sources, and never more than four.
 * A one-sentence subtitle that identifies the concrete subject and states what the combined material helps explain.
 * As many paragraphs as the idea's analytical development genuinely requires. Allocate depth independently: a richer relationship may need several paragraphs, while a narrower one may need fewer. Do not infer paragraph count or section length from neighboring threads or from the HTML template.
 * Inline numerical citations attached to the exact claims or synthesized inferences they support.
@@ -138,6 +143,13 @@ Each section should normally contain:
 Section titles and subtitles must let the reader identify the concrete subject before reading the body. Use the most broadly understandable vocabulary that preserves the necessary precision; a specialized term may appear when essential, but it must not carry the full burden of orientation. Prefer specific mechanisms, developments, questions, or consequences over slogans, metaphors, or abstract conclusions that the body must decode. Do not repeat an article title.
 
 Do not add an article-by-article roundup.
+
+### The catalog-only edition
+When no honest cross-source thread qualifies — every candidate would need a broad abstraction, a slogan, or a metaphor to hold it together — do not manufacture one. Publish the explicit catalog-only edition instead: the orientation, then the source catalog.
+
+This is a legitimate outcome, not a failure, and it is rare. It is bounded by one condition: it is only honest when the corpus genuinely offers no concrete subject that two or more sources make easier to understand together. A corpus with an eligible thread must use it. The catalog-only edition is also longer than it looks, because the complete catalog of every substantively reviewed source remains required, and is exempt from the body-length expectation that governs a threaded briefing. Its orientation should tell the reader plainly what the edition is: the corpus was read, and nothing in it was worth combining.
+
+Do not pad it. There are no threads, no thread source-notes, and nothing after the catalog.
 
 ## Citations
 Use numerical citations instead of article names in the prose.

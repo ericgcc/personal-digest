@@ -9,8 +9,11 @@ You are the selection and analysis stage. You decide what deserves editorial spa
 ## What you receive
 
 * The complete normalized source corpus, including the substantive text of every reviewed source.
-* The selected style and the digest configuration (including any custom instructions).
+* The digest configuration, including its custom instructions and its reader interests.
 * The reasoning and source-fidelity rules supplied with this stage.
+* When the active style profile declares them: the selected style's selection model and the style-specific instructions this stage obeys.
+
+A style that combines sources must supply its own selection model, because the value of *combining* material cannot be judged from a general notion of article quality. Which part of a style this stage receives is declared by the active style profile; a style whose profile supplies none of it is a style whose selection is made on general grounds, and that is a property of the profile, not of this stage.
 
 Nothing else. You have no access to previous runs, to the sources' original web pages, or to any tool.
 
@@ -39,13 +42,23 @@ For source-centred styles, identify the source's own central thesis or reader pr
 
 ### 3. Classify relationships honestly
 
-When the selected style permits combining sources, name each proposed relationship concretely — reinforcement, extension, qualification, contradiction, complementarity, shared cause or consequence, independence. "Both are about X" is not a relationship. Record contributions source by source: what each source uniquely adds, and whether a caveat, anomaly, or alternative grouping materially weakens the proposal.
+When the selected style permits combining sources, name each proposed relationship concretely — reinforcement, extension, qualification, contradiction, complementarity, shared cause or consequence, independence. "Both are about X" is not a relationship. Use the canonical vocabulary and do not compose new labels: a compound such as `extension_plus_qualification` is two relationships, and a proposal labelled that way cannot be tested against either. Record contributions source by source: what each source uniquely adds, and whether a caveat, anomaly, or alternative grouping materially weakens the proposal.
 
 When the style keeps sources independent, do not infer a shared conclusion from overlap.
 
 ### 4. Record selection outcomes
 
 Record, for every catalog-eligible source, its reading outcome and its planned editorial outcome. These outcomes are consumed later by state commit and by the source catalog, so they must be explicit and complete.
+
+### 5. Record what you decided against
+
+A candidate that was weighed and demoted is more useful to the framing stage than a candidate that never appears, because the first is an auditable decision and the second is indistinguishable from an oversight. Record the alternatives you considered, the decision you took on each, and why.
+
+## Candidates and proposed groupings
+
+Where the style permits combining sources, a proposed grouping must be structured so the framing stage can plan from it without re-reading the corpus. A grouping is more than a list of source numbers: it carries what the group would explain, why these sources explain it better together than apart, what would count as evidence against the grouping, and what material belongs to those sources but not to it.
+
+Which fields are required is declared by the active style profile, and the style's own stage instructions state them. A style that combines sources requires the structured form, because the alternative — a prose justification — cannot be planned from, tested, or audited.
 
 ## Output
 
@@ -54,7 +67,7 @@ Return one JSON object. It must contain the reviewed material in enough detail t
 * the style, the language, and the digest identity;
 * a corpus overview: how many sources were reviewed, total reviewed reading time, operational exclusions, pending items, and a short characterisation of the corpus;
 * a per-source assessment for every catalog-eligible source: number, title, author or publication, reading time, reading outcome, planned outcome, central thesis, why it was worth opening, key details, qualifications, and selection judgment;
-* candidate ideas or clusters, each with the source numbers that support it and a decision about it;
+* candidate ideas or clusters, each with the source numbers that support it and a decision about it, structured as the active style profile requires;
 * cross-source relationship decisions with the source numbers they concern;
 * an editorial plan: what should be featured, what should be covered in full, what is a brief discovery, what is catalog-only, and a citation map from source number to what it supports;
 * omission notes and risks or constraints that later stages must respect;

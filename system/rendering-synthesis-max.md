@@ -15,6 +15,18 @@ All English component names in this profile are semantic maintainer labels. Reso
 
 `THREAD` and `SOURCE NOTES` are fixed component labels owned by this rendering profile. Do not replace them with synonyms, digest vocabulary such as `SIGNAL`, or labels inferred from the editorial prose.
 
+## The catalog-only edition
+`styles/synthesis-max.md` permits one deliberate variation on this structure: when no cross-source thread qualifies, the edition is the orientation plus the complete source catalog, and the approved prose contains no threads.
+
+When the approved prose has no threads:
+
+* still render the masthead, reading-time capsule, and `THE BIG PICTURE`;
+* render **no** `THREAD` components, no running heads, and no `SOURCE NOTES` lines — do not manufacture a thread from the orientation, and do not renumber or promote any catalog entry into one;
+* still render the complete `Sources` catalog, with the same grouping, numbering, statuses, and reading times as any other edition;
+* keep the catalog's introductory wording neutral about the edition's shape. Do not add an apology, a note about a light day, or an explanation of why threads are absent; the orientation already says what the edition is.
+
+The catalog is the substance of this edition, so it receives no reduced treatment. Nothing follows it.
+
 ## The Big Picture
 Treat `THE BIG PICTURE` as an opening editorial statement, not a blockquote or card.
 

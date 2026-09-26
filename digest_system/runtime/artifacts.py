@@ -68,6 +68,18 @@ def read_json(file_path: Path) -> Any:
     return json.loads(file_path.read_text(encoding="utf-8"))
 
 
+def read_text_raw(file_path: Path) -> str:
+    """Read a text file preserving its line endings exactly.
+
+    The JavaScript runner read canonical documents with ``readFile(..., "utf8")``, which
+    preserves ``\\r\\n``. Python's default text mode translates newlines, which would change
+    every assembled prompt byte-for-byte on a Windows checkout. Prompt parity depends on
+    reading the bytes as they are.
+    """
+    with open(file_path, "r", encoding="utf-8", newline="") as handle:
+        return handle.read()
+
+
 def try_read_json(file_path: Path) -> Any | None:
     try:
         return read_json(file_path)
@@ -99,6 +111,17 @@ def wrap_block(tag: str, payload: str) -> str:
     return f"<{tag}>\n{payload}\n</{tag}>"
 
 
+def js_length(text: str) -> int:
+    """The length JavaScript's ``String.prototype.length`` would report.
+
+    JavaScript counts UTF-16 code units, so a character outside the Basic Multilingual Plane
+    counts as two. The run records' ``bytes`` fields were produced by ``.length``, so a
+    character count would disagree with every historical run's manifest on any document
+    containing an emoji or a rare CJK ideograph.
+    """
+    return len(text.encode("utf-16-le")) // 2
+
+
 _CODE_FENCE = re.compile(r"^```(?:json)?\s*([\s\S]*?)\s*```$", re.IGNORECASE)
 
 
@@ -118,7 +141,7 @@ def read_context_files(relative_paths: Iterable[str], root: Path | None = None) 
     for relative_path in sorted(set(relative_paths)):
         absolute = base / relative_path
         try:
-            content = absolute.read_text(encoding="utf-8")
+            content = read_text_raw(absolute)
         except OSError as error:
             raise RunnerError(f"Required canonical context is missing: {relative_path}") from error
         parts.append(f'<document path="{relative_path}">\n{content}\n</document>')
@@ -177,7 +200,7 @@ def extract_context_sections(
     base = root or ROOT
     absolute = base / relative_path
     try:
-        document = absolute.read_text(encoding="utf-8")
+        document = read_text_raw(absolute)
     except OSError as error:
         raise RunnerError(f"Required canonical context is missing: {relative_path}") from error
     sections, missing = extract_sections(document, heading_texts)

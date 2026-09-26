@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "digest-system"
+version = "2.1.0"
+description = "Personal Digest editorial backend: the Python port of the editorial pipeline v2."
+requires-python = ">=3.11"
+dependencies = [
+    # Digest configuration is YAML frontmatter.
+    "PyYAML>=6.0",
+    # HTTP transport for the model provider.
+    "httpx>=0.27",
+    # Validated external boundaries only (the model response envelope).
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+# The evaluation package's own pinned dependencies. Kept separate so the editorial
+# backend can be installed without the judge stack, and so the evaluator's pins are
+# not silently upgraded by this migration.
+evaluation = [
+    "readsight==1.0.5",
+    "deepeval==4.2.3",
+    "typer==0.27.2",
+    "scipy==1.10.1",
+]
+test = [
+    "pytest>=9.0",
+]
+
+[project.scripts]
+digest = "digest_system.cli:main"
+
+[tool.setuptools]
+packages = [
+    "digest_system",
+    "digest_system.config",
+    "digest_system.editorial",
+    "digest_system.editorial.prompts",
+    "digest_system.editorial.evidence",
+    "digest_system.editorial.validation",
+    "digest_system.editorial.rendering",
+    "digest_system.integrations",
+    "digest_system.runtime",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests/python", "evaluation/tests"]
+addopts = "-q --strict-markers"
+markers = [
+    "integration: performs a real judge call; requires credentials and opt-in",
+]

@@ -9,48 +9,45 @@ assembling every (style, stage) pair directly — no model call, no network, no 
 
 Four independent things are asserted, because none of them alone is enough:
 
-1. Equivalence. Each legacy profile's section set is exactly the intersection of the
-   pre-Phase-1 union with that style's own headings, in the union's order.
-2. Recorded evidence. The assembled section list reproduces the frozen reference exactly,
-   bytes included.
-3. Isolation, with a sensitivity control. Changing one style's stage documents perturbs that
+1. **Equivalence with the pre-Phase-2b reference.** Every section the reference inlined reaches
+   its stage as the module that now owns it, and its text is unchanged.
+2. **No runtime code reads a heading.** A profile names files; nothing extracts sections, and no
+   stage receives the generated ``styles/<style>.md`` document.
+3. **Isolation, with a sensitivity control.** Changing one style's instructions perturbs that
    style and nothing else — and the comparison is shown to detect a real difference, so the
    assertion cannot pass by comparing nothing to nothing.
-4. Shared infrastructure. The operational part of every stage's context is identical across
+4. **Shared infrastructure.** The operational part of every stage's context is identical across
    all four styles, so the isolation is genuine rather than four copies.
 """
 
 from __future__ import annotations
 
 import json
+import re
+import subprocess
+import sys
 from dataclasses import replace
-
-import pytest
 
 from digest_system.config import STYLE_PROFILES, style_profile_ids
 from digest_system.config.profiles import (
     CANONICAL_STYLES,
-    LEGACY_CHARACTER_SECTIONS,
-    LEGACY_COMPOSITION_SECTIONS,
-    LEGACY_EXPECTATION_SECTIONS,
-    LEGACY_INTERFACE_SECTIONS,
     Descriptor,
-    StageDeclaration,
     default_style_profile_id,
-    extract_section_headings,
+    excluded_sections,
     preflight_style_profile,
     profiles_for_style,
 )
+from digest_system.config.style_modules import load_style_manifest, module_files_for_headings
 from digest_system.editorial.prompts.assembler import assemble_stage_context
 from digest_system.editorial.stages import stage_names_v2
 from digest_system.runtime.artifacts import ROOT
 
 from ..fixtures import digest_config_path, reference
 
-STYLE_HEADINGS = {
-    style: extract_section_headings((ROOT / "styles" / f"{style}.md").read_text(encoding="utf-8"))
-    for style in CANONICAL_STYLES
-}
+_STYLE_PREFIX = "styles/"
+
+#: Which stages legitimately declare no documents under the legacy profiles.
+_NO_DOCUMENT_STAGES = {"analyze", "render"}
 
 
 def _default_profile(style):
@@ -80,9 +77,9 @@ def _assemble_all(profile_for=_default_profile):
 def _signature(assembled):
     """Everything a stage's assembled context contains.
 
-    The evaluation stages inline no text — they hand their instructions to the Python adapter
-    as contracts — so comparing ``text`` alone would compare two empty strings and report
-    isolation that was never tested.
+    The evaluation stages inline no text — they hand their instructions to the Python adapter as
+    contracts — so comparing ``text`` alone would compare two empty strings and report isolation
+    that was never tested.
     """
     return json.dumps(
         {
@@ -94,50 +91,124 @@ def _signature(assembled):
     )
 
 
-def _declared_style_doc(profile, stage_name):
-    for descriptor in profile.stages[stage_name].documents:
-        if descriptor.path.replace("<style>", profile.style) == f"styles/{profile.style}.md":
-            return {"path": f"styles/{profile.style}.md", "sections": list(descriptor.sections or ())}
-    return None
+def _normalize(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _declared_paths(profile, stage_name) -> set[str]:
+    declaration = profile.stages[stage_name]
+    paths = {
+        descriptor.path.replace("<style>", profile.style) for descriptor in declaration.documents
+    }
+    for descriptors in declaration.contracts.values():
+        paths.update(descriptor.path.replace("<style>", profile.style) for descriptor in descriptors)
+    return paths
+
+
+def _style_modules(profile) -> set[str]:
+    return set(load_style_manifest(profile.style).module_files())
 
 
 # ---------------------------------------------------------------------------------------
-# 1. Equivalence with the pre-Phase-1 union
+# 1. Equivalence with the pre-Phase-2b reference
 # ---------------------------------------------------------------------------------------
 
 
-def test_frame_receives_exactly_the_unions_composition_sections_for_its_style():
+def test_every_reference_section_still_reaches_its_stage_as_a_module():
+    """Each section the reference requested resolves to a module the stage now receives.
+
+    This is the load-bearing equivalence: a section the reference inlined is instruction text the
+    stage must still receive. Only the unit changed, from a heading inside one document to a file
+    the profile names.
+    """
+    expected = reference()["assembled"]
+    for profile_id, stages in expected.items():
+        profile = STYLE_PROFILES[profile_id]
+        for stage_name, want in stages.items():
+            declared = _declared_paths(profile, stage_name)
+            for entry in want["manifest"]:
+                if entry.get("mode") not in {"sections", "contract-sections"}:
+                    continue
+                for heading in entry.get("sections", []):
+                    for module in module_files_for_headings(profile.style, [heading]):
+                        assert module in declared, (
+                            f"{profile_id}/{stage_name}: {heading} ({module}) no longer reaches the stage"
+                        )
+
+
+def test_every_style_module_text_appears_verbatim_in_the_reference_prompt():
+    """The instruction text is unchanged; only its packaging moved."""
+    expected = reference()["assembled"]
+    for profile_id, stages in expected.items():
+        profile = STYLE_PROFILES[profile_id]
+        for stage_name, want in stages.items():
+            if want.get("contracts"):
+                continue
+            prompt = _normalize(want["text"])
+            for path in _declared_paths(profile, stage_name):
+                if path not in _style_modules(profile):
+                    continue
+                text = _normalize((ROOT / path).read_text(encoding="utf-8"))
+                assert text in prompt, f"{profile_id}/{stage_name}: {path} is not present in the reference prompt"
+
+
+def test_the_style_module_documents_are_byte_identical_to_the_notes_they_compose():
+    """The generated style document is reproducible from its modules, byte for byte."""
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "build_style_docs.py"), "--check"],
+        capture_output=True,
+        text=True,
+        cwd=str(ROOT),
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+# ---------------------------------------------------------------------------------------
+# 2. No runtime code reads a heading
+# ---------------------------------------------------------------------------------------
+
+
+def test_no_declared_document_is_the_composed_style_document():
+    """A stage receives modules, never the generated ``styles/<style>.md`` document."""
+    for profile_id, profile in STYLE_PROFILES.items():
+        for stage, declaration in profile.stages.items():
+            for descriptor in declaration.documents:
+                path = descriptor.path.replace("<style>", profile.style)
+                assert path != f"styles/{profile.style}.md", (
+                    f"{profile_id}/{stage} still names the composed style document"
+                )
+
+
+def test_no_profile_declaration_carries_a_section_selector():
+    """The descriptor model has no concept of a section at all."""
+    from digest_system.config.profiles import Descriptor as _Descriptor
+
+    assert "sections" not in _Descriptor.__dataclass_fields__, (
+        "a section selector would make a Markdown heading a runtime identifier again"
+    )
+
+
+def test_every_declared_module_is_one_the_style_owns():
     for style in CANONICAL_STYLES:
-        expected = [heading for heading in LEGACY_COMPOSITION_SECTIONS if heading in STYLE_HEADINGS[style]]
-        assert _declared_style_doc(_default_profile(style), "frame")["sections"] == expected, style
+        known = set(load_style_manifest(style).module_files())
+        for profile in profiles_for_style(style):
+            for stage, declaration in profile.stages.items():
+                for descriptor in declaration.documents:
+                    path = descriptor.path.replace("<style>", style)
+                    if path.startswith(f"styles/{style}/modules/"):
+                        assert path in known, f"{profile.id}/{stage}: unknown module {path}"
 
 
-def test_draft_receives_the_unions_composition_sections_plus_the_writing_character():
+def test_excluded_sections_are_reported_by_module():
     for style in CANONICAL_STYLES:
-        expected = [
-            *[heading for heading in LEGACY_COMPOSITION_SECTIONS if heading in STYLE_HEADINGS[style]],
-            *LEGACY_CHARACTER_SECTIONS,
-        ]
-        assert _declared_style_doc(_default_profile(style), "draft")["sections"] == expected, style
-
-
-def test_copy_verify_receives_the_unions_composition_sections_for_its_style():
-    for style in CANONICAL_STYLES:
-        expected = [heading for heading in LEGACY_COMPOSITION_SECTIONS if heading in STYLE_HEADINGS[style]]
-        assert _declared_style_doc(_default_profile(style), "copy-verify")["sections"] == expected, style
-
-
-def test_the_review_stages_receive_the_same_sets_as_before():
-    for style in CANONICAL_STYLES:
-        profile = _default_profile(style)
-        for stage in ("writer-revision", "line-edit", "targeted-repair"):
-            assert _declared_style_doc(profile, stage)["sections"] == list(LEGACY_CHARACTER_SECTIONS), f"{style}/{stage}"
-        assert list(profile.stages["developmental-review"].contracts["style"].sections) == list(
-            LEGACY_INTERFACE_SECTIONS
-        ), style
-        assert list(profile.stages["reader-review"].contracts["style"].sections) == list(
-            LEGACY_EXPECTATION_SECTIONS
-        ), style
+        known = set(load_style_manifest(style).module_files())
+        for profile in profiles_for_style(style):
+            preflight = preflight_style_profile(profile)
+            for stage in profile.stages:
+                for path in excluded_sections(
+                    profile=profile, stage=stage, style_headings=preflight.style_headings
+                ):
+                    assert path in known, f"{profile.id}/{stage}: {path} is not a module"
 
 
 def test_analyze_still_receives_no_style_document_under_the_default_profile():
@@ -145,42 +216,24 @@ def test_analyze_still_receives_no_style_document_under_the_default_profile():
         assert _default_profile(style).stages["analyze"].documents == (), style
 
 
-def test_no_profile_can_request_a_section_its_own_style_does_not_declare():
+def test_no_stage_silently_receives_nothing():
+    """A stage with no documents says so explicitly; a stage that declares documents delivers some.
+
+    Stages that legitimately declare nothing under the legacy profiles — analyze and render —
+    still receive their shared operational contracts, which are declared by the stage table rather
+    than the profile.
+    """
     for style in CANONICAL_STYLES:
-        for profile in profiles_for_style(style):
-            resolved = preflight_style_profile(profile)
-            for stage, entry in resolved.stages.items():
-                for document in entry["documents"]:
-                    for heading in document.descriptor.sections or ():
-                        assert heading in STYLE_HEADINGS[style], f"{profile.id}/{stage} requests {heading}"
-
-
-def test_every_assembled_section_request_delivers_at_least_one_section():
-    table = _assemble_all()
-    for style in CANONICAL_STYLES:
-        for stage, assembled in table[style].items():
-            for entry in assembled["manifest"]:
-                if entry["mode"] not in {"sections", "contract-sections"}:
-                    continue
-                assert entry["sections"], f"{style}/{stage}: a section request delivered nothing"
-
-
-# ---------------------------------------------------------------------------------------
-# 2. Recorded evidence
-# ---------------------------------------------------------------------------------------
-
-
-def test_assembled_contexts_reproduce_the_frozen_reference_exactly():
-    expected = reference()["assembled"]
-    for profile_id, stages in expected.items():
-        profile = STYLE_PROFILES[profile_id]
-        for stage_name, want in stages.items():
-            assembled = assemble_stage_context(
-                stage_name=stage_name,
-                profile=profile,
-                digest_config_relative=digest_config_path(profile.style),
-            )
-            assert assembled["manifest"] == want["manifest"], f"{profile_id}/{stage_name}"
+        profile = _default_profile(style)
+        for stage in stage_names_v2():
+            declared = profile.stages[stage].documents
+            assembled = _assemble(style, stage)
+            if stage in {"developmental-review", "reader-review"}:
+                assert assembled["contracts"], f"{style}/{stage}: no contracts"
+                continue
+            if not declared:
+                continue
+            assert assembled["manifest"], f"{style}/{stage}: declared documents but delivered none"
 
 
 # ---------------------------------------------------------------------------------------
@@ -233,16 +286,15 @@ def test_changing_one_styles_instructions_changes_only_that_style():
             )
 
 
-def test_a_style_section_edit_cannot_reach_another_style():
+def test_a_module_edit_cannot_reach_another_style():
     """The class of leak the profile mechanism exists to remove.
 
-    Adding a heading to one style's section list must not change any other style's assembled
-    context, because no stage names a section itself.
+    Adding a module to one style's stage declaration must not change any other style's assembled
+    context, because no stage names a module itself.
     """
     baseline = _assemble_all(_baseline_profile)
     profile = STYLE_PROFILES["synthesis-max-v1"]
     frame = profile.stages["frame"]
-    style_doc = next(d for d in frame.documents if d.path == "styles/synthesis-max.md")
     widened = replace(
         profile,
         stages={
@@ -250,8 +302,8 @@ def test_a_style_section_edit_cannot_reach_another_style():
             "frame": replace(
                 frame,
                 documents=(
-                    replace(style_doc, sections=(*style_doc.sections, "## Citations")),
-                    *[d for d in frame.documents if d is not style_doc],
+                    *frame.documents,
+                    Descriptor(path="styles/synthesis-max/modules/08-citations.md"),
                 ),
             ),
         },
@@ -273,14 +325,15 @@ def test_the_operational_part_of_every_stage_context_is_identical_across_styles(
     """The isolation is genuine rather than four copies: the shared contracts are shared."""
     table = _assemble_all()
     for stage in stage_names_v2():
-        shared = {}
+        shared: dict[str, set[int]] = {}
         for style in CANONICAL_STYLES:
             for entry in table[style][stage]["manifest"]:
-                if entry["path"].startswith("styles/") or entry["path"].startswith("system/style-pipelines/"):
+                path = entry["path"]
+                if path.startswith("styles/") or path.startswith("system/style-pipelines/"):
                     continue
-                if entry["path"].startswith("digests/"):
+                if path.startswith("digests/"):
                     continue
-                shared.setdefault(entry["path"], set()).add(entry["bytes"])
+                shared.setdefault(path, set()).add(entry["bytes"])
         for path, sizes in shared.items():
             assert len(sizes) == 1, f"{stage}: {path} differs across styles ({sizes})"
 

@@ -1,0 +1,3 @@
+orig: '# Concise\nA fast per-source digest designed for scanning. Ke'
+new : '# Concise\nA fast per-source digest designed for scanning. Ke'
+header repr: '# Concise\nA fast per-source digest designed for scanning. Keep each source separate and reduce it to the smallest useful summary without losing its central value.\n\n'

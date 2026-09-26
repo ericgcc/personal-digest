@@ -1,0 +1,67 @@
+# Phase 2b profile: a profile selects named files, never Markdown headings. Each entry
+# below is a module under styles/<style>/modules/ or a canonical instruction document.
+# Reproducible with scripts/export_profiles.py.
+id: synthesis-max-legacy
+version: 1.0.0
+style: synthesis-max
+label: synthesis-max — pre-profile-context baseline
+status: active
+frame_failure_policy: recovery-frame
+enforced: []
+notes:
+- 'Reproduces the pre-Phase-1 assembled context for this style: the legacy composition union, resolved against the sections the style actually declares.'
+- Retained as the default and as the rollback option for every style.
+- Enforces no composition constraint, so a stage validator changes nothing about a run under this profile.
+stages:
+  analyze:
+    documents: []
+  frame:
+    documents:
+    - path: styles/synthesis-max/modules/01-style-interface.md
+    - path: styles/synthesis-max/modules/03-synthesis-mode.md
+    - path: styles/synthesis-max/modules/07-required-structure.md
+    - path: styles/synthesis-max/modules/06-length-and-density.md
+    - path: styles/synthesis-max/modules/08-citations.md
+    - path: styles/synthesis-max/modules/09-final-source-catalog.md
+    - path: styles/synthesis-max/modules/10-ending-rules.md
+  draft:
+    documents:
+    - path: styles/synthesis-max/modules/01-style-interface.md
+    - path: styles/synthesis-max/modules/03-synthesis-mode.md
+    - path: styles/synthesis-max/modules/07-required-structure.md
+    - path: styles/synthesis-max/modules/06-length-and-density.md
+    - path: styles/synthesis-max/modules/08-citations.md
+    - path: styles/synthesis-max/modules/09-final-source-catalog.md
+    - path: styles/synthesis-max/modules/10-ending-rules.md
+    - path: styles/synthesis-max/modules/04-writing-character.md
+  developmental-review:
+    documents: []
+    contracts:
+      style:
+      - path: styles/synthesis-max/modules/01-style-interface.md
+  writer-revision:
+    documents:
+    - path: styles/synthesis-max/modules/04-writing-character.md
+  line-edit:
+    documents:
+    - path: styles/synthesis-max/modules/04-writing-character.md
+  reader-review:
+    documents: []
+    contracts:
+      style:
+      - path: styles/synthesis-max/modules/01-style-interface.md
+      - path: styles/synthesis-max/modules/07-required-structure.md
+  targeted-repair:
+    documents:
+    - path: styles/synthesis-max/modules/04-writing-character.md
+  copy-verify:
+    documents:
+    - path: styles/synthesis-max/modules/01-style-interface.md
+    - path: styles/synthesis-max/modules/03-synthesis-mode.md
+    - path: styles/synthesis-max/modules/07-required-structure.md
+    - path: styles/synthesis-max/modules/06-length-and-density.md
+    - path: styles/synthesis-max/modules/08-citations.md
+    - path: styles/synthesis-max/modules/09-final-source-catalog.md
+    - path: styles/synthesis-max/modules/10-ending-rules.md
+  render:
+    documents: []

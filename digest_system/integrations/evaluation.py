@@ -1,16 +1,20 @@
 """EvaluationAdapter — direct access to the production subset of the Python evaluator.
 
 Unlike the JavaScript implementation, this is a thin interface to the existing Python
-evaluator rather than another process launcher. It calls the same underlying functions the
-standalone adapter CLI uses, so the evaluator's prompt builders, scoring schemas, version
-metadata and prompt-capture callback are all retained.
+evaluator rather than another process launcher. It calls the evaluator's **supported in-process
+interface** (``evaluation.adapters.invoke``), so the pipeline depends on a documented contract
+rather than on another package's private handler registry, and both this adapter and the
+standalone CLI invoke the same code.
 
 The standalone evaluator CLI (``python -m evaluation.adapters``) remains available for
 independent testing and external integrations.
 
-Every call is auditable. The request and the result are written into the stage directory, and
-the exact prompt the judge received is written alongside them, so a run can be replayed from
-its own artifacts.
+Every call is auditable. The request and the result are written into the stage directory, the
+exact prompt the judge received is written alongside them, and the call's duration is recorded,
+so a run can be replayed from its own artifacts. The adapter is deliberately *not* a thread or
+subprocess timeout: the evaluator runs in-process on purpose, and its own judge client owns
+transport timeouts. ``timeout_ms`` is the declared budget for the call, recorded and enforced
+against the observed duration so a call that overruns its budget is visible rather than silent.
 """
 
 from __future__ import annotations
@@ -62,9 +66,10 @@ class EvaluationAdapter:
             "adapter": {
                 "python": self.python,
                 "python_source": self.python_source,
+                "timeout_ms": self.timeout_ms,
                 "duration_ms": 0,
-                "exit_code": None,
                 "timed_out": False,
+                "exit_code": None,
                 "request_path": relative_to_root(request_path, self.root),
                 "result_path": relative_to_root(result_path, self.root),
                 "prompt_path": relative_to_root(prompt_path, self.root),
@@ -72,43 +77,45 @@ class EvaluationAdapter:
         }
 
         try:
-            from evaluation.adapters.cli import COMMANDS, _HANDLERS, RequestError
+            from evaluation.adapters import AdapterRequest, supported_commands
+            from evaluation.adapters import invoke as invoke_adapter
         except ImportError as error:
             envelope["error"] = f"the evaluation package is unavailable: {error}"
             return envelope
 
-        if command not in COMMANDS:
+        if command not in supported_commands():
             envelope["error"] = f"unknown evaluation command: {command}"
             return envelope
 
-        captured: list[str] = []
+        outcome = invoke_adapter(AdapterRequest(command=command, payload=request))
 
-        def capture(prompt: str) -> None:
-            captured.append(prompt)
+        if outcome.prompts:
+            write_artifact(prompt_path, "\n\n=== PROMPT ===\n\n".join(outcome.prompts))
 
-        try:
-            outcome = _HANDLERS[command](document, capture)
-        except RequestError as error:
-            envelope["error"] = str(error)
-            return envelope
-        except Exception as error:  # noqa: BLE001 - a crash must still be a JSON answer
-            envelope["error"] = f"{type(error).__name__}: {error}"
-            return envelope
-
-        if captured:
-            write_artifact(prompt_path, "\n\n=== PROMPT ===\n\n".join(captured))
+        # A call that overran its declared budget is recorded rather than silently accepted.
+        timed_out = bool(self.timeout_ms and outcome.duration_ms > self.timeout_ms)
+        if timed_out:
+            envelope["adapter"]["timed_out"] = True
+            envelope["warnings"] = [
+                *outcome.warnings,
+                (
+                    f"the evaluator took {outcome.duration_ms} ms, over its {self.timeout_ms} ms budget. "
+                    "The result is retained because the call completed, but the budget is exceeded."
+                ),
+            ]
 
         result = {
             "schema_version": REQUEST_SCHEMA_VERSION,
             "command": command,
-            "ok": bool(outcome.get("ok")),
-            "degraded": not bool(outcome.get("ok")),
-            "error": (outcome.get("warnings") or [None])[0] if not outcome.get("ok") else None,
-            "warnings": list(outcome.get("warnings") or []),
-            "versions": outcome.get("versions") or {},
-            "usage": outcome.get("usage") or {},
-            "result": outcome.get("result"),
-            "capabilities": outcome.get("capabilities"),
+            "ok": outcome.ok,
+            "degraded": outcome.degraded,
+            "error": outcome.error,
+            "warnings": list(envelope["warnings"]),
+            "versions": dict(outcome.versions),
+            "usage": dict(outcome.usage),
+            "result": outcome.result,
+            "capabilities": outcome.capabilities,
+            "duration_ms": outcome.duration_ms,
         }
         write_json(result_path, result)
 
@@ -122,6 +129,7 @@ class EvaluationAdapter:
             "result": result["result"],
             "versions": result["versions"],
             "usage": result["usage"],
+            "adapter": {**envelope["adapter"], "duration_ms": outcome.duration_ms},
         }
 
     # --- commands ---------------------------------------------------------------------

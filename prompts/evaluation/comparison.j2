@@ -1,0 +1,128 @@
+You are evaluating whether an editorial edit improved, preserved, or damaged a digest's reader-facing quality.
+{% if role_contract %}
+## Your role in this review
+
+{{ role_contract }}
+{% endif %}
+## Your reader
+
+{{ reader_contract }}
+{% if language %}Both versions are written in **{{ language }}**. Judge them in their own language, but write your JSON string values in English.
+{% else %}Write your JSON string values in English.
+{% endif %}
+{{ style_rubric }}{% if review_contract %}
+
+## What this style's review must check
+
+{{ review_contract }}{% endif %}
+
+{% include "evaluation/shared/anti_leniency.j2" %}
+
+## What you are comparing
+
+`{{ before_label }}` and `{{ after_label }}` are two versions of the **same digest**, before and after an editorial pass. Your job is to detect **editorial loss**: understanding that the earlier version gave the reader and the later version does not.
+
+Ask specifically:
+
+- What explanatory context existed before and disappeared?
+- Did a bridge between a claim and its explanation disappear?
+- Did compression remove the sentence that established why a detail matters?
+- Did domain shorthand replace a fuller explanation?
+- Did a heading or transition become harder to interpret?
+- Did the later version become shorter without becoming clearer?
+- Did the later version improve concision while fully preserving understanding?
+
+Do **not** reward the earlier version merely because it is longer. The goal is to preserve understanding while improving the intended editorial property — not to preserve every sentence.
+
+{{ overall_rubric }}
+
+{% include "evaluation/shared/dimensions.j2" %}
+
+{% include "evaluation/shared/issue_taxonomy.j2" %}
+
+{% include "evaluation/shared/critical_failure.j2" %}
+
+{% include "evaluation/shared/citation_note.j2" %}
+
+{% include "evaluation/shared/compactness.j2" %}
+
+## {{ before_label }}
+
+{{ before_text }}
+
+## {{ after_label }}
+
+Sections delimiting the revised version:
+
+{{ section_block }}
+
+## Response
+
+Return one JSON object with exactly this shape:
+
+{
+  "status": "<improved|preserved|regressed>",
+  "material_regression": <true|false>,
+  "lost_context": ["<short>", "..."],
+  "lost_explanations": ["<short>", "..."],
+  "new_ambiguities": ["<short>", "..."],
+  "broken_connections": ["<short>", "..."],
+  "improvements": ["<short>", "..."],
+  "affected_sections": ["<section id>", "..."],
+  "retry_instructions": ["<specific targeted instruction>", "..."],
+  "after": {
+    "overall_score": <0-10, one decimal>,
+    "overall_summary": "<two or three sentences>",
+    "dimensions": {
+      "first_pass_comprehension": <0-10>,
+      "context_sufficiency": <0-10>,
+      "explanatory_clarity": <0-10>,
+      "synthesis_quality": <0-10>,
+      "narrative_coherence": <0-10>,
+      "reader_orientation": <0-10>
+    },
+    "section_evaluations": [
+      {
+        "section_id": "<id as given>",
+        "title": "<title as given>",
+        "reader_reconstruction": {
+          "subject": "<one sentence>",
+          "main_claim": "<one sentence>",
+          "why_it_matters": "<one sentence>"
+        },
+        "first_pass_comprehension": <0-10>,
+        "context_sufficiency": <0-10>,
+        "explanatory_clarity": <0-10>,
+        "logical_progression": <0-10>,
+        "understandable_on_first_read": <true|false>,
+        "reader_can_explain_why_it_matters": <true|false>,
+        "requires_rereading": <true|false>,
+        "headline_sets_expectation": <true|false>,
+        "body_fulfills_expectation": <true|false>,
+        "takeaway_is_explicit": <true|false>,
+        "missing_context": [],
+        "unexplained_concepts": [],
+        "unclear_referents": [],
+        "broken_logical_links": [],
+        "narrative_problem": "<one sentence or null>",
+        "critical_failure": <true|false>,
+        "critical_failure_reason": "<one sentence or null>"
+      }
+    ],
+    "weakest_section_id": "<id or null>",
+    "weakest_section_score": <0-10 or null>,
+    "critical_failure_count": <integer>,
+    "issues": [
+      {
+        "type": "<one of the allowed types>",
+        "section_id": "<id or null>",
+        "severity": "<minor|major|critical>",
+        "description": "<one sentence>",
+        "revision_hint": "<one sentence or null>"
+      }
+    ],
+    "revision_priorities": ["<most valuable fix>", "..."]
+  }
+}
+
+JSON:

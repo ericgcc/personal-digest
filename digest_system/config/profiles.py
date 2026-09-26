@@ -1,159 +1,69 @@
 """Style profiles: an explicit, versioned declaration of what each style's stages receive.
 
-Python port of ``src/editorial/prompts/style-profiles.mjs``. The module's purpose is
-unchanged: a profile is the only thing that decides which style instructions a stage
-receives, so adding a heading to one style file cannot change another style's prompt.
+A profile is the only thing that decides which style instructions a stage receives, so adding
+or editing one style's instructions cannot change another style's prompt. Phase 2b changes
+*how* a profile is declared, not what it decides:
 
-The registry, the resolution order, the aliases, the validation and the preflight are all
-reproduced exactly. The frozen legacy section sets are kept as exported constants because
-they are the independent reference the isolation test compares the profiles against.
+* Before, a profile named ``##`` heading text inside ``styles/<style>.md`` and the runtime
+  extracted those sections. A heading was doing two jobs — editorial formatting and a runtime
+  identifier — so reorganising a style's prose could silently redirect a stage's instructions.
+* Now, a profile names **files**. A style's rules live in ordered modules under
+  ``styles/<style>/modules/``, the readable ``styles/<style>.md`` is generated from them, and
+  ``prompts/profiles/<profile-id>.yaml`` lists the files each stage receives. No runtime code
+  parses a heading.
+
+The resolution order, aliases, structural validation, structural preflight, composition
+constraints, budgets and failure policies are unchanged.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Mapping, Sequence
+
+import yaml
 
 from ..runtime.artifacts import ROOT, RunnerError
 from .budgets import STYLE_BUDGET
+from .style_modules import load_style_manifest
 
-# ---------------------------------------------------------------------------------------
-# Frozen legacy section sets
-# ---------------------------------------------------------------------------------------
-
-#: The pre-Phase-1 union, unchanged. Reference and test data only: no stage reads it.
-LEGACY_COMPOSITION_SECTIONS: tuple[str, ...] = (
-    "## Style interface",
-    "## Synthesis mode",
-    "## Curation process",
-    "## Core principle: Digest-first reading",
-    "## Relationship between sources",
-    "## Editorial depth",
-    "## Understanding over extraction",
-    "## Organization",
-    "## Required structure",
-    "## Summary mode",
-    "## Multiple items within one source",
-    "## Cross-source overlap",
-    "## Selection and filtering",
-    "## Fidelity",
-    "## Fidelity and nuance",
-    "## Optional depth cue",
-    "## Length and density",
-    "## Citations",
-    "## Section-level source lines",
-    "## Final source catalog",
-    "## Ending rules",
-)
-
-LEGACY_CHARACTER_SECTIONS: tuple[str, ...] = ("## Writing character",)
-LEGACY_INTERFACE_SECTIONS: tuple[str, ...] = ("## Style interface",)
-LEGACY_EXPECTATION_SECTIONS: tuple[str, ...] = ("## Style interface", "## Required structure")
-
-#: Required of every canonical style by ``system/style-contract.md``. A profile may not
-#: omit these from the style file, and preflight fails if the style file lacks them.
-MANDATED_STYLE_SECTIONS: tuple[str, ...] = ("## Style interface", "## Writing character")
+#: Every profile file, by id, is read from here.
+PROFILES_RELATIVE = "prompts/profiles"
 
 CANONICAL_STYLES: tuple[str, ...] = ("curated-discovery", "concise", "detailed", "synthesis-max")
 
-# ---------------------------------------------------------------------------------------
-# Per-style section sets
-# ---------------------------------------------------------------------------------------
+#: The sections a canonical style must still declare in its readable document. Retained as a
+#: documentation-level guarantee (``system/style-contract.md`` states it) and checked by
+#: ``scripts/build_style_docs.py``; the runtime no longer extracts anything by heading.
+MANDATED_STYLE_SECTIONS: tuple[str, ...] = ("## Style interface", "## Writing character")
 
-#: The canonical ``##`` sections each style actually declares, in
-#: ``LEGACY_COMPOSITION_SECTIONS`` order. Order is preserved deliberately: extraction
-#: inlines sections in the order they were requested, so this list is what the model reads.
-COMPOSITION_SECTIONS_BY_STYLE: dict[str, tuple[str, ...]] = {
-    "synthesis-max": (
-        "## Style interface",
-        "## Synthesis mode",
-        "## Required structure",
-        "## Length and density",
-        "## Citations",
-        "## Final source catalog",
-        "## Ending rules",
-    ),
-    "curated-discovery": (
-        "## Style interface",
-        "## Curation process",
-        "## Core principle: Digest-first reading",
-        "## Relationship between sources",
-        "## Editorial depth",
-        "## Understanding over extraction",
-        "## Organization",
-        "## Required structure",
-        "## Optional depth cue",
-        "## Length and density",
-        "## Citations",
-        "## Section-level source lines",
-        "## Final source catalog",
-        "## Ending rules",
-    ),
-    "concise": (
-        "## Style interface",
-        "## Required structure",
-        "## Summary mode",
-        "## Selection and filtering",
-        "## Fidelity",
-        "## Length and density",
-        "## Ending rules",
-    ),
-    "detailed": (
-        "## Style interface",
-        "## Organization",
-        "## Required structure",
-        "## Summary mode",
-        "## Multiple items within one source",
-        "## Cross-source overlap",
-        "## Selection and filtering",
-        "## Fidelity and nuance",
-        "## Length and density",
-        "## Ending rules",
-    ),
-}
+STAGE_NAMES: tuple[str, ...] = (
+    "analyze",
+    "frame",
+    "draft",
+    "developmental-review",
+    "writer-revision",
+    "line-edit",
+    "reader-review",
+    "targeted-repair",
+    "copy-verify",
+    "render",
+)
 
-#: The sections each style's *selection* work needs.
-SELECTION_BY_STYLE: dict[str, tuple[str, ...]] = {
-    "synthesis-max": ("## Style interface", "## Synthesis mode"),
-    "curated-discovery": (
-        "## Style interface",
-        "## Curation process",
-        "## Core principle: Digest-first reading",
-        "## Relationship between sources",
-    ),
-    "concise": ("## Style interface", "## Selection and filtering", "## Fidelity"),
-    "detailed": ("## Style interface", "## Selection and filtering", "## Fidelity and nuance"),
-}
+STAGES_REQUIRING_A_DECLARATION: tuple[str, ...] = STAGE_NAMES
 
-#: A stage that verifies rather than composes must not be handed the procedure that
-#: composes.
-COMPOSITION_VERIFY_OMISSIONS: dict[str, tuple[str, ...]] = {
-    "synthesis-max": ("## Synthesis mode",),
-    "curated-discovery": ("## Curation process",),
-    "concise": (),
-    "detailed": (),
-}
-
-#: A stage that plans does not terminate the document.
-COMPOSITION_FRAME_OMISSIONS: dict[str, tuple[str, ...]] = {
-    "synthesis-max": ("## Ending rules",),
-    "curated-discovery": (),
-    "concise": (),
-    "detailed": (),
-}
-
-
-def _without(headings: Sequence[str], omissions: Sequence[str]) -> tuple[str, ...]:
-    return tuple(heading for heading in headings if heading not in omissions)
+#: What happens when the frame stage cannot produce a plan that satisfies the profile.
+FRAME_FAILURE_POLICIES: tuple[str, ...] = ("fail", "recovery-frame")
 
 
 # ---------------------------------------------------------------------------------------
 # Composition metadata
 # ---------------------------------------------------------------------------------------
 
-#: Composed from each style's ``## Style interface`` table. Key order is preserved so the
-#: recorded profile is byte-comparable with the JavaScript reference.
+#: Composed from each style's ``## Style interface`` table. This is editorial constraint data,
+#: not prompt composition, so it stays in code; the interface table remains its human-readable
+#: source. Key order is preserved so the recorded profile is byte-comparable with the reference.
 COMPOSITION_BY_STYLE: dict[str, dict[str, Any]] = {
     "synthesis-max": {
         "unit": "a concrete topic, question, mechanism, development, or tension explained through at least two substantively contributing sources",
@@ -223,24 +133,6 @@ EVALUATION_BY_STYLE: dict[str, dict[str, Any]] = {
     for style in CANONICAL_STYLES
 }
 
-STAGE_NAMES: tuple[str, ...] = (
-    "analyze",
-    "frame",
-    "draft",
-    "developmental-review",
-    "writer-revision",
-    "line-edit",
-    "reader-review",
-    "targeted-repair",
-    "copy-verify",
-    "render",
-)
-
-STAGES_REQUIRING_A_DECLARATION: tuple[str, ...] = STAGE_NAMES
-
-#: What happens when the frame stage cannot produce a plan that satisfies the profile.
-FRAME_FAILURE_POLICIES: tuple[str, ...] = ("fail", "recovery-frame")
-
 
 # ---------------------------------------------------------------------------------------
 # Profile data model
@@ -249,16 +141,17 @@ FRAME_FAILURE_POLICIES: tuple[str, ...] = ("fail", "recovery-frame")
 
 @dataclass(frozen=True)
 class Descriptor:
-    """One canonical document a stage receives, optionally restricted to ``##`` sections."""
+    """One canonical document a stage receives.
+
+    ``path`` is a file, not a heading. A style document descriptor therefore names the module
+    that owns the rule, and the module's ``##`` heading is ordinary editorial formatting.
+    """
 
     path: str
-    sections: tuple[str, ...] | None = None
     required: bool | None = None
 
     def to_dict(self) -> dict[str, Any]:
         value: dict[str, Any] = {"path": self.path}
-        if self.sections is not None:
-            value["sections"] = list(self.sections)
         if self.required is not None:
             value["required"] = self.required
         return value
@@ -267,13 +160,19 @@ class Descriptor:
 @dataclass(frozen=True)
 class StageDeclaration:
     documents: tuple[Descriptor, ...] = ()
-    contracts: Mapping[str, Descriptor] = field(default_factory=dict)
+    contracts: Mapping[str, tuple[Descriptor, ...]] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         value: dict[str, Any] = {"documents": [descriptor.to_dict() for descriptor in self.documents]}
         if self.contracts:
-            value["contracts"] = {name: descriptor.to_dict() for name, descriptor in self.contracts.items()}
+            value["contracts"] = {
+                name: [descriptor.to_dict() for descriptor in descriptors]
+                for name, descriptors in self.contracts.items()
+            }
         return value
+
+    def contract_descriptors(self, name: str) -> tuple[Descriptor, ...]:
+        return tuple(self.contracts.get(name, ()))
 
 
 @dataclass(frozen=True)
@@ -293,179 +192,124 @@ class StyleProfile:
     rendering: dict[str, str]
 
 
-def _build_profile(
-    *,
-    id: str,
-    version: str,
-    style: str,
-    label: str,
-    status: str,
-    stages: Mapping[str, StageDeclaration],
-    rendering: Mapping[str, str],
-    enforced: Sequence[str] = (),
-    frame_failure_policy: str = "recovery-frame",
-    notes: Sequence[str] = (),
-) -> StyleProfile:
+# ---------------------------------------------------------------------------------------
+# Loading
+# ---------------------------------------------------------------------------------------
+
+
+def _profile_path(profile_id: str, root: Path | None = None) -> Path:
+    base = root or ROOT
+    return base / PROFILES_RELATIVE / f"{profile_id}.yaml"
+
+
+def _descriptors(entries: Any, *, where: str) -> tuple[Descriptor, ...]:
+    if entries is None:
+        return ()
+    if not isinstance(entries, list):
+        raise RunnerError(f"{where} must be a list of documents")
+    descriptors: list[Descriptor] = []
+    for index, entry in enumerate(entries):
+        if isinstance(entry, str):
+            descriptors.append(Descriptor(path=entry))
+            continue
+        if not isinstance(entry, Mapping) or not entry.get("path"):
+            raise RunnerError(f"{where}[{index}] must declare a path")
+        required = entry.get("required")
+        descriptors.append(
+            Descriptor(path=str(entry["path"]), required=required if isinstance(required, bool) else None)
+        )
+    return tuple(descriptors)
+
+
+def _stage_declarations(entries: Any, *, profile_id: str) -> dict[str, StageDeclaration]:
+    if not isinstance(entries, Mapping):
+        raise RunnerError(f"profile {profile_id} declares no stages")
+    stages: dict[str, StageDeclaration] = {}
+    for name, value in entries.items():
+        if not isinstance(name, str):
+            raise RunnerError(f"profile {profile_id} declares a stage whose name is not a string")
+        if not isinstance(value, Mapping):
+            raise RunnerError(f"profile {profile_id}: stage {name} must be a mapping")
+        contracts: dict[str, tuple[Descriptor, ...]] = {}
+        declared = value.get("contracts")
+        if declared is not None:
+            if not isinstance(declared, Mapping):
+                raise RunnerError(f"profile {profile_id}: stage {name} contracts must be a mapping")
+            for contract_name, contract_entries in declared.items():
+                contracts[str(contract_name)] = _descriptors(
+                    contract_entries, where=f"profile {profile_id}: {name}.contracts.{contract_name}"
+                )
+        stages[name] = StageDeclaration(
+            documents=_descriptors(value.get("documents"), where=f"profile {profile_id}: {name}.documents"),
+            contracts=contracts,
+        )
+    return stages
+
+
+def load_style_profile(profile_id: str, *, root: Path | None = None) -> StyleProfile:
+    """Read one profile from ``prompts/profiles/<id>.yaml``."""
+    base = root or ROOT
+    path = _profile_path(profile_id, base)
+    if not path.is_file():
+        raise RunnerError(
+            f"Style profile {profile_id} has no declaration at {PROFILES_RELATIVE}/{profile_id}.yaml"
+        )
+    try:
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as error:
+        raise RunnerError(f"{PROFILES_RELATIVE}/{profile_id}.yaml is not valid YAML: {error}") from error
+    if not isinstance(loaded, Mapping):
+        raise RunnerError(f"{PROFILES_RELATIVE}/{profile_id}.yaml must be a mapping")
+
+    style = str(loaded.get("style") or "")
     budget = STYLE_BUDGET.get(style)
     if budget is None:
         raise RunnerError(
-            f"Style profile {id} names style {style}, which has no entry in digest_system/config/budgets.py"
+            f"Style profile {profile_id} names style {style!r}, which has no entry in "
+            "digest_system/config/budgets.py"
         )
+    frame_failure_policy = str(loaded.get("frame_failure_policy") or "recovery-frame")
     if frame_failure_policy not in FRAME_FAILURE_POLICIES:
         raise RunnerError(
-            f"Style profile {id} declares frameFailurePolicy {frame_failure_policy!r}; "
+            f"Style profile {profile_id} declares frame_failure_policy {frame_failure_policy!r}; "
             f"expected one of {', '.join(FRAME_FAILURE_POLICIES)}"
         )
     composition = dict(COMPOSITION_BY_STYLE[style])
-    composition["enforced"] = list(enforced)
+    enforced = loaded.get("enforced")
+    composition["enforced"] = list(enforced) if isinstance(enforced, list) else []
+    rendering = loaded.get("rendering")
+    if not isinstance(rendering, Mapping):
+        rendering = {
+            "rules": f"system/rendering-{style}.md",
+            "template": f"templates/{style}-email-v1.html",
+        }
+    notes = loaded.get("notes")
     return StyleProfile(
-        id=id,
-        version=version,
+        id=str(loaded.get("id") or profile_id),
+        version=str(loaded.get("version") or ""),
         style=style,
-        label=label,
-        status=status,
-        notes=tuple(notes),
+        label=str(loaded.get("label") or ""),
+        status=str(loaded.get("status") or ""),
+        notes=tuple(str(note) for note in notes) if isinstance(notes, list) else (),
         budget={"unit": budget.unit, "min": budget.min, "max": budget.max, "prose": budget.prose},
         budget_source="digest_system/config/budgets.py",
         composition=composition,
         evaluation=dict(EVALUATION_BY_STYLE[style]),
         frame_failure_policy=frame_failure_policy,
-        stages=dict(stages),
-        rendering=dict(rendering),
+        stages=_stage_declarations(loaded.get("stages"), profile_id=profile_id),
+        rendering={str(key): str(value) for key, value in dict(rendering).items()},
     )
 
 
-def _style_doc(style: str, sections: Sequence[str]) -> Descriptor:
-    return Descriptor(path=f"styles/{style}.md", sections=tuple(sections))
+def _discover_profile_ids(root: Path | None = None) -> list[str]:
+    base = (root or ROOT) / PROFILES_RELATIVE
+    if not base.is_dir():
+        raise RunnerError(f"the profile directory is missing: {base}")
+    return sorted(path.stem for path in base.glob("*.yaml"))
 
 
-def _legacy_profile(style: str) -> StyleProfile:
-    """The profile that reproduces pre-Phase-1 behaviour exactly for one style."""
-    composition = COMPOSITION_SECTIONS_BY_STYLE[style]
-    full = (*composition, "## Writing character")
-    return _build_profile(
-        id=f"{style}-legacy",
-        version="1.0.0",
-        style=style,
-        label=f"{style} — pre-profile-context baseline",
-        status="active",
-        notes=(
-            "Reproduces the pre-Phase-1 assembled context for this style: the legacy composition union, resolved against the sections the style actually declares.",
-            "Retained as the default and as the rollback option for every style.",
-            "Enforces no composition constraint, so a stage validator changes nothing about a run under this profile.",
-        ),
-        stages={
-            "analyze": StageDeclaration(),
-            "frame": StageDeclaration(documents=(_style_doc(style, composition),)),
-            "draft": StageDeclaration(documents=(_style_doc(style, full),)),
-            "developmental-review": StageDeclaration(
-                contracts={"style": Descriptor(path="styles/<style>.md", sections=LEGACY_INTERFACE_SECTIONS)}
-            ),
-            "writer-revision": StageDeclaration(documents=(_style_doc(style, LEGACY_CHARACTER_SECTIONS),)),
-            "line-edit": StageDeclaration(documents=(_style_doc(style, LEGACY_CHARACTER_SECTIONS),)),
-            "reader-review": StageDeclaration(
-                contracts={"style": Descriptor(path="styles/<style>.md", sections=LEGACY_EXPECTATION_SECTIONS)}
-            ),
-            "targeted-repair": StageDeclaration(documents=(_style_doc(style, LEGACY_CHARACTER_SECTIONS),)),
-            "copy-verify": StageDeclaration(documents=(_style_doc(style, composition),)),
-            "render": StageDeclaration(),
-        },
-        rendering={
-            "rules": f"system/rendering-{style}.md",
-            "template": f"templates/{style}-email-v1.html",
-        },
-    )
-
-
-def _synthesis_max_v1() -> StyleProfile:
-    """The first profile whose editorial contract diverges from the canonical style file."""
-    style = "synthesis-max"
-
-    def style_doc(sections: Sequence[str]) -> Descriptor:
-        return _style_doc(style, sections)
-
-    def pipeline_doc(name: str) -> Descriptor:
-        return Descriptor(path=f"system/style-pipelines/{style}/{name}.md")
-
-    return _build_profile(
-        id="synthesis-max-v1",
-        version="2.0.0",
-        style=style,
-        label="Synthesis MAX — style-isolated pipeline v2",
-        status="experimental",
-        enforced=ENFORCEABLE_CONSTRAINTS,
-        frame_failure_policy="fail",
-        notes=(
-            "Opt-in. Selected with --style-profile synthesis-max-v1 or DIGEST_STYLE_PROFILE=synthesis-max-v1.",
-            "Not the production default: production stays on synthesis-max-legacy until a historical replay and an editorial review of the finished digest both pass.",
-            "Delivers the style's selection and relationship model to analyze, which previously received no style document at all.",
-            "Routes every stage through the style's own section set rather than the cross-style union.",
-            "Requires a structured cluster schema from analyze and a realizable word plan from frame, and validates both deterministically.",
-            "Supplies its review obligations to the Python evaluation stages as the `review` contract, so a style-specific diagnosis can reach the judge.",
-            "Stops rather than deriving a recovery frame when the plan cannot satisfy its narrative contract.",
-        ),
-        stages={
-            "analyze": StageDeclaration(
-                documents=(style_doc(SELECTION_BY_STYLE[style]), pipeline_doc("analyze"))
-            ),
-            "frame": StageDeclaration(
-                documents=(
-                    style_doc(_without(COMPOSITION_SECTIONS_BY_STYLE[style], COMPOSITION_FRAME_OMISSIONS[style])),
-                    pipeline_doc("frame"),
-                )
-            ),
-            "draft": StageDeclaration(
-                documents=(
-                    style_doc((*COMPOSITION_SECTIONS_BY_STYLE[style], "## Writing character")),
-                    pipeline_doc("draft"),
-                )
-            ),
-            "developmental-review": StageDeclaration(
-                contracts={
-                    "style": Descriptor(path="styles/<style>.md", sections=LEGACY_INTERFACE_SECTIONS),
-                    "review": pipeline_doc("review"),
-                }
-            ),
-            "writer-revision": StageDeclaration(
-                documents=(style_doc(LEGACY_CHARACTER_SECTIONS), pipeline_doc("review"))
-            ),
-            "line-edit": StageDeclaration(
-                documents=(style_doc(LEGACY_CHARACTER_SECTIONS), pipeline_doc("review"))
-            ),
-            "reader-review": StageDeclaration(
-                contracts={
-                    "style": Descriptor(path="styles/<style>.md", sections=LEGACY_EXPECTATION_SECTIONS),
-                    "review": pipeline_doc("review"),
-                }
-            ),
-            "targeted-repair": StageDeclaration(
-                documents=(style_doc(LEGACY_CHARACTER_SECTIONS), pipeline_doc("review"))
-            ),
-            "copy-verify": StageDeclaration(
-                documents=(
-                    style_doc(_without(COMPOSITION_SECTIONS_BY_STYLE[style], COMPOSITION_VERIFY_OMISSIONS[style])),
-                )
-            ),
-            "render": StageDeclaration(),
-        },
-        rendering={
-            "rules": f"system/rendering-{style}.md",
-            "template": f"templates/{style}-email-v1.html",
-        },
-    )
-
-
-#: Every selectable profile, by id.
-STYLE_PROFILES: dict[str, StyleProfile] = {
-    profile.id: profile
-    for profile in (
-        _legacy_profile("curated-discovery"),
-        _legacy_profile("concise"),
-        _legacy_profile("detailed"),
-        _legacy_profile("synthesis-max"),
-        _synthesis_max_v1(),
-    )
-}
+#: Every selectable profile, by id. Loaded once from the declaration files.
+STYLE_PROFILES: dict[str, StyleProfile] = {pid: load_style_profile(pid) for pid in _discover_profile_ids()}
 
 #: What a style runs when no profile is named.
 DEFAULT_STYLE_PROFILE_BY_STYLE: dict[str, str] = {style: f"{style}-legacy" for style in CANONICAL_STYLES}
@@ -628,17 +472,13 @@ def validate_style_profile(profile: StyleProfile | None) -> StructuralValidation
             continue
         if not isinstance(entry.documents, tuple):
             problems.append(f"stage {stage}: documents must be an array")
-        if entry.contracts is not None and not isinstance(entry.contracts, Mapping):
-            problems.append(f"stage {stage}: contracts must be an object")
-        for index, descriptor in enumerate(entry.documents or ()):
+        for index, descriptor in enumerate(entry.documents):
             if not isinstance(descriptor, Descriptor) or not descriptor.path.strip():
                 problems.append(f"stage {stage}: documents[{index}] has no path")
-                continue
-            if descriptor.sections is not None and not isinstance(descriptor.sections, tuple):
-                problems.append(f"stage {stage}: documents[{index}].sections must be an array")
-        for name, descriptor in (entry.contracts or {}).items():
-            if not isinstance(descriptor, Descriptor) or not descriptor.path.strip():
-                problems.append(f"stage {stage}: contract {name} has no path")
+        for name, descriptors in entry.contracts.items():
+            for index, descriptor in enumerate(descriptors):
+                if not isinstance(descriptor, Descriptor) or not descriptor.path.strip():
+                    problems.append(f"stage {stage}: contract {name}[{index}] has no path")
     for stage in profile.stages:
         if stage not in STAGE_NAMES:
             problems.append(f"unknown stage declared: {stage}")
@@ -646,7 +486,11 @@ def validate_style_profile(profile: StyleProfile | None) -> StructuralValidation
 
 
 def extract_section_headings(markdown: str) -> list[str]:
-    """``## Heading`` titles in a Markdown document, at level 2 only."""
+    """``## Heading`` titles in a Markdown document, at level 2 only.
+
+    Retained for the style generator's verification and for historical readers. No runtime
+    prompt path calls it: a profile names files, not headings.
+    """
     import re
 
     headings = []
@@ -671,11 +515,11 @@ class PreflightResult:
 
 
 def preflight_style_profile(profile: StyleProfile, *, root: Path | None = None) -> PreflightResult:
-    """Preflight every file and section a profile declares, before the first model call.
+    """Preflight every file a profile declares, before the first model call.
 
-    A profile that names a document which does not exist, or a section which its style file
-    does not declare, is a configuration defect. Every problem is collected so one failure
-    reports all of them.
+    A profile that names a document which does not exist is a configuration defect. Every
+    problem is collected so one failure reports all of them. The style's own module manifest is
+    read here too, because a style whose modules are missing has no instructions to deliver.
     """
     base = root or ROOT
     structural = validate_style_profile(profile)
@@ -686,17 +530,17 @@ def preflight_style_profile(profile: StyleProfile, *, root: Path | None = None) 
         )
 
     problems: list[str] = []
-    resolved_style_path = base / "styles" / f"{profile.style}.md"
-    style_text: str | None = None
+    manifest = None
     try:
-        style_text = resolved_style_path.read_text(encoding="utf-8")
-    except OSError as error:
-        problems.append(f"styles/{profile.style}.md could not be read: {error}")
-    style_headings = [] if style_text is None else extract_section_headings(style_text)
+        manifest = load_style_manifest(profile.style, root=base)
+    except RunnerError as error:
+        problems.append(str(error))
+    style_headings = [] if manifest is None else manifest.headings()
     for mandated in MANDATED_STYLE_SECTIONS:
-        if style_text is not None and mandated not in style_headings:
+        if manifest is not None and mandated not in style_headings:
             problems.append(
-                f"styles/{profile.style}.md does not declare the mandated section {mandated} (system/style-contract.md)"
+                f"styles/{profile.style}/style.yaml declares no module for the mandated section "
+                f"{mandated} (system/style-contract.md)"
             )
 
     for name, relative_path in (("rules", profile.rendering["rules"]), ("template", profile.rendering["template"])):
@@ -709,34 +553,26 @@ def preflight_style_profile(profile: StyleProfile, *, root: Path | None = None) 
         if entry is None:
             continue
         documents: list[ResolvedDescriptor] = []
-        contracts: dict[str, ResolvedDescriptor] = {}
+        contracts: dict[str, list[ResolvedDescriptor]] = {}
 
         def resolve(descriptor: Descriptor) -> ResolvedDescriptor:
             relative_path = descriptor.path.replace("<style>", profile.style)
             absolute = base / relative_path
             if not absolute.exists():
                 if descriptor.required is False:
-                    return ResolvedDescriptor(Descriptor(path=relative_path, sections=descriptor.sections, required=descriptor.required), False)
+                    return ResolvedDescriptor(
+                        Descriptor(path=relative_path, required=descriptor.required), False
+                    )
                 problems.append(f"{stage}: required document is missing: {relative_path}")
-                return ResolvedDescriptor(Descriptor(path=relative_path, sections=descriptor.sections, required=descriptor.required), False)
-            requested = descriptor.sections
-            if requested:
-                is_style_file = relative_path == f"styles/{profile.style}.md"
-                if is_style_file and style_text is not None:
-                    absent = [heading for heading in requested if heading not in style_headings]
-                    if absent:
-                        problems.append(
-                            f"{stage}: {relative_path} does not declare {', '.join(absent)}; "
-                            f"the sections it does declare are {', '.join(style_headings)}"
-                        )
-            return ResolvedDescriptor(
-                Descriptor(path=relative_path, sections=descriptor.sections, required=descriptor.required), True
-            )
+                return ResolvedDescriptor(
+                    Descriptor(path=relative_path, required=descriptor.required), False
+                )
+            return ResolvedDescriptor(Descriptor(path=relative_path, required=descriptor.required), True)
 
         for descriptor in entry.documents:
             documents.append(resolve(descriptor))
-        for name, descriptor in entry.contracts.items():
-            contracts[name] = resolve(descriptor)
+        for name, descriptors in entry.contracts.items():
+            contracts[name] = [resolve(descriptor) for descriptor in descriptors]
         stages[stage] = {"documents": documents, "contracts": contracts}
 
     if problems:
@@ -747,20 +583,24 @@ def preflight_style_profile(profile: StyleProfile, *, root: Path | None = None) 
 
 
 def excluded_sections(*, profile: StyleProfile, stage: str, style_headings: Sequence[str]) -> list[str]:
-    """Sections a stage will not receive, out of those its style declares."""
+    """Style modules a stage will not receive, out of those its style declares.
+
+    Reported by module for the audit: the profile's selectivity is the thing this architecture
+    is trusted to get right, and a record of what was *not* sent is how that is audited.
+    """
     if stage.startswith("render"):
         return []
     entry = profile.stages.get(stage)
     if entry is None:
         return []
     requested: set[str] = set()
-    for descriptor in (*entry.documents, *entry.contracts.values()):
+    for descriptor in (*entry.documents, *(d for ds in entry.contracts.values() for d in ds)):
         relative_path = descriptor.path.replace("<style>", profile.style)
-        if relative_path != f"styles/{profile.style}.md":
+        if not relative_path.startswith(f"styles/{profile.style}/modules/"):
             continue
-        for heading in descriptor.sections or ():
-            requested.add(heading)
-    return [heading for heading in style_headings if heading not in requested]
+        requested.add(relative_path)
+    manifest = load_style_manifest(profile.style)
+    return [module.file for module in manifest.modules if module.file not in requested]
 
 
 def describe_style_profile(profile: StyleProfile, *, source: str | None = None) -> dict[str, Any]:
@@ -786,25 +626,20 @@ def profile_document_paths(profile: StyleProfile) -> list[str]:
     """Every canonical document a profile's stages reference."""
     paths = {profile.rendering["rules"], profile.rendering["template"]}
     for entry in profile.stages.values():
-        for descriptor in (*entry.documents, *entry.contracts.values()):
+        for descriptor in (*entry.documents, *(d for ds in entry.contracts.values() for d in ds)):
             paths.add(descriptor.path.replace("<style>", profile.style))
     return sorted(paths)
 
 
 __all__ = [
-    "LEGACY_COMPOSITION_SECTIONS",
-    "LEGACY_CHARACTER_SECTIONS",
-    "LEGACY_INTERFACE_SECTIONS",
-    "LEGACY_EXPECTATION_SECTIONS",
     "MANDATED_STYLE_SECTIONS",
     "CANONICAL_STYLES",
-    "COMPOSITION_SECTIONS_BY_STYLE",
-    "SELECTION_BY_STYLE",
     "COMPOSITION_BY_STYLE",
     "ENFORCEABLE_CONSTRAINTS",
     "EVALUATION_BY_STYLE",
     "STAGE_NAMES",
     "FRAME_FAILURE_POLICIES",
+    "PROFILES_RELATIVE",
     "Descriptor",
     "StageDeclaration",
     "StyleProfile",
@@ -823,4 +658,5 @@ __all__ = [
     "excluded_sections",
     "describe_style_profile",
     "profile_document_paths",
+    "load_style_profile",
 ]

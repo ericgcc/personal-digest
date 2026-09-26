@@ -1,0 +1,172 @@
+<source_corpus>
+{
+  "digest_id": "tech-bi-daily",
+  "style": "synthesis-max",
+  "language": "English",
+  "acquisition_time": "2026-09-20T06:30:00.000Z",
+  "html_lang": "en",
+  "delivery": {
+    "subject": "Tech Bi-Daily — 20 September 2026",
+    "invisible_html_run_marker": "<!-- run-key: tech-bi-daily-synthesis-max-fixture -->"
+  },
+  "sources": [
+    {
+      "source_number": 1,
+      "title": "A mechanism for incremental evaluation",
+      "author_or_publication": "Fixture Press",
+      "canonical_url": "https://example.invalid/a",
+      "resolved_locator": "https://example.invalid/a",
+      "reading_time_minutes": 12,
+      "reading_outcome": "read",
+      "received_at": "2026-09-19T08:00:00.000Z",
+      "originating_gmail_message_id": "msg-003"
+    },
+    {
+      "source_number": 2,
+      "title": "Qualifying the evaluation claim",
+      "author_or_publication": "Fixture Press",
+      "canonical_url": "https://example.invalid/b",
+      "resolved_locator": "https://example.invalid/b",
+      "reading_time_minutes": 8,
+      "reading_outcome": "read",
+      "received_at": "2026-09-19T09:00:00.000Z",
+      "originating_gmail_message_id": "msg-001"
+    },
+    {
+      "source_number": 3,
+      "title": "A contradictory result",
+      "author_or_publication": "Fixture Review",
+      "canonical_url": "https://example.invalid/c",
+      "resolved_locator": "https://example.invalid/c",
+      "reading_time_minutes": 15,
+      "reading_outcome": "read",
+      "received_at": "2026-09-20T05:00:00.000Z",
+      "originating_gmail_message_id": "msg-002"
+    },
+    {
+      "source_number": 5,
+      "title": "A short note",
+      "author_or_publication": "Fixture Notes",
+      "canonical_url": "https://example.invalid/e",
+      "resolved_locator": "https://example.invalid/e",
+      "reading_time_minutes": 3,
+      "reading_outcome": "read",
+      "received_at": "2026-09-20T05:45:00.000Z",
+      "originating_gmail_message_id": "msg-005"
+    }
+  ]
+}
+</source_corpus>
+
+<approved_frame>
+{
+  "digest_id": "tech-bi-daily",
+  "style": "synthesis-max",
+  "language": "English",
+  "stage": "frame",
+  "mode": "threads",
+  "frame_summary": {
+    "note": "Two threads."
+  },
+  "editorial_units": [
+    {
+      "unit_id": "T1",
+      "intended_order": 1,
+      "working_title": "Incremental evaluation",
+      "disposition": "keep",
+      "selected_source_numbers": [
+        1,
+        2
+      ],
+      "central_focus": "How incremental evaluation changes the cost of a claim.",
+      "reader_promise": "You will be able to tell a cheap claim from an expensive one.",
+      "narrative_spine": [
+        "orientation",
+        "mechanism",
+        "relationship"
+      ],
+      "explanation_shape": "mechanism",
+      "evidence_refs": [
+        {
+          "source_number": 1,
+          "role": "states the mechanism"
+        },
+        {
+          "source_number": 2,
+          "role": "qualifies the claim"
+        }
+      ],
+      "depth_target_words": 200,
+      "branches_to_cut": []
+    },
+    {
+      "unit_id": "T2",
+      "intended_order": 2,
+      "working_title": "The contradictory result",
+      "disposition": "keep",
+      "selected_source_numbers": [
+        3,
+        5
+      ],
+      "central_focus": "Why the result contradicts the mechanism.",
+      "reader_promise": "You will know which claim the evidence does not support.",
+      "narrative_spine": [
+        "orientation",
+        "contradiction",
+        "consequence"
+      ],
+      "explanation_shape": "contradiction",
+      "evidence_refs": [
+        {
+          "source_number": 3,
+          "role": "reports the contradiction"
+        },
+        {
+          "source_number": 5,
+          "role": "narrows the scope"
+        }
+      ],
+      "depth_target_words": 200,
+      "branches_to_cut": []
+    }
+  ],
+  "selected_source_numbers": [
+    1,
+    2,
+    3,
+    5
+  ],
+  "catalog_only": {
+    "worth_reading": [],
+    "reviewed": [],
+    "selected": [
+      1,
+      2,
+      3,
+      5
+    ]
+  },
+  "budget": {
+    "big_picture_words": 100,
+    "unit_depth_targets": {
+      "T1": 200,
+      "T2": 200
+    },
+    "total_unit_words": 400,
+    "total_body_words": 500
+  },
+  "framing_constraints": []
+}
+</approved_frame>
+
+<stage_task>
+Stage: draft
+Digest ID: tech-bi-daily
+Selected style: synthesis-max
+Output language: English
+Purpose: DRAFT: write the editorial body from the approved frame and the evidence the frame selected.
+Length target: about 700-1,200 words for the briefing body, excluding the source catalog. Treat this as a binding constraint, not a suggestion.
+
+Return ONLY the complete Markdown artifact. Do not wrap it in a Markdown code fence. Do not narrate, explain, or describe the artifact. Do not use tools. Do not edit files. Do not access the network, Gmail, Drive, Chrome, or SQLite. Do not ask questions. Do not write HTML unless this stage is render.
+</stage_task>
+

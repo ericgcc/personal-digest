@@ -1,0 +1,67 @@
+# Phase 2b profile: a profile selects named files, never Markdown headings. Each entry
+# below is a module under styles/<style>/modules/ or a canonical instruction document.
+# Reproducible with scripts/export_profiles.py.
+id: concise-legacy
+version: 1.0.0
+style: concise
+label: concise — pre-profile-context baseline
+status: active
+frame_failure_policy: recovery-frame
+enforced: []
+notes:
+- 'Reproduces the pre-Phase-1 assembled context for this style: the legacy composition union, resolved against the sections the style actually declares.'
+- Retained as the default and as the rollback option for every style.
+- Enforces no composition constraint, so a stage validator changes nothing about a run under this profile.
+stages:
+  analyze:
+    documents: []
+  frame:
+    documents:
+    - path: styles/concise/modules/01-style-interface.md
+    - path: styles/concise/modules/06-required-structure.md
+    - path: styles/concise/modules/03-summary-mode.md
+    - path: styles/concise/modules/07-selection-and-filtering.md
+    - path: styles/concise/modules/08-fidelity.md
+    - path: styles/concise/modules/05-length-and-density.md
+    - path: styles/concise/modules/09-ending-rules.md
+  draft:
+    documents:
+    - path: styles/concise/modules/01-style-interface.md
+    - path: styles/concise/modules/06-required-structure.md
+    - path: styles/concise/modules/03-summary-mode.md
+    - path: styles/concise/modules/07-selection-and-filtering.md
+    - path: styles/concise/modules/08-fidelity.md
+    - path: styles/concise/modules/05-length-and-density.md
+    - path: styles/concise/modules/09-ending-rules.md
+    - path: styles/concise/modules/04-writing-character.md
+  developmental-review:
+    documents: []
+    contracts:
+      style:
+      - path: styles/concise/modules/01-style-interface.md
+  writer-revision:
+    documents:
+    - path: styles/concise/modules/04-writing-character.md
+  line-edit:
+    documents:
+    - path: styles/concise/modules/04-writing-character.md
+  reader-review:
+    documents: []
+    contracts:
+      style:
+      - path: styles/concise/modules/01-style-interface.md
+      - path: styles/concise/modules/06-required-structure.md
+  targeted-repair:
+    documents:
+    - path: styles/concise/modules/04-writing-character.md
+  copy-verify:
+    documents:
+    - path: styles/concise/modules/01-style-interface.md
+    - path: styles/concise/modules/06-required-structure.md
+    - path: styles/concise/modules/03-summary-mode.md
+    - path: styles/concise/modules/07-selection-and-filtering.md
+    - path: styles/concise/modules/08-fidelity.md
+    - path: styles/concise/modules/05-length-and-density.md
+    - path: styles/concise/modules/09-ending-rules.md
+  render:
+    documents: []

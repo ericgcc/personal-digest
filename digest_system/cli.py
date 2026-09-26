@@ -14,6 +14,7 @@ Usage::
     python -m digest_system.cli resume --digest tech-bi-daily --run-id test-001 --from-stage draft
     python -m digest_system.cli replay --from-run historical-run --run-id replay-001 --style-profile synthesis-max-v1 --until-stage frame
     python -m digest_system.cli ledger
+    python -m digest_system.cli inspect --digest tech-bi-daily --style-profile synthesis-max-v1 --stage draft
 """
 
 from __future__ import annotations
@@ -321,6 +322,52 @@ def command_replay(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_inspect(args: argparse.Namespace) -> int:
+    """Render a stage's exact prompt and its dependency manifest, offline.
+
+    This is the maintenance interface Phase 2b exists to provide: an operator can see what a
+    stage will send, and where each part came from, without spending anything and without
+    reading the executor.
+    """
+    from .editorial.prompts.inspection import inspect_all, inspect_stage
+
+    resolved = resolve_digest(args.digest)
+    profile = resolved_profile_for(args, resolved.style)
+    root = Path(args.output).expanduser() if args.output else ROOT / "prompt-inspections"
+
+    selected = (
+        [inspect_stage(digest_id=args.digest, profile_id=profile.profile_id, stage_name=args.stage)]
+        if args.stage
+        else inspect_all(digest_id=args.digest, profile_id=profile.profile_id)
+    )
+    for inspection in selected:
+        if args.print_prompt:
+            print(inspection.prompt_text)
+            continue
+        directory = root / profile.profile_id / inspection.stage
+        written = inspection.write(directory)
+        print(
+            f"{profile.profile_id}/{inspection.stage}: {len(written)} file(s) in "
+            f"{directory.relative_to(ROOT) if directory.is_relative_to(ROOT) else directory}",
+            file=sys.stderr,
+        )
+    return 0
+
+
+def _profile_for_inspection(args: argparse.Namespace, style: str):
+    from .config.profiles import resolve_style_profile
+
+    return resolve_style_profile(
+        style=style,
+        explicit=args.style_profile,
+        explicit_source="--style-profile",
+    )
+
+
+#: The name the command uses, kept separate so `command_inspect` reads clearly.
+resolved_profile_for = _profile_for_inspection
+
+
 def command_ledger(args: argparse.Namespace) -> int:
     """Rebuild run-summary.json and the cost ledger from the run directories already on disk."""
     runs_root = ROOT / RUNS_DIRECTORY
@@ -404,6 +451,18 @@ def build_parser() -> argparse.ArgumentParser:
     ledger_parser = subparsers.add_parser("ledger", help="Rebuild the cost ledger")
     ledger_parser.set_defaults(handler=command_ledger)
 
+    inspect_parser = subparsers.add_parser(
+        "inspect", help="Render a stage's exact prompt and dependency manifest, offline"
+    )
+    inspect_parser.add_argument("--digest", required=True, help="Digest ID, e.g. tech-bi-daily")
+    inspect_parser.add_argument("--style-profile", default=None, help="Style profile id or alias")
+    inspect_parser.add_argument("--stage", default=None, help="One stage; omit for every stage")
+    inspect_parser.add_argument("--output", default=None, help="Directory to write into")
+    inspect_parser.add_argument(
+        "--print", dest="print_prompt", action="store_true", help="Print the prompt instead of writing files"
+    )
+    inspect_parser.set_defaults(handler=command_inspect)
+
     return parser
 
 
@@ -416,7 +475,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             reconfigure(encoding="utf-8", errors="replace")
     parser = build_parser()
     args = parser.parse_args(argv)
-    if getattr(args, "timeout", 900) is not None and args.timeout <= 0:
+    if getattr(args, "timeout", None) is not None and args.timeout <= 0:
         print("digest_runner: --timeout must be a positive whole number", file=sys.stderr)
         return 1
     try:

@@ -1,0 +1,12 @@
+## Output economy
+
+- Reader reconstruction fields: one sentence each.
+- At most 3 items **per list** (`missing_context`, `unexplained_concepts`,
+  `unclear_referents`, `broken_logical_links`). Merge related items into one.
+- At most 8 document-level `issues` in total. Prioritize; do not enumerate every
+  small thing. If the same problem appears in several sections, report it once at
+  document level instead of once per section.
+- At most 4 `revision_priorities`.
+- Descriptions and hints: one concise sentence. Do not repeat the same problem in several fields.
+- Report conclusions and evidence only — no hidden reasoning, no chain of thought.
+- Return JSON only, with no surrounding commentary and no Markdown code fence.

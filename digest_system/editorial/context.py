@@ -70,9 +70,16 @@ class RunContext:
         """
         return [entry.descriptor.to_dict() for entry in self._preflight_stage(stage_name)["documents"]]
 
-    def style_contracts(self, stage_name: str) -> dict[str, dict[str, Any]]:
+    def style_contracts(self, stage_name: str) -> dict[str, list[dict[str, Any]]]:
+        """The contracts a stage hands to the evaluation adapter.
+
+        A contract may concatenate several documents, so each name maps to a list of descriptors.
+        """
         resolved = self._preflight_stage(stage_name)["contracts"]
-        return {name: entry.descriptor.to_dict() for name, entry in resolved.items()}
+        return {
+            name: [entry.descriptor.to_dict() for entry in entries if entry.present]
+            for name, entries in resolved.items()
+        }
 
     def _preflight_stage(self, stage_name: str) -> dict[str, Any]:
         from ..config.profiles import preflight_style_profile

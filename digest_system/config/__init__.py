@@ -4,6 +4,13 @@ from __future__ import annotations
 
 from .budgets import STYLE_BUDGET, StyleBudget, budget_for, budget_prose
 from .digests import ResolvedDigest, frontmatter_value, read_frontmatter, resolve_digest
+from .legacy import (
+    COMPOSITION_SECTIONS_BY_STYLE,
+    LEGACY_CHARACTER_SECTIONS,
+    LEGACY_COMPOSITION_SECTIONS,
+    LEGACY_EXPECTATION_SECTIONS,
+    LEGACY_INTERFACE_SECTIONS,
+)
 from .profiles import (
     CANONICAL_STYLES,
     DEFAULT_STYLE_PROFILE_BY_STYLE,
@@ -18,6 +25,7 @@ from .profiles import (
     style_profile_ids,
     validate_style_profile,
 )
+from .style_modules import StyleManifest, StyleModule, load_style_manifest
 from .runtime import (
     PIPELINE_V1,
     PIPELINE_V2,
@@ -50,6 +58,14 @@ __all__ = [
     "style_profile_for",
     "style_profile_ids",
     "validate_style_profile",
+    "COMPOSITION_SECTIONS_BY_STYLE",
+    "LEGACY_CHARACTER_SECTIONS",
+    "LEGACY_COMPOSITION_SECTIONS",
+    "LEGACY_EXPECTATION_SECTIONS",
+    "LEGACY_INTERFACE_SECTIONS",
+    "StyleManifest",
+    "StyleModule",
+    "load_style_manifest",
     "PIPELINE_V1",
     "PIPELINE_V2",
     "SUPPORTED_PIPELINES",

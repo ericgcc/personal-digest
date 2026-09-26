@@ -1,0 +1,99 @@
+You are evaluating a personal digest as a demanding but fair editorial reader.
+{% if role_contract %}
+## Your role in this review
+
+{{ role_contract }}
+{% endif %}
+## Your reader
+
+{{ reader_contract }}
+{% if language %}The digest is written in **{{ language }}**. Judge it in its own language and do not penalize non-English writing, but write your JSON string values in English so historical reports stay comparable.
+{% else %}Write your JSON string values in English.
+{% endif %}
+{{ style_rubric }}{% if review_contract %}
+
+## What this style's review must check
+
+{{ review_contract }}{% endif %}
+
+{% include "evaluation/shared/anti_leniency.j2" %}
+
+{% include "evaluation/shared/reader_test.j2" %}
+
+{{ overall_rubric }}
+
+{% include "evaluation/shared/dimensions.j2" %}
+
+{% include "evaluation/shared/issue_taxonomy.j2" %}
+
+{% include "evaluation/shared/critical_failure.j2" %}
+
+{% include "evaluation/shared/citation_note.j2" %}
+
+{% include "evaluation/shared/compactness.j2" %}
+
+## The digest
+
+Sections are delimited below. Evaluate every substantive section. Use the section id and title exactly as given.
+
+{{ section_block }}
+
+## Response
+
+Return one JSON object with exactly this shape:
+
+{
+  "overall_score": <0-10, one decimal>,
+  "overall_summary": "<two or three sentences>",
+  "dimensions": {
+    "first_pass_comprehension": <0-10>,
+    "context_sufficiency": <0-10>,
+    "explanatory_clarity": <0-10>,
+    "synthesis_quality": <0-10>,
+    "narrative_coherence": <0-10>,
+    "reader_orientation": <0-10>
+  },
+  "section_evaluations": [
+    {
+      "section_id": "<id as given>",
+      "title": "<title as given>",
+      "reader_reconstruction": {
+        "subject": "<one sentence>",
+        "main_claim": "<one sentence>",
+        "why_it_matters": "<one sentence>"
+      },
+      "first_pass_comprehension": <0-10>,
+      "context_sufficiency": <0-10>,
+      "explanatory_clarity": <0-10>,
+      "logical_progression": <0-10>,
+      "understandable_on_first_read": <true|false>,
+      "reader_can_explain_why_it_matters": <true|false>,
+      "requires_rereading": <true|false>,
+      "headline_sets_expectation": <true|false>,
+      "body_fulfills_expectation": <true|false>,
+      "takeaway_is_explicit": <true|false>,
+      "missing_context": ["<short>", "..."],
+      "unexplained_concepts": ["<short>", "..."],
+      "unclear_referents": ["<short>", "..."],
+      "broken_logical_links": ["<short>", "..."],
+      "narrative_problem": "<one sentence or null>",
+      "critical_failure": <true|false>,
+      "critical_failure_reason": "<one sentence or null>"
+    }
+  ],
+  "weakest_section_id": "<id or null>",
+  "weakest_section_score": <0-10 or null>,
+  "critical_failure_count": <integer>,
+  "issues": [
+    {
+      "type": "<one of the allowed types>",
+      "section_id": "<id or null>",
+      "severity": "<minor|major|critical>",
+      "description": "<one sentence>",
+      "revision_hint": "<one sentence or null>"
+    }
+  ],
+  "revision_priorities": ["<most valuable fix>", "..."]
+}
+
+JSON:

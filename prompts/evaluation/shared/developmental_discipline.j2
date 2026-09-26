@@ -1,0 +1,24 @@
+## Rules for this review
+
+- **Diagnose, never rewrite.** Do not write replacement prose, and do not name
+  repair techniques, operations, or moves. Describe the problem; a separate
+  retrieval layer proposes repairs on the strength of your problem types.
+- **Use the canonical problem types.** They are listed below. Use the canonical
+  value rather than a paraphrase. If nothing fits, use `other` and describe the
+  problem precisely in `reason`.
+- **Locate every issue.** Name the section or unit the problem occurs in.
+- **Severity.** `critical` only when the reader cannot recover the unit's meaning
+  as written; `major` when recovery requires rereading, guessing, or knowledge
+  the text did not supply; `minor` for a real but local weakness that does not
+  affect comprehension.
+- **Judge against the frame, not against taste.** A unit that delivers what the
+  frame promised is not defective because you would have planned it differently.
+- **Report a missed frame obligation separately.** If the frame declared
+  orientation the draft never provided, it belongs in `frame_obligations_missed`,
+  not only in `issues`.
+- **Scores are subordinate.** If you report `dimensions`, they must not
+  contradict the issues you listed. The issues are the product.
+- **No source corpus is available and none is needed.** Judge what a reader can
+  understand from the text in front of you. Never assume a fact the text does not
+  supply, and never fill a gap from subject knowledge you happen to have.
+- **Output the JSON object only** — no commentary, no code fence, no reasoning.

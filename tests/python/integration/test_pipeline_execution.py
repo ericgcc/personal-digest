@@ -165,10 +165,15 @@ def _responses() -> dict[str, str]:
 
 @pytest.fixture
 def workspace(tmp_path: Path):
-    """A temporary repository root with the canonical documents copied in."""
+    """A temporary repository root with the canonical documents and prompt templates copied in.
+
+    The prompt templates and the profile declarations are part of the repository's runtime
+    configuration, so a run against a temporary root needs them — a missing template is a
+    configuration defect, and the fixture must not manufacture one.
+    """
     from digest_system.runtime.artifacts import ROOT
 
-    for name in ("system", "styles", "digests", "templates"):
+    for name in ("system", "styles", "digests", "templates", "prompts"):
         source = ROOT / name
         if source.exists():
             import shutil

@@ -42,10 +42,8 @@ from .evidence.projection import derive_recovery_frame, project_evidence
 from .prompts.assembler import (
     assemble_documents,
     assemble_evaluation_contracts,
-    required_block,
-    stage_task_block,
-    system_preamble,
 )
+from .prompts.compose import compose_stage_prompt
 from .stages import PIPELINE_ID, VALIDATION_ATTEMPTS, stage_names_v2
 from .validation.copy_verify import (
     catalog_required,
@@ -307,6 +305,16 @@ __all__ = [
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _record_prompt_manifest(attempt_dir: Path, composed: Any) -> None:
+    """Write the prompt's dependency manifest beside the prompt.
+
+    The manifest names the templates, instruction files and data blocks the prompt contained,
+    with sizes and hashes, and the style modules the profile withheld. It is what makes a prompt
+    auditable after the fact without re-deriving it from the live configuration.
+    """
+    write_json(attempt_dir / "prompt-manifest.json", composed.manifest.to_dict())
 
 
 def execute_stage(
@@ -722,16 +730,20 @@ def _run_llm_stage(
     validation_feedback: str | None = None,
     provider: Any = None,
 ) -> None:
-    blocks = required_block(stage.blocks(context))
-    corpus_block = wrap_block("source_corpus", projection["text"]) if projection and projection["text"] else ""
-    system_text = system_preamble(stage, documents["text"])
-    # A correction attempt receives the previous artifact's violations as the last thing it
-    # reads, after the stage's own instruction and its data.
-    correction_block = {"tag": "validation_feedback", "payload": validation_feedback} if validation_feedback else None
-    entries = [corpus_block, *blocks, correction_block, stage_task_block(stage, context)]
-    user_text = "\n\n".join(
-        entry if isinstance(entry, str) else wrap_block(entry["tag"], entry["payload"]) for entry in entries if entry
+    # The prompt is composed by the stage's own templates. The executor supplies the evidence,
+    # the stage's data blocks and the validation feedback; the template decides how they are
+    # framed and in what order. What the inspection command prints is what this sends.
+    composed = compose_stage_prompt(
+        stage=stage,
+        context=context,
+        documents=documents,
+        projection=projection,
+        blocks=stage.blocks(context),
+        validation_feedback=validation_feedback,
     )
+    system_text = composed.system_text
+    user_text = composed.user_text
+    _record_prompt_manifest(attempt_dir, composed)
 
     write_artifact(attempt_dir / "prompt.txt", f"{system_text}\n\n=== USER ===\n\n{user_text}")
     try:
@@ -907,31 +919,36 @@ def _run_copy_verify_stage(
     )
     record["deterministic_checks"] = checks["counts"]
 
-    system_text = system_preamble(stage, documents["text"])
-    user_text = "\n\n".join(
-        entry
-        for entry in (
-            wrap_block("source_provenance", projection["text"]) if projection and projection["text"] else "",
-            wrap_block("previous_stage_artifact", prose.text),
-            wrap_block("deterministic_check_findings", json.dumps(checks, ensure_ascii=False, indent=2)),
-            wrap_block(
-                "approved_frame_citations",
-                json.dumps(
-                    {
-                        "declared_source_numbers": sorted(narrative_evidence_numbers(frame)),
-                        "note": (
-                            "These are the sources the narrative may cite: the union of the retained units' selected_source_numbers. "
-                            "The catalogue lists every reviewed source; it is not narrative evidence."
-                        ),
-                    },
-                    ensure_ascii=False,
-                    indent=2,
-                ),
+    # Copy/verify declares its own block order, which differs from the LLM stages: the source
+    # provenance comes first, then the prose, then this stage's deterministic findings. The
+    # blocks are handed to the template, which decides the order.
+    composed = compose_stage_prompt(
+        stage=stage,
+        context=context,
+        documents=documents,
+        projection=projection,
+        projection_tag="source_provenance",
+        blocks=(),
+        extra_blocks={
+            "previous_stage_artifact": prose.text,
+            "deterministic_check_findings": json.dumps(checks, ensure_ascii=False, indent=2),
+            "approved_frame_citations": json.dumps(
+                {
+                    "declared_source_numbers": sorted(narrative_evidence_numbers(frame)),
+                    "note": (
+                        "These are the sources the narrative may cite: the union of the retained units' selected_source_numbers. "
+                        "The catalogue lists every reviewed source; it is not narrative evidence."
+                    ),
+                },
+                ensure_ascii=False,
+                indent=2,
             ),
-            stage_task_block(stage, context),
-        )
-        if entry
+        },
     )
+    system_text = composed.system_text
+    user_text = composed.user_text
+    _record_prompt_manifest(attempt_dir, composed)
+
     write_artifact(attempt_dir / "prompt.txt", f"{system_text}\n\n=== USER ===\n\n{user_text}")
     try:
         copy_file(attempt_dir / "prompt.txt", work_dir / "prompt.txt")

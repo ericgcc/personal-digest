@@ -1,0 +1,95 @@
+# Phase 2b profile: a profile selects named files, never Markdown headings. Each entry
+# below is a module under styles/<style>/modules/ or a canonical instruction document.
+# Reproducible with scripts/export_profiles.py.
+id: synthesis-max-v1
+version: 2.0.0
+style: synthesis-max
+label: Synthesis MAX — style-isolated pipeline v2
+status: experimental
+frame_failure_policy: fail
+enforced:
+- edition_mode
+- unit_count.min
+- unit_count.max
+- sources_per_unit.min
+- sources_per_unit.max
+- sources_per_unit.exists
+- unit:source_roles
+- unit:progression
+- unit:explanation_shape
+- unit:budget_present
+- unit:evidence_fits_budget
+- opening_words
+- arithmetic
+- analysis_clusters
+notes:
+- Opt-in. Selected with --style-profile synthesis-max-v1 or DIGEST_STYLE_PROFILE=synthesis-max-v1.
+- 'Not the production default: production stays on synthesis-max-legacy until a historical replay and an editorial review of the finished digest both pass.'
+- Delivers the style's selection and relationship model to analyze, which previously received no style document at all.
+- Routes every stage through the style's own section set rather than the cross-style union.
+- Requires a structured cluster schema from analyze and a realizable word plan from frame, and validates both deterministically.
+- Supplies its review obligations to the Python evaluation stages as the `review` contract, so a style-specific diagnosis can reach the judge.
+- Stops rather than deriving a recovery frame when the plan cannot satisfy its narrative contract.
+stages:
+  analyze:
+    documents:
+    - path: styles/synthesis-max/modules/01-style-interface.md
+    - path: styles/synthesis-max/modules/03-synthesis-mode.md
+    - path: system/style-pipelines/synthesis-max/analyze.md
+  frame:
+    documents:
+    - path: styles/synthesis-max/modules/01-style-interface.md
+    - path: styles/synthesis-max/modules/03-synthesis-mode.md
+    - path: styles/synthesis-max/modules/07-required-structure.md
+    - path: styles/synthesis-max/modules/06-length-and-density.md
+    - path: styles/synthesis-max/modules/08-citations.md
+    - path: styles/synthesis-max/modules/09-final-source-catalog.md
+    - path: system/style-pipelines/synthesis-max/frame.md
+  draft:
+    documents:
+    - path: styles/synthesis-max/modules/01-style-interface.md
+    - path: styles/synthesis-max/modules/03-synthesis-mode.md
+    - path: styles/synthesis-max/modules/07-required-structure.md
+    - path: styles/synthesis-max/modules/06-length-and-density.md
+    - path: styles/synthesis-max/modules/08-citations.md
+    - path: styles/synthesis-max/modules/09-final-source-catalog.md
+    - path: styles/synthesis-max/modules/10-ending-rules.md
+    - path: styles/synthesis-max/modules/04-writing-character.md
+    - path: system/style-pipelines/synthesis-max/draft.md
+  developmental-review:
+    documents: []
+    contracts:
+      style:
+      - path: styles/synthesis-max/modules/01-style-interface.md
+      review:
+      - path: system/style-pipelines/synthesis-max/review.md
+  writer-revision:
+    documents:
+    - path: styles/synthesis-max/modules/04-writing-character.md
+    - path: system/style-pipelines/synthesis-max/review.md
+  line-edit:
+    documents:
+    - path: styles/synthesis-max/modules/04-writing-character.md
+    - path: system/style-pipelines/synthesis-max/review.md
+  reader-review:
+    documents: []
+    contracts:
+      style:
+      - path: styles/synthesis-max/modules/01-style-interface.md
+      - path: styles/synthesis-max/modules/07-required-structure.md
+      review:
+      - path: system/style-pipelines/synthesis-max/review.md
+  targeted-repair:
+    documents:
+    - path: styles/synthesis-max/modules/04-writing-character.md
+    - path: system/style-pipelines/synthesis-max/review.md
+  copy-verify:
+    documents:
+    - path: styles/synthesis-max/modules/01-style-interface.md
+    - path: styles/synthesis-max/modules/07-required-structure.md
+    - path: styles/synthesis-max/modules/06-length-and-density.md
+    - path: styles/synthesis-max/modules/08-citations.md
+    - path: styles/synthesis-max/modules/09-final-source-catalog.md
+    - path: styles/synthesis-max/modules/10-ending-rules.md
+  render:
+    documents: []

@@ -1,0 +1,88 @@
+# Phase 2b profile: a profile selects named files, never Markdown headings. Each entry
+# below is a module under styles/<style>/modules/ or a canonical instruction document.
+# Reproducible with scripts/export_profiles.py.
+id: curated-discovery-legacy
+version: 1.0.0
+style: curated-discovery
+label: curated-discovery — pre-profile-context baseline
+status: active
+frame_failure_policy: recovery-frame
+enforced: []
+notes:
+- 'Reproduces the pre-Phase-1 assembled context for this style: the legacy composition union, resolved against the sections the style actually declares.'
+- Retained as the default and as the rollback option for every style.
+- Enforces no composition constraint, so a stage validator changes nothing about a run under this profile.
+stages:
+  analyze:
+    documents: []
+  frame:
+    documents:
+    - path: styles/curated-discovery/modules/01-style-interface.md
+    - path: styles/curated-discovery/modules/04-curation-process.md
+    - path: styles/curated-discovery/modules/03-core-principle-digest-first-reading.md
+    - path: styles/curated-discovery/modules/05-relationship-between-sources.md
+    - path: styles/curated-discovery/modules/06-editorial-depth.md
+    - path: styles/curated-discovery/modules/07-understanding-over-extraction.md
+    - path: styles/curated-discovery/modules/12-organization.md
+    - path: styles/curated-discovery/modules/10-required-structure.md
+    - path: styles/curated-discovery/modules/11-optional-depth-cue.md
+    - path: styles/curated-discovery/modules/09-length-and-density.md
+    - path: styles/curated-discovery/modules/13-citations.md
+    - path: styles/curated-discovery/modules/14-section-level-source-lines.md
+    - path: styles/curated-discovery/modules/15-final-source-catalog.md
+    - path: styles/curated-discovery/modules/16-ending-rules.md
+  draft:
+    documents:
+    - path: styles/curated-discovery/modules/01-style-interface.md
+    - path: styles/curated-discovery/modules/04-curation-process.md
+    - path: styles/curated-discovery/modules/03-core-principle-digest-first-reading.md
+    - path: styles/curated-discovery/modules/05-relationship-between-sources.md
+    - path: styles/curated-discovery/modules/06-editorial-depth.md
+    - path: styles/curated-discovery/modules/07-understanding-over-extraction.md
+    - path: styles/curated-discovery/modules/12-organization.md
+    - path: styles/curated-discovery/modules/10-required-structure.md
+    - path: styles/curated-discovery/modules/11-optional-depth-cue.md
+    - path: styles/curated-discovery/modules/09-length-and-density.md
+    - path: styles/curated-discovery/modules/13-citations.md
+    - path: styles/curated-discovery/modules/14-section-level-source-lines.md
+    - path: styles/curated-discovery/modules/15-final-source-catalog.md
+    - path: styles/curated-discovery/modules/16-ending-rules.md
+    - path: styles/curated-discovery/modules/08-writing-character.md
+  developmental-review:
+    documents: []
+    contracts:
+      style:
+      - path: styles/curated-discovery/modules/01-style-interface.md
+  writer-revision:
+    documents:
+    - path: styles/curated-discovery/modules/08-writing-character.md
+  line-edit:
+    documents:
+    - path: styles/curated-discovery/modules/08-writing-character.md
+  reader-review:
+    documents: []
+    contracts:
+      style:
+      - path: styles/curated-discovery/modules/01-style-interface.md
+      - path: styles/curated-discovery/modules/10-required-structure.md
+  targeted-repair:
+    documents:
+    - path: styles/curated-discovery/modules/08-writing-character.md
+  copy-verify:
+    documents:
+    - path: styles/curated-discovery/modules/01-style-interface.md
+    - path: styles/curated-discovery/modules/04-curation-process.md
+    - path: styles/curated-discovery/modules/03-core-principle-digest-first-reading.md
+    - path: styles/curated-discovery/modules/05-relationship-between-sources.md
+    - path: styles/curated-discovery/modules/06-editorial-depth.md
+    - path: styles/curated-discovery/modules/07-understanding-over-extraction.md
+    - path: styles/curated-discovery/modules/12-organization.md
+    - path: styles/curated-discovery/modules/10-required-structure.md
+    - path: styles/curated-discovery/modules/11-optional-depth-cue.md
+    - path: styles/curated-discovery/modules/09-length-and-density.md
+    - path: styles/curated-discovery/modules/13-citations.md
+    - path: styles/curated-discovery/modules/14-section-level-source-lines.md
+    - path: styles/curated-discovery/modules/15-final-source-catalog.md
+    - path: styles/curated-discovery/modules/16-ending-rules.md
+  render:
+    documents: []

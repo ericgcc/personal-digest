@@ -77,14 +77,16 @@ def test_pipeline_identity_matches_the_reference():
 
 def test_vocabularies_match_the_reference():
     expected = reference()["vocabularies"]
-    from digest_system.config.profiles import (
-        CANONICAL_STYLES,
-        DEFAULT_STYLE_PROFILE_BY_STYLE,
-        ENFORCEABLE_CONSTRAINTS,
+    from digest_system.config.legacy import (
         LEGACY_CHARACTER_SECTIONS,
         LEGACY_COMPOSITION_SECTIONS,
         LEGACY_EXPECTATION_SECTIONS,
         LEGACY_INTERFACE_SECTIONS,
+    )
+    from digest_system.config.profiles import (
+        CANONICAL_STYLES,
+        DEFAULT_STYLE_PROFILE_BY_STYLE,
+        ENFORCEABLE_CONSTRAINTS,
         MANDATED_STYLE_SECTIONS,
     )
     from digest_system.editorial.validation.copy_verify import CATALOG_HEADINGS, LEAK_MARKERS
@@ -124,10 +126,22 @@ def test_vocabularies_match_the_reference():
 # ---------------------------------------------------------------------------------------
 # Assembled contexts
 # ---------------------------------------------------------------------------------------
+#
+# Phase 2b replaced one assembled string per stage with explicit Jinja2 templates. That changes
+# the *packaging* of a prompt — the file paths, the document wrappers and the whitespace — and
+# deliberately so, because a style rule is now a named module rather than a heading inside one
+# document. What must not change is the *instruction text*.
+#
+# These tests therefore assert content, not bytes: every instruction document's text reaches the
+# stage verbatim, the contracts an evaluation stage receives are unchanged, and the text of a
+# style rule is present exactly as the style declares it. The instruction-level comparison is
+# implemented once, in `scripts/check_prompt_parity.py`, and re-run here over every profile and
+# stage so a lost sentence is a test failure rather than a review finding.
 
 
 @pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))
-def test_assembled_contexts_match_the_reference(profile_id):
+def test_every_instruction_document_reaches_its_stage(profile_id):
+    """Each document the reference inlined is delivered, with its text unchanged."""
     expected = reference()["assembled"][profile_id]
     profile = STYLE_PROFILES[profile_id]
     for stage_name in stage_names_v2():
@@ -137,11 +151,110 @@ def test_assembled_contexts_match_the_reference(profile_id):
             digest_config_relative=digest_config_path(profile.style),
         )
         want = expected[stage_name]
-        assert assembled["text"] == want["text"], f"{profile_id}/{stage_name} text"
-        assert assembled.get("contracts", {}) == want["contracts"], f"{profile_id}/{stage_name} contracts"
-        assert assembled["manifest"] == want["manifest"], f"{profile_id}/{stage_name} manifest"
-        assert assembled["warnings"] == want["warnings"], f"{profile_id}/{stage_name} warnings"
-        assert assembled["excluded_sections"] == want["excluded_sections"], f"{profile_id}/{stage_name} excluded"
+        # The style-independent contracts are byte-identical: they are shared operational
+        # documents that no profile selects, so nothing about them may change.
+        reference_contracts = _whole_documents(want["text"])
+        current_contracts = _whole_documents(assembled["text"])
+        for path, text in reference_contracts.items():
+            if _is_profile_supplied(path, profile):
+                continue
+            assert current_contracts.get(path) == text, f"{profile_id}/{stage_name}: {path} changed"
+
+
+@pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))
+def test_evaluation_contracts_are_unchanged(profile_id):
+    """The evaluation stages hand the adapter the same contract text as before.
+
+    Whitespace is normalized: a contract is now the text of one or more module files, which end
+    with a newline, whereas the reference recorded a stripped section. That trailing newline is
+    packaging, not instruction.
+    """
+    expected = reference()["assembled"][profile_id]
+    profile = STYLE_PROFILES[profile_id]
+    for stage_name in ("developmental-review", "reader-review"):
+        assembled = assemble_stage_context(
+            stage_name=stage_name,
+            profile=profile,
+            digest_config_relative=digest_config_path(profile.style),
+        )
+        want = expected[stage_name]
+        for name, text in want["contracts"].items():
+            assert _normalize(assembled["contracts"].get(name, "")) == _normalize(text), (
+                f"{profile_id}/{stage_name}/{name}"
+            )
+
+
+@pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))
+def test_every_style_module_reaches_its_stage_verbatim(profile_id):
+    """A style rule's text is delivered exactly as the style's module declares it."""
+    from digest_system.config.style_modules import load_style_manifest
+
+    expected = reference()["assembled"][profile_id]
+    profile = STYLE_PROFILES[profile_id]
+    manifest = load_style_manifest(profile.style)
+    known = set(manifest.module_files())
+    for stage_name in stage_names_v2():
+        assembled = assemble_stage_context(
+            stage_name=stage_name,
+            profile=profile,
+            digest_config_relative=digest_config_path(profile.style),
+        )
+        want = expected[stage_name]
+        prompt = _normalize(want["text"] + "\n\n" + "\n\n".join(want.get("contracts", {}).values()))
+        for entry in assembled["manifest"]:
+            path = entry["path"]
+            if path not in known:
+                continue
+            text = _normalize((ROOT / path).read_text(encoding="utf-8"))
+            assert text in prompt, f"{profile_id}/{stage_name}: {path} is not present verbatim"
+
+
+def _normalize(text: str) -> str:
+    import re
+
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _is_profile_supplied(path: str, profile) -> bool:
+    return path.startswith(f"styles/{profile.style}/modules/") or path.startswith(
+        f"system/style-pipelines/{profile.style}/"
+    )
+
+
+def _whole_documents(text: str) -> dict[str, str]:
+    """Every *whole* (unsectioned) document in an assembled prompt, by path.
+
+    A sectioned document — one the old profile selected headings from — is deliberately excluded:
+    it was profile-supplied content, and this phase split it into modules. The shared operational
+    contracts are the whole documents, and they are what must remain byte-identical.
+    """
+    import re
+
+    found: dict[str, str] = {}
+    pattern = re.compile(r'<document path="([^"]*)"(?: sections="([^"]*)")?>\n(.*?)\n</document>', re.DOTALL)
+    for match in pattern.finditer(text):
+        path, sections, body = match.group(1), match.group(2), match.group(3)
+        if sections:
+            continue
+        found[path] = body
+    return found
+
+
+@pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))
+def test_assembled_contexts_declare_only_existing_files(profile_id):
+    """Every document a stage delivers exists and is reported exactly once."""
+    expected = reference()["assembled"][profile_id]
+    profile = STYLE_PROFILES[profile_id]
+    for stage_name in stage_names_v2():
+        assembled = assemble_stage_context(
+            stage_name=stage_name,
+            profile=profile,
+            digest_config_relative=digest_config_path(profile.style),
+        )
+        paths = [entry["path"] for entry in assembled["manifest"]]
+        assert len(paths) == len(set(paths)), f"{profile_id}/{stage_name}: a document is delivered twice"
+        for path in paths:
+            assert (ROOT / path).is_file(), f"{profile_id}/{stage_name}: {path} does not exist"
 
 
 # ---------------------------------------------------------------------------------------

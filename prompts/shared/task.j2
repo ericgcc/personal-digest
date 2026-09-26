@@ -1,0 +1,10 @@
+<stage_task>
+Stage: {{ stage.name }}
+Digest ID: {{ digest.id }}
+Selected style: {{ digest.style }}
+Output language: {{ digest.language }}
+Purpose: {{ stage.purpose }}
+{% if budget_prose %}Length target: {{ budget_prose }}. Treat this as a binding constraint, not a suggestion.
+{% endif %}
+{% if stage.executor == "copy-verify" %}Return the complete {{ stage.format }} artifact, then a line containing exactly ---VERIFICATION---, then the verification JSON object. Do not wrap either in a Markdown code fence. Do not narrate or explain. Do not use tools. Do not access the network, Gmail, Drive, Chrome, or SQLite. Do not ask questions.{% else %}Return ONLY the complete {{ stage.format }} artifact. Do not wrap it in a Markdown code fence. Do not narrate, explain, or describe the artifact. Do not use tools. Do not edit files. Do not access the network, Gmail, Drive, Chrome, or SQLite. Do not ask questions. Do not write HTML unless this stage is render.{% endif %}
+</stage_task>

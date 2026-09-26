@@ -1,0 +1,116 @@
+{
+  "system_template": "stages/draft/system.j2",
+  "user_template": "stages/draft/user.j2",
+  "templates": [
+    {
+      "path": "prompts/stages/draft/system.j2",
+      "bytes": 231,
+      "sha256": "c7c07f7a325ada45efd1bb8e25692a0a2c806aeb0d289b9ec1f77511228252b3"
+    },
+    {
+      "path": "prompts/shared/preamble.j2",
+      "bytes": 463,
+      "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
+    },
+    {
+      "path": "prompts/stages/draft/user.j2",
+      "bytes": 81,
+      "sha256": "f9c8cd7ef4bdfe79883eb55b19f95c17911c63e0072fc06c91e010458e5b66ed"
+    },
+    {
+      "path": "prompts/shared/task.j2",
+      "bytes": 992,
+      "sha256": "d12ba969b789e4e2e361fcce24b6e3dc29635420b9ec9b91d608863f5659e417"
+    }
+  ],
+  "documents": [
+    {
+      "path": "system/contracts/draft.md",
+      "bytes": 4386,
+      "sha256": "a83ab924e5c326d15dd4cb58260227e749196693cc5a27e2c02d83d988dddfec"
+    },
+    {
+      "path": "system/contracts/reader-contract.md",
+      "bytes": 3465,
+      "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
+    },
+    {
+      "path": "digests/tech-bi-daily.md",
+      "bytes": 3784,
+      "sha256": "4bc94b96ab1e93ea0c15823b65bb57ea89d72fa334eff6b34a131057ba0ccc85"
+    }
+  ],
+  "instructions": [
+    {
+      "path": "styles/synthesis-max/modules/01-style-interface.md",
+      "bytes": 2850,
+      "sha256": "35e389151e7acbd2964f043602b1e5b809050910337625fd5eb200e52daafd00"
+    },
+    {
+      "path": "styles/synthesis-max/modules/03-synthesis-mode.md",
+      "bytes": 3282,
+      "sha256": "a6b32685788b52e4439d6d5d23d02943be15df63a02c1ab0e35580dabbff1de1"
+    },
+    {
+      "path": "styles/synthesis-max/modules/07-required-structure.md",
+      "bytes": 4022,
+      "sha256": "8bc77aca136c612d442cdacbf1eaafdd3038981544fd6e6f3e891e030a4006e7"
+    },
+    {
+      "path": "styles/synthesis-max/modules/06-length-and-density.md",
+      "bytes": 1518,
+      "sha256": "72af0519f874c0899b1ada2816b71f185110424ae988d5c24f979701e44c3f32"
+    },
+    {
+      "path": "styles/synthesis-max/modules/08-citations.md",
+      "bytes": 1576,
+      "sha256": "cdeee64d04c3e021628a13e8b865230c56f01b6745b765dce78cf7dec8eb7b91"
+    },
+    {
+      "path": "styles/synthesis-max/modules/09-final-source-catalog.md",
+      "bytes": 3170,
+      "sha256": "b738bba9885958ffd3d1928348ec7996e7afbaa9744e2364a352bf930ff3adce"
+    },
+    {
+      "path": "styles/synthesis-max/modules/10-ending-rules.md",
+      "bytes": 313,
+      "sha256": "8a33057172b643ed1ee8fc72a8e120b87ba3089cce9de8c245507af2e92b5b00"
+    },
+    {
+      "path": "styles/synthesis-max/modules/04-writing-character.md",
+      "bytes": 2687,
+      "sha256": "5688f4f3d85b9c8273a87ffeda05dddfd7545bb2c7640c462aa8444b40081073"
+    },
+    {
+      "path": "system/style-pipelines/synthesis-max/draft.md",
+      "bytes": 4896,
+      "sha256": "f286a4dc55a2aca89f89c5ddf7db521c7f683a33821c39fd82a39cdcd2a2dd3a"
+    },
+    {
+      "path": "styles/editorial-base.md",
+      "bytes": 14746,
+      "sha256": "fa95ec1128329ab23559b7637e90eb367b3c492a8bc3b2a0598228a97b5f8251"
+    }
+  ],
+  "blocks": [
+    {
+      "tag": "source_corpus",
+      "bytes": 1949
+    },
+    {
+      "tag": "approved_frame",
+      "bytes": 2190
+    },
+    {
+      "tag": "stage_task",
+      "bytes": 669
+    }
+  ],
+  "omitted": [
+    "styles/synthesis-max/modules/02-writing-reference-profile.md",
+    "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
+    "styles/synthesis-max/modules/11-quality-control.md"
+  ],
+  "system_bytes": 51166,
+  "user_bytes": 4881
+}

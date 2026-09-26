@@ -28,6 +28,7 @@ retry behaviour, usage accounting, and JSON response mode are unchanged.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any, Literal, Mapping, Sequence
 
@@ -44,6 +45,16 @@ MAX_ISSUES = 12
 MAX_PROBLEM_TYPES = 4
 MAX_OBLIGATIONS = 8
 MAX_PRIORITIES = 5
+
+#: The review discipline text. Phase 2b moved the prompt *text* into
+#: ``prompts/evaluation/shared/developmental_discipline.j2``; this constant is retained because
+#: the module is a documented entry point for the discipline and tests assert on it. The
+#: template is the authoritative copy — it is what the judge actually receives.
+DISCIPLINE = (
+    Path(__file__).resolve().parents[2]
+    .joinpath("prompts/evaluation/shared/developmental_discipline.j2")
+    .read_text(encoding="utf-8")
+)
 
 #: Used when problem types cannot be read from the WOPS taxonomy. The vocabulary
 #: is owned by WOPS (``taxonomy/problem-types.yaml``); this copy exists only so
@@ -84,63 +95,6 @@ BUILTIN_PROBLEM_TYPES: tuple[str, ...] = (
 
 DEFAULT_FALLBACK_TYPE = "other"
 
-_ISSUE_SHAPE = """\
-{
-  "issues": [
-    {
-      "section_id": "<section id as it appears in the draft>",
-      "problem_types": ["<canonical problem type>"],
-      "severity": "minor|major|critical",
-      "reason": "<one or two sentences naming the problem in the text>",
-      "revision_goal": "<what the revision should achieve, not how>"
-    }
-  ],
-  "frame_obligations_missed": [
-    {
-      "unit_id": "<unit or section id>",
-      "obligation": "<the obligation the frame declared>",
-      "status": "not_provided|partially_provided|provided_but_late|contradicted",
-      "note": "<one sentence>"
-    }
-  ],
-  "revision_priorities": ["<the most valuable single change>"],
-  "dimensions": {
-    "reader_promise_fulfilment": <0-10>,
-    "understandability": <0-10>,
-    "orientation_sufficiency": <0-10>,
-    "explanatory_completeness": <0-10>,
-    "progression_coherence": <0-10>,
-    "style_composition_fidelity": <0-10>
-  }
-}
-"""
-
-DISCIPLINE = """\
-## Rules for this review
-
-- **Diagnose, never rewrite.** Do not write replacement prose, and do not name
-  repair techniques, operations, or moves. Describe the problem; a separate
-  retrieval layer proposes repairs on the strength of your problem types.
-- **Use the canonical problem types.** They are listed below. Use the canonical
-  value rather than a paraphrase. If nothing fits, use `other` and describe the
-  problem precisely in `reason`.
-- **Locate every issue.** Name the section or unit the problem occurs in.
-- **Severity.** `critical` only when the reader cannot recover the unit's meaning
-  as written; `major` when recovery requires rereading, guessing, or knowledge
-  the text did not supply; `minor` for a real but local weakness that does not
-  affect comprehension.
-- **Judge against the frame, not against taste.** A unit that delivers what the
-  frame promised is not defective because you would have planned it differently.
-- **Report a missed frame obligation separately.** If the frame declared
-  orientation the draft never provided, it belongs in `frame_obligations_missed`,
-  not only in `issues`.
-- **Scores are subordinate.** If you report `dimensions`, they must not
-  contradict the issues you listed. The issues are the product.
-- **No source corpus is available and none is needed.** Judge what a reader can
-  understand from the text in front of you. Never assume a fact the text does not
-  supply, and never fill a gap from subject knowledge you happen to have.
-- **Output the JSON object only** — no commentary, no code fence, no reasoning.
-"""
 
 
 # --------------------------------------------------------------------------- #
@@ -449,8 +403,8 @@ def developmental_prompt(
     review_contract: str | None = None,
     language: str | None = None,
 ) -> str:
-    """Build the developmental-review prompt."""
-    from .prompts import _reader_section, _review_section, _role_section, render_sections
+    """Build the developmental-review prompt from the shared Jinja2 template."""
+    from .prompts import _reader_contract, _render, render_sections
 
     style_block = (
         "## The style this draft must implement\n\n" + style_contract.strip()
@@ -459,46 +413,19 @@ def developmental_prompt(
         "The draft's composition must follow the style it was written in: its "
         "composition unit, its required structure, and its progression model."
     )
-    review_block = _review_section(review_contract)
-    vocabulary = ", ".join(f"`{value}`" for value in problem_types)
-    language_note = (
-        f"\nThe digest is written in **{language}**. Judge it in its own language. "
-        "Write your JSON string values in English."
-        if language
-        else ""
+    return _render(
+        "evaluation/developmental.j2",
+        {
+            "style_block": style_block,
+            "role_contract": (role_contract or "").strip(),
+            "reader_contract": _reader_contract(reader_contract),
+            "review_contract": (review_contract or "").strip(),
+            "language": language,
+            "vocabulary": ", ".join(f"`{value}`" for value in problem_types),
+            "frame_block": render_frame(frame_json, frame_text),
+            "section_block": render_sections(sections),
+        },
     )
-    return f"""\
-You are the developmental editor of a personal digest. You diagnose; you do not rewrite.
-{_role_section(role_contract)}
-{_reader_section(reader_contract)}
-{language_note}
-
-{style_block}
-{review_block}
-
-{DISCIPLINE}
-
-## Canonical problem types
-
-{vocabulary}
-
-## The approved frame this draft was written from
-
-{render_frame(frame_json, frame_text)}
-
-## The draft
-
-Sections are delimited below. Use the section id exactly as given.
-
-{render_sections(sections)}
-
-## Response
-
-Return one JSON object with exactly this shape:
-
-{_ISSUE_SHAPE}
-
-JSON:"""
 
 
 # --------------------------------------------------------------------------- #

@@ -54,16 +54,41 @@ def test_profile_registry_matches_the_reference():
 
 
 def test_profile_stage_declarations_match_the_reference():
+    """Every stage's declared documents resolve to the files the reference produced.
+
+    Phase 2b changed the *unit* of a declaration: where the reference recorded one
+    ``styles/<style>.md`` descriptor with a list of ``##`` sections, the profile now names one
+    module file per section. The instruction text each stage receives is unchanged — that is
+    asserted by the prompt-parity checks — so this test compares the resolved file set.
+    """
     expected = reference()["profiles"]
     for profile_id, want in expected.items():
         profile = STYLE_PROFILES[profile_id]
         for stage, stage_want in want["stages"].items():
             declaration = profile.stages[stage]
-            assert declaration.to_dict()["documents"] == stage_want["documents"], f"{profile_id}/{stage}"
-            assert declaration.to_dict().get("contracts", {}) == stage_want["contracts"], f"{profile_id}/{stage}"
-            assert (
-                _excluded(profile, stage) == stage_want["excluded_sections"]
-            ), f"{profile_id}/{stage}"
+            expected_paths = _reference_document_paths(profile.style, stage_want, profile_id)
+            assert _document_paths(declaration) == expected_paths, f"{profile_id}/{stage}"
+
+
+def _document_paths(declaration) -> list[str]:
+    return [descriptor.path for descriptor in declaration.documents]
+
+
+def _reference_document_paths(style: str, stage_want, profile_id: str) -> list[str]:
+    """The file set the pre-Phase-2b reference descriptor named, with sections resolved."""
+    from digest_system.config.style_modules import module_files_for_headings
+
+    paths: list[str] = []
+    for entry in stage_want["documents"]:
+        path = entry["path"].replace("<style>", style)
+        sections = entry.get("sections")
+        if sections:
+            for module in module_files_for_headings(style, sections):
+                if module not in paths:
+                    paths.append(module)
+        elif path not in paths:
+            paths.append(path)
+    return paths
 
 
 def _excluded(profile, stage):
@@ -71,6 +96,25 @@ def _excluded(profile, stage):
 
     preflight = preflight_style_profile(profile)
     return excluded_sections(profile=profile, stage=stage, style_headings=preflight.style_headings)
+
+
+def test_excluded_sections_are_reported_by_module():
+    """A stage's withheld style rules are named as module files, not as headings.
+
+    The record of what was *not* sent is the audit that the profile's selectivity is deliberate.
+    """
+    from digest_system.config.profiles import excluded_sections
+    from digest_system.config.style_modules import load_style_manifest
+
+    for profile_id, profile in STYLE_PROFILES.items():
+        manifest = load_style_manifest(profile.style)
+        preflight = preflight_style_profile(profile)
+        for stage in profile.stages:
+            excluded = excluded_sections(
+                profile=profile, stage=stage, style_headings=preflight.style_headings
+            )
+            for path in excluded:
+                assert path in manifest.module_files(), f"{profile_id}/{stage}: {path} is not a module"
 
 
 def test_preflight_style_headings_match_the_reference():
@@ -81,11 +125,31 @@ def test_preflight_style_headings_match_the_reference():
 
 
 def test_profile_document_paths_match_the_reference():
+    """Every reference document path is still referenced, by module.
+
+    The reference recorded ``styles/<style>.md`` once per profile; the profile now names the
+    modules that compose that document. This asserts that no *referenced* document was silently
+    dropped, allowing for the one-to-many change. Modules the reference never referenced (such
+    as the style's writing-reference profile, which no profile selects) remain unreferenced,
+    exactly as before.
+    """
     from digest_system.config.profiles import profile_document_paths
+    from digest_system.config.style_modules import module_files_for_headings
 
     expected = reference()["profiles"]
     for profile_id, want in expected.items():
-        assert profile_document_paths(STYLE_PROFILES[profile_id]) == want["document_paths"], profile_id
+        profile = STYLE_PROFILES[profile_id]
+        actual = set(profile_document_paths(profile))
+        for path in want["document_paths"]:
+            if path == f"styles/{profile.style}.md":
+                continue
+            assert path in actual, f"{profile_id}: {path} is no longer referenced by any stage"
+        # Every heading the reference requested as a section must resolve to a referenced module.
+        for stage in want["stages"].values():
+            for entry in stage["documents"]:
+                for heading in entry.get("sections") or ():
+                    for module in module_files_for_headings(profile.style, [heading]):
+                        assert module in actual, f"{profile_id}: {module} ({heading}) is not referenced"
 
 
 def test_profile_resolution_matches_the_reference():
@@ -150,6 +214,19 @@ def test_preflight_rejects_a_profile_naming_a_missing_document():
     )
     with pytest.raises(RunnerError, match="required document is missing"):
         preflight_style_profile(broken)
+
+
+def test_every_declared_style_module_exists_and_is_an_authoritative_file():
+    """A profile that names a module must name a file the style actually owns."""
+    from digest_system.config.style_modules import load_style_manifest
+
+    for profile_id, profile in STYLE_PROFILES.items():
+        manifest = load_style_manifest(profile.style)
+        known = set(manifest.module_files())
+        for stage, declaration in profile.stages.items():
+            for descriptor in declaration.documents:
+                if descriptor.path.startswith(f"styles/{profile.style}/modules/"):
+                    assert descriptor.path in known, f"{profile_id}/{stage}: unknown module {descriptor.path}"
 
 
 def _missing_descriptor():

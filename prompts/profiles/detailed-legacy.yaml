@@ -1,0 +1,76 @@
+# Phase 2b profile: a profile selects named files, never Markdown headings. Each entry
+# below is a module under styles/<style>/modules/ or a canonical instruction document.
+# Reproducible with scripts/export_profiles.py.
+id: detailed-legacy
+version: 1.0.0
+style: detailed
+label: detailed — pre-profile-context baseline
+status: active
+frame_failure_policy: recovery-frame
+enforced: []
+notes:
+- 'Reproduces the pre-Phase-1 assembled context for this style: the legacy composition union, resolved against the sections the style actually declares.'
+- Retained as the default and as the rollback option for every style.
+- Enforces no composition constraint, so a stage validator changes nothing about a run under this profile.
+stages:
+  analyze:
+    documents: []
+  frame:
+    documents:
+    - path: styles/detailed/modules/01-style-interface.md
+    - path: styles/detailed/modules/05-organization.md
+    - path: styles/detailed/modules/07-required-structure.md
+    - path: styles/detailed/modules/03-summary-mode.md
+    - path: styles/detailed/modules/08-multiple-items-within-one-source.md
+    - path: styles/detailed/modules/09-cross-source-overlap.md
+    - path: styles/detailed/modules/10-selection-and-filtering.md
+    - path: styles/detailed/modules/11-fidelity-and-nuance.md
+    - path: styles/detailed/modules/06-length-and-density.md
+    - path: styles/detailed/modules/12-ending-rules.md
+  draft:
+    documents:
+    - path: styles/detailed/modules/01-style-interface.md
+    - path: styles/detailed/modules/05-organization.md
+    - path: styles/detailed/modules/07-required-structure.md
+    - path: styles/detailed/modules/03-summary-mode.md
+    - path: styles/detailed/modules/08-multiple-items-within-one-source.md
+    - path: styles/detailed/modules/09-cross-source-overlap.md
+    - path: styles/detailed/modules/10-selection-and-filtering.md
+    - path: styles/detailed/modules/11-fidelity-and-nuance.md
+    - path: styles/detailed/modules/06-length-and-density.md
+    - path: styles/detailed/modules/12-ending-rules.md
+    - path: styles/detailed/modules/04-writing-character.md
+  developmental-review:
+    documents: []
+    contracts:
+      style:
+      - path: styles/detailed/modules/01-style-interface.md
+  writer-revision:
+    documents:
+    - path: styles/detailed/modules/04-writing-character.md
+  line-edit:
+    documents:
+    - path: styles/detailed/modules/04-writing-character.md
+  reader-review:
+    documents: []
+    contracts:
+      style:
+      - path: styles/detailed/modules/01-style-interface.md
+      - path: styles/detailed/modules/07-required-structure.md
+  targeted-repair:
+    documents:
+    - path: styles/detailed/modules/04-writing-character.md
+  copy-verify:
+    documents:
+    - path: styles/detailed/modules/01-style-interface.md
+    - path: styles/detailed/modules/05-organization.md
+    - path: styles/detailed/modules/07-required-structure.md
+    - path: styles/detailed/modules/03-summary-mode.md
+    - path: styles/detailed/modules/08-multiple-items-within-one-source.md
+    - path: styles/detailed/modules/09-cross-source-overlap.md
+    - path: styles/detailed/modules/10-selection-and-filtering.md
+    - path: styles/detailed/modules/11-fidelity-and-nuance.md
+    - path: styles/detailed/modules/06-length-and-density.md
+    - path: styles/detailed/modules/12-ending-rules.md
+  render:
+    documents: []

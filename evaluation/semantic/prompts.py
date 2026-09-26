@@ -1,33 +1,38 @@
-"""Prompts for ``reader_quality_v3``.
+"""Prompts for ``reader_quality_v3``, rendered from shared Jinja2 templates.
 
-The judge is deliberately *not* given the source articles. This metric measures
-the reader who has not read the sources, so a judge that could see them would
-silently fill in the context the digest itself failed to supply.
+The judge is deliberately *not* given the source articles. This metric measures the reader who
+has not read the sources, so a judge that could see them would silently fill in the context the
+digest itself failed to supply.
 
-Two deliberate design choices live here:
+Phase 2b moved the prompt *text* into ``prompts/evaluation`` so the editorial pipeline and the
+evaluator share one template engine. This module is the evaluator's call site: it supplies the
+parsed sections, the rubric data and the caller's contracts, and renders the template. The
+scoring rubrics, response schemas, issue taxonomy and diagnostic behaviour are unchanged; they
+were moved, not rewritten.
 
-* **Style awareness.** Synthesis MAX and Curated Discovery are different jobs, so
-  the prompt states what each one owes the reader. Curated Discovery is never
-  penalized for lacking a single global thesis; Synthesis MAX is judged on its
-  cross-source throughline.
-* **Anti-leniency.** v2's judge described dense, jargon-first prose as clear with
-  "minor" issues, because fluent professional text reads smoothly to a model that
-  already knows the domain. The prompt therefore makes the judge demonstrate
-  comprehension via a reader reconstruction and forbids using its own domain
-  knowledge to fill gaps.
+Two deliberate design choices are preserved:
+
+* **Style awareness.** Synthesis MAX and Curated Discovery are different jobs, so the prompt
+  states what each one owes the reader. Curated Discovery is never penalized for lacking a
+  single global thesis; Synthesis MAX is judged on its cross-source throughline.
+* **Anti-leniency.** v2's judge described dense, jargon-first prose as clear with "minor"
+  issues. The template therefore makes the judge demonstrate comprehension via a reader
+  reconstruction and forbids using its own domain knowledge to fill gaps.
 """
 
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from ..sections import DigestSection
 from .rubric import overall_rubric_text
 
-#: Rendered from :mod:`evaluation.semantic.rubric`, which owns the bands, so the
-#: prompt and the rubric data can never drift apart.
-OVERALL_RUBRIC = overall_rubric_text()
+#: The templates are found relative to the repository root.
+_ROOT = Path(__file__).resolve().parents[2]
 
+#: The style rubrics, owned here because they are data the evaluator selects; the templates
+#: render whichever one applies. Kept byte-identical to the pre-Phase-2b constants.
 STYLE_RUBRICS: dict[str, str] = {
     "synthesis-max": (
         "This digest is written in the **Synthesis MAX** style. It must build one coherent "
@@ -55,170 +60,22 @@ DEFAULT_STYLE_RUBRIC = (
     "relationships, and a reader who always knows what is being discussed and why."
 )
 
-ANTI_LENIENCY = """\
-## How to score
-
-- Do **not** grade relative to average AI-generated text. Do not award a high score merely \
-because the prose is grammatical, professional, domain correct, or polished.
-- The target is publication-quality explanatory writing that an intelligent reader can \
-understand without having read the source material.
-- When deciding between two score bands, **prefer the lower band** if the higher one \
-requires the reader to silently supply missing context.
-- A section that requires the reader's own domain knowledge to reconstruct the writer's \
-intended explanation is not fully self-contained.
-- **"Understandable eventually" is not the same as "understandable on first read."**
-- Do **not** use your own domain knowledge to silently fill explanatory gaps. Whatever \
-specialised subject matter you already know is **not** evidence that the text explained \
-it. Evaluate whether the text itself establishes the context its claims depend on. This \
-instruction names no domain on purpose: apply it to whatever the artifact in front of you \
-is about.
-- Specialized vocabulary, domain specificity, a long sentence, and normal intellectual \
-effort are **not** defects. The defect is missing explanation, not sophistication."""
-
-READER_TEST = """\
-## The reader test
-
-For each section, first reconstruct what you understood from the text alone:
-
-- `subject` — what this section is about
-- `main_claim` — the single most important thing it asserts
-- `why_it_matters` — why that matters, as **the text** establishes it
-
-Keep each field to one concise sentence. Then judge whether the text itself supplied enough \
-information for that reconstruction. If you could only produce a reconstruction by relying \
-on knowledge you brought with you, the text did not supply it — score `context_sufficiency` \
-and `explanation_clarity` accordingly, and record the gap as an issue.
-
-A reconstruction you can only write because you already know the domain is a finding, not a \
-pass."""
-
-CRITICAL_FAILURE = """\
-## Critical failures
-
-Set `critical_failure = true` for a substantive section when a material problem prevents the \
-reader from recovering its meaning, for example:
-
-- the reader cannot explain the section's main point after one careful read;
-- essential context is absent;
-- domain behavior is described before the underlying problem is established;
-- a causal or logical relationship required to understand the takeaway is missing;
-- the heading or opening and the actual explanation do not connect;
-- the section is effectively compressed notes for someone who already knows the subject.
-
-Do **not** mark a section critical merely because it contains specialized vocabulary, is \
-domain specific, has a long sentence, or requires normal intellectual effort."""
-
-DIMENSIONS = """\
-## Document dimensions (0-10 each)
-
-- `first_pass_comprehension` — can the intended reader understand the prose without \
-repeatedly rereading sentences?
-- `context_sufficiency` — does the text establish enough background before relying on \
-domain concepts, actors, events, references, or assumptions?
-- `explanatory_clarity` — does the text explain the mechanism or idea, or does it merely \
-state domain-like correct facts?
-- `synthesis_quality` — does the text transform sources into useful understanding instead of \
-reproducing article-by-article observations? Interpret this style-specifically.
-- `narrative_coherence` — are cause, contrast, consequence, sequence and significance \
-connected clearly?
-- `reader_orientation` — at any point, can the reader answer: what are we talking about, why \
-are we talking about it, and why does it matter?"""
-
-ISSUE_TAXONOMY = """\
-## Issue taxonomy
-
-Report problems as typed issues rather than prose. Allowed `type` values:
-
-`missing_context`, `unexplained_domain_concept`, `unclear_referent`, \
-`dense_or_overcompressed`, `weak_causal_connection`, `abrupt_transition`, \
-`headline_body_disconnect`, `missing_significance`, \
-`source_reporting_without_synthesis`, `reader_orientation_loss`, \
-`unsupported_analogy_or_connection`, `other`
-
-Allowed `severity`: `minor`, `major`, `critical`."""
-
-COMPACTNESS = """\
-## Output economy
-
-- Reader reconstruction fields: one sentence each.
-- At most 3 items **per list** (`missing_context`, `unexplained_concepts`,
-  `unclear_referents`, `broken_logical_links`). Merge related items into one.
-- At most 8 document-level `issues` in total. Prioritize; do not enumerate every
-  small thing. If the same problem appears in several sections, report it once at
-  document level instead of once per section.
-- At most 4 `revision_priorities`.
-- Descriptions and hints: one concise sentence. Do not repeat the same problem in several \
-fields.
-- Report conclusions and evidence only — no hidden reasoning, no chain of thought.
-- Return JSON only, with no surrounding commentary and no Markdown code fence."""
-
-CITATION_NOTE = """\
-Citation markers such as `[12]` are normal reader-facing navigation and are **not** a \
-defect. Do not penalize citation syntax unless it genuinely makes a sentence confusing."""
+#: Rendered from :mod:`evaluation.semantic.rubric`, which owns the bands, so the prompt and the
+#: rubric data can never drift apart.
+OVERALL_RUBRIC = overall_rubric_text()
 
 
-#: Used when the caller supplies no reader contract. Callers in the v2 pipeline
-#: pass the canonical ``system/contracts/reader-contract.md`` text instead, so the
-#: reader definition lives in the Digest System rather than being duplicated here.
-DEFAULT_READER_CONTRACT = """\
-You are an intelligent, well-read generalist reader who has **not** read any of the source \
-articles this digest was built from. You cannot consult them. Judge only what the digest \
-itself tells you. Do not assume a domain, a profession, a field of study, a seniority \
-level, a toolchain, or familiarity with any particular institution, product, or debate \
-unless the digest itself establishes it."""
-
-
-def _style_rubric(style: str | None) -> str:
+def style_rubric(style: str | None) -> str:
     if not style:
         return DEFAULT_STYLE_RUBRIC
     return STYLE_RUBRICS.get(style.strip().lower(), DEFAULT_STYLE_RUBRIC)
 
 
-def _role_section(role_contract: str | None) -> str:
-    """Render the caller-supplied role contract, when there is one.
-
-    The production pipeline owns the role instruction for each stage; supplying it
-    here keeps the stage contract in one canonical place instead of duplicating it
-    into the prompt templates.
-    """
-    if role_contract and role_contract.strip():
-        return f"## Your role in this review\n\n{role_contract.strip()}\n"
-    return ""
-
-
-def _reader_section(reader_contract: str | None) -> str:
-    """Render the reader definition the caller supplied, or the neutral default."""
-    text = (
-        reader_contract.strip()
-        if reader_contract and reader_contract.strip()
-        else DEFAULT_READER_CONTRACT
-    )
-    return f"## Your reader\n\n{text}"
-
-
-def _review_section(review_contract: str | None) -> str:
-    """Render the style's review obligations, when the caller supplied them.
-
-    The three contracts this evaluator already accepted — role, reader and style interface —
-    establish *who is judging* and *what style the artifact claims to be*. None of them states
-    what a reviewer of this particular style must look for and must not ask for, so a
-    style-specific diagnostic could not be delivered to the judge at all. This renders the
-    active profile's review document, which is where those obligations live.
-
-    Absent is the normal case for every style whose profile does not declare one, and it emits
-    nothing rather than an empty heading, so the prompt is unchanged for those styles.
-    """
-    if review_contract and review_contract.strip():
-        return f"\n\n## What this style's review must check\n\n{review_contract.strip()}"
-    return ""
-
-
-
 def render_sections(sections: list[DigestSection], *, max_words_per_section: int | None = None) -> str:
     """Render the section list the judge will evaluate.
 
-    Section ids and titles are passed exactly as the parser found them, so the
-    judge's ``section_id`` values can be matched back without guessing.
+    Section ids and titles are passed exactly as the parser found them, so the judge's
+    ``section_id`` values can be matched back without guessing.
     """
     blocks: list[str] = []
     for section in sections:
@@ -237,6 +94,50 @@ def render_sections(sections: list[DigestSection], *, max_words_per_section: int
     return "\n\n".join(blocks)
 
 
+def _environment(root: Path | None = None):
+    """The evaluator's template environment.
+
+    It falls back to the local ``prompts`` directory at the repository root. The environment
+    construction is shared with the editorial pipeline, so both sides get the same strict
+    variables, the same restricted loader and the same whitespace settings.
+    """
+    try:
+        from digest_system.editorial.prompts.environment import build_environment
+
+        return build_environment(root or _ROOT)
+    except ImportError:  # pragma: no cover - the evaluator standalone without digest_system
+        from jinja2 import Environment, FileSystemLoader, StrictUndefined
+
+        base = (root or _ROOT) / "prompts"
+        return Environment(
+            loader=FileSystemLoader(str(base)),
+            undefined=StrictUndefined,
+            autoescape=False,
+            trim_blocks=False,
+            lstrip_blocks=False,
+            keep_trailing_newline=True,
+            auto_reload=False,
+            cache_size=0,
+        )
+
+
+def _render(template: str, context: dict, *, root: Path | None = None) -> str:
+    from jinja2 import TemplateNotFound
+
+    environment = _environment(root)
+    try:
+        return environment.get_template(template).render(**context)
+    except TemplateNotFound as error:
+        raise RuntimeError(f"evaluation prompt template is missing: {template}") from error
+
+
+def _reader_contract(reader_contract: str | None, *, root: Path | None = None) -> str:
+    """The caller's reader contract, or the neutral default rendered from its template."""
+    if reader_contract and reader_contract.strip():
+        return reader_contract.strip()
+    return _render("evaluation/shared/default_reader.j2", {}, root=root).strip()
+
+
 def absolute_prompt(
     *,
     digest_text: str,
@@ -246,109 +147,22 @@ def absolute_prompt(
     role_contract: str | None = None,
     reader_contract: str | None = None,
     review_contract: str | None = None,
+    root: Path | None = None,
 ) -> str:
     """Build the absolute-mode prompt: assess one artifact."""
-    style_block = _style_rubric(style)
-    review_block = _review_section(review_contract)
-    language_note = (
-        f"\nThe digest is written in **{language}**. Judge it in its own language and do not "
-        "penalize non-English writing, but write your JSON string values in English so "
-        "historical reports stay comparable."
-        if language
-        else "\nWrite your JSON string values in English."
+    return _render(
+        "evaluation/absolute.j2",
+        {
+            "style_rubric": style_rubric(style),
+            "role_contract": (role_contract or "").strip(),
+            "reader_contract": _reader_contract(reader_contract, root=root),
+            "review_contract": (review_contract or "").strip(),
+            "language": language,
+            "overall_rubric": OVERALL_RUBRIC,
+            "section_block": render_sections(sections),
+        },
+        root=root,
     )
-    section_block = render_sections(sections)
-
-    return f"""\
-You are evaluating a personal digest as a demanding but fair editorial reader.
-{_role_section(role_contract)}
-{_reader_section(reader_contract)}
-{language_note}
-
-{style_block}{review_block}
-
-{ANTI_LENIENCY}
-
-{READER_TEST}
-
-{OVERALL_RUBRIC}
-
-{DIMENSIONS}
-
-{ISSUE_TAXONOMY}
-
-{CRITICAL_FAILURE}
-
-{CITATION_NOTE}
-
-{COMPACTNESS}
-
-## The digest
-
-Sections are delimited below. Evaluate every substantive section. Use the section id and \
-title exactly as given.
-
-{section_block}
-
-## Response
-
-Return one JSON object with exactly this shape:
-
-{{
-  "overall_score": <0-10, one decimal>,
-  "overall_summary": "<two or three sentences>",
-  "dimensions": {{
-    "first_pass_comprehension": <0-10>,
-    "context_sufficiency": <0-10>,
-    "explanatory_clarity": <0-10>,
-    "synthesis_quality": <0-10>,
-    "narrative_coherence": <0-10>,
-    "reader_orientation": <0-10>
-  }},
-  "section_evaluations": [
-    {{
-      "section_id": "<id as given>",
-      "title": "<title as given>",
-      "reader_reconstruction": {{
-        "subject": "<one sentence>",
-        "main_claim": "<one sentence>",
-        "why_it_matters": "<one sentence>"
-      }},
-      "first_pass_comprehension": <0-10>,
-      "context_sufficiency": <0-10>,
-      "explanatory_clarity": <0-10>,
-      "logical_progression": <0-10>,
-      "understandable_on_first_read": <true|false>,
-      "reader_can_explain_why_it_matters": <true|false>,
-      "requires_rereading": <true|false>,
-      "headline_sets_expectation": <true|false>,
-      "body_fulfills_expectation": <true|false>,
-      "takeaway_is_explicit": <true|false>,
-      "missing_context": ["<short>", "..."],
-      "unexplained_concepts": ["<short>", "..."],
-      "unclear_referents": ["<short>", "..."],
-      "broken_logical_links": ["<short>", "..."],
-      "narrative_problem": "<one sentence or null>",
-      "critical_failure": <true|false>,
-      "critical_failure_reason": "<one sentence or null>"
-    }}
-  ],
-  "weakest_section_id": "<id or null>",
-  "weakest_section_score": <0-10 or null>,
-  "critical_failure_count": <integer>,
-  "issues": [
-    {{
-      "type": "<one of the allowed types>",
-      "section_id": "<id or null>",
-      "severity": "<minor|major|critical>",
-      "description": "<one sentence>",
-      "revision_hint": "<one sentence or null>"
-    }}
-  ],
-  "revision_priorities": ["<most valuable fix>", "..."]
-}}
-
-JSON:"""
 
 
 def comparison_prompt(
@@ -364,140 +178,38 @@ def comparison_prompt(
     role_contract: str | None = None,
     reader_contract: str | None = None,
     review_contract: str | None = None,
+    root: Path | None = None,
 ) -> str:
     """Build the comparison-mode prompt: one call, before and after."""
-    style_block = _style_rubric(style)
-    review_block = _review_section(review_contract)
-    language_note = (
-        f"\nBoth versions are written in **{language}**. Judge them in their own language, "
-        "but write your JSON string values in English."
-        if language
-        else "\nWrite your JSON string values in English."
+    return _render(
+        "evaluation/comparison.j2",
+        {
+            "style_rubric": style_rubric(style),
+            "role_contract": (role_contract or "").strip(),
+            "reader_contract": _reader_contract(reader_contract, root=root),
+            "review_contract": (review_contract or "").strip(),
+            "language": language,
+            "overall_rubric": OVERALL_RUBRIC,
+            "before_text": before_text,
+            "before_label": before_label,
+            "after_label": after_label,
+            "section_block": render_sections(after_sections),
+        },
+        root=root,
     )
 
-    return f"""\
-You are evaluating whether an editorial edit improved, preserved, or damaged a digest's \
-reader-facing quality.
-{_role_section(role_contract)}
-{_reader_section(reader_contract)}
-{language_note}
 
-{style_block}{review_block}
+# --------------------------------------------------------------------------------------- #
+# Compatibility shims
+# --------------------------------------------------------------------------------------- #
+#
+# The developmental prompt is built by ``evaluation.semantic.developmental``, which shares the
+# same templates. These names are retained because they are part of the package's public surface
+# and are used by tests to assert the prompt's contents, but they now render the template rather
+# than concatenate string constants.
 
-{ANTI_LENIENCY}
 
-## What you are comparing
-
-`{before_label}` and `{after_label}` are two versions of the **same digest**, before and after \
-an editorial pass. Your job is to detect **editorial loss**: understanding that the earlier \
-version gave the reader and the later version does not.
-
-Ask specifically:
-
-- What explanatory context existed before and disappeared?
-- Did a bridge between a claim and its explanation disappear?
-- Did compression remove the sentence that established why a detail matters?
-- Did domain shorthand replace a fuller explanation?
-- Did a heading or transition become harder to interpret?
-- Did the later version become shorter without becoming clearer?
-- Did the later version improve concision while fully preserving understanding?
-
-Do **not** reward the earlier version merely because it is longer. The goal is to preserve \
-understanding while improving the intended editorial property — not to preserve every \
-sentence.
-
-{OVERALL_RUBRIC}
-
-{DIMENSIONS}
-
-{ISSUE_TAXONOMY}
-
-{CRITICAL_FAILURE}
-
-{CITATION_NOTE}
-
-{COMPACTNESS}
-
-## {before_label}
-
-{before_text}
-
-## {after_label}
-
-Sections delimiting the revised version:
-
-{render_sections(after_sections)}
-
-## Response
-
-Return one JSON object with exactly this shape:
-
-{{
-  "status": "<improved|preserved|regressed>",
-  "material_regression": <true|false>,
-  "lost_context": ["<short>", "..."],
-  "lost_explanations": ["<short>", "..."],
-  "new_ambiguities": ["<short>", "..."],
-  "broken_connections": ["<short>", "..."],
-  "improvements": ["<short>", "..."],
-  "affected_sections": ["<section id>", "..."],
-  "retry_instructions": ["<specific targeted instruction>", "..."],
-  "after": {{
-    "overall_score": <0-10, one decimal>,
-    "overall_summary": "<two or three sentences>",
-    "dimensions": {{
-      "first_pass_comprehension": <0-10>,
-      "context_sufficiency": <0-10>,
-      "explanatory_clarity": <0-10>,
-      "synthesis_quality": <0-10>,
-      "narrative_coherence": <0-10>,
-      "reader_orientation": <0-10>
-    }},
-    "section_evaluations": [
-      {{
-        "section_id": "<id as given>",
-        "title": "<title as given>",
-        "reader_reconstruction": {{
-          "subject": "<one sentence>",
-          "main_claim": "<one sentence>",
-          "why_it_matters": "<one sentence>"
-        }},
-        "first_pass_comprehension": <0-10>,
-        "context_sufficiency": <0-10>,
-        "explanatory_clarity": <0-10>,
-        "logical_progression": <0-10>,
-        "understandable_on_first_read": <true|false>,
-        "reader_can_explain_why_it_matters": <true|false>,
-        "requires_rereading": <true|false>,
-        "headline_sets_expectation": <true|false>,
-        "body_fulfills_expectation": <true|false>,
-        "takeaway_is_explicit": <true|false>,
-        "missing_context": [],
-        "unexplained_concepts": [],
-        "unclear_referents": [],
-        "broken_logical_links": [],
-        "narrative_problem": "<one sentence or null>",
-        "critical_failure": <true|false>,
-        "critical_failure_reason": "<one sentence or null>"
-      }}
-    ],
-    "weakest_section_id": "<id or null>",
-    "weakest_section_score": <0-10 or null>,
-    "critical_failure_count": <integer>,
-    "issues": [
-      {{
-        "type": "<one of the allowed types>",
-        "section_id": "<id or null>",
-        "severity": "<minor|major|critical>",
-        "description": "<one sentence>",
-        "revision_hint": "<one sentence or null>"
-      }}
-    ],
-    "revision_priorities": ["<most valuable fix>", "..."]
-  }}
-}}
-
-JSON:"""
+ANTI_LENIENCY = _render("evaluation/shared/anti_leniency.j2", {})
 
 
 def schema_reference() -> str:
@@ -518,9 +230,11 @@ def schema_reference() -> str:
 __all__ = [
     "ANTI_LENIENCY",
     "DEFAULT_STYLE_RUBRIC",
+    "OVERALL_RUBRIC",
     "STYLE_RUBRICS",
     "absolute_prompt",
     "comparison_prompt",
     "render_sections",
     "schema_reference",
+    "style_rubric",
 ]

@@ -71,12 +71,12 @@ Neither makes a model call.
 ## Running the tests
 
 ```powershell
-npm test                                   # Node: tests/unit, tests/regression, tests/integration
-python -m pytest                           # Python: evaluation/tests
+python -m pytest                           # Python: tests/python and evaluation/tests
 ```
 
-Both suites are offline: no paid model calls, no Gmail delivery, no writes to production
-state. The Python integration tests are opt-in via `DIGEST_EVAL_RUN_INTEGRATION=1`.
+The suite is offline: no paid model calls, no Gmail delivery, no writes to production
+state. The Python evaluation integration tests are opt-in via
+`DIGEST_EVAL_RUN_INTEGRATION=1`.
 
 ## Configuration
 

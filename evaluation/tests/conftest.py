@@ -30,11 +30,10 @@ V1_STAGES = [
     {"name": "render", "artifact": "email.html", "type": "HTML", "task": "Render final prose."},
 ]
 
-#: Retained as a compatibility marker for tests that need a runner file to exist; the stage
-#: table no longer lives in the runner.
+#: Retained as a compatibility marker for tests that need a pipeline-definition file to
+#: exist; the stage table no longer lives in the runner.
 RUNNER_SOURCE = """\
-// Compatibility entry point; stage declarations live in src/editorial/stages.mjs.
-export const x = 1;
+# Compatibility marker; stage declarations live in digest_system/editorial/stages.py.
 """
 
 EDITORIAL_PROCESS = """\
@@ -187,12 +186,12 @@ def stub_evaluation_payload(score: float, *, sections: int = 2) -> dict:
 @pytest.fixture
 def project(tmp_path: Path) -> ProjectPaths:
     """Build a minimal project tree shaped like the real Digest System."""
-    (tmp_path / "tools").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "digest_system").mkdir(parents=True, exist_ok=True)
     (tmp_path / "system").mkdir(parents=True, exist_ok=True)
     (tmp_path / "digests").mkdir(parents=True, exist_ok=True)
     (tmp_path / "config").mkdir(parents=True, exist_ok=True)
 
-    _write(tmp_path / "tools" / "digest_runner.mjs", RUNNER_SOURCE)
+    _write(tmp_path / "digest_system" / "cli.py", RUNNER_SOURCE)
     _write(tmp_path / "config" / "pipeline-v1-stages.json", json.dumps(V1_STAGES, indent=2))
     _write(tmp_path / "system" / "editorial-process.md", EDITORIAL_PROCESS)
     _write(tmp_path / "system" / "registry.yaml", REGISTRY)

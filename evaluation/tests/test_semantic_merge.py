@@ -100,12 +100,12 @@ def test_semantic_results_merge_into_records_and_survive_persistence(tmp_path) -
     from evaluation.config import ProjectPaths
 
     project = ProjectPaths(tmp_path)
-    (tmp_path / "tools").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "digest_system").mkdir(parents=True, exist_ok=True)
     (tmp_path / "digests").mkdir(parents=True, exist_ok=True)
     (tmp_path / "config").mkdir(parents=True, exist_ok=True)
     from evaluation.tests.conftest import DIGEST_TECH, RUNNER_SOURCE, V1_STAGES, write_run
 
-    (tmp_path / "tools" / "digest_runner.mjs").write_text(RUNNER_SOURCE, encoding="utf-8")
+    (tmp_path / "digest_system" / "cli.py").write_text(RUNNER_SOURCE, encoding="utf-8")
     (tmp_path / "config" / "pipeline-v1-stages.json").write_text(
         json.dumps(V1_STAGES, indent=2), encoding="utf-8"
     )

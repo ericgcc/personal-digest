@@ -53,7 +53,7 @@ def parse_stage_specs(runner_path: str | Path) -> tuple[StageSpec, ...]:
         ValueError: the descriptor exists but declares no stages.
     """
     path = Path(runner_path)
-    # `runner_path` is `<root>/tools/digest_runner.mjs`, so the project root is its
+    # `runner_path` is `<root>/digest_system/cli.py`, so the project root is its
     # grandparent directory.
     root = path.parents[1].resolve()
     descriptor = (root / "config" / "pipeline-v1-stages.json").resolve()

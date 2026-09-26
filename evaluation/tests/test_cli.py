@@ -169,8 +169,8 @@ def _recording_handler(seen: list):
 
 def test_dispatch_passes_the_bag_and_the_paths_to_the_handler(tmp_path) -> None:
     seen: list = []
-    (tmp_path / "tools").mkdir(parents=True)
-    (tmp_path / "tools" / "digest_runner.mjs").write_text("// runner", encoding="utf-8")
+    (tmp_path / "digest_system").mkdir(parents=True)
+    (tmp_path / "digest_system" / "cli.py").write_text("# runner", encoding="utf-8")
     ProjectPaths(tmp_path).runs_dir.mkdir(parents=True)
 
     code = _dispatch(_recording_handler(seen), _resolve(None, root=str(tmp_path)))
@@ -187,8 +187,8 @@ def test_a_missing_pipeline_definition_exits_two(tmp_path) -> None:
 
 def test_a_missing_runs_directory_exits_two(tmp_path) -> None:
     seen: list = []
-    (tmp_path / "tools").mkdir(parents=True)
-    (tmp_path / "tools" / "digest_runner.mjs").write_text("// runner", encoding="utf-8")
+    (tmp_path / "digest_system").mkdir(parents=True)
+    (tmp_path / "digest_system" / "cli.py").write_text("# runner", encoding="utf-8")
     assert _dispatch(_recording_handler(seen), _resolve(None, root=str(tmp_path))) == 2
     assert not seen
 

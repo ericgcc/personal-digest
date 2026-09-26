@@ -3,6 +3,7 @@
 .makemd/
 .space/
 .digest-runs/
+# Left over from the retired JavaScript implementation; no longer referenced.
 node_modules/
 
 # Runtime state databases (preserved outside Git)

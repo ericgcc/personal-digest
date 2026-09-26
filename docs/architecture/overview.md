@@ -4,87 +4,95 @@ This is the current architecture of the Digest System's programmatic layer. Hist
 design documents live in `docs/history/`; this document is the one that describes the
 system as it is now.
 
+The editorial backend is Python. The JavaScript implementation was removed once the Python
+port demonstrated parity against the frozen reference in
+`tests/fixtures/reference/reference.json`.
+
 ## Module boundaries
 
-Application code lives in `src/`. Everything else is either canonical editorial content
-(`system/`, `styles/`, `digests/`, `adapters/`, `templates/`), the Python evaluation
-package (`evaluation/`), tests (`tests/`, `evaluation/tests/`), or maintenance tooling
+Application code lives in `digest_system/`. Everything else is either canonical editorial
+content (`system/`, `styles/`, `digests/`, `adapters/`, `templates/`), the Python evaluation
+package (`evaluation/`), tests (`tests/python/`, `evaluation/tests/`), or maintenance tooling
 (`scripts/`).
 
 ```
-src/
-├── cli/
-│   └── digest.mjs              # CLI entry point: run / resume / replay / ledger
+digest_system/
+├── cli.py                      # CLI entry point: run / resume / replay / ledger
 ├── config/
-│   ├── runtime.mjs             # runtime.json resolution, adapter process plumbing
-│   └── digest-config.mjs       # digest frontmatter and digest resolution
+│   ├── runtime.py              # runtime.json resolution, adapter process plumbing
+│   ├── digests.py              # digest frontmatter and digest resolution
+│   ├── profiles.py             # the style-profile registry and preflight
+│   └── budgets.py              # numeric style length budgets
 ├── editorial/
-│   ├── stages.mjs              # THE stage table: order, artifacts, corpus policy, validation
-│   ├── orchestrator.mjs        # run lifecycle: profile resolution, sequencing, records
-│   ├── stage-executor.mjs      # one stage: attempts, retries, degradation, recovery
-│   ├── budgets.mjs             # numeric style length budgets
+│   ├── stages.py               # THE stage table: order, artifacts, corpus policy, validation
+│   ├── orchestrator.py         # run lifecycle: profile resolution, sequencing, records
+│   ├── executor.py             # one stage: attempts, retries, degradation, recovery
+│   ├── context.py              # the run context a stage reads and writes
 │   ├── prompts/
-│   │   ├── assembler.mjs       # stage context assembly (the isolation seam)
-│   │   └── style-profiles.mjs  # the style-profile registry and preflight
+│   │   └── assembler.py        # stage context assembly (the isolation seam)
 │   ├── evidence/
-│   │   └── projection.mjs      # corpus projection and the recovery frame
+│   │   └── projection.py       # corpus projection and the recovery frame
 │   ├── validation/
-│   │   ├── editorial.mjs       # deterministic frame/analysis validators
-│   │   └── copy-verify.mjs     # deterministic publication checks and the diff guard
+│   │   ├── editorial.py        # deterministic frame/analysis validators
+│   │   └── copy_verify.py      # deterministic publication checks and the diff guard
 │   └── rendering/
-│       └── values.mjs          # run key and deterministic rendering values
+│       └── values.py           # run key and deterministic rendering values
 ├── integrations/
-│   ├── deepseek.mjs            # model transport and retry policy
-│   ├── evaluation.mjs          # Python evaluation adapter (JSON CLI)
-│   └── wops.mjs                # WOPS writing-operations adapter
+│   ├── models.py               # the provider-independent model interface
+│   ├── deepseek.py             # model transport and retry policy
+│   ├── evaluation.py           # in-process access to the Python evaluator
+│   └── wops.py                 # WOPS writing-operations adapter
 └── runtime/
-    ├── artifacts.mjs           # filesystem utilities, run directories, ROOT
-    ├── costs.mjs               # pricing and billing bands
-    ├── reporting.mjs           # run summaries and measured-stage readback
-    └── replay.mjs              # historical-run replay preparation
+    ├── artifacts.py            # filesystem utilities, run directories, ROOT
+    ├── costs.py                # pricing and billing bands
+    ├── reporting.py            # run summaries and measured-stage readback
+    └── replay.py               # historical-run replay preparation
 ```
 
 ## Ownership rules
 
-* **`stages.mjs` is the single source of truth** for stage order, artifact names, corpus
+* **`stages.py` is the single source of truth** for stage order, artifact names, corpus
   policies, and per-stage validation. The orchestrator, the verification scripts, and the
   cost reporting all derive stage metadata from it. The retired v1 pipeline exists only as
   the static descriptor `config/pipeline-v1-stages.json`.
-* **`style-profiles.mjs` is the only place a style section is named.** A stage obtains its
+* **`config/profiles.py` is the only place a style section is named.** A stage obtains its
   style-derived instructions through the active profile; no stage names a style file or
-  section directly. This is the property `tests/integration/style-context-isolation.test.mjs`
+  section directly. This is the property `tests/python/integration/test_style_isolation.py`
   proves.
-* **`assembler.mjs` owns prompt assembly** and is callable without running a stage, so
+* **`prompts/assembler.py` owns prompt assembly** and is callable without running a stage, so
   assembled contexts can be compared byte for byte with no model call.
-* **`stage-executor.mjs` owns execution and retries**; `orchestrator.mjs` owns sequencing
-  and the run record. Neither duplicates the other's responsibility.
-* **`tools/digest_runner.mjs` is a thin compatibility shim** over `src/cli/digest.mjs`,
-  kept so the documented scheduled-agent invocation keeps working.
+* **`executor.py` owns execution and retries**; `orchestrator.py` owns sequencing and the run
+  record. Neither duplicates the other's responsibility.
+* **`integrations/models.py` is the only interface orchestration depends on.** DeepSeek is the
+  reference provider; introducing OpenRouter is a new implementation of that interface rather
+  than a change to orchestration or prompts.
+* **`integrations/evaluation.py` is a thin interface to the evaluator**, not another process
+  launcher. The standalone evaluator CLI remains available for independent testing.
 
 ## Entry points
 
 | Task | Command |
 | --- | --- |
-| Run a digest | `node --env-file=.env tools/digest_runner.mjs run --digest <id> --run-id <id> --input <sources.json>` |
-| Resume a run | `node --env-file=.env tools/digest_runner.mjs resume --digest <id> --run-id <id> --from-stage <stage>` |
-| Replay a historical corpus | `node --env-file=.env tools/digest_runner.mjs replay --from-run <run-id> --run-id <new-id>` |
-| Rebuild the cost ledger | `node --env-file=.env tools/digest_runner.mjs ledger` |
-| Verify a completed run | `node scripts/verify-run.mjs --run <run-id>` |
-| Verify a replay | `node scripts/verify-replay.mjs --run <run-id>` |
+| Run a digest | `python -m digest_system.cli run --digest <id> --run-id <id> --input <sources.json>` |
+| Resume a run | `python -m digest_system.cli resume --digest <id> --run-id <id> --from-stage <stage>` |
+| Replay a historical corpus | `python -m digest_system.cli replay --from-run <run-id> --run-id <new-id>` |
+| Rebuild the cost ledger | `python -m digest_system.cli ledger` |
+| Verify a completed run | `python scripts/verify_run.py --run <run-id>` |
+| Verify a replay | `python scripts/verify_replay.py --run <run-id>` |
 
 ## Testing
 
 | Suite | Command |
 | --- | --- |
-| Node unit tests | `npm test` (runs `node --test "tests/**/*.test.mjs"`) |
-| Python evaluation tests | `python -m pytest` (see `pytest.ini`) |
-| Prompt-equivalence measurement | `node scripts/measure-context.mjs` |
-| Phase-2 correction report | `node scripts/verify-corrections.mjs` |
+| Python tests (backend + evaluation) | `python -m pytest` (see `pytest.ini`) |
+| Prompt-equivalence measurement | `python scripts/measure_context.py` |
+| Phase-2 correction report | `python scripts/verify_corrections.py` |
 
-Tests are grouped by behavior: `tests/unit/` (validators, profiles, stage wiring),
-`tests/regression/` (defects pinned by the Phase 2 review), and
-`tests/integration/` (the style-isolation guarantee). The Python evaluation package keeps
-its own tests in `evaluation/tests/`.
+Tests are grouped by behavior: `tests/python/unit/` (validators, profiles, stage wiring),
+`tests/python/regression/` (the migration acceptance checklist), and
+`tests/python/integration/` (the style-isolation guarantee, pipeline execution, the CLI and
+the maintenance scripts). The Python evaluation package keeps its own tests in
+`evaluation/tests/`.
 
 ## Configuration
 
@@ -99,6 +107,25 @@ Resolution order for external components: CLI flag → environment variable → 
 ## What Phase 2b will replace
 
 The heading-based prompt router — the `sections` mechanism in
-`src/editorial/prompts/style-profiles.mjs` and the `extractContextSections` path in
-`src/runtime/artifacts.mjs` — will be replaced by explicit templates. Everything else in
-this structure is intended to survive that change.
+`digest_system/config/profiles.py` and the `extract_context_sections` path in
+`digest_system/runtime/artifacts.py` — will be replaced by explicit templates. Everything
+else in this structure is intended to survive that change.
+
+## What the OpenRouter handoff will add
+
+The orchestration layer depends only on the interface in `digest_system/integrations/models.py`.
+Introducing OpenRouter is a new implementation of that interface plus per-stage model
+selection and normalized usage and costs; it does not change orchestration or prompts.
+
+## Known follow-ups
+
+* **Stale entry-point references in the canonical instruction documents.** `system/workflow.md`,
+  `system/editorial-pipeline-v2.md` and `system/style-contract.md` still name
+  `tools/digest_runner.mjs`, `package.json` and `src/editorial/*.mjs`. They were deliberately
+  **not** edited during the migration: they are canonical instruction content that is inlined
+  into stage prompts, so editing them would change every assembled prompt and break the
+  prompt-parity guarantee this migration exists to establish. Correcting them belongs to
+  Phase 2b, together with the template-based prompt composition that will re-measure the
+  assembled contexts anyway.
+* **`node_modules/`** may remain on disk from the JavaScript implementation. It is ignored by
+  Git and is no longer referenced by anything.

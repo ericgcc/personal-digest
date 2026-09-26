@@ -218,6 +218,19 @@ def _check(check_id: str, status: str, note: str, details: Any = None) -> dict[s
     return value
 
 
+def _budget_field(budget: Any, field: str) -> Any:
+    """Read one budget field from either a ``StyleBudget`` or a plain mapping.
+
+    The profile records its budget as a mapping (so it serializes into the run record), while
+    the canonical budgets module exposes a dataclass. Both shapes reach this function.
+    """
+    if budget is None:
+        return None
+    if isinstance(budget, Mapping):
+        return budget.get(field)
+    return getattr(budget, field, None)
+
+
 def run_deterministic_checks(
     *,
     prose: str,
@@ -370,10 +383,13 @@ def run_deterministic_checks(
 
     # --- length ---------------------------------------------------------------------
     effective_budget = budget if budget is not None else (STYLE_BUDGET.get(style) if style else None)
+    budget_unit = _budget_field(effective_budget, "unit")
+    budget_min = _budget_field(effective_budget, "min")
+    budget_max = _budget_field(effective_budget, "max")
     if exempt_length:
         measured = (
-            f"{word_count(body)} body words against a {effective_budget.min}-{effective_budget.max} target"
-            if effective_budget and effective_budget.unit == "document"
+            f"{word_count(body)} body words against a {budget_min}-{budget_max} target"
+            if effective_budget is not None and budget_unit == "document"
             else "no document budget applies to this style"
         )
         checks.append(
@@ -385,9 +401,9 @@ def run_deterministic_checks(
         )
     elif effective_budget is None:
         checks.append(_check("length:budget", "warn", f"no length budget is defined for style {style or '(none)'}"))
-    elif effective_budget.unit == "document":
+    elif budget_unit == "document":
         words = word_count(body)
-        minimum, maximum = effective_budget.min, effective_budget.max
+        minimum, maximum = budget_min, budget_max
         checks.append(
             _check("length:budget", "pass", f"{words} body words against a {minimum}-{maximum} target")
             if minimum * 0.75 <= words <= maximum * 1.25
@@ -398,19 +414,19 @@ def run_deterministic_checks(
         outside = [
             entry
             for entry in entries
-            if entry["words"] < effective_budget.min * 0.6 or entry["words"] > effective_budget.max * 1.6
+            if entry["words"] < budget_min * 0.6 or entry["words"] > budget_max * 1.6
         ]
         checks.append(
             _check(
                 "length:budget",
                 "pass",
-                f"{len(entries)} entries within the {effective_budget.min}-{effective_budget.max} word band",
+                f"{len(entries)} entries within the {budget_min}-{budget_max} word band",
             )
             if not outside
             else _check(
                 "length:budget",
                 "warn",
-                f"{len(outside)} of {len(entries)} entries fall outside the {effective_budget.min}-{effective_budget.max} word band",
+                f"{len(outside)} of {len(entries)} entries fall outside the {budget_min}-{budget_max} word band",
                 {"entries": outside[:8]},
             )
         )
@@ -549,8 +565,13 @@ def guard_copy_pass(
     if after_paragraphs < before_paragraphs - 1:
         reasons.append(f"paragraphs removed: {before_paragraphs} → {after_paragraphs}")
 
-    if budget and budget.unit == "document" and after_words and (after_words < budget.min * 0.5 or after_words > budget.max * 1.5):
-        reasons.append(f"{after_words} body words is outside any plausible range for the {budget.min}-{budget.max} target")
+    if budget and _budget_field(budget, "unit") == "document" and after_words and (
+        after_words < _budget_field(budget, "min") * 0.5 or after_words > _budget_field(budget, "max") * 1.5
+    ):
+        reasons.append(
+            f"{after_words} body words is outside any plausible range for the "
+            f"{_budget_field(budget, 'min')}-{_budget_field(budget, 'max')} target"
+        )
     if catalogue_required is True and before_split["catalog"] and not after_split["catalog"]:
         reasons.append("the copy pass removed the source catalogue")
     if any(marker in revised for marker in LEAK_MARKERS) and not any(marker in original for marker in LEAK_MARKERS):

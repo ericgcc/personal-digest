@@ -236,7 +236,7 @@ executor.
 ## 8. Test results
 
 ```
-606 passed, 9 skipped in 122.35s
+607 passed, 9 skipped in 109.82s
 ```
 
 Up from 563 passing before this phase. The 9 skips are the evaluator's opt-in live-judge tests
@@ -244,7 +244,7 @@ Up from 563 passing before this phase. The 9 skips are the evaluator's opt-in li
 
 New coverage this phase:
 
-* `tests/python/regression/test_phase2b_checklist.py` — 25 tests: the acceptance checklist, the
+* `tests/python/regression/test_phase2b_checklist.py` — 26 tests: the acceptance checklist, the
   classification of every prompt change, and the recorded inspection example.
 * `tests/python/integration/test_style_isolation.py` — rewritten for module-based profiles, with
   a sensitivity control and a byte-for-byte style-document reproducibility check.

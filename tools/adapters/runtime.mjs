@@ -40,18 +40,31 @@ function normalizePipeline(value) {
   return PIPELINE_ALIASES[key] ?? null;
 }
 
-const RUNTIME_CONFIG_PATH = path.join(ROOT, "system", "runtime.json");
+// Installation-specific configuration lives at `system/runtime.json` and is ignored by
+// Git, because it holds machine-specific paths (an absolute Python interpreter, a WOPS
+// checkout location). The committed `config/runtime.example.json` is portable and is read
+// when no installation file exists, so a fresh checkout still has a documented default.
+const INSTALLED_CONFIG_PATH = path.join(ROOT, "system", "runtime.json");
+const EXAMPLE_CONFIG_PATH = path.join(ROOT, "config", "runtime.example.json");
 
-export async function loadRuntimeConfig() {
+async function readConfigFile(filePath) {
   try {
-    const text = await readFile(RUNTIME_CONFIG_PATH, "utf8");
+    const text = await readFile(filePath, "utf8");
     const parsed = JSON.parse(text);
     return typeof parsed === "object" && parsed !== null ? parsed : {};
   } catch {
-    // Absent or unreadable configuration is the documented default: v1, and no
-    // external component. It is not an error.
-    return {};
+    return null;
   }
+}
+
+export async function loadRuntimeConfig() {
+  const installed = await readConfigFile(INSTALLED_CONFIG_PATH);
+  if (installed) return installed;
+  const example = await readConfigFile(EXAMPLE_CONFIG_PATH);
+  if (example) return example;
+  // Absent or unreadable configuration is the documented default: v1, and no
+  // external component. It is not an error.
+  return {};
 }
 
 function configured(config, key) {

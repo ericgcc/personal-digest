@@ -1,0 +1,48 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.obsidian": true,
+    "**/.pytest_cache": true,
+    "**/.space": true,
+    "**/.trash": true,
+    "**/.ts": true,
+    "**/.digest-runs": true,
+    "**/.deepeval": true,
+    "**/node_modules": true,
+    "**/state": true,
+    "**/evaluation-results*": true,
+    "**/evaluation-results-v3*": true,
+    "**/evaluation-results-v3-smoke*": true,
+    "**/.venv": true
+  },
+  "search.exclude": {
+    "**/.git": true,
+    "**/.obsidian": true,
+    "**/.pytest_cache": true,
+    "**/.space": true,
+    "**/.trash": true,
+    "**/.ts": true,
+    "**/.digest-runs": true,
+    "**/.deepeval": true,
+    "**/node_modules": true,
+    "**/state": true,
+    "**/evaluation-results*": true,
+    "**/evaluation-results-v3*": true,
+    "**/evaluation-results-v3-smoke*": true
+  },
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/.obsidian/**": true,
+    "**/.pytest_cache/**": true,
+    "**/.space/**": true,
+    "**/.trash/**": true,
+    "**/.ts/**": true,
+    "**/.digest-runs/**": true,
+    "**/.deepeval/**": true,
+    "**/node_modules/**": true,
+    "**/state/**": true,
+    "**/evaluation-results*/**": true,
+    "**/evaluation-results-v3*/**": true,
+    "**/evaluation-results-v3-smoke*/**": true
+  }
+}

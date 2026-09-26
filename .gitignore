@@ -5,6 +5,14 @@
 .digest-runs/
 node_modules/
 
+# Runtime state databases (preserved outside Git)
+state/digest-state.db
+state/*.db
+
+# Installation-specific runtime configuration (the committed example is portable)
+system/runtime.json
+config/runtime.json
+
 # Generated evaluation output (derived from .digest-runs, reproducible)
 evaluation-results/
 evaluation-results-*/

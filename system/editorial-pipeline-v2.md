@@ -6,25 +6,23 @@ This document is the authoritative description of the v2 editorial pipeline: its
 
 ## 1. Pipeline versioning
 
-Two pipelines are declared and both remain runnable:
+Two pipelines are declared. Only v2 is executable:
 
 | Pipeline | Stages | Status |
 | --- | --- | --- |
-| `editorial-pipeline-v1` | analyze → frame → draft → structural-edit → clarity-edit → voice-edit → compression-edit → final-polish → render | Preserved. The declaration in `tools/digest_runner.mjs` is unchanged. |
-| `editorial-pipeline-v2` | analyze → frame → draft → developmental-review → writer-revision → line-edit → reader-review → [targeted-repair] → copy-verify → render | Default once the historical replay acceptance in `MIGRATION-v2.md` passed. |
+| `editorial-pipeline-v1` | analyze → frame → draft → structural-edit → clarity-edit → voice-edit → compression-edit → final-polish → render | **Retired.** Its stage list survives only as the static metadata in `config/pipeline-v1-stages.json`, which the evaluation package reads to describe historical runs. |
+| `editorial-pipeline-v2` | analyze → frame → draft → developmental-review → writer-revision → line-edit → reader-review → [targeted-repair] → copy-verify → render | **The only runnable pipeline.** Entry point: `python -m digest_system.cli`. |
 
 Selection rules:
 
-* `--pipeline <id>` on the command line wins.
-* `DIGEST_PIPELINE` in the environment wins next.
-* `system/runtime.json` → `pipeline.active` is the configured default.
-* Absent configuration means `editorial-pipeline-v1`.
+* `--pipeline <id>` is no longer accepted; the Python CLI exposes no pipeline selector because there is one pipeline.
+* `system/runtime.json` → `pipeline.active` remains the configured default and must name `editorial-pipeline-v2`.
 
-Every run records the pipeline it executed in `run-summary.json` and in `pipeline.json` at the run root, so an artifact set is never ambiguous about which pipeline produced it. v1 and v2 run directories are distinguishable without reference to the runner source.
+Every run records the pipeline it executed in `run-summary.json` and in `pipeline.json` at the run root, so an artifact set is never ambiguous about which pipeline produced it. Historical v1 and v2 run directories remain readable by the Python readers.
 
 Within v2, a run also records the **style profile** it executed — `style_profile_id` and `style_profile_version` in `pipeline.json`, `run-summary.json` and `stage-records.json`, with the full profile body in `pipeline.json` (§3.1). Neither version is inferred after the fact from the instructions that happen to be on disk, because a profile can be edited between a run and its audit.
 
-The editorial migration is deliberately **not** combined with a Node → Python migration. The Node runner remains the pipeline orchestrator; Python components are reached through adapters (§5).
+The editorial runtime is Python. Composition is Jinja2; the instruction text is Markdown; the profile configuration is YAML (§3.1).
 
 ## 2. Stages
 
@@ -41,7 +39,7 @@ The editorial migration is deliberately **not** combined with a Node → Python 
 | 9 | `copy-verify` | `final.md`, `verification.json` | deterministic checks + constrained model call | yes |
 | 10 | `render` | `email.html` | model call | yes |
 
-"Executor" records who owns the judgement, not who invokes it. Node always invokes; Python owns writing-operation retrieval and semantic evaluation.
+"Executor" records who owns the judgement, not who invokes it. The Python orchestrator always invokes; Python owns writing-operation retrieval and semantic evaluation.
 
 ## 3. Context matrix
 
@@ -52,14 +50,14 @@ The style half of every stage's context is **resolved from the active style prof
 | Stage | Canonical instruction documents | Data |
 | --- | --- | --- |
 | `analyze` | `contracts/analyze.md`; **profile**: the style's selection model and its stage document; `writing-research-basis.md`; `writing-reasoning-and-source-fidelity.md`; `digests/<id>.md` | full source corpus |
-| `frame` | `contracts/frame.md`; `style-contract.md`; `contracts/reader-contract.md`; **profile**: the style's composition sections and its stage document; `digests/<id>.md` | `analysis.json` |
-| `draft` | `contracts/draft.md`; `styles/editorial-base.md`; `contracts/reader-contract.md`; **profile**: the style's composition sections, `## Writing character`, and its stage document; `digests/<id>.md` | `frame.json` + frame-selected evidence |
+| `frame` | `contracts/frame.md`; `style-contract.md`; `contracts/reader-contract.md`; **profile**: the style's composition modules and its stage document; `digests/<id>.md` | `analysis.json` |
+| `draft` | `contracts/draft.md`; `styles/editorial-base.md`; `contracts/reader-contract.md`; **profile**: the style's composition modules, its writing-character module, and its stage document; `digests/<id>.md` | `frame.json` + frame-selected evidence |
 | `developmental-review` | `contracts/developmental-review.md`; `contracts/reader-contract.md`; **profile**: the `style` and `review` contracts | `draft.md` + `frame.json` |
 | `writer-revision` | `contracts/writer-revision.md`; **profile**: `## Writing character` and the review document | `draft.md` + `review.json` + `wops.json` + `frame.json` + frame-selected evidence |
 | `line-edit` | `contracts/line-edit.md`; `naturalness-contract.md`; **profile**: `## Writing character` and the review document | `revision.md` + `wops.json` |
 | `reader-review` | `contracts/reader-review.md`; `contracts/reader-contract.md`; **profile**: the `style` and `review` contracts | `revision.md` (BEFORE) + `line-edit.md` (AFTER) |
 | `targeted-repair` | `contracts/targeted-repair.md`; `contracts/reader-contract.md`; **profile**: `## Writing character` and the review document | `line-edit.md` + `review.json` (reader feedback) + `wops.json` + the evidence the repair needs |
-| `copy-verify` | `contracts/copy-verify.md`; **profile**: the style's verifiable composition sections; `digests/<id>.md` | `line-edit.md` (or `repair.md`) + source provenance |
+| `copy-verify` | `contracts/copy-verify.md`; **profile**: the style's verifiable composition modules; `digests/<id>.md` | `line-edit.md` (or `repair.md`) + source provenance |
 | `render` | `contracts/render.md`; `html-rendering.md`; **style-scoped**: `rendering-<style>.md`; `templates/<style>-email-v1.html`; `digests/<id>.md` | `final.md` |
 
 Deliberately excluded from every stage: `system/workflow.md`, `system/editorial-process.md`, the complete naturalness manual, and the instructions of later stages.
@@ -68,11 +66,19 @@ One documented deviation from the strictest reading of the matrix:
 
 * `draft` also receives `styles/editorial-base.md`. The editorial base is the inherited quality floor of every style; drafting is the only stage that establishes quality from nothing, and the style contract states that no style may weaken it. Every other stage receives a pointer to the base through its own role contract instead of the whole file.
 
-`frame` additionally receives `system/style-contract.md`, which defines the interface vocabulary that the style's `## Style interface` section uses. No v2 stage inlines a whole style file, so a stage can only ever receive the sections its profile declares.
+`frame` additionally receives `system/style-contract.md`, which defines the interface vocabulary that the style's modules use. No v2 stage inlines a whole style file; a stage receives only the module files its profile names.
 
-### Section extraction
+### Prompt composition
 
-Where the matrix names a subset of a style file, the runner extracts those `##` sections by name and inlines only them. The style file stays the single source of truth; extraction is how a stage receives its part of it. Which sections a stage receives is declared by the active profile, not by this document.
+A stage's prompt is composed from explicit templates under `prompts/`, rendered by Jinja2. For each stage the model executes there is a `prompts/stages/<stage>/system.j2` and a `user.j2`; the two evaluation stages, which the Python adapter executes, are composed from `prompts/evaluation/` instead. The system template declares the shared contract, the relevant editorial standards and the stage's style instructions; the user template declares the evidence and the previous artifacts.
+
+Three properties are guaranteed by construction:
+
+* **A template receives only the data its stage's corpus policy permits.** Evidence projection still happens in `digest_system/editorial/evidence/projection.py`; the template is handed the projected result, never the whole corpus.
+* **Instructions are files, not headings.** A profile names module files under `styles/<style>/modules/`; the runtime never parses a `##` heading to decide what a stage receives. See §3.1.
+* **Data is inert.** Source corpora, artifacts, review JSON, computed rendering values and the HTML email templates are passed as variables and printed verbatim. They are never rendered as templates, which matters because the email templates contain `{{RUN_KEY}}` placeholders of their own.
+
+Undefined template variables, a missing template and a malformed profile all fail **before** the first paid call: prompt composition is strict, and preflight resolves every document and template a stage declares. The exact resolved prompt is inspectable offline with `python -m digest_system.cli inspect` (§7).
 
 ## 3.1 Style profiles
 
@@ -80,21 +86,25 @@ A **style profile** is an explicit, versioned declaration of what each style's e
 
 | Concept | Where it lives |
 | --- | --- |
-| The registry: one entry per profile | `src/editorial/prompts/style-profiles.mjs` |
+| The registry: one entry per profile | `prompts/profiles/<profile-id>.yaml` |
 | Operational stage documents for a style | `system/style-pipelines/<style>/` |
-| The style's identity and output requirements | `styles/<style>.md` — unchanged, and still authoritative |
-| The numeric body-length policy | `src/editorial/budgets.mjs`, referenced by every profile |
+| The style's individual rules | `styles/<style>/modules/*.md`, listed by `styles/<style>/style.yaml` |
+| The style's readable specification | `styles/<style>.md`, generated from the modules by `scripts/build_style_docs.py` |
+| The numeric body-length policy | `digest_system/config/budgets.py`, referenced by every profile |
+| The stage prompt templates | `prompts/stages/<stage>/{system,user}.j2` |
+| The shared prompt framing | `prompts/shared/{preamble,task}.j2` |
 
 A profile declares, per stage, the style-derived `documents` (and, for the evaluation stages, `contracts`) that stage receives; and once for the profile as a whole, its **budget policy**, its **composition constraints** and its **evaluation rubric**. `analyze` receives the style's selection model through its profile, which is why it can select for the style's composition unit rather than for article quality in general.
 
 Rules:
 
-* **No stage names a style section.** `STAGES_V2` declares only operational documents and splices in whatever the profile supplies. Adding a `##` heading to one style file therefore cannot change another style's prompt.
+* **No stage names a style section, and no heading is an identifier.** `STAGES_V2` declares only operational documents and splices in whatever the profile supplies; a profile names module *files*. The readable `styles/<style>.md` is generated from those modules and reorganized freely — its headings are editorial formatting, and changing one cannot redirect a stage's instructions.
+* **One authoritative definition per rule.** A rule lives in exactly one module. The readable style document is generated from the modules, so there are never two independently editable copies of the same rule.
 * **No cross-style fallback.** A profile id that does not exist, or that belongs to a different style, stops the run with an error naming the valid profiles. Silently running another style's instructions is the failure this mechanism exists to prevent.
-* **Preflight is mandatory.** Before the first model call, every document and every declared section is resolved. A missing document, a section its style does not declare, or a style file missing a mandated section is a configuration error, reported with all other problems at once rather than discovered as a thinner prompt mid-run.
-* **Selectivity is audited.** Each stage's `attempt.json` records `style_sections_excluded`: the sections its style declares that this stage was deliberately not given.
+* **Preflight is mandatory.** Before the first model call, every document a profile declares is resolved and the template environment is built. A missing document, a missing module, a missing stage template or a style file missing a mandated section is a configuration error, reported with all other problems at once rather than discovered as a thinner prompt mid-run.
+* **Selectivity is audited.** Each stage's `attempt.json` records `style_sections_excluded`: the style modules its style declares that this stage was deliberately not given.
 * **Rendering is style-scoped, not profile-scoped.** An editorial profile version never changes how the digest looks.
-* **The runtime documents state requirements; the reasoning lives elsewhere.** `system/style-pipelines/<style>/*.md` are part of a stage's prompt, so they carry executable responsibilities, required fields, decision rules and prohibited behaviours. Why a rule exists, and the historical evidence for it, is in `docs/history/style-pipeline-rationale.md` — which is delivered to no model. Assembled context is measured with `node scripts/measure-context.mjs`, and a test asserts that no requirement disappeared in the trimming.
+* **The runtime documents state requirements; the reasoning lives elsewhere.** `system/style-pipelines/<style>/*.md` are part of a stage's prompt, so they carry executable responsibilities, required fields, decision rules and prohibited behaviours. Why a rule exists, and the historical evidence for it, is in `docs/history/style-pipeline-rationale.md` — which is delivered to no model. Assembled context is measured with `python scripts/measure_context.py`, and a test asserts that no requirement disappeared in the trimming.
 
 ### The four adapter contracts
 
@@ -111,12 +121,12 @@ The evaluation stages do not receive inlined documents; they hand instructions t
 
 ### What a rollback restores, and what it does not
 
-`styles/<style>.md` is the single source of truth for a style's identity and output requirements, and every profile of that style reads it. So the profiles separate two things that are easy to conflate:
+A style's rules live in its modules, and `styles/<style>.md` is generated from them. Every profile of that style names those same modules, so a revision to a module applies to every profile of that style. The profiles separate two things that are easy to conflate:
 
-* **Routing** — which part of the style each stage receives, which stage documents are added, and which constraints are enforced. This is per profile, and `<style>-legacy` restores it exactly.
+* **Routing** — which of the style's modules each stage receives, which stage documents are added, and which constraints are enforced. This is per profile, and `<style>-legacy` restores it exactly.
 * **The style's own contract** — its composition unit, thread range, source bounds, structure and voice. This is per style, and a revision to it applies to every profile of that style, including the rollback profile.
 
-A consequence worth stating plainly: once a style file is revised, `<style>-legacy` is a rollback of the *routing* and not of the style's content. Reverting a style file requires reverting the style file. `tests/integration/style-context-isolation.test.mjs` keeps a `REVISED_SINCE_BASELINE` record naming each style revised since the historical runs and why, and it fails if a style is edited without being recorded there or recorded without being edited — so the drift is always visible and always attributed.
+A consequence worth stating plainly: once a style module is revised, `<style>-legacy` is a rollback of the *routing* and not of the style's content. Reverting a style rule requires reverting that module. `tests/python/integration/test_style_isolation.py` asserts that changing one style's instructions perturbs that style and no other, with a sensitivity control proving the comparison can detect a real difference — so the drift is always visible and always attributed.
 
 ### Profile selection
 
@@ -124,7 +134,7 @@ Resolution order: `--style-profile`, then `DIGEST_STYLE_PROFILE`, then `system/r
 
 ### Recorded per run
 
-`pipeline.json` records `style_profile_id`, `style_profile_version` and the full profile body with its selection source; `run-summary.json` records the id, version, source and status, and the cost ledger carries the id so cost can be compared across profiles; `stage-records.json` and each stage record carry the id and version; each `attempt.json` carries the id, version, source and the excluded sections. Assembled prompts remain in each stage's `attempts/attempt-N/prompt.txt`.
+`pipeline.json` records `style_profile_id`, `style_profile_version` and the full profile body with its selection source; `run-summary.json` records the id, version, source and status, and the cost ledger carries the id so cost can be compared across profiles; `stage-records.json` and each stage record carry the id and version; each `attempt.json` carries the id, version, source and the excluded modules. The resolved prompt is written to each stage's `attempts/attempt-N/prompt.txt`, with its dependency manifest in `attempts/attempt-N/prompt-manifest.json`.
 
 ### Adding a style
 
@@ -132,7 +142,7 @@ The registry grows one entry per style. A profile is `active` only when its beha
 
 ## 4. Evidence projection
 
-FRAME declares, per editorial unit, the sources that unit needs — `selected_source_numbers`, with `evidence_refs` describing what is drawn from each. The runner builds the draft's corpus block from exactly that selection.
+FRAME declares, per editorial unit, the sources that unit needs — `selected_source_numbers`, with `evidence_refs` describing what is drawn from each. The Python runtime builds the draft's corpus block from exactly that selection.
 
 Two declarations are separated here, because conflating them is how a projection stops being a selection:
 
@@ -150,19 +160,19 @@ Rules:
   1. **`frame-selection`** — the frame's declared selection (normal operation);
   2. **`analysis-shortlist`** — if FRAME declares nothing usable, the source numbers from the analysis's **candidate groupings** are used, and the stage is marked degraded;
   3. **`full-corpus`** — only if both of the above yield nothing, and always recorded as a warning with `recovery: "full-corpus"`.
-* the runner never silently widens the projection to the whole corpus during normal operation;
+* the runtime never silently widens the projection to the whole corpus during normal operation;
 * the analysis shortlist reads the candidate groupings' declared source numbers, not every `source_number` occurrence in the analysis. The per-source assessments each carry that field, so a whole-document scan returns the entire corpus and a "shortlist" that narrows nothing.
 
 ## 5. Component adapters
 
-Two Python components are reached through Node adapters. Neither is reimplemented in JavaScript.
+Two Python components are reached through adapters. Neither has a second implementation.
 
 | Adapter | Owns | Reaches |
 | --- | --- | --- |
 | `WopsAdapter` | writing-operation retrieval | the `wops` JSON CLI at `WOPS_ROOT` |
-| `EvaluationAdapter` | semantic evaluation and its schemas | `python -m evaluation.adapters` |
+| `EvaluationAdapter` | semantic evaluation and its schemas | `evaluation.adapters.invoke` (in-process) |
 
-Node owns workflow orchestration, artifact paths, fallback behaviour, stage transitions, and cost and run metadata. Python owns writing-operation retrieval, semantic evaluation, and the evaluation schemas.
+The Python orchestrator owns workflow orchestration, artifact paths, fallback behaviour, stage transitions, and cost and run metadata. The evaluation adapter calls the evaluator's **supported in-process interface** (`evaluation.adapters.invoke`), not its private handler registry, and records each call's duration and timeout budget. The standalone evaluator CLI (`python -m evaluation.adapters`) remains available for independent testing and external integrations, and shares the same command handlers.
 
 Both adapters degrade gracefully. Their failure never prevents a digest from being produced.
 
@@ -196,8 +206,10 @@ Every WOPS retrieval is persisted in that stage's `wops.json`: the query, the pr
 ├── targeted-repair/           # optional
 ├── copy-verify/               # final.md, verification.json
 ├── render/                    # email.html
+├── attempts/attempt-N/          # prompt.txt, prompt-manifest.json, model-response.json
+...
 ├── run-summary.json
-└── verification.json / verification.md   (written by verify-run.mjs, advisory)
+└── verification.json / verification.md   (advisory)
 ```
 
 Every stage directory keeps the v1 layout: `context/` (the canonical instructions actually inlined), `input/`, `output/`, `prompt.txt`, `model-response.json`, `attempts/attempt-N/{attempt.json,prompt.txt,model-response.json,completed.json}`, and `stage-error.log` on failure.
@@ -208,9 +220,23 @@ Recorded per run and per stage: the pipeline and its version, exact prompts, inp
 
 A stage can make more than one model call, because a structural validation failure earns one correction attempt. The measurement therefore enumerates every attempt directory rather than reading `attempt-1`: each attempt's own tokens, duration and billing band are preserved, the stage's totals are their sum, and the stage's wall time is kept distinct from the sum of its model calls — the difference being the time spent validating between them. A stage whose attempts land in different bands reports `mixed` rather than a silent average, and each call is priced in its own band. A single-attempt stage, including every historical run, is unchanged.
 
-### Attempts are measured individually
+### Prompt inspection
 
-A stage can make more than one model call, because a structural validation failure earns one correction attempt. The measurement therefore enumerates every attempt directory rather than reading `attempt-1`: each attempt's own tokens, duration and billing band are preserved, the stage's totals are their sum, and the stage's wall time is kept distinct from the sum of its model calls — the difference being the time spent validating between them. A stage whose attempts land in different bands reports `mixed` rather than a silent average, and each call is priced in its own band. A single-attempt stage, including every historical run, is unchanged.
+An operator can resolve a stage's prompt without running anything and without spending anything:
+
+```
+python -m digest_system.cli inspect --digest tech-bi-daily \
+    --style-profile synthesis-max-v1 --stage draft
+python -m digest_system.cli inspect --digest tech-bi-daily --style-profile synthesis-max-v1 --print
+```
+
+For the named stage (or every stage when `--stage` is omitted) the command writes, under `prompt-inspections/<profile>/<stage>/`:
+
+* `system.txt` and `user.txt` — the exact messages the model will receive. An evaluation stage writes a single `prompt.txt`, because the Python adapter sends one combined judge prompt and inventing system/user roles for it would misdescribe what is sent.
+* `manifest.json` — every template and instruction file with its size and SHA-256, the profile id and version, the data blocks and their sizes, the template dependency list, and the style modules the profile deliberately withheld.
+* `report.md` — the same information in a human-readable form.
+
+A developer can therefore open `prompts/stages/draft/system.j2`, read its declared dependencies, inspect `prompts/profiles/synthesis-max-v1.yaml`, and generate exactly what the model receives — without reading the executor.
 
 ## 7. Failure semantics
 
@@ -226,7 +252,7 @@ Editorial-component failure means: **use the last valid artifact and continue.**
 | Reader Review unavailable | skip targeted repair and continue with the line edit |
 | Targeted Repair unavailable or rejected | use the line edit |
 | Copy/Verify model pass unavailable or rejected by the diff guard | use the unmodified input prose; deterministic checks still run |
-| Python adapter unavailable | record degraded mode and continue |
+| Python adapter unavailable | record degraded mode and continue. A call that exceeds its declared `timeout_ms` budget is recorded as over-budget in the adapter record rather than silently accepted |
 | Frame unavailable or its plan invalid after correction | derive the deterministic recovery frame from the analysis and continue, degraded |
 
 Only genuinely fatal technical failures terminate a run: a missing or unreadable corpus, an unavailable model credential or endpoint, a failed `analyze` or `draft` (nothing exists to carry forward), a failed `render`, or a canonical artifact that already exists for the run being started.

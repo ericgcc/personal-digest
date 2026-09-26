@@ -330,17 +330,37 @@ def test_checklist_9_the_historical_prompt_capture_exists():
     assert (PHASE2B / "prompt-baseline.json").is_file(), "the offline prompt baseline is missing"
 
 
-def test_checklist_9_every_prompt_change_is_packaging_only():
-    """The migration's central claim, asserted: no stage's instruction text changed."""
+def test_checklist_9_every_prompt_change_is_classified():
+    """The migration's central claim, asserted: no stage's instruction text changed silently.
+
+    Every difference is either packaging-only, or an instruction change recorded in the approved
+    list with its reason. The diff tool exits non-zero on an unapproved change, so this test also
+    proves the tool would catch one.
+    """
     result = _run([str(ROOT / "scripts" / "prompt_diff.py"), "--json"])
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
-    changes = [row for row in payload["rows"] if row["status"] != "packaging-only"]
-    assert not changes, "instruction changes were not approved:\n" + "\n".join(
-        f"{row['profile']}/{row['stage']}: {row.get('old_context')} -> {row.get('new_context')}"
-        for row in changes
+    unapproved = [row for row in payload["rows"] if row["status"] == "instruction-change"]
+    assert not unapproved, "unapproved instruction changes:\n" + "\n".join(
+        f"{row['profile']}/{row['stage']} ({row.get('document')}): "
+        f"{row.get('old_context')} -> {row.get('new_context')}"
+        for row in unapproved
     )
     assert len(payload["rows"]) == 50, "the diff did not cover every profile/stage pair"
+
+
+def test_checklist_9_the_approved_change_is_recorded_and_real():
+    """The one approved instruction change names the document and is actually present."""
+    payload = json.loads(
+        (PHASE2B / "approved-instruction-changes.json").read_text(encoding="utf-8")
+    )
+    assert payload["approved"], "no instruction change is recorded, so the record proves nothing"
+    for entry in payload["approved"]:
+        document = ROOT / entry["document"]
+        assert document.is_file(), entry["document"]
+        assert entry["reason"].strip()
+        # The corrected document must not still name the retired JavaScript module.
+        assert "style-profiles.mjs" not in document.read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------------------

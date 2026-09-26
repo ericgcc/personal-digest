@@ -55,19 +55,40 @@ digest_system/
   policies, and per-stage validation. The orchestrator, the verification scripts, and the
   cost reporting all derive stage metadata from it. The retired v1 pipeline exists only as
   the static descriptor `config/pipeline-v1-stages.json`.
-* **`config/profiles.py` is the only place a style section is named.** A stage obtains its
-  style-derived instructions through the active profile; no stage names a style file or
+* **`config/profiles.py` is the only place a style instruction is selected.** A stage obtains its
+  style-derived instructions through the active profile; no stage names a style module or
   section directly. This is the property `tests/python/integration/test_style_isolation.py`
   proves.
-* **`prompts/assembler.py` owns prompt assembly** and is callable without running a stage, so
-  assembled contexts can be compared byte for byte with no model call.
+
+## Prompt composition
+
+* **Jinja2 owns composition.** Every prompt is rendered from explicit templates under `prompts/`:
+  `prompts/stages/<stage>/{system,user}.j2` for the stages the model executes, and
+  `prompts/evaluation/{absolute,comparison,developmental}.j2` for the two the Python evaluator
+  executes. `digest_system/editorial/prompts/environment.py` builds the environment with
+  strict undefined variables, no autoescaping and a loader restricted to `prompts/`.
+* **A profile selects files, not headings.** `prompts/profiles/<profile-id>.yaml` names the
+  module files each stage receives. A style's rules live in `styles/<style>/modules/*.md`, listed
+  by `styles/<style>/style.yaml`; the readable `styles/<style>.md` is generated from them by
+  `scripts/build_style_docs.py`. No runtime code parses a Markdown heading, so reorganising a
+  style's prose cannot redirect a stage's instructions.
+* **Markdown owns editorial knowledge.** The instruction text is the Markdown in `system/` and
+  `styles/`; the templates frame it and place it, they do not restate it.
+* **Data is inert.** Source corpora, artifacts, review JSON and HTML templates are passed as
+  variables and printed verbatim — never rendered as templates, because the email templates
+  contain `{{RUN_KEY}}` placeholders of their own.
+* **`prompts/assembler.py` resolves documents; `prompts/compose.py` renders them.** Both are
+  callable without running a stage, so the exact prompt a stage will send can be inspected
+  offline with `python -m digest_system.cli inspect`.
 * **`executor.py` owns execution and retries**; `orchestrator.py` owns sequencing and the run
   record. Neither duplicates the other's responsibility.
 * **`integrations/models.py` is the only interface orchestration depends on.** DeepSeek is the
   reference provider; introducing OpenRouter is a new implementation of that interface rather
   than a change to orchestration or prompts.
-* **`integrations/evaluation.py` is a thin interface to the evaluator**, not another process
-  launcher. The standalone evaluator CLI remains available for independent testing.
+* **`integrations/evaluation.py` calls the evaluator's supported in-process interface**
+  (`evaluation.adapters.invoke`), not a private handler registry. Each call records its duration
+  and flags an overrun of its declared timeout. The standalone evaluator CLI remains available
+  for independent testing and shares the same handlers.
 
 ## Entry points
 
@@ -77,6 +98,7 @@ digest_system/
 | Resume a run | `python -m digest_system.cli resume --digest <id> --run-id <id> --from-stage <stage>` |
 | Replay a historical corpus | `python -m digest_system.cli replay --from-run <run-id> --run-id <new-id>` |
 | Rebuild the cost ledger | `python -m digest_system.cli ledger` |
+| Inspect a resolved prompt | `python -m digest_system.cli inspect --digest <id> --style-profile <profile> [--stage <stage>]` |
 | Verify a completed run | `python scripts/verify_run.py --run <run-id>` |
 | Verify a replay | `python scripts/verify_replay.py --run <run-id>` |
 
@@ -104,28 +126,27 @@ the maintenance scripts). The Python evaluation package keeps its own tests in
 Resolution order for external components: CLI flag → environment variable → installed
 `system/runtime.json` → committed example → degrade.
 
-## What Phase 2b will replace
+## What Phase 2b changed
 
-The heading-based prompt router — the `sections` mechanism in
-`digest_system/config/profiles.py` and the `extract_context_sections` path in
-`digest_system/runtime/artifacts.py` — will be replaced by explicit templates. Everything
-else in this structure is intended to survive that change.
+The heading-based prompt router — the `sections` mechanism in `digest_system/config/profiles.py`
+and the `extract_context_sections` path in `digest_system/runtime/artifacts.py` — has been
+**removed**. A profile now names module files, and every prompt is rendered from a Jinja2
+template. Both functions are gone from the runtime.
 
 ## What the OpenRouter handoff will add
 
 The orchestration layer depends only on the interface in `digest_system/integrations/models.py`.
 Introducing OpenRouter is a new implementation of that interface plus per-stage model
-selection and normalized usage and costs; it does not change orchestration or prompts.
+selection and normalized usage and costs; it does not change orchestration or prompts. It is a
+**provider switch on both sides or neither**: the editorial executor and the evaluator's judge
+must move together, because changing the editorial model alone would leave the review stages on
+the previous provider.
 
 ## Known follow-ups
 
-* **Stale entry-point references in the canonical instruction documents.** `system/workflow.md`,
-  `system/editorial-pipeline-v2.md` and `system/style-contract.md` still name
-  `tools/digest_runner.mjs`, `package.json` and `src/editorial/*.mjs`. They were deliberately
-  **not** edited during the migration: they are canonical instruction content that is inlined
-  into stage prompts, so editing them would change every assembled prompt and break the
-  prompt-parity guarantee this migration exists to establish. Correcting them belongs to
-  Phase 2b, together with the template-based prompt composition that will re-measure the
-  assembled contexts anyway.
+* **The outstanding paid historical replays.** Before promoting the Python pipeline to live
+  delivery, the historical replays that need a real model must be completed. They are performed
+  after Phase 2b's offline tests pass, and they are independent of the OpenRouter provider
+  change, which must remain separately verifiable.
 * **`node_modules/`** may remain on disk from the JavaScript implementation. It is ignored by
   Git and is no longer referenced by anything.

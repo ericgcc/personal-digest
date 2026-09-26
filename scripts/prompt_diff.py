@@ -38,6 +38,7 @@ from digest_system.runtime.artifacts import ROOT  # noqa: E402
 from _maintenance import configure_stdio  # noqa: E402
 
 PRE2B_PATH = ROOT / "tests" / "fixtures" / "phase2b" / "pre2b-prompts.json"
+APPROVED_PATH = ROOT / "tests" / "fixtures" / "phase2b" / "approved-instruction-changes.json"
 
 #: Content that the templates add as framing, or that the wrappers contribute. Removing it lets
 #: the comparison isolate the *instruction* text the two implementations delivered.
@@ -86,6 +87,46 @@ def _instruction_text(entry: dict) -> str:
     return entry.get("system_text", "")
 
 
+def approved_changes() -> dict[tuple[str, str], dict]:
+    """The instruction changes an owner explicitly approved, by (stage, document).
+
+    A change to a document that is inlined into a prompt is a real instruction change, so it
+    must be declared rather than hidden. This file is that declaration; it names the document
+    that changed and why.
+    """
+    if not APPROVED_PATH.is_file():
+        return {}
+    payload = json.loads(APPROVED_PATH.read_text(encoding="utf-8"))
+    return {(entry["stage"], entry["document"]): entry for entry in payload.get("approved", [])}
+
+
+def _changed_document(old: str, new: str) -> str | None:
+    """The first document whose *body* differs between two prompts, if any.
+
+    A document present in both prompts and differing is the changed instruction. A path present
+    in only one prompt is a packaging change (the composed style document becomes modules), so it
+    is considered only when no common document differs.
+    """
+    old_docs = _documents_by_path(old)
+    new_docs = _documents_by_path(new)
+    for path in sorted(set(old_docs) & set(new_docs)):
+        if normalize(old_docs[path]) != normalize(new_docs[path]):
+            return path
+    for path in sorted(set(old_docs) ^ set(new_docs)):
+        return path
+    return None
+
+
+def _documents_by_path(text: str) -> dict[str, str]:
+    import re
+
+    found: dict[str, str] = {}
+    pattern = re.compile(r'<document path="([^"]*)"(?: sections="[^"]*")?>\n(.*?)\n</document>', re.DOTALL)
+    for match in pattern.finditer(text):
+        found[match.group(1)] = match.group(2)
+    return found
+
+
 def diff_all(profile_id: str | None = None) -> list[dict]:
     historical = json.loads(PRE2B_PATH.read_text(encoding="utf-8"))
     rows: list[dict] = []
@@ -99,6 +140,18 @@ def diff_all(profile_id: str | None = None) -> list[dict]:
                 stage_name=stage_name, profile=profile, digest_config_relative=config
             )
             result = compare(_instruction_text(stages[stage_name]), _instruction_text(current))
+            if result["status"] != "packaging-only":
+                document = _changed_document(stages[stage_name].get("system_text", ""), current.get("system_text", ""))
+                approval = approved_changes().get((stage_name, document or ""))
+                if approval is not None:
+                    result = {
+                        **result,
+                        "status": "approved-instruction-change",
+                        "document": document,
+                        "reason": approval["reason"],
+                    }
+                elif document:
+                    result["document"] = document
             rows.append({"profile": pid, "stage": stage_name, **result})
     return rows
 
@@ -124,21 +177,29 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"rows": rows}, ensure_ascii=False, indent=2))
         return 0
 
-    changes = [row for row in rows if row["status"] != "packaging-only"]
+    changes = [row for row in rows if row["status"] == "instruction-change"]
+    approved = [row for row in rows if row["status"] == "approved-instruction-change"]
     print("Instruction-level diff: pre-Phase-2b prompts vs current\n")
     for row in rows:
         if row["status"] == "packaging-only" and not args.verbose:
             continue
-        marker = "ok  " if row["status"] == "packaging-only" else "DIFF"
+        marker = {
+            "packaging-only": "ok  ",
+            "approved-instruction-change": "APPR",
+            "instruction-change": "DIFF",
+        }[row["status"]]
         print(f"{marker} {row['profile']:<28} {row['stage']:<22} {row['status']}")
-        if row["status"] != "packaging-only":
+        if row["status"] == "approved-instruction-change":
+            print(f"       {row.get('document')}: {row.get('reason')}")
+        elif row["status"] == "instruction-change":
             print(f"       old: ...{row['old_context']}...")
             print(f"       new: ...{row['new_context']}...")
+    packaging = len(rows) - len(changes) - len(approved)
     print(
-        f"\n{len(rows) - len(changes)}/{len(rows)} profile/stage prompts are packaging-only; "
-        f"{len(changes)} carry an instruction change"
+        f"\n{packaging}/{len(rows)} profile/stage prompts are packaging-only; "
+        f"{len(approved)} approved instruction change(s); {len(changes)} unapproved"
     )
-    return 0
+    return 1 if changes else 0
 
 
 if __name__ == "__main__":

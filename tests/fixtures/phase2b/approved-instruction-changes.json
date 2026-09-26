@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "note": "Instruction changes to documents that are inlined into a runtime prompt. Each entry is an explicit, reviewed change for Phase 2b step 7: the stale documentation a prompt delivered had to be corrected. Anything not listed here is a defect.",
+  "approved": [
+    {
+      "stage": "frame",
+      "document": "system/style-contract.md",
+      "reason": "The style contract told the model that a profile lives in `src/editorial/prompts/style-profiles.mjs`, a path removed when JavaScript was retired. It now names the actual location, `prompts/profiles/<profile-id>.yaml`, and describes module files rather than heading extraction.",
+      "approved_by": "Phase 2b step 7 (correct stale instructions)"
+    }
+  ]
+}

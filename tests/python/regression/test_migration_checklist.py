@@ -107,15 +107,28 @@ def test_checklist_2_assembled_prompts_match_the_reference():
             for module in known & delivered:
                 text = _normalize((ROOT / module).read_text(encoding="utf-8"))
                 assert text in _normalize(reference_text), f"{profile_id}/{stage_name}: {module} changed"
-            # A shared document the reference delivered whole is still delivered whole.
+            # A shared document the reference delivered whole is still delivered whole. A
+            # document named in the approved instruction-change record is delivered too, but its
+            # text was corrected on purpose; the record names it and the reason.
             for path, text in _whole_documents(want["text"]).items():
                 if path.startswith("styles/") or path.startswith("system/style-pipelines/"):
                     continue
                 if path not in delivered:
                     continue
+                if (stage_name, path) in _approved_instruction_changes():
+                    continue
                 assert _normalize((ROOT / path).read_text(encoding="utf-8")) == _normalize(text), (
                     f"{profile_id}/{stage_name}: {path} changed"
                 )
+
+
+def _approved_instruction_changes() -> set[tuple[str, str]]:
+    payload = json.loads(
+        (ROOT / "tests" / "fixtures" / "phase2b" / "approved-instruction-changes.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    return {(entry["stage"], entry["document"]) for entry in payload["approved"]}
 
 
 def _normalize(text: str) -> str:

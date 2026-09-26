@@ -171,7 +171,19 @@ def test_measure_context_matches_the_frozen_reference():
                     "system/style-pipelines/"
                 ):
                     continue
+                # A document whose text was corrected on purpose changes size; the approved
+                # instruction-change record names it.
+                if (stage_name, entry["path"]) in _approved_instruction_changes():
+                    continue
                 assert current.get(entry["path"]) == entry["bytes"], f"{profile_id}/{stage_name}: {entry['path']}"
+
+
+def _approved_instruction_changes() -> set[tuple[str, str]]:
+    import json as _json
+
+    path = ROOT / "tests" / "fixtures" / "phase2b" / "approved-instruction-changes.json"
+    payload = _json.loads(path.read_text(encoding="utf-8"))
+    return {(entry["stage"], entry["document"]) for entry in payload["approved"]}
 
 
 def test_verify_corrections_runs_offline():

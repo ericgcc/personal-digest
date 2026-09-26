@@ -141,9 +141,16 @@ def test_vocabularies_match_the_reference():
 
 @pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))
 def test_every_instruction_document_reaches_its_stage(profile_id):
-    """Each document the reference inlined is delivered, with its text unchanged."""
+    """Each document the reference inlined is delivered, with its text unchanged.
+
+    A document whose text legitimately had to change — the stale JavaScript path in
+    ``system/style-contract.md``, which is inlined into the frame prompt — is listed in
+    ``tests/fixtures/phase2b/approved-instruction-changes.json``. Its change is asserted there
+    and here, so it can never be silent.
+    """
     expected = reference()["assembled"][profile_id]
     profile = STYLE_PROFILES[profile_id]
+    approved = _approved_instruction_changes()
     for stage_name in stage_names_v2():
         assembled = assemble_stage_context(
             stage_name=stage_name,
@@ -157,6 +164,9 @@ def test_every_instruction_document_reaches_its_stage(profile_id):
         current_contracts = _whole_documents(assembled["text"])
         for path, text in reference_contracts.items():
             if _is_profile_supplied(path, profile):
+                continue
+            if (stage_name, path) in approved:
+                assert path in current_contracts, f"{profile_id}/{stage_name}: {path} is no longer delivered"
                 continue
             assert current_contracts.get(path) == text, f"{profile_id}/{stage_name}: {path} changed"
 
@@ -238,6 +248,16 @@ def _whole_documents(text: str) -> dict[str, str]:
             continue
         found[path] = body
     return found
+
+
+def _approved_instruction_changes() -> set[tuple[str, str]]:
+    import json
+
+    path = ROOT / "tests" / "fixtures" / "phase2b" / "approved-instruction-changes.json"
+    if not path.is_file():
+        return set()
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return {(entry["stage"], entry["document"]) for entry in payload.get("approved", [])}
 
 
 @pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))

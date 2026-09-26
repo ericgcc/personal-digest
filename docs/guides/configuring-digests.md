@@ -14,7 +14,9 @@ A digest is assembled from separate layers with different responsibilities:
 | Style contract | `system/style-contract.md` | Interface every canonical style must implement; validates architectural completeness without imposing one output shape. |
 | Editorial base | `styles/editorial-base.md` | Shared prose quality floor: clarity, specificity, rhythm, naturalness, honesty, economy, reader interest, and editing standard. |
 | Writing references | `system/writing-*.md` | Shared reasoning, source-fidelity, editorial-prose, naturalness, and style-application guidance used by the editorial process; these refine craft without redefining the selected style. |
-| Style | `styles/<style>.md` | The editorial implementation: composition, source relationship, depth, structure, provenance, and distinct Writing character. |
+| Style | `styles/<style>/modules/*.md` + `styles/<style>.md` | The editorial implementation: composition, source relationship, depth, structure, provenance, and distinct Writing character. The modules are authoritative; the readable document is generated from them. |
+| Style profile | `prompts/profiles/<profile-id>.yaml` | Which style modules and stage documents each stage receives. A profile selects files, never Markdown headings. |
+| Stage prompt templates | `prompts/stages/<stage>/{system,user}.j2` | How a stage's instruction is framed. Rendered by Jinja2 with strict undefined variables. |
 | Digest config | `digests/<digest-id>.md` | Which digest this is, what sources it uses, and optional preferences. |
 | Adapter | `adapters/<adapter>.md` | How a particular source type must be read. |
 | Rendering profile | `system/rendering-<style>.md` | How a style maps into HTML. |
@@ -181,13 +183,16 @@ The Digest System defines what happens when a digest is invoked. Daily/weekly/bi
 Every deliverable style must have all four pieces:
 
 ```text
-styles/<style>.md
+styles/<style>.md              (generated from styles/<style>/modules/ by scripts/build_style_docs.py)
+styles/<style>/style.yaml      (the module manifest)
+styles/<style>/modules/*.md    (the authoritative rules)
+prompts/profiles/<style>-legacy.yaml
 system/rendering-<style>.md
 templates/<style>-email-v1.html
 system/registry.yaml -> rendering_profiles.<style>
 ```
 
-The canonical style ID must be identical in all four locations. If any piece is missing, the workflow should stop rather than borrow another style's template.
+The canonical style ID must be identical in all of these locations. If any piece is missing, the workflow stops rather than borrow another style's template.
 
 `templates/email-theme.html` is only the shared visual-language reference. It is not a fallback layout.
 
@@ -261,7 +266,7 @@ Before registering it, read `system/style-contract.md` and create `styles/<style
 
 Then add a dedicated `## Writing character` section and style-specific `## Quality control`. The style automatically inherits `styles/editorial-base.md` and uses `system/editorial-process.md`; do not copy the base/process wholesale or create a separate competing production method. Add only what makes this style's voice and editorial behavior distinct.
 
-A v2 stage receives only the `##` sections of a style file it needs — drafting receives the composition sections, the prose stages receive `## Writing character`, and evaluation stages receive `## Style interface`. A section named in the v2 context matrix but absent from the style file is recorded as a missing section in that stage's context manifest rather than silently omitted, so keep the canonical section names.
+Run `python scripts/build_style_docs.py` to split the readable document into one module per `##` section under `styles/<style>/modules/` and write `styles/<style>/style.yaml`. The modules become the authoritative rules; the readable document is regenerated from them. A profile then names the modules a stage receives — drafting receives the composition modules, the prose stages receive the writing-character module, and the evaluation stages receive the interface module. `python scripts/build_style_docs.py --check` fails if the document and its modules have drifted apart.
 
 A style may legitimately declare `Opening behavior: None`, `Source catalog: None`, or `Optional extension points: None`. The interface standardizes the questions, not the answers.
 

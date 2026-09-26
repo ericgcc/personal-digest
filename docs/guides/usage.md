@@ -64,9 +64,32 @@ The runner itself is the delivery gate.
 ```powershell
 python scripts/measure_context.py          # assembled context bytes per profile/stage
 python scripts/verify_corrections.py       # the Phase 2 correction report
+python scripts/prompt_diff.py              # instruction-level diff vs the pre-Jinja2 prompts
 ```
 
-Neither makes a model call.
+None makes a model call.
+
+## Inspecting a prompt
+
+```powershell
+python -m digest_system.cli inspect --digest tech-bi-daily --style-profile synthesis-max-v1 --stage draft
+python -m digest_system.cli inspect --digest tech-bi-daily --style-profile synthesis-max-v1 --print
+```
+
+Resolves a stage's exact system and user prompt (or the single combined judge prompt for an
+evaluation stage) with no model call, and writes `system.txt`/`user.txt`, `manifest.json` and
+`report.md` under `prompt-inspections/<profile>/<stage>/`. The manifest names every template and
+instruction file with its size and SHA-256, the data blocks, and the style modules the profile
+deliberately withheld.
+
+## Maintaining the style documents
+
+```powershell
+python scripts/build_style_docs.py          # split styles/<style>.md into modules + style.yaml
+python scripts/build_style_docs.py --check  # verify the modules and document have not drifted
+python scripts/export_profiles.py --check   # verify the profile YAML is current
+python scripts/capture_prompt_baseline.py   # re-freeze the offline prompt baseline
+```
 
 ## Running the tests
 

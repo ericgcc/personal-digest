@@ -27,7 +27,7 @@ A style must also contain a dedicated `## Writing character` section that develo
 
 ### This file is authoritative for a style's identity, not for what each stage is told
 
-Which part of a style a given pipeline stage receives is declared by the active **style profile** in `src/editorial/prompts/style-profiles.mjs`, and a style's stage-specific operational instructions live in `system/style-pipelines/<style>/`. See `system/editorial-pipeline-v2.md` §3.1.
+Which part of a style a given pipeline stage receives is declared by the active **style profile** in `prompts/profiles/<profile-id>.yaml`, and a style's stage-specific operational instructions live in `system/style-pipelines/<style>/`. A profile selects *files*: each rule of a style lives in its own module under `styles/<style>/modules/`, listed by `styles/<style>/style.yaml`, and the readable `styles/<style>.md` is generated from those modules by `scripts/build_style_docs.py`. A profile names the module a stage receives; no runtime code parses the headings inside a style file. See `system/editorial-pipeline-v2.md` §3.1.
 
 A style file remains the single source of truth for what the style *is* and must produce: its interface, its composition and progression models, its structure, its citation and provenance rules, and its voice. A `system/style-pipelines/<style>/` document supplies the operational routing a stage needs and must not restate, contradict or weaken the style file. Where the two disagree about the style's identity or output requirements, the style file wins and the stage document is a defect.
 
@@ -75,7 +75,7 @@ A new style is runnable only when all of the following are true:
 6. The referenced `templates/<style>-email-v1.html` exists.
 7. The rendering profile and template implement the style's actual structure rather than silently borrowing another style's composition.
 8. The style obeys the shared provenance, state, delivery, HTML-safety, and complete-output localization contracts; its template contains no hard-coded reader-facing English labels.
-9. `src/editorial/prompts/style-profiles.mjs` contains an entry for the style, with a declared default, and `system/style-pipelines/<style>/` holds the stage documents that entry names. A style whose profile cannot be preflighted is not runnable.
+9. `prompts/profiles/<profile-id>.yaml` contains an entry for the style, with a declared default, and `system/style-pipelines/<style>/` holds the stage documents that entry names. A style whose profile cannot be preflighted is not runnable.
 
 If any requirement is missing, the style is not a valid canonical deliverable and the workflow must stop before source processing or delivery.
 

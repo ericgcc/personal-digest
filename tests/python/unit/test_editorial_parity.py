@@ -150,7 +150,6 @@ def test_every_instruction_document_reaches_its_stage(profile_id):
     """
     expected = reference()["assembled"][profile_id]
     profile = STYLE_PROFILES[profile_id]
-    approved = _approved_instruction_changes()
     for stage_name in stage_names_v2():
         assembled = assemble_stage_context(
             stage_name=stage_name,
@@ -159,13 +158,18 @@ def test_every_instruction_document_reaches_its_stage(profile_id):
         )
         want = expected[stage_name]
         # The style-independent contracts are byte-identical: they are shared operational
-        # documents that no profile selects, so nothing about them may change.
+        # documents that no profile selects, so nothing about them may change — unless the change
+        # is recorded, in which case the reference text must still be present verbatim.
         reference_contracts = _whole_documents(want["text"])
         current_contracts = _whole_documents(assembled["text"])
         for path, text in reference_contracts.items():
             if _is_profile_supplied(path, profile):
                 continue
-            if (stage_name, path) in approved:
+            if _removed_document(stage_name, path):
+                # A deliberate delivery change: the document is no longer inlined, and the
+                # approval record names where its instruction moved to.
+                continue
+            if _approved_instruction_change(stage_name, path):
                 assert path in current_contracts, f"{profile_id}/{stage_name}: {path} is no longer delivered"
                 continue
             assert current_contracts.get(path) == text, f"{profile_id}/{stage_name}: {path} changed"
@@ -178,6 +182,10 @@ def test_evaluation_contracts_are_unchanged(profile_id):
     Whitespace is normalized: a contract is now the text of one or more module files, which end
     with a newline, whereas the reference recorded a stripped section. That trailing newline is
     packaging, not instruction.
+
+    The reader contract is deliberately augmented: the shared reader contract plus the digest's
+    `## Reader` section. The shared text must still be present verbatim; the digest text is the
+    addition. That augmentation is recorded, so it cannot happen silently.
     """
     expected = reference()["assembled"][profile_id]
     profile = STYLE_PROFILES[profile_id]
@@ -189,9 +197,13 @@ def test_evaluation_contracts_are_unchanged(profile_id):
         )
         want = expected[stage_name]
         for name, text in want["contracts"].items():
-            assert _normalize(assembled["contracts"].get(name, "")) == _normalize(text), (
-                f"{profile_id}/{stage_name}/{name}"
-            )
+            current = assembled["contracts"].get(name, "")
+            if _augmented_contract(stage_name, name):
+                assert _normalize(text) in _normalize(current), (
+                    f"{profile_id}/{stage_name}/{name}: the reference contract text is no longer present"
+                )
+                continue
+            assert _normalize(current) == _normalize(text), f"{profile_id}/{stage_name}/{name}"
 
 
 @pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))
@@ -258,6 +270,24 @@ def _approved_instruction_changes() -> set[tuple[str, str]]:
         return set()
     payload = json.loads(path.read_text(encoding="utf-8"))
     return {(entry["stage"], entry["document"]) for entry in payload.get("approved", [])}
+
+
+def _approved_instruction_change(stage: str, document: str) -> bool:
+    from digest_system.editorial.prompts.instruction_changes import approved_change
+
+    return approved_change(stage, document) is not None
+
+
+def _removed_document(stage: str, document: str) -> bool:
+    from digest_system.editorial.prompts.instruction_changes import removed_document
+
+    return removed_document(stage, document) is not None
+
+
+def _augmented_contract(stage: str, contract: str) -> bool:
+    from digest_system.editorial.prompts.instruction_changes import augmented_contract
+
+    return augmented_contract(stage, contract) is not None
 
 
 @pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))

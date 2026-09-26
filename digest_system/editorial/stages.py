@@ -104,9 +104,8 @@ STAGES_V2: tuple[Stage, ...] = (
             *ctx.style_documents("analyze"),
             {"path": "system/writing-research-basis.md"},
             {"path": "system/writing-reasoning-and-source-fidelity.md"},
-            {"path": ctx.digest_config_relative},
         ),
-        blocks=lambda ctx: (),
+        blocks=lambda ctx: (ctx.reading_instructions_block("analyze"),),
     ),
     Stage(
         name="frame",
@@ -131,9 +130,11 @@ STAGES_V2: tuple[Stage, ...] = (
             {"path": "system/style-contract.md"},
             {"path": "system/contracts/reader-contract.md"},
             *ctx.style_documents("frame"),
-            {"path": ctx.digest_config_relative},
         ),
-        blocks=lambda ctx: (ctx.artifact_block("analyze", "analysis", "analysis.json"),),
+        blocks=lambda ctx: (
+            ctx.artifact_block("analyze", "analysis", "analysis.json"),
+            ctx.reading_instructions_block("frame"),
+        ),
     ),
     Stage(
         name="draft",
@@ -150,9 +151,11 @@ STAGES_V2: tuple[Stage, ...] = (
             {"path": "styles/editorial-base.md"},
             {"path": "system/contracts/reader-contract.md"},
             *ctx.style_documents("draft"),
-            {"path": ctx.digest_config_relative},
         ),
-        blocks=lambda ctx: (ctx.artifact_block("frame", "approved_frame"),),
+        blocks=lambda ctx: (
+            ctx.artifact_block("frame", "approved_frame"),
+            ctx.reading_instructions_block("draft"),
+        ),
     ),
     Stage(
         name="developmental-review",
@@ -164,10 +167,12 @@ STAGES_V2: tuple[Stage, ...] = (
         extra_artifacts=("wops.json",),
         purpose="DEVELOPMENTAL REVIEW: diagnose the draft against the frame. Structured issues in canonical problem types, no rewriting.",
         documents=lambda ctx: (),
-        # Evaluation stages are executed by the Python adapter, which owns the prompt.
+        # Evaluation stages are executed by the Python adapter, which owns the prompt. The reader
+        # contract is the shared reader contract plus this digest's `## Reader` section: the same
+        # effective Reader Brief the writing stages used, so the judge reasons from one reader.
         contracts=lambda ctx: {
             "role": {"path": "system/contracts/developmental-review.md"},
-            "reader": {"path": "system/contracts/reader-contract.md"},
+            "reader": _reader_contract(ctx),
             **ctx.style_contracts("developmental-review"),
         },
         blocks=lambda ctx: (),
@@ -191,6 +196,7 @@ STAGES_V2: tuple[Stage, ...] = (
             ctx.artifact_block("frame", "approved_frame"),
             ctx.artifact_block("developmental-review", "developmental_review", "review.json"),
             ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),
+            ctx.reading_instructions_block("writer-revision"),
         ),
     ),
     Stage(
@@ -211,6 +217,7 @@ STAGES_V2: tuple[Stage, ...] = (
         blocks=lambda ctx: (
             ctx.artifact_block("writer-revision", "previous_stage_artifact"),
             ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),
+            ctx.reading_instructions_block("line-edit"),
         ),
     ),
     Stage(
@@ -224,7 +231,7 @@ STAGES_V2: tuple[Stage, ...] = (
         documents=lambda ctx: (),
         contracts=lambda ctx: {
             "role": {"path": "system/contracts/reader-review.md"},
-            "reader": {"path": "system/contracts/reader-contract.md"},
+            "reader": _reader_contract(ctx),
             **ctx.style_contracts("reader-review"),
         },
         blocks=lambda ctx: (),
@@ -250,6 +257,7 @@ STAGES_V2: tuple[Stage, ...] = (
             ctx.artifact_block("line-edit", "previous_stage_artifact"),
             ctx.artifact_block("reader-review", "reader_review", "review.json"),
             ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),
+            ctx.reading_instructions_block("targeted-repair"),
         ),
     ),
     Stage(
@@ -265,9 +273,8 @@ STAGES_V2: tuple[Stage, ...] = (
         documents=lambda ctx: (
             {"path": "system/contracts/copy-verify.md"},
             *ctx.style_documents("copy-verify"),
-            {"path": ctx.digest_config_relative},
         ),
-        blocks=lambda ctx: (),
+        blocks=lambda ctx: (ctx.reading_instructions_block("copy-verify"),),
     ),
     Stage(
         name="render",
@@ -282,7 +289,6 @@ STAGES_V2: tuple[Stage, ...] = (
             {"path": "system/contracts/render.md"},
             {"path": "system/html-rendering.md"},
             *ctx.rendering_documents(),
-            {"path": ctx.digest_config_relative},
         ),
         # The run key is a `{{RUN_KEY}}` placeholder in the template, not a value the rendering
         # stage may invent: the duplicate-delivery guard checks Gmail Sent for exactly this
@@ -315,6 +321,31 @@ def _json(value: Any) -> str:
     import json
 
     return json.dumps(value, ensure_ascii=False, indent=2)
+
+
+def _reader_contract(ctx: Any) -> dict[str, Any]:
+    """The effective Reader Brief for an evaluation stage.
+
+    The shared reader contract plus, when the digest states one, its `## Reader` section. The
+    brief is handed to the judge as the `reader` contract, so the review reasons from exactly the
+    reader the writing stages wrote for. When the digest states no reader, the contract is the
+    shared document alone — the default general reader — and nothing else is added.
+    """
+    entries: list[dict[str, Any]] = [{"path": "system/contracts/reader-contract.md"}]
+    reader = ctx.reader_brief()
+    if reader:
+        entries.append(
+            {
+                "label": "digest-reader-brief",
+                "text": (
+                    f"# Digest reader brief\n\n"
+                    f"This digest explicitly describes its reader. That description narrows the "
+                    f"reader contract above for this digest; it never removes its requirements, "
+                    f"and it is used only as written.\n\n{reader}"
+                ),
+            }
+        )
+    return entries
 
 
 def stage_names_v2() -> list[str]:

@@ -159,6 +159,32 @@
 }
 </approved_frame>
 
+<reading_instructions>
+Digest reading instructions for `tech-bi-daily`.
+Routed to this stage: Reader, Content preferences, Optional highlights.
+These are the reader's stated preferences. They refine the selected style inside its
+envelope and cannot override the shared contracts, the editorial base, the reader
+contract, or the selected style.
+
+## Reader
+
+Assume an intelligent, curious generalist who has not read the underlying articles. Assume interest in the subjects listed under Selection, but do not treat that interest as expertise: someone interested in AI need not understand every branch of machine learning, and someone interested in software engineering need not know every framework. Explain technical terminology where it first matters, and do not rely on professional vocabulary that the digest has not established.
+
+## Content preferences
+
+When the original offers substantial practical depth—evidence, examples, implementation detail, or a benchmark with transferable consequences—preserve enough of it that the reader understands why reading the source in full is worth the time. Do not compress an unusually valuable explanation into a passing mention.
+
+## Optional highlights
+
+Use these only when genuinely warranted, as a callout:
+
+* `🔥 TREND`—an emerging pattern supported by meaningful evidence.
+* `🛠 PRACTICAL`—a concrete technique, workflow, checklist, or experiment worth applying.
+* `✍️ WRITE`—an idea or connection with potential for a thoughtful technical or professional post.
+
+Integrate signal callouts inside the relevant selection. Do not create a signals appendix. Use no more than four or five in total.
+</reading_instructions>
+
 <stage_task>
 Stage: draft
 Digest ID: tech-bi-daily

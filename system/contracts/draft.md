@@ -16,7 +16,7 @@ You are not the planner and not the editor. The frame has already decided what e
 * The evidence for the frame-selected sources only. You do not have the rest of the corpus and you must not wish for it. If a detail you want is not in the evidence you were given, the unit does not need it.
 * The selected style's composition contract: its interface, required structure, depth model, and organisation model.
 * The selected style's writing character.
-* The digest configuration, including its language and any custom instructions.
+* The digest's reading instructions: its `## Reader`, `## Content preferences` and `## Optional highlights` sections, when the digest states them. These refine the selected style inside its envelope; they cannot override the reader contract, the style's structure, or the length budget.
 * The reader contract.
 * A body-length budget for this style.
 

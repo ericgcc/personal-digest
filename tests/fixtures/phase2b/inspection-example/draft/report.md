@@ -8,17 +8,16 @@
 
 ## Templates
 
-- `prompts/stages/draft/system.j2` — 231 units, sha256 `c7c07f7a325a`
+- `prompts/stages/draft/system.j2` — 197 units, sha256 `d52434a927e8`
 - `prompts/shared/preamble.j2` — 463 units, sha256 `8f60794abad6`
-- `prompts/stages/draft/user.j2` — 81 units, sha256 `f9c8cd7ef4bd`
+- `prompts/stages/draft/user.j2` — 103 units, sha256 `81e0da1c5a99`
 - `prompts/shared/task.j2` — 992 units, sha256 `d12ba969b789`
 
 ## Instruction documents
 
-- `system/contracts/draft.md` — 4386 chars, sha256 `a83ab924e5c3`
+- `system/contracts/draft.md` — 4593 chars, sha256 `c417d4763856`
 - `styles/editorial-base.md` — 14746 chars, sha256 `fa95ec112832`
 - `system/contracts/reader-contract.md` — 3465 chars, sha256 `1e10114ede33`
-- `digests/tech-bi-daily.md` — 3784 chars, sha256 `4bc94b96ab1e`
 
 ## Style-supplied instructions
 
@@ -42,12 +41,13 @@
 
 - `source_corpus` — 1949 chars
 - `approved_frame` — 2190 chars
+- `reading_instructions` — 1618 chars
 - `stage_task` — 669 chars
 
 ## Sizes
 
-- System: 51166 units
-- User: 4881 units
+- System: 47587 units
+- User: 6548 units
 
 ## Style modules
 

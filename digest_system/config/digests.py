@@ -22,6 +22,12 @@ from typing import Any
 import yaml
 
 from ..runtime.artifacts import ROOT, RunnerError
+from .reading_instructions import (
+    ReadingInstructions,
+    empty_instructions,
+    read_reading_instructions,
+    split_document,
+)
 
 _FRONTMATTER_DELIMITER = "---"
 
@@ -77,13 +83,25 @@ def frontmatter_value(config_path: Path, key: str) -> str:
 
 @dataclass(frozen=True)
 class ResolvedDigest:
+    """One digest's operational configuration and its parsed reading instructions.
+
+    The reading instructions are parsed here, once, so no stage ever reads the digest file. The
+    operational frontmatter and the editorial preferences stay separate: a stage receives only
+    the sections the reading-instructions contract routes to it.
+    """
+
     config_path: Path
     style: str
     digest_id: str
+    reading_instructions: ReadingInstructions = None  # type: ignore[assignment]
+    body_sha256: str = ""
+
+    def sections_for_stage(self, stage_name: str) -> tuple[str, ...]:
+        return self.reading_instructions.for_stage(stage_name)
 
 
 def resolve_digest(digest_id: str, *, root: Path | None = None) -> ResolvedDigest:
-    """Resolve a digest ID to its configuration file path and declared style."""
+    """Resolve a digest ID to its configuration file path, declared style and instructions."""
     base = root or ROOT
     config_path = base / "digests" / f"{digest_id}.md"
     if not config_path.exists():
@@ -91,7 +109,30 @@ def resolve_digest(digest_id: str, *, root: Path | None = None) -> ResolvedDiges
     declared_id = frontmatter_value(config_path, "id")
     if declared_id != digest_id:
         raise RunnerError(f"Digest ID mismatch: {digest_id}")
-    return ResolvedDigest(config_path=config_path, style=frontmatter_value(config_path, "style"), digest_id=digest_id)
+    instructions = read_reading_instructions(config_path, digest_id=digest_id, source=f"digests/{digest_id}.md")
+    return ResolvedDigest(
+        config_path=config_path,
+        style=frontmatter_value(config_path, "style"),
+        digest_id=digest_id,
+        reading_instructions=instructions,
+        body_sha256=instructions.version,
+    )
 
 
-__all__ = ["read_frontmatter", "frontmatter_value", "ResolvedDigest", "resolve_digest"]
+def read_digest_body(config_path: Path) -> str:
+    """The Markdown body of a digest file, with newlines normalized and frontmatter removed."""
+    text = config_path.read_text(encoding="utf-8")
+    _block, body = split_document(text, where=f"digest config {config_path}")
+    return body.replace("\r\n", "\n").replace("\r", "\n")
+
+
+__all__ = [
+    "ReadingInstructions",
+    "ResolvedDigest",
+    "empty_instructions",
+    "frontmatter_value",
+    "read_digest_body",
+    "read_frontmatter",
+    "read_reading_instructions",
+    "resolve_digest",
+]

@@ -32,6 +32,12 @@ from digest_system.editorial.prompts.baseline import (  # noqa: E402
     DIGEST_CONFIG_BY_STYLE,
     stage_prompt,
 )
+from digest_system.editorial.prompts.instruction_changes import (  # noqa: E402
+    approved_change,
+    augmented_contract,
+    load_record,
+    removed_document,
+)
 from digest_system.editorial.stages import stage_names_v2  # noqa: E402
 from digest_system.runtime.artifacts import ROOT  # noqa: E402
 
@@ -92,12 +98,29 @@ def approved_changes() -> dict[tuple[str, str], dict]:
 
     A change to a document that is inlined into a prompt is a real instruction change, so it
     must be declared rather than hidden. This file is that declaration; it names the document
-    that changed and why.
+    that changed and why. A ``*`` stage pattern approves the change for every stage.
     """
-    if not APPROVED_PATH.is_file():
-        return {}
-    payload = json.loads(APPROVED_PATH.read_text(encoding="utf-8"))
-    return {(entry["stage"], entry["document"]): entry for entry in payload.get("approved", [])}
+    from fnmatch import fnmatch
+
+    payload = load_record()
+    approved: dict[tuple[str, str], dict] = {}
+    for entry in payload.get("approved", []):
+        stage = str(entry.get("stage", ""))
+        document = str(entry.get("document", ""))
+        if stage == "*" and document == "*":
+            continue
+        approved[(stage, document)] = entry
+    return approved
+
+
+def _approval_for(stage_name: str, document: str) -> dict | None:
+    """An approval entry matching a (stage, document) pair, honoring ``*`` patterns."""
+    from fnmatch import fnmatch
+
+    for (stage, doc), entry in approved_changes().items():
+        if (stage == "*" or fnmatch(stage_name, stage)) and fnmatch(document, doc):
+            return entry
+    return None
 
 
 def _changed_document(old: str, new: str) -> str | None:
@@ -127,6 +150,16 @@ def _documents_by_path(text: str) -> dict[str, str]:
     return found
 
 
+def _changed_contract(old: dict, new: dict) -> str | None:
+    """The first contract whose text differs between two evaluation-stage captures."""
+    old_contracts = old.get("contracts") or {}
+    new_contracts = new.get("contracts") or {}
+    for name in sorted(set(old_contracts) & set(new_contracts)):
+        if normalize(old_contracts[name]) != normalize(new_contracts[name]):
+            return name
+    return None
+
+
 def diff_all(profile_id: str | None = None) -> list[dict]:
     historical = json.loads(PRE2B_PATH.read_text(encoding="utf-8"))
     rows: list[dict] = []
@@ -141,19 +174,48 @@ def diff_all(profile_id: str | None = None) -> list[dict]:
             )
             result = compare(_instruction_text(stages[stage_name]), _instruction_text(current))
             if result["status"] != "packaging-only":
-                document = _changed_document(stages[stage_name].get("system_text", ""), current.get("system_text", ""))
-                approval = approved_changes().get((stage_name, document or ""))
-                if approval is not None:
-                    result = {
-                        **result,
-                        "status": "approved-instruction-change",
-                        "document": document,
-                        "reason": approval["reason"],
-                    }
-                elif document:
-                    result["document"] = document
+                result = _classify(stage_name, stages[stage_name], current, result)
             rows.append({"profile": pid, "stage": stage_name, **result})
     return rows
+
+
+def _classify(stage_name: str, old: dict, new: dict, result: dict) -> dict:
+    """Attach a document and an approval status to a non-packaging difference."""
+    # An evaluation stage inlines no text: its instruction is the contracts it hands the judge.
+    if old.get("contracts") or new.get("contracts"):
+        contract = _changed_contract(old, new)
+        if contract:
+            augmentation = augmented_contract(stage_name, contract)
+            if augmentation is not None:
+                return {
+                    **result,
+                    "status": "approved-instruction-change",
+                    "document": f"contract:{contract}",
+                    "reason": augmentation["reason"],
+                }
+            return {**result, "document": f"contract:{contract}"}
+        return result
+
+    document = _changed_document(old.get("system_text", ""), new.get("system_text", ""))
+    if not document:
+        return result
+    approval = _approval_for(stage_name, document)
+    if approval is not None:
+        return {
+            **result,
+            "status": "approved-instruction-change",
+            "document": document,
+            "reason": approval["reason"],
+        }
+    removal = removed_document(stage_name, document)
+    if removal is not None:
+        return {
+            **result,
+            "status": "approved-instruction-change",
+            "document": document,
+            "reason": removal["reason"],
+        }
+    return {**result, "document": document}
 
 
 def main(argv: list[str] | None = None) -> int:

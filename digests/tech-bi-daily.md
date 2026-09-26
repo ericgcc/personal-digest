@@ -13,7 +13,9 @@ sources:
 ---
 
 # Custom instructions
-## Editorial objective
+
+## Selection
+
 Treat this digest as a highly selective personal technology learning and signal filter, not as a summary of everything received and not as a ranking of what is most newsworthy.
 
 Use this priority:
@@ -22,21 +24,15 @@ Teach me something > Give me something I can apply > Show me an interesting idea
 
 Prioritize learning, applicability, and durable understanding over recency. Practical techniques, engineering patterns, deep explanations, case studies, architectures, workflows, failure analyses, and lessons learned usually deserve more attention than announcements.
 
-## Interest profile
-Treat these as affinity signals, not an exhaustive taxonomy, required coverage, or section plan.
-
-Strong recurring interests include:
+Treat the interests below as affinity signals, not an exhaustive taxonomy, required coverage, or section plan. Strong recurring interests include:
 
 * AI/LLMs, agents, coding agents, MCP, context and memory, evaluation, reliability, RAG, inference, and production AI.
 * Software engineering, architecture, system design, APIs, developer tooling, testing, refactoring, maintainability, and code quality.
 * Data engineering, databases, data science, machine learning, and ML systems.
 * Engineering leadership, mentoring, technical strategy, productivity, learning systems, and knowledge management.
 
-Do not let AI news crowd out stronger practical engineering, software, or data material.
+Do not let AI news crowd out stronger practical engineering, software, or data material. Allow exceptional discoveries outside these professional clusters when the material is unusually useful, surprising, or worth retaining. Serendipity is welcome; forced coverage is not.
 
-Allow exceptional discoveries outside these professional clusters when the material is unusually useful, surprising, or worth retaining. Serendipity is welcome; forced coverage is not.
-
-## Selection calibration
 Prefer material that:
 
 * Teaches a reusable technique, workflow, engineering practice, mental model, or decision rule.
@@ -54,7 +50,16 @@ Keep generic advice, clickbait, minor updates, job posts, low-signal AI hype, an
 
 Prefer omission over completeness. Optimize for useful knowledge, practical ideas, deeper understanding, and a clear sense of what—if anything—is worth reading in full.
 
-## Optional editorial signals callouts
+## Reader
+
+Assume an intelligent, curious generalist who has not read the underlying articles. Assume interest in the subjects listed under Selection, but do not treat that interest as expertise: someone interested in AI need not understand every branch of machine learning, and someone interested in software engineering need not know every framework. Explain technical terminology where it first matters, and do not rely on professional vocabulary that the digest has not established.
+
+## Content preferences
+
+When the original offers substantial practical depth—evidence, examples, implementation detail, or a benchmark with transferable consequences—preserve enough of it that the reader understands why reading the source in full is worth the time. Do not compress an unusually valuable explanation into a passing mention.
+
+## Optional highlights
+
 Use these only when genuinely warranted, as a callout:
 
 * `🔥 TREND`—an emerging pattern supported by meaningful evidence.

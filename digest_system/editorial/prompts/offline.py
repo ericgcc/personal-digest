@@ -52,6 +52,43 @@ class OfflineContext:
     root: Path = ROOT
     run_key: str = "synthetic-run-key"
     run_key_source: str = "fixture"
+    reading_instructions: Any = None
+
+    # --- reading instructions -----------------------------------------------------------
+
+    def instructions(self):
+        if self.reading_instructions is None:
+            from ...config.reading_instructions import empty_instructions, read_reading_instructions
+
+            path = self.root / self.digest_config_relative
+            digest_id = Path(self.digest_config_relative).stem
+            if path.is_file():
+                self.reading_instructions = read_reading_instructions(
+                    path, digest_id=digest_id, source=self.digest_config_relative
+                )
+            else:
+                self.reading_instructions = empty_instructions(digest_id, source=self.digest_config_relative)
+        return self.reading_instructions
+
+    def reading_sections(self, stage_name: str) -> tuple[str, ...]:
+        return self.instructions().for_stage(stage_name)
+
+    def reading_instructions_block(self, stage_name: str) -> dict[str, Any] | None:
+        text = self.instructions().render_for_stage(stage_name)
+        if not text:
+            return None
+        return {
+            "tag": "reading_instructions",
+            "payload": text,
+            "source": {
+                "path": self.digest_config_relative,
+                "sections": list(self.reading_sections(stage_name)),
+                "version": self.instructions().version,
+            },
+        }
+
+    def reader_brief(self) -> str:
+        return self.instructions().reader_section
 
     # --- style instructions ------------------------------------------------------------
 

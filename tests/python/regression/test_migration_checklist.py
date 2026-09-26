@@ -115,7 +115,7 @@ def test_checklist_2_assembled_prompts_match_the_reference():
                     continue
                 if path not in delivered:
                     continue
-                if (stage_name, path) in _approved_instruction_changes():
+                if _approved_instruction_change(stage_name, path):
                     continue
                 assert _normalize((ROOT / path).read_text(encoding="utf-8")) == _normalize(text), (
                     f"{profile_id}/{stage_name}: {path} changed"
@@ -129,6 +129,12 @@ def _approved_instruction_changes() -> set[tuple[str, str]]:
         )
     )
     return {(entry["stage"], entry["document"]) for entry in payload["approved"]}
+
+
+def _approved_instruction_change(stage: str, document: str) -> bool:
+    from digest_system.editorial.prompts.instruction_changes import approved_change
+
+    return approved_change(stage, document) is not None
 
 
 def _normalize(text: str) -> str:
@@ -191,9 +197,14 @@ def test_checklist_3_evaluation_contracts_match_the_reference():
             )
             want = stages[stage_name]["contracts"]
             for name, text in want.items():
-                assert _normalize(assembled["contracts"].get(name, "")) == _normalize(text), (
-                    f"{profile_id}/{stage_name}/{name}"
-                )
+                current = assembled["contracts"].get(name, "")
+                from digest_system.editorial.prompts.instruction_changes import augmented_contract
+
+                if augmented_contract(stage_name, name) is not None:
+                    # A recorded augmentation: the reference text must still be present.
+                    assert _normalize(text) in _normalize(current), f"{profile_id}/{stage_name}/{name}"
+                    continue
+                assert _normalize(current) == _normalize(text), f"{profile_id}/{stage_name}/{name}"
 
 
 def test_checklist_3_the_evaluator_retains_its_prompt_builders_and_schemas():

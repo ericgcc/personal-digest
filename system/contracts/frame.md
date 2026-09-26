@@ -11,7 +11,8 @@ You are the authority on what the drafting stage is allowed to see. The sources 
 ## What you receive
 
 * `analysis.json`, complete: per-source assessments, candidate clusters, relationship decisions, and the selection plan.
-* The digest configuration and the selected style's composition model (interface, required structure, depth model).
+* The selected style's composition model (interface, required structure, depth model).
+* The digest's reading instructions: its `## Reader`, `## Content preferences` and `## Optional highlights` sections, when the digest states them. The `## Reader` section is the digest half of the effective Reader Brief this stage plans for.
 * The reader contract.
 * Nothing else. You do not receive the source corpus.
 

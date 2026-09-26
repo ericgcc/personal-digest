@@ -17,7 +17,8 @@ A digest is assembled from separate layers with different responsibilities:
 | Style | `styles/<style>/modules/*.md` + `styles/<style>.md` | The editorial implementation: composition, source relationship, depth, structure, provenance, and distinct Writing character. The modules are authoritative; the readable document is generated from them. |
 | Style profile | `prompts/profiles/<profile-id>.yaml` | Which style modules and stage documents each stage receives. A profile selects files, never Markdown headings. |
 | Stage prompt templates | `prompts/stages/<stage>/{system,user}.j2` | How a stage's instruction is framed. Rendered by Jinja2 with strict undefined variables. |
-| Digest config | `digests/<digest-id>.md` | Which digest this is, what sources it uses, and optional preferences. |
+| Digest config | `digests/<digest-id>.md` | Which digest this is, what sources it uses, and its four optional reading-instruction sections. |
+| Reading instructions | `system/contracts/reading-instructions.md` | What each reading-instruction section may influence, precedence, and the stage routing. |
 | Adapter | `adapters/<adapter>.md` | How a particular source type must be read. |
 | Rendering profile | `system/rendering-<style>.md` | How a style maps into HTML. |
 | Template | `templates/<style>-email-v1.html` | Canonical HTML composition for that style. |
@@ -27,9 +28,7 @@ A digest is assembled from separate layers with different responsibilities:
 
 A file under `digests/` is primarily a **configuration file**. Its Markdown body is optional. It does not need custom instructions to be valid.
 
-Every digest automatically uses the shared editorial process, its writing references, and the shared editorial base through its selected canonical style. Custom instructions do not need to repeat universal writing-quality or naturalness rules and cannot opt out of the process or quality floor.
-
-## Canonical styles
+Every digest automatically uses the shared editorial process, its writing references, and the shared editorial base through its selected canonical style. Custom instructions do not need to repeat universal writing-quality or naturalness rules and cannot opt out of the process or quality floor.## Canonical styles
 Choose exactly one:
 
 * `concise`—independent, highly compressed per-source summaries.
@@ -132,27 +131,80 @@ Only use filter keys documented by the adapter. Unsupported acquisition filters 
 
 Source-group order matters. If one Gmail message matches several groups, the first matching group owns it for that run.
 
-## 3. Add custom instructions only when useful
-Everything after the frontmatter is optional custom editorial guidance. A heading such as `# Custom instructions` is recommended for readability but is not required by the parser.
+## 3. Add custom reading instructions only when useful
+Everything after the frontmatter is optional. When you do write instructions, use the four canonical sections below. The parser recognizes the headings deterministically; it does not ask a model to find them, and it rejects an unknown heading rather than ignoring it.
 
-Good custom instructions refine the digest **inside the selected style**. They may specify:
+```markdown
+# Custom instructions
 
-* topics or domains to prioritize;
-* practical vs. news-oriented preferences;
-* editorial inclusion/exclusion rules applied after required source reading;
-* selectivity or signal thresholds;
-* tone and vocabulary;
-* useful tie-breakers when several items compete for space;
-* compatible callout labels or emphasis conventions.
+## Selection
+
+What interests the reader, what makes material valuable, selection priorities,
+preferences, and subjects to avoid or deprioritize.
+
+## Reader
+
+Who will read the digest, their existing knowledge, why they read, and what they
+hope to understand or accomplish.
+
+## Content preferences
+
+Important details to preserve, relevant practical circumstances, constraints, and
+additional source value worth explaining.
+
+## Optional highlights
+
+Which supported editorial signals or callouts would be useful, and when they are
+warranted.
+```
+
+All four sections are optional. An empty body is valid and runs with the style's normal editorial behavior and the default general reader. An unrecognized `##` heading, a duplicate canonical heading, or prose outside a section is a **preflight error**, so a preference that cannot be routed is reported before a paid run rather than silently dropped.
+
+The full contract — what each section may influence, what it cannot override, precedence, and the stage routing — is `system/contracts/reading-instructions.md`.
+
+### What each section may influence
+
+| Section | Permitted influence | What it cannot override |
+| --- | --- | --- |
+| `Selection` | Topics, editorial objectives, learning priorities, practical relevance, negative signals, post-review exclusions, diversity preferences, and openness to unexpected discoveries. | Source acquisition, mandatory stages, or the style's fundamental selection and source-relationship method. |
+| `Reader` | Intended audience, known background, unfamiliar areas, reading purpose, circumstances, and desired outcomes. | Factual fidelity, essential explanations, minimum comprehension standards, or the style's structure. |
+| `Content preferences` | Details to preserve, contextual constraints, available tools or resources, and reasons the original may offer extra value. | The style's required structure, citation policy, editorial method, or binding length limits. |
+| `Optional highlights` | Which supported editorial signals matter to this reader and when they add value. | Unsupported component types, required callout quotas, or unauthorized layout changes. |
+
+Keep each section a single natural-language field. Do not try to express every preference through a fixed taxonomy, and do not add domain-specific subfields: the same four sections serve photography, programming, finance, science, and any other domain.
+
+### The default reader
+Unless you write a `## Reader` section, the reader is an intelligent, curious generalist who has not read the underlying articles. Assume no specialized knowledge. A stated subject interest is not evidence of expertise: someone interested in AI need not understand every branch of machine learning. The effective Reader Brief is the shared reader contract plus your `## Reader` section, and it is what every writing and review stage uses.
+
+### What the sections are routed to
+Each stage receives only the sections that can still change its decision. Selection is not repeated to the writing and editing stages, because Analyze and Frame have already recorded their decisions; Render receives none at all, because rendering is presentation.
+
+| Stage | Sections supplied |
+| --- | --- |
+| Analyze | `Selection`, `Reader` |
+| Frame, Draft | `Reader`, `Content preferences`, `Optional highlights` |
+| Developmental Review, Writer Revision, Line Edit, Reader Review, Targeted Repair | `Reader` |
+| Copy / Verify | `Optional highlights` |
+| Render | *(none)* |
+
+The runtime records, for every run, the resolved reading-instruction version and which sections each stage received, so routing is auditable.
 
 For example:
 
 ```markdown
-# Custom instructions
-Prefer material that teaches a reusable technique or explains an engineering trade-off. De-emphasize minor product announcements and generic AI hype. Preserve room for unusually strong material outside the main topics.
+## Selection
+
+Prefer material that teaches a reusable technique or explains an engineering trade-off.
+De-emphasize minor product announcements and generic AI hype. Preserve room for unusually
+strong material outside the main topics.
+
+## Reader
+
+An intelligent generalist interested in software engineering but not necessarily an expert
+in every framework. Explain framework-specific terms where they first matter.
 ```
 
-Custom instructions must not redefine the selected style. In particular, do not use them to:
+Reading instructions refine the digest **inside the selected style**. They must not:
 
 * weaken the shared editorial-base quality floor or skip/reorder mandatory stages in `system/editorial-process.md`;
 * weaken `system/contracts/reader-contract.md`, which defines what the reader must be able to understand;
@@ -160,10 +212,10 @@ Custom instructions must not redefine the selected style. In particular, do not 
 * force `curated-discovery` to search for connections or themes merely because they exist;
 * remove a required `Sources` catalog from a style that requires one;
 * add a replacement top-level structure incompatible with the selected style;
-* change adapter reading methods, processed-state rules, reference integrity, or create pre-read exclusions; use supported structured `acquisition_filters` for the latter;
+* change adapter reading methods, processed-state rules, or reference integrity; use supported structured `acquisition_filters` for pre-read exclusions;
 * copy another digest's visual/editorial conventions into this one unless the selected rendering profile explicitly supports the same extension point.
 
-If one custom clause conflicts with the style, the workflow ignores that clause while preserving the rest of the custom instructions.
+If one instruction conflicts with the style or the shared contracts, that instruction is ignored while the rest of the section is preserved.
 
 ## 4. Register the digest
 Add the digest to `system/registry.yaml`:
@@ -294,7 +346,8 @@ Before enabling a new digest, verify:
 - [ ] every adapter exists and matches the source structure;
 - [ ] every configured `acquisition_filters` key is explicitly supported by the selected adapter and has intentional values;
 - [ ] `source_catalog_grouping`, when present, is supported by the selected catalog style;
-- [ ] custom instructions refine rather than replace the style;
+- [ ] every body heading is one of the four canonical reading-instruction sections (`Selection`, `Reader`, `Content preferences`, `Optional highlights`), with no unknown or duplicate heading;
+- [ ] reading instructions refine rather than replace the style, and respect each section's permitted influence;
 - [ ] custom callouts are supported by the rendering profile;
 - [ ] `catch_up_days` is intentional;
 - [ ] any prior digest ID is listed in `aliases` after a rename;

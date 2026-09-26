@@ -1,12 +1,62 @@
 {
-  "schema_version": 1,
-  "note": "Instruction changes to documents that are inlined into a runtime prompt. Each entry is an explicit, reviewed change for Phase 2b step 7: the stale documentation a prompt delivered had to be corrected. Anything not listed here is a defect.",
+  "schema_version": 2,
+  "note": "Instruction changes to documents that are inlined into a runtime prompt. Each entry is an explicit, reviewed change. Anything not listed here is a defect: the parity tests and scripts/prompt_diff.py both fail on an unrecorded difference.",
   "approved": [
     {
       "stage": "frame",
       "document": "system/style-contract.md",
       "reason": "The style contract told the model that a profile lives in `src/editorial/prompts/style-profiles.mjs`, a path removed when JavaScript was retired. It now names the actual location, `prompts/profiles/<profile-id>.yaml`, and describes module files rather than heading extraction.",
       "approved_by": "Phase 2b step 7 (correct stale instructions)"
+    },
+    {
+      "stage": "*",
+      "document": "system/contracts/analyze.md",
+      "reason": "Phase 3A stops inlining the digest configuration as one document. Analyze now receives only its `## Selection` and `## Reader` sections as a delimited reading-instructions block. The contract's 'What you receive' list names the sections it actually gets instead of the whole file.",
+      "approved_by": "Phase 3A (reading-instructions contract)"
+    },
+    {
+      "stage": "*",
+      "document": "system/contracts/frame.md",
+      "reason": "Phase 3A stops inlining the digest configuration. Frame now receives its `## Reader`, `## Content preferences` and `## Optional highlights` sections as a reading-instructions block, and its 'What you receive' list names them.",
+      "approved_by": "Phase 3A (reading-instructions contract)"
+    },
+    {
+      "stage": "*",
+      "document": "system/contracts/draft.md",
+      "reason": "Phase 3A stops inlining the digest configuration. Draft now receives its `## Reader`, `## Content preferences` and `## Optional highlights` sections as a reading-instructions block, and its 'What you receive' list names them.",
+      "approved_by": "Phase 3A (reading-instructions contract)"
+    },
+    {
+      "stage": "*",
+      "document": "system/contracts/render.md",
+      "reason": "Phase 3A stops inlining the digest configuration, and render receives no reading instructions at all: rendering is a presentation layer. The contract now says so explicitly rather than promising a document the stage is not given.",
+      "approved_by": "Phase 3A (reading-instructions contract)"
     }
-  ]
+  ],
+  "phase3a": {
+    "note": "Structural changes Phase 3A makes to prompt delivery, distinct from the wording changes above.",
+    "removed_documents": [
+      {
+        "stage": "*",
+        "document": "digests/*.md",
+        "reason": "The digest configuration file is no longer inlined whole. Its operational frontmatter stays operational, and its Markdown body is parsed into the four canonical reading-instruction sections. Each stage now receives only the sections routed to it, as a `reading_instructions` block. No preference was lost: the same text reaches the same stages that act on it.",
+        "moved_to": "digest_system/config/reading_instructions.py (parser) and the `reading_instructions` data block"
+      }
+    ],
+    "augmented_contracts": [
+      {
+        "stage": "developmental-review",
+        "contract": "reader",
+        "reason": "The reader contract handed to the developmental review is now the shared reader contract plus the digest's `## Reader` section, so the judge reasons from the same effective Reader Brief the writing stages used. The shared text is unchanged and still present verbatim.",
+        "appended": "the digest's `## Reader` section"
+      },
+      {
+        "stage": "reader-review",
+        "contract": "reader",
+        "reason": "The reader contract handed to the reader review is now the shared reader contract plus the digest's `## Reader` section, so the before/after assessment uses the same effective Reader Brief as drafting. The shared text is unchanged and still present verbatim.",
+        "appended": "the digest's `## Reader` section"
+      }
+    ]
+  }
 }
+

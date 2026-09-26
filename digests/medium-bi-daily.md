@@ -17,10 +17,10 @@ sources:
 ---
 
 # Custom instructions
-## Core objective
-Treat this digest as a personal learning and discovery filter, not as a ranking of the most technically impressive or newsworthy material.
 
-Optimize for expected personal value.
+## Selection
+
+Treat this digest as a personal learning and discovery filter, not as a ranking of the most technically impressive or newsworthy material. Optimize for expected personal value.
 
 Use this priority:
 
@@ -30,10 +30,7 @@ Personal relevance is a multiplier, not a quota. When two items are similarly st
 
 A practical idea in an everyday technology may be more valuable than a technically sophisticated idea whose main appeal is novelty or scale.
 
-## Interest profile
-Treat these as affinity signals, not an exhaustive taxonomy and not required sections.
-
-Strong recurring interests include:
+Treat the interests below as affinity signals, not an exhaustive taxonomy and not required sections. Strong recurring interests include:
 
 * Python as a day-to-day programming language: useful libraries, language features, tooling, testing, typing, packaging, APIs, automation, maintainability, performance, workflows, and development practices.
 * Software engineering, architecture, system design, design patterns, APIs, developer tooling, testing, refactoring, security, code quality, maintainability, and databases.
@@ -42,11 +39,8 @@ Strong recurring interests include:
 * PKM, Obsidian, productivity, automation, learning systems, writing, and better ways of working.
 * Engineering leadership, mentoring, technical strategy, career development, and decision-making.
 
-Also give genuine consideration to strong material about products, startups, side projects, business or monetization, personal development, reading and learning, personal finance, design, and other established interests.
+Also give genuine consideration to strong material about products, startups, side projects, business or monetization, personal development, reading and learning, personal finance, design, and other established interests. Save room for serendipity, including subjects outside these clusters.
 
-Save room for serendipity, including subjects outside these clusters.
-
-## Selection calibration
 Prefer material that:
 
 * Can plausibly change something I do, try, build, study, or pay attention to.
@@ -67,13 +61,12 @@ Downrank material whose primary appeal is:
 
 Do not penalize familiar subjects merely because they are not novel. A strong practical article about a technology I use frequently may deserve more attention than a novel article about a remote problem.
 
-When several articles cover the same area, select the one with the strongest substance rather than allowing repetition to dominate.
-
-When several candidates have comparable value, prefer some diversity of usefulness rather than filling the edition with variations of the same technical theme.
+When several articles cover the same area, select the one with the strongest substance rather than allowing repetition to dominate. When several candidates have comparable value, prefer some diversity of usefulness rather than filling the edition with variations of the same technical theme.
 
 With a small source set, a shorter edition containing only genuinely strong material is preferable to lowering the selection threshold.
 
-## Optional editorial signal callouts
+## Optional highlights
+
 Use these only when genuinely warranted, as a callout:
 
 * `🔥 TREND`—an emerging pattern supported by meaningful evidence.

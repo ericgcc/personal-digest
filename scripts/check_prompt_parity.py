@@ -29,6 +29,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from digest_system.config.profiles import STYLE_PROFILES, style_profile_ids  # noqa: E402
 from digest_system.editorial.prompts.assembler import assemble_stage_context  # noqa: E402
 from digest_system.editorial.prompts.compose import compose_stage_prompt  # noqa: E402
+from digest_system.editorial.prompts.instruction_changes import (  # noqa: E402
+    approved_change,
+    augmented_contract,
+    removed_document,
+)
 from digest_system.editorial.stages import stage_names_v2, stage_v2  # noqa: E402
 from digest_system.runtime.artifacts import ROOT  # noqa: E402
 
@@ -56,61 +61,73 @@ class _Context:
         self.root = ROOT
 
 
-_DOCUMENT = re.compile(r'<document path="[^"]*"(?: sections="[^"]*")?>\n(.*?)\n</document>', re.DOTALL)
+_DOCUMENT = re.compile(r'<document path="([^"]*)"(?: sections="[^"]*")?>\n(.*?)\n</document>', re.DOTALL)
 
 
-def instruction_blocks(text: str) -> list[str]:
-    """The instruction text of every delimited document, in order, with blanks removed."""
-    blocks = [match.group(1).strip() for match in _DOCUMENT.finditer(text)]
-    if not blocks:
-        return [text.strip()] if text.strip() else []
-    return blocks
+def documents_by_path(text: str) -> dict[str, str]:
+    """Every delimited document in a prompt, by path, with its body."""
+    return {match.group(1): match.group(2) for match in _DOCUMENT.finditer(text)}
 
 
-def old_blocks(reference_text: str) -> list[str]:
-    return instruction_blocks(reference_text)
-
-
-def new_blocks(profile, stage_name: str) -> list[str]:
+def new_system_text(profile, stage_name: str) -> str:
     config = DIGEST_CONFIG_BY_STYLE[profile.style]
     assembled = assemble_stage_context(
         stage_name=stage_name, profile=profile, digest_config_relative=config
     )
-    if stage_v2(stage_name).executor == "evaluation":
-        return [value.strip() for value in assembled["contracts"].values()]
     ctx = _Context(style=profile.style, profile=profile, digest_config_relative=config)
     composed = compose_stage_prompt(stage=stage_v2(stage_name), context=ctx, documents=assembled)
-    return instruction_blocks(composed.system_text)
+    return composed.system_text
 
 
-def compare_blocks(old: list[str], new: list[str]) -> list[str]:
-    """Compare two ordered instruction lists, treating a split as equivalent.
+def new_contracts(profile, stage_name: str) -> dict[str, str]:
+    config = DIGEST_CONFIG_BY_STYLE[profile.style]
+    assembled = assemble_stage_context(
+        stage_name=stage_name, profile=profile, digest_config_relative=config
+    )
+    return assembled["contracts"]
 
-    Phase 2b turns one ``styles/<style>.md`` document into several module files, so an old
-    single block may legitimately become several new blocks whose concatenation is the same
-    text. The comparison therefore checks that the *joined* text is identical after whitespace
-    normalisation, which detects a lost or altered sentence while allowing a reformatting.
+
+def _normalize(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def compare_documents(stage_name: str, old_text: str, new_text: str) -> list[str]:
+    """Compare the instruction documents of two prompts, by path.
+
+    Phase 2b turns one ``styles/<style>.md`` document into several module files, and Phase 3A
+    replaces the whole digest-configuration document with parsed reading-instruction sections.
+    The unit of comparison is therefore the document *text*, not the block sequence: every
+    document the reference delivered must still be delivered with its text unchanged, unless the
+    change is recorded in ``approved-instruction-changes.json``.
     """
     problems: list[str] = []
+    old_docs = documents_by_path(old_text)
+    new_docs = documents_by_path(new_text)
+    for path, text in old_docs.items():
+        if path.startswith("styles/") or path.startswith("system/style-pipelines/"):
+            continue
+        if removed_document(stage_name, path):
+            continue
+        current = new_docs.get(path)
+        if current is None:
+            problems.append(f"document {path} is no longer delivered")
+            continue
+        if _normalize(current) != _normalize(text) and not approved_change(stage_name, path):
+            problems.append(f"document {path} changed")
+    return problems
 
-    def normalize(blocks: list[str]) -> str:
-        return re.sub(r"\s+", " ", "\n\n".join(blocks)).strip()
 
-    old_joined = normalize(old)
-    new_joined = normalize(new)
-    if old_joined == new_joined:
-        return problems
-    # Report the first divergence with enough context to be actionable.
-    index = next(
-        (i for i in range(min(len(old_joined), len(new_joined))) if old_joined[i] != new_joined[i]),
-        min(len(old_joined), len(new_joined)),
-    )
-    problems.append(
-        f"instruction text differs at character {index}:\n"
-        f"  reference: ...{old_joined[max(0, index - 60) : index + 60]!r}\n"
-        f"  current:   ...{new_joined[max(0, index - 60) : index + 60]!r}"
-    )
-    problems.append(f"reference blocks {len(old)} ({len(old_joined)} chars) vs current {len(new)} ({len(new_joined)} chars)")
+def compare_contracts(stage_name: str, old: dict, new: dict) -> list[str]:
+    """Compare an evaluation stage's contracts, honoring a recorded augmentation."""
+    problems: list[str] = []
+    for name, text in old.items():
+        current = new.get(name, "")
+        if augmented_contract(stage_name, name):
+            if _normalize(text) not in _normalize(current):
+                problems.append(f"contract {name} no longer contains the reference text")
+            continue
+        if _normalize(current) != _normalize(text):
+            problems.append(f"contract {name} changed")
     return problems
 
 
@@ -127,21 +144,18 @@ def main(argv: list[str] | None = None) -> int:
         profile = STYLE_PROFILES[profile_id]
         for stage_name in stage_names_v2():
             want = reference[profile_id][stage_name]
-            if stage_v2(stage_name).executor == "evaluation":
-                old = list(want["contracts"].values())
-                new = new_blocks(profile, stage_name)
-            else:
-                old = old_blocks(want["text"])
-                new = new_blocks(profile, stage_name)
             checked += 1
-            problems = compare_blocks(old, new)
+            if stage_v2(stage_name).executor == "evaluation":
+                problems = compare_contracts(stage_name, want["contracts"], new_contracts(profile, stage_name))
+            else:
+                problems = compare_documents(stage_name, want["text"], new_system_text(profile, stage_name))
             if problems:
                 failures += 1
                 print(f"FAIL {profile_id}/{stage_name}")
                 for problem in problems:
                     print(f"     {problem}")
             elif args.verbose:
-                print(f"ok   {profile_id}/{stage_name}: {len(old)} -> {len(new)} block(s)")
+                print(f"ok   {profile_id}/{stage_name}")
 
     print(f"\n{checked - failures}/{checked} stage prompts preserve their instruction text")
     return 1 if failures else 0

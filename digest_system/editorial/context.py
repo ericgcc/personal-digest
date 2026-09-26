@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from ..config.profiles import StyleProfile, excluded_sections
+from ..config.reading_instructions import ReadingInstructions, empty_instructions
 from ..runtime.artifacts import ROOT, relative_to_root
 from .rendering.values import resolve_rendering_values
 
@@ -52,6 +53,9 @@ class RunContext:
     style_headings: list[str]
     corpus: Mapping[str, Any]
     style_text: str
+    #: The digest's parsed reading instructions. Defaults to none, which is a valid digest: the
+    #: style's normal editorial behavior and the default general reader.
+    reading_instructions: ReadingInstructions | None = None
     root: Path = ROOT
     artifacts: dict[str, Artifact] = field(default_factory=dict)
     rendering: dict[str, Any] | None = None
@@ -95,6 +99,44 @@ class RunContext:
 
     def stage_excluded_sections(self, stage_name: str) -> list[str]:
         return excluded_sections(profile=self.profile, stage=stage_name, style_headings=self.style_headings)
+
+    # --- reading instructions -----------------------------------------------------------
+
+    def instructions(self) -> ReadingInstructions:
+        """The digest's reading instructions, or an empty set when the digest states none."""
+        if self.reading_instructions is None:
+            self.reading_instructions = empty_instructions(
+                self.digest_id, source=self.digest_config_relative
+            )
+        return self.reading_instructions
+
+    def reading_sections(self, stage_name: str) -> tuple[str, ...]:
+        """The canonical reading-instruction sections this stage receives."""
+        return self.instructions().for_stage(stage_name)
+
+    def reading_instructions_block(self, stage_name: str) -> dict[str, Any] | None:
+        """The delimited reading-instruction block for a stage, or ``None`` when empty."""
+        text = self.instructions().render_for_stage(stage_name)
+        if not text:
+            return None
+        return {
+            "tag": "reading_instructions",
+            "payload": text,
+            "source": {
+                "path": self.digest_config_relative,
+                "sections": list(self.reading_sections(stage_name)),
+                "version": self.instructions().version,
+            },
+        }
+
+    def reader_brief(self) -> str:
+        """The digest half of the effective Reader Brief: the `## Reader` section, or ``''``.
+
+        The other half is `system/contracts/reader-contract.md`, which always applies. The
+        effective brief is the reader contract narrowed by this text; it is what the writing and
+        review stages are given so they all reason from the same reader.
+        """
+        return self.instructions().reader_section
 
     # --- rendering values ---------------------------------------------------------------
 

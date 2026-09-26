@@ -4,8 +4,8 @@
   "templates": [
     {
       "path": "prompts/stages/draft/system.j2",
-      "bytes": 231,
-      "sha256": "c7c07f7a325ada45efd1bb8e25692a0a2c806aeb0d289b9ec1f77511228252b3"
+      "bytes": 197,
+      "sha256": "d52434a927e8b293290c2aa0b62185884d9c0212d52d822eb955bd46f40e8d2d"
     },
     {
       "path": "prompts/shared/preamble.j2",
@@ -14,8 +14,8 @@
     },
     {
       "path": "prompts/stages/draft/user.j2",
-      "bytes": 81,
-      "sha256": "f9c8cd7ef4bdfe79883eb55b19f95c17911c63e0072fc06c91e010458e5b66ed"
+      "bytes": 103,
+      "sha256": "81e0da1c5a991b16458b79390ce9fa3ab679ac4e9476c6050ec43df1c0ae2108"
     },
     {
       "path": "prompts/shared/task.j2",
@@ -26,8 +26,8 @@
   "documents": [
     {
       "path": "system/contracts/draft.md",
-      "bytes": 4386,
-      "sha256": "a83ab924e5c326d15dd4cb58260227e749196693cc5a27e2c02d83d988dddfec"
+      "bytes": 4593,
+      "sha256": "c417d4763856e46930f9626009dc7783836e7b66d39fa87cfe6a3a0ab4d24bbd"
     },
     {
       "path": "styles/editorial-base.md",
@@ -38,11 +38,6 @@
       "path": "system/contracts/reader-contract.md",
       "bytes": 3465,
       "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
-    },
-    {
-      "path": "digests/tech-bi-daily.md",
-      "bytes": 3784,
-      "sha256": "4bc94b96ab1e93ea0c15823b65bb57ea89d72fa334eff6b34a131057ba0ccc85"
     }
   ],
   "instructions": [
@@ -102,6 +97,10 @@
       "bytes": 2190
     },
     {
+      "tag": "reading_instructions",
+      "bytes": 1618
+    },
+    {
       "tag": "stage_task",
       "bytes": 669
     }
@@ -111,6 +110,6 @@
     "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
     "styles/synthesis-max/modules/11-quality-control.md"
   ],
-  "system_bytes": 51166,
-  "user_bytes": 4881
+  "system_bytes": 47587,
+  "user_bytes": 6548
 }

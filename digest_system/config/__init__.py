@@ -3,7 +3,23 @@
 from __future__ import annotations
 
 from .budgets import STYLE_BUDGET, StyleBudget, budget_for, budget_prose
-from .digests import ResolvedDigest, frontmatter_value, read_frontmatter, resolve_digest
+from .digests import (
+    ResolvedDigest,
+    frontmatter_value,
+    read_digest_body,
+    read_frontmatter,
+    resolve_digest,
+)
+from .reading_instructions import (
+    CANONICAL_SECTIONS,
+    STAGE_SECTIONS,
+    ReadingInstructions,
+    empty_instructions,
+    parse_reading_instructions,
+    read_reading_instructions,
+    split_document,
+    stage_section_names,
+)
 from .legacy import (
     COMPOSITION_SECTIONS_BY_STYLE,
     LEGACY_CHARACTER_SECTIONS,
@@ -44,8 +60,17 @@ __all__ = [
     "budget_prose",
     "ResolvedDigest",
     "frontmatter_value",
+    "read_digest_body",
     "read_frontmatter",
     "resolve_digest",
+    "CANONICAL_SECTIONS",
+    "STAGE_SECTIONS",
+    "ReadingInstructions",
+    "empty_instructions",
+    "parse_reading_instructions",
+    "read_reading_instructions",
+    "split_document",
+    "stage_section_names",
     "CANONICAL_STYLES",
     "DEFAULT_STYLE_PROFILE_BY_STYLE",
     "STYLE_PROFILES",

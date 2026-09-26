@@ -24,6 +24,7 @@ from ..config.profiles import (
     resolve_style_profile,
     validate_style_profile,
 )
+from ..config.reading_instructions import empty_instructions, read_reading_instructions
 from ..config.runtime import load_runtime_config
 from ..integrations.evaluation import create_evaluation_adapter
 from ..integrations.wops import create_wops_adapter
@@ -104,6 +105,15 @@ def execute_pipeline_v2(
         style_text = read_text_raw(style_path)
     run_key_record = resolve_run_key(corpus=corpus, digest_id=digest_id, style=style)
 
+    # The digest's reading instructions are parsed once, here, before any stage runs. The
+    # operational frontmatter stays separate: a stage receives only the sections the
+    # reading-instructions contract routes to it, never the digest file.
+    reading_instructions = (
+        read_reading_instructions(config_path, digest_id=digest_id, source=relative_to_root(config_path, base))
+        if config_path.is_file()
+        else empty_instructions(digest_id)
+    )
+
     ctx = RunContext(
         run_id=run_id,
         digest_id=digest_id,
@@ -121,6 +131,7 @@ def execute_pipeline_v2(
         style_headings=preflight.style_headings,
         corpus=corpus,
         style_text=style_text,
+        reading_instructions=reading_instructions,
         root=base,
     )
     ctx._preflight_cache = preflight  # noqa: SLF001 - the context caches its own preflight
@@ -154,6 +165,14 @@ def execute_pipeline_v2(
         "style_profile_id": profile.id,
         "style_profile_version": profile.version,
         "style_profile": describe_style_profile(profile, source=resolved_profile["source"]),
+        # The exact reading instructions this run executed, and which sections each stage
+        # received, so the routing is auditable after the fact.
+        "reading_instructions": {
+            **reading_instructions.to_manifest(),
+            "routing": {
+                stage.name: list(reading_instructions.for_stage(stage.name)) for stage in STAGES_V2
+            },
+        },
         "runtime": {
             "wops": wops.describe(),
             "evaluation": {"python": evaluation.python, "python_source": evaluation.python_source},

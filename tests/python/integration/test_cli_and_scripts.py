@@ -173,7 +173,11 @@ def test_measure_context_matches_the_frozen_reference():
                     continue
                 # A document whose text was corrected on purpose changes size; the approved
                 # instruction-change record names it.
-                if (stage_name, entry["path"]) in _approved_instruction_changes():
+                if _approved_instruction_change(stage_name, entry["path"]):
+                    continue
+                # A document deliberately no longer inlined (the digest configuration) is
+                # recorded as a removal, not a lost instruction.
+                if _removed_document(stage_name, entry["path"]):
                     continue
                 assert current.get(entry["path"]) == entry["bytes"], f"{profile_id}/{stage_name}: {entry['path']}"
 
@@ -183,7 +187,22 @@ def _approved_instruction_changes() -> set[tuple[str, str]]:
 
     path = ROOT / "tests" / "fixtures" / "phase2b" / "approved-instruction-changes.json"
     payload = _json.loads(path.read_text(encoding="utf-8"))
-    return {(entry["stage"], entry["document"]) for entry in payload["approved"]}
+    approved = {(entry["stage"], entry["document"]) for entry in payload["approved"]}
+    for entry in payload.get("phase3a", {}).get("removed_documents", []):
+        approved.add((entry["stage"], entry["document"]))
+    return approved
+
+
+def _approved_instruction_change(stage: str, document: str) -> bool:
+    from digest_system.editorial.prompts.instruction_changes import approved_change
+
+    return approved_change(stage, document) is not None
+
+
+def _removed_document(stage: str, document: str) -> bool:
+    from digest_system.editorial.prompts.instruction_changes import removed_document
+
+    return removed_document(stage, document) is not None
 
 
 def test_verify_corrections_runs_offline():

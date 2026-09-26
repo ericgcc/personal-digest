@@ -60,8 +60,33 @@ def _normalize(entry: Any) -> list[dict[str, Any]]:
     return []
 
 
+def _descriptor_text(descriptor: dict[str, Any], ctx: Any, *, base: Path) -> tuple[str, str]:
+    """Resolve one descriptor to ``(label, text)``.
+
+    A descriptor either names a ``path`` to read, or supplies ``text`` inline. The inline form is
+    used for the digest's reading instructions: they are parsed data the runtime computed, not a
+    file a stage should be handed whole, and they must never be reported as a canonical document.
+    """
+    if "text" in descriptor and descriptor.get("path") is None:
+        label = str(descriptor.get("label") or "inline")
+        return label, str(descriptor.get("text") or "")
+    return _resolve_path(descriptor, ctx.style), _read_document(
+        _resolve_path(descriptor, ctx.style), root=base
+    )
+
+
 def _resolve_path(descriptor: dict[str, Any], style: str) -> str:
     return str(descriptor["path"]).replace("<style>", style)
+
+
+def _is_inline(descriptor: dict[str, Any]) -> bool:
+    """A descriptor that supplies its text inline rather than naming a file.
+
+    The digest's effective Reader Brief is supplied this way: it is the shared reader contract
+    concatenated with the digest's own `## Reader` section, which is parsed data rather than a
+    canonical document, so it must never be recorded as one.
+    """
+    return descriptor.get("path") is None and descriptor.get("text") is not None
 
 
 def _rendering_paths(stage: Any, ctx: Any, by_path: dict[str, str]) -> list[str]:
@@ -92,6 +117,20 @@ def assemble_documents(stage: Any, ctx: Any, *, root: Path | None = None) -> dic
 
     for declaration in stage.documents(ctx) or ():
         for descriptor in _normalize(declaration):
+            if _is_inline(descriptor):
+                label = str(descriptor.get("label") or "inline")
+                text = str(descriptor.get("text") or "")
+                by_path[label] = wrap_document(label, text)
+                parts.append(by_path[label])
+                manifest.append(
+                    {
+                        "path": label,
+                        "mode": "inline",
+                        "bytes": js_length(text),
+                        "style_selected": False,
+                    }
+                )
+                continue
             path = _resolve_path(descriptor, ctx.style)
             if path in seen:
                 continue
@@ -146,6 +185,10 @@ def assemble_evaluation_contracts(stage: Any, ctx: Any, *, root: Path | None = N
             raise RunnerError(f"Stage {stage.name} declares no path for the {name} contract")
         pieces: list[str] = []
         for descriptor in descriptors:
+            if _is_inline(descriptor):
+                text = str(descriptor.get("text") or "")
+                pieces.append(text)
+                continue
             path = _resolve_path(descriptor, ctx.style)
             text = _read_document(path, root=base)
             pieces.append(text)
@@ -176,12 +219,60 @@ def assemble_evaluation_contracts(stage: Any, ctx: Any, *, root: Path | None = N
 class _AssemblerContext:
     """The minimal context `assemble_stage_context` needs, built from a resolved preflight."""
 
-    def __init__(self, *, style: str, profile: Any, preflight: Any, digest_config_relative: str) -> None:
+    def __init__(
+        self,
+        *,
+        style: str,
+        profile: Any,
+        preflight: Any,
+        digest_config_relative: str,
+        root: Path | None = None,
+    ) -> None:
         self.style = style
         self.profile = profile
         self.preflight = preflight
         self.style_headings = preflight.style_headings
         self.digest_config_relative = digest_config_relative
+        self.root = root or ROOT
+        self._instructions: Any = None
+
+    def instructions(self):
+        """The digest's parsed reading instructions, or an empty set when it states none."""
+        if self._instructions is None:
+            from ...config.reading_instructions import (
+                empty_instructions,
+                read_reading_instructions,
+            )
+
+            path = self.root / self.digest_config_relative
+            digest_id = Path(self.digest_config_relative).stem
+            if path.is_file():
+                self._instructions = read_reading_instructions(
+                    path, digest_id=digest_id, source=self.digest_config_relative
+                )
+            else:
+                self._instructions = empty_instructions(digest_id, source=self.digest_config_relative)
+        return self._instructions
+
+    def reader_brief(self) -> str:
+        return self.instructions().reader_section
+
+    def reading_sections(self, stage_name: str) -> tuple[str, ...]:
+        return self.instructions().for_stage(stage_name)
+
+    def reading_instructions_block(self, stage_name: str) -> dict[str, Any] | None:
+        text = self.instructions().render_for_stage(stage_name)
+        if not text:
+            return None
+        return {
+            "tag": "reading_instructions",
+            "payload": text,
+            "source": {
+                "path": self.digest_config_relative,
+                "sections": list(self.reading_sections(stage_name)),
+                "version": self.instructions().version,
+            },
+        }
 
     def style_documents(self, name: str) -> list[dict[str, Any]]:
         return [
@@ -228,6 +319,7 @@ def assemble_stage_context(
         profile=profile,
         preflight=preflight,
         digest_config_relative=digest_config_relative or f"digests/{style}.md",
+        root=base,
     )
     stage = stage_v2(stage_name)
     return (

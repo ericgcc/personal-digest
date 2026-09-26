@@ -2,9 +2,15 @@
 
 How to run, resume, replay, verify, and test the Digest System on this development branch.
 
+The editorial backend is Python. The JavaScript implementation was removed once the Python
+port demonstrated parity against the frozen reference in
+`tests/fixtures/reference/reference.json`.
+
 ## Prerequisites
 
-* Node.js 24+ and the local `.env` file with a non-empty `DEEPSEEK_API_KEY`.
+* Python 3.11+ with the `digest_system` package and the existing `evaluation` package
+  importable in one environment, plus a local `.env` file with a non-empty
+  `DEEPSEEK_API_KEY`.
 * The evaluation Python environment (configured in `system/runtime.json` or
   `DIGEST_EVAL_PYTHON`); see `config/runtime.example.json` for the shape.
 * The WOPS writing-operations project is optional: without it, developmental review still
@@ -13,7 +19,7 @@ How to run, resume, replay, verify, and test the Digest System on this developme
 ## Running a digest
 
 ```powershell
-node --env-file=.env tools/digest_runner.mjs run `
+python -m digest_system.cli run `
   --digest tech-bi-daily `
   --run-id tech-bi-daily-20260925-0900 `
   --input "$env:TEMP\sources.json"
@@ -33,8 +39,8 @@ Useful flags:
 ## Resuming and replaying
 
 ```powershell
-node --env-file=.env tools/digest_runner.mjs resume --digest <id> --run-id <id> --from-stage line-edit
-node --env-file=.env tools/digest_runner.mjs replay --from-run <historical-run-id> --run-id <new-run-id>
+python -m digest_system.cli resume --digest <id> --run-id <id> --from-stage line-edit
+python -m digest_system.cli replay --from-run <historical-run-id> --run-id <new-run-id>
 ```
 
 A replay reuses a historical `sources.json` and performs no acquisition, no delivery, and
@@ -44,10 +50,10 @@ unless you pass `--style-profile` explicitly.
 ## Verifying a run
 
 ```powershell
-node scripts/verify-run.mjs --run <run-id>            # completed-run contract check
-node scripts/verify-replay.mjs --run <run-id>         # replay acceptance check
-node scripts/revalidate-run.mjs --run <run-id>        # re-judge artifacts with current validators
-node scripts/compare-analysis-frame.mjs --replay <id> --against <id>
+python scripts/verify_run.py --run <run-id>            # completed-run contract check
+python scripts/verify_replay.py --run <run-id>         # replay acceptance check
+python scripts/revalidate_run.py --run <run-id>        # re-judge artifacts with current validators
+python scripts/compare_analysis_frame.py --replay <id> --against <id>
 ```
 
 Both verifiers are advisory by default and write their findings into the run directory.
@@ -56,8 +62,8 @@ The runner itself is the delivery gate.
 ## Measuring prompts
 
 ```powershell
-node scripts/measure-context.mjs          # assembled context bytes per profile/stage
-node scripts/verify-corrections.mjs       # the Phase 2 correction report
+python scripts/measure_context.py          # assembled context bytes per profile/stage
+python scripts/verify_corrections.py       # the Phase 2 correction report
 ```
 
 Neither makes a model call.

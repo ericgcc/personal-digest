@@ -1,12 +1,12 @@
 # Digest runner
 
-`tools/digest_runner.mjs` is a thin compatibility shim over `src/cli/digest.mjs`, kept so
-the documented scheduled-task agent invocation keeps working. It delegates the complete
-staged editorial pipeline to the DeepSeek API. It is intentionally not a complete digest
-runner: the agent retains configuration resolution, Gmail and browser access, source
-acquisition, delivery, and SQLite/Gmail-label state changes.
+The editorial backend is now Python. The entry point is
+`python -m digest_system.cli`, which delegates the complete staged editorial pipeline to the
+DeepSeek API. It is intentionally not a complete digest runner: the agent retains
+configuration resolution, Gmail and browser access, source acquisition, delivery, and
+SQLite/Gmail-label state changes.
 
-The tool inlines only the canonical instructions required by the stage and the artifacts
+The runner inlines only the canonical instructions required by the stage and the artifacts
 supplied to it, then writes a single output artifact per stage. Canonical Digest System
 files are never its working copies.
 
@@ -29,7 +29,7 @@ historical-run analysis. It is not runnable.
 ## Style profiles
 
 Which part of a style a stage receives is declared by an explicit, versioned **style
-profile**, not by the stage table. The registry is `src/editorial/prompts/style-profiles.mjs`;
+profile**, not by the stage table. The registry is `digest_system/config/profiles.py`;
 a style's stage-specific operational instructions live in `system/style-pipelines/<style>/`.
 
 | Profile | Style | Status | Notes |

@@ -216,12 +216,16 @@ def inspect_stage(
             "system_template": None,
             "user_template": None,
             "templates": [
-                {"path": path, "bytes": 0, "sha256": _digest(base / "prompts" / path)}
+                {"path": f"prompts/{path}", "bytes": 0, "sha256": _digest(base / "prompts" / path)}
                 for path in prompts.templates
             ],
             "documents": [],
             "instructions": [
-                {"path": entry["path"], "bytes": entry["bytes"], "sha256": entry["sha256"]}
+                {
+                    "path": entry["path"],
+                    "bytes": entry["bytes"],
+                    "sha256": _digest(base / entry["path"]),
+                }
                 for entry in inputs["documents"]["manifest"]
             ],
             "blocks": [],

@@ -485,22 +485,6 @@ def validate_style_profile(profile: StyleProfile | None) -> StructuralValidation
     return StructuralValidation(len(problems) == 0, problems)
 
 
-def extract_section_headings(markdown: str) -> list[str]:
-    """``## Heading`` titles in a Markdown document, at level 2 only.
-
-    Retained for the style generator's verification and for historical readers. No runtime
-    prompt path calls it: a profile names files, not headings.
-    """
-    import re
-
-    headings = []
-    for line in re.split(r"\r?\n", str(markdown or "")):
-        match = re.match(r"^##\s+(.*?)\s*$", line)
-        if match:
-            headings.append(f"## {match.group(1).strip()}")
-    return headings
-
-
 @dataclass(frozen=True)
 class ResolvedDescriptor:
     descriptor: Descriptor
@@ -653,7 +637,6 @@ __all__ = [
     "profiles_for_style",
     "resolve_style_profile",
     "validate_style_profile",
-    "extract_section_headings",
     "preflight_style_profile",
     "excluded_sections",
     "describe_style_profile",

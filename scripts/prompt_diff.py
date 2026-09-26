@@ -85,12 +85,20 @@ def _instruction_text(entry: dict) -> str:
     (the corpus, artifacts, review JSON) are a property of the synthetic input the two captures
     happened to use, not of the template migration, so comparing them would report fixture noise
     as an instruction change.
+
+    Documents are joined in **path order**, not prompt order. Phase 3B is explicitly allowed to
+    test and adjust the component order for the selected model (design §3B.1), so a pure
+    reordering of unchanged documents is packaging, not an instruction change.
     """
     if entry.get("contracts"):
         # The historical capture sorted its JSON keys, so contract order is not meaningful there;
         # joining by contract name makes the comparison about content, not serialization order.
         return "\n\n".join(entry["contracts"][name] for name in sorted(entry["contracts"]))
-    return entry.get("system_text", "")
+    text = entry.get("system_text", "")
+    documents = _documents_by_path(text)
+    if documents:
+        return "\n\n".join(documents[path] for path in sorted(documents))
+    return text
 
 
 def approved_changes() -> dict[tuple[str, str], dict]:

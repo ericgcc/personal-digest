@@ -19,21 +19,18 @@ Both are checked deterministically before Draft sees anything, and a plan that v
 
 ## What you receive
 
-| Document | What it contributes here |
-| --- | --- |
-| `system/contracts/frame.md` | The stage's role, the unit rule, the disposition vocabulary, and how to resolve material that does not fit. |
-| `system/style-contract.md` | The interface vocabulary the style's `## Style interface` section uses. |
-| `system/contracts/reader-contract.md` | What a reader must be able to follow, independent of style. |
-| `styles/synthesis-max.md` § `## Style interface` | The style's composition unit, source relationship, depth model, organisation model, opening behaviour and catalogue requirement. |
-| `styles/synthesis-max.md` § `## Synthesis mode` | How threads are formed, and the tests a proposed thread must pass. |
-| `styles/synthesis-max.md` § `## Required structure` | The structure each thread and the edition must take, the source-notes component, and the catalog-only edition. |
-| `styles/synthesis-max.md` § `## Length and density` | The body budget, the thread range, and the evidentiary floor. |
-| `styles/synthesis-max.md` § `## Citations` | Which sources a thread may cite: only those that materially contribute to the claim they support. |
-| `styles/synthesis-max.md` § `## Final source catalog` | The catalogue's grouping and status semantics, which this stage records. |
-| `digests/<digest-id>.md` | This digest's reader interests and selection priorities. |
-| `system/style-pipelines/synthesis-max/frame.md` | This document. |
+`system/contracts/frame.md` states the stage's role and the unit rule. This style adds the plan's
+shape and arithmetic: the composition unit, source relationship, depth model, organisation model,
+opening behaviour and catalogue requirement (`## Style interface`); the thread-forming tests
+(`## Synthesis mode`); the required structure and catalog-only edition (`## Required structure`);
+the body budget and thread range (`## Length and density`); the citation rule
+(`## Citations`); and the catalogue's grouping and status semantics (`## Final source catalog`),
+which this stage records. The digest's reading instructions supply the reader and its
+preservation obligations.
 
-You do **not** receive `## Ending rules`: you plan a document, you do not terminate one, and the ending rule is enforced by the stage that publishes it. You do not receive `## Writing character` or `## Domain accessibility in synthesis`: you work in directions and structured fields, not prose.
+You do **not** receive `## Ending rules`: you plan a document, you do not terminate one, and the
+ending rule is enforced by the stage that publishes it. You do not receive `## Writing character`
+or `## Domain accessibility in synthesis`: you work in directions and structured fields, not prose.
 
 ---
 

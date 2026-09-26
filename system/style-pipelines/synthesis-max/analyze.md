@@ -8,17 +8,16 @@ This document is operational. It states what *this stage* is responsible for in 
 
 ## What you are given
 
-| Document | What it contributes here |
-| --- | --- |
-| `system/contracts/analyze.md` | The stage's role: evaluate the corpus, establish the material facts, decide what deserves space. |
-| `styles/synthesis-max.md` § `## Style interface` | The style's selection model, composition unit, source relationship and depth model — the standard selection is judged against. |
-| `styles/synthesis-max.md` § `## Synthesis mode` | How this style forms threads, and its tests for a justified grouping, including the rule that a second source used only as decoration, analogy or citation padding does not satisfy the requirement. |
-| `system/writing-research-basis.md` | How a claim is traced to the evidence that carries it. |
-| `system/writing-reasoning-and-source-fidelity.md` | The canonical relationship vocabulary, the synthesis test, and the source-explanatory-value and source-thesis preservation tests. |
-| `digests/<digest-id>.md` | This digest's reader interests and selection priorities. It is the authority for what this reader values; the style is the authority for how material is combined. |
-| `system/style-pipelines/synthesis-max/analyze.md` | This document. |
+`system/contracts/analyze.md` states the stage's role and what it receives. This style adds the
+selection standard you judge against: its selection model, composition unit and source
+relationship (`## Style interface`), its thread-forming tests (`## Synthesis mode`), and the
+canonical relationship vocabulary and synthesis test in
+`system/writing-reasoning-and-source-fidelity.md`. The digest's reading instructions are the
+authority for what this reader values; the style is the authority for how material is combined.
 
-You do **not** receive the style's writing character, its required structure, its citation rules, its ending rules or a rendering profile. Those govern stages that write and publish a document, and nothing in them should influence which sources are selected.
+You do **not** receive the style's writing character, its required structure, its citation rules,
+its ending rules or a rendering profile. Those govern stages that write and publish a document,
+and nothing in them should influence which sources are selected.
 
 ---
 

@@ -102,7 +102,6 @@ STAGES_V2: tuple[Stage, ...] = (
         documents=lambda ctx: (
             {"path": "system/contracts/analyze.md"},
             *ctx.style_documents("analyze"),
-            {"path": "system/writing-research-basis.md"},
             {"path": "system/writing-reasoning-and-source-fidelity.md"},
         ),
         blocks=lambda ctx: (ctx.reading_instructions_block("analyze"),),

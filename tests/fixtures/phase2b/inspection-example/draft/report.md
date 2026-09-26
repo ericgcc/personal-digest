@@ -8,7 +8,7 @@
 
 ## Templates
 
-- `prompts/stages/draft/system.j2` — 197 units, sha256 `d52434a927e8`
+- `prompts/stages/draft/system.j2` — 197 units, sha256 `70123544fddd`
 - `prompts/shared/preamble.j2` — 463 units, sha256 `8f60794abad6`
 - `prompts/stages/draft/user.j2` — 103 units, sha256 `81e0da1c5a99`
 - `prompts/shared/task.j2` — 992 units, sha256 `d12ba969b789`
@@ -29,7 +29,7 @@
 - `styles/synthesis-max/modules/09-final-source-catalog.md` — 3170 chars, sha256 `b738bba98859`
 - `styles/synthesis-max/modules/10-ending-rules.md` — 313 chars, sha256 `8a33057172b6`
 - `styles/synthesis-max/modules/04-writing-character.md` — 2687 chars, sha256 `5688f4f3d85b`
-- `system/style-pipelines/synthesis-max/draft.md` — 4896 chars, sha256 `f286a4dc55a2`
+- `system/style-pipelines/synthesis-max/draft.md` — 3993 chars, sha256 `bd4d65b01d79`
 
 ## Deliberately omitted style modules
 
@@ -46,7 +46,7 @@
 
 ## Sizes
 
-- System: 47587 units
+- System: 46684 units
 - User: 6548 units
 
 ## Style modules

@@ -8,23 +8,20 @@ This document is operational. It states what *this stage* is responsible for in 
 
 ## What you receive
 
-| Document | What it contributes here |
-| --- | --- |
-| `system/contracts/draft.md` | The stage's role, how to write, and what the style does and does not decide. |
-| `styles/editorial-base.md` | The inherited quality floor of every style: clarity, coherence, orientation, specificity, fidelity, economy, interest and variety. |
-| `system/contracts/reader-contract.md` | The domain-neutral definition of a reader who can follow what was written. Where a style habit makes a passage harder to follow, the reader contract wins. |
-| `styles/synthesis-max.md` § `## Style interface` | The composition unit, source relationship and progression model the draft must implement. |
-| `styles/synthesis-max.md` § `## Synthesis mode` | What makes a thread a synthesis rather than a set of adjacent summaries, and the conditions under which a thread should not exist. |
-| `styles/synthesis-max.md` § `## Required structure` | The edition's required shape: the opening, the numbered threads, the per-thread components, and the source catalogue. |
-| `styles/synthesis-max.md` § `## Length and density` | The body budget, and what each paragraph must contribute. |
-| `styles/synthesis-max.md` § `## Citations` | How claims and synthesized inferences are attributed, and when a source may be cited at all. |
-| `styles/synthesis-max.md` § `## Final source catalog` | The catalogue's grouping, numbering and status semantics. |
-| `styles/synthesis-max.md` § `## Ending rules` | Where the document stops. |
-| `styles/synthesis-max.md` § `## Writing character` | How this style sounds: explanatory, domain-accessible, analytical, restrained. |
-| `digests/<digest-id>.md` | This digest's language, reader interests and custom instructions. |
-| `system/style-pipelines/synthesis-max/draft.md` | This document. |
+`system/contracts/draft.md` states the stage's role and how to write. `styles/editorial-base.md`
+and `system/contracts/reader-contract.md` are the shared quality floor and the domain-neutral
+reader definition; where a style habit makes a passage harder to follow, the reader contract wins.
+This style adds the composition unit, source relationship and progression model
+(`## Style interface`); what makes a thread a synthesis (`## Synthesis mode`); the edition's
+required shape (`## Required structure`); the body budget and what each paragraph must contribute
+(`## Length and density`); attribution (`## Citations`); the catalogue's grouping, numbering and
+status (`## Final source catalog`); where the document stops (`## Ending rules`); and how this
+style sounds (`## Writing character`). The digest's reading instructions supply the reader,
+preservation obligations and callout intent.
 
-You do **not** receive the analysis, the later stages' instructions, the rendering rules, or the whole corpus. `frame.json` and the evidence for the sources Frame declared are your complete material.
+You do **not** receive the analysis, the later stages' instructions, the rendering rules, or the
+whole corpus. `frame.json` and the evidence for the sources Frame declared are your complete
+material.
 
 ---
 

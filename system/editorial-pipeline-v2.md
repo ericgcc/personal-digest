@@ -49,7 +49,7 @@ The style half of every stage's context is **resolved from the active style prof
 
 | Stage | Canonical instruction documents | Data |
 | --- | --- | --- |
-| `analyze` | `contracts/analyze.md`; **profile**: the style's selection model and its stage document; `writing-research-basis.md`; `writing-reasoning-and-source-fidelity.md`; `digests/<id>.md` | full source corpus |
+| `analyze` | `contracts/analyze.md`; **profile**: the style's selection model and its stage document; `writing-reasoning-and-source-fidelity.md`; the digest's reading instructions | full source corpus |
 | `frame` | `contracts/frame.md`; `style-contract.md`; `contracts/reader-contract.md`; **profile**: the style's composition modules and its stage document; `digests/<id>.md` | `analysis.json` |
 | `draft` | `contracts/draft.md`; `styles/editorial-base.md`; `contracts/reader-contract.md`; **profile**: the style's composition modules, its writing-character module, and its stage document; `digests/<id>.md` | `frame.json` + frame-selected evidence |
 | `developmental-review` | `contracts/developmental-review.md`; `contracts/reader-contract.md`; **profile**: the `style` and `review` contracts | `draft.md` + `frame.json` |

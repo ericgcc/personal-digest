@@ -57,7 +57,6 @@ from _maintenance import configure_stdio  # noqa: E402
 CHARS_PER_TOKEN = 4
 
 _WRITING_REFERENCES = (
-    "system/writing-research-basis.md",
     "system/writing-reasoning-and-source-fidelity.md",
     "system/naturalness-contract.md",
     "system/html-rendering.md",

@@ -40,6 +40,16 @@ def _matches(pattern: str, value: str) -> bool:
     return pattern == "*" or fnmatch(value, pattern)
 
 
+def _phase_sections(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Every phase's structural-change section, whatever the phase is named.
+
+    A phase records its structural changes under its own key (``phase3a``, ``phase3b``, …) with
+    the same shape. Scanning them by pattern means a later phase does not have to edit this
+    loader, and a structural change is still declared rather than inferred.
+    """
+    return [value for key, value in payload.items() if key.startswith("phase") and isinstance(value, dict)]
+
+
 def approved_change(stage: str, document: str, *, root: Path | None = None) -> dict[str, Any] | None:
     """The approval entry for a changed document at a stage, or ``None``.
 
@@ -57,10 +67,10 @@ def removed_document(stage: str, document: str, *, root: Path | None = None) -> 
     A removal is a deliberate delivery change: the instruction was not dropped, it moved. The
     entry records where it moved to so an auditor can follow it.
     """
-    phase3a = load_record(root).get("phase3a", {})
-    for entry in phase3a.get("removed_documents", []):
-        if _matches(str(entry.get("stage", "")), stage) and _matches(str(entry.get("document", "")), document):
-            return entry
+    for section in _phase_sections(load_record(root)):
+        for entry in section.get("removed_documents", []):
+            if _matches(str(entry.get("stage", "")), stage) and _matches(str(entry.get("document", "")), document):
+                return entry
     return None
 
 
@@ -71,10 +81,10 @@ def augmented_contract(stage: str, contract: str, *, root: Path | None = None) -
     section. The shared text is unchanged; the digest text is appended. That is an augmentation,
     not a rewrite, and the parity test asserts the reference text is still present verbatim.
     """
-    phase3a = load_record(root).get("phase3a", {})
-    for entry in phase3a.get("augmented_contracts", []):
-        if _matches(str(entry.get("stage", "")), stage) and _matches(str(entry.get("contract", "")), contract):
-            return entry
+    for section in _phase_sections(load_record(root)):
+        for entry in section.get("augmented_contracts", []):
+            if _matches(str(entry.get("stage", "")), stage) and _matches(str(entry.get("contract", "")), contract):
+                return entry
     return None
 
 

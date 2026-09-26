@@ -31,6 +31,12 @@
       "document": "system/contracts/render.md",
       "reason": "Phase 3A stops inlining the digest configuration, and render receives no reading instructions at all: rendering is a presentation layer. The contract now says so explicitly rather than promising a document the stage is not given.",
       "approved_by": "Phase 3A (reading-instructions contract)"
+    },
+    {
+      "stage": "line-edit",
+      "document": "system/naturalness-contract.md",
+      "reason": "Phase 3B deduplication. The concision invariant was stated verbatim in both `system/contracts/line-edit.md` and `system/naturalness-contract.md` — two owners for one rule. It now has one owner (`line-edit.md`), and the naturalness contract refers to it rather than repeating it. No requirement changed: the invariant is unchanged and still delivered to the same stage.",
+      "approved_by": "Phase 3B (instruction ownership and deduplication)"
     }
   ],
   "phase3a": {
@@ -55,6 +61,17 @@
         "contract": "reader",
         "reason": "The reader contract handed to the reader review is now the shared reader contract plus the digest's `## Reader` section, so the before/after assessment uses the same effective Reader Brief as drafting. The shared text is unchanged and still present verbatim.",
         "appended": "the digest's `## Reader` section"
+      }
+    ]
+  },
+  "phase3b": {
+    "note": "Phase 3B structural changes: instruction ownership and deduplication.",
+    "removed_documents": [
+      {
+        "stage": "analyze",
+        "document": "system/writing-research-basis.md",
+        "reason": "The research basis is maintainer-facing provenance, not a runtime checklist. It states the expert sources behind the writing references and how their ideas are used; its operational guidance already lives in the writing references and, for the reasoning it carried into Analyze, in `system/writing-reasoning-and-source-fidelity.md`. `system/workflow.md` already declared it 'provenance for maintainers' that 'need not be loaded during normal digest execution', but the stage table inlined it into Analyze — the largest single document in that prompt (10,579 chars). It is retained in the repository as a reference and is no longer inlined into any stage.",
+        "moved_to": "maintainer reference only; the operational reasoning it carried is in `system/writing-reasoning-and-source-fidelity.md`"
       }
     ]
   }

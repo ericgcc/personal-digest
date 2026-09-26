@@ -16,9 +16,7 @@ Universal craft principles — the named failure modes, their detection signals,
 
 ## What LINE EDIT may change
 
-Rhythm, sentence length and shape, transitions, sentence openings, paragraph shape, local emphasis, word choice, redundancy, and concision — subject to the standing invariant:
-
-> **Never obtain concision by deleting explanatory setup, definitions, causal bridges, material qualifications, or reader orientation.**
+Rhythm, sentence length and shape, transitions, sentence openings, paragraph shape, local emphasis, word choice, redundancy, and concision — subject to the standing invariant stated in `system/contracts/line-edit.md`: never obtain concision by deleting explanatory setup, definitions, causal bridges, material qualifications, or reader orientation.
 
 ## What LINE EDIT may not change
 

@@ -44,6 +44,38 @@ A stage's prompt is composed from three independent sources, in this order:
 They are combined by the stage's Jinja2 template and, for evidence-carrying stages, the approved
 evidence projection.
 
+## Standard prompt composition
+
+Every editorial stage's prompt has the same logical components, in the same order. The exact
+ordering may be tested and adjusted for the selected model (design §3B.1), but the *components*
+are fixed, and each has exactly one owner.
+
+```text
+SYSTEM
+  1. Stage role and principal objective        system/contracts/<stage>.md
+  2. Shared operational contract               system/contracts/<stage>.md, system/style-contract.md
+  3. Applicable style-specific procedure       styles/<style>/modules/, system/style-pipelines/<style>/
+  4. Essential quality and reader obligations  styles/editorial-base.md, system/contracts/reader-contract.md
+  5. Evidence and output restrictions          system/contracts/<stage>.md
+
+USER
+  1. Permitted source evidence and prior artifacts
+  2. Applicable reading-instruction sections   digests/<digest-id>.md (routed per section)
+  3. Validation feedback, if this is a correction
+  4. Immediate task and expected output        prompts/shared/task.j2
+```
+
+Two rules follow from the table and are enforced by the templates:
+
+* **The role contract precedes the style.** A stage reads what it is responsible for before it
+  reads how its style performs that responsibility.
+* **Shared obligations come after the style procedure.** The editorial base and the reader
+  contract are the floor a style refines inside, so they follow the style rather than framing it.
+
+The templates are the only place this order is expressed. `prompts/stages/<stage>/system.j2` names
+the documents in this order, and a stage that names them differently is a defect the Phase 3B
+checklist catches.
+
 ## Reading-instruction routing
 
 The digest's Markdown body is parsed **once**, at configuration resolution, into four canonical

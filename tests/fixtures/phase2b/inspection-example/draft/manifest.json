@@ -5,7 +5,7 @@
     {
       "path": "prompts/stages/draft/system.j2",
       "bytes": 197,
-      "sha256": "d52434a927e8b293290c2aa0b62185884d9c0212d52d822eb955bd46f40e8d2d"
+      "sha256": "70123544fddd2a3b90a2687439544996e7e3f9408cb5d82bddc16fc129e22e25"
     },
     {
       "path": "prompts/shared/preamble.j2",
@@ -83,8 +83,8 @@
     },
     {
       "path": "system/style-pipelines/synthesis-max/draft.md",
-      "bytes": 4896,
-      "sha256": "f286a4dc55a2aca89f89c5ddf7db521c7f683a33821c39fd82a39cdcd2a2dd3a"
+      "bytes": 3993,
+      "sha256": "bd4d65b01d791372dce7776f831581c15c4091958f2ecdd3f43125cbbfd6d3e9"
     }
   ],
   "blocks": [
@@ -110,6 +110,6 @@
     "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
     "styles/synthesis-max/modules/11-quality-control.md"
   ],
-  "system_bytes": 47587,
+  "system_bytes": 46684,
   "user_bytes": 6548
 }

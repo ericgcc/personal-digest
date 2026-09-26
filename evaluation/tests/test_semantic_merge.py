@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from evaluation.config import JudgeConfig
@@ -100,9 +102,13 @@ def test_semantic_results_merge_into_records_and_survive_persistence(tmp_path) -
     project = ProjectPaths(tmp_path)
     (tmp_path / "tools").mkdir(parents=True, exist_ok=True)
     (tmp_path / "digests").mkdir(parents=True, exist_ok=True)
-    from evaluation.tests.conftest import DIGEST_TECH, RUNNER_SOURCE, write_run
+    (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+    from evaluation.tests.conftest import DIGEST_TECH, RUNNER_SOURCE, V1_STAGES, write_run
 
     (tmp_path / "tools" / "digest_runner.mjs").write_text(RUNNER_SOURCE, encoding="utf-8")
+    (tmp_path / "config" / "pipeline-v1-stages.json").write_text(
+        json.dumps(V1_STAGES, indent=2), encoding="utf-8"
+    )
     (tmp_path / "digests" / "tech-bi-daily.md").write_text(DIGEST_TECH, encoding="utf-8")
     write_run(project, "tech-bi-daily-20260101", digest_id="tech-bi-daily")
 

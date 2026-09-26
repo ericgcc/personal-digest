@@ -22,7 +22,7 @@ Before touching Gmail, validate that:
 * the rendering profile and template exist and match the selected style;
 * `tools/digest_runner.mjs` and `package.json` exist; Node.js can execute the runner; the local `.env` file defines a non-empty `DEEPSEEK_API_KEY` and is loaded with Node's native `--env-file` flag; and the configured DeepSeek chat endpoint responds to an authenticated request;
 * when `editorial-pipeline-v2` is active, the two Python components it reaches through adapters are resolvable: the WOPS project at `WOPS_ROOT` and an interpreter carrying the evaluation extras at `DIGEST_EVAL_PYTHON`. Neither is required for delivery — an unavailable component degrades its stage and the run continues — but the agent must establish which are available before the run so it can report a degraded capability rather than pass it off as normal;
-* `tools/verify-run.mjs` exists for the post-run contract check described in `## Verify the run`;
+* `scripts/verify-run.mjs` exists for the post-run contract check described in `## Verify the run`;
 * the configured SQLite state database and state contract exist, the database passes `PRAGMA integrity_check`, and its `PRAGMA user_version` matches the contract;
 * any `aliases` are distinct from the canonical digest ID;
 * `language` is present, recognizable, and can be mapped to a valid BCP 47 tag for HTML metadata. Stop before source acquisition if the output language cannot be resolved unambiguously.
@@ -321,14 +321,14 @@ The runner is the delivery gate. No contract verifier blocks delivery.
 After a completed run, invoke the read-only contract verifier for the record:
 
 ```text
-node tools/verify-run.mjs --run <run-id> --digest <digest-id>
+node scripts/verify-run.mjs --run <run-id> --digest <digest-id>
 ```
 
 The pipeline is read from the run's own `pipeline.json`, so no `--pipeline` flag is needed; pass `--pipeline v1` or `--pipeline v2` only to override a run whose record is missing or wrong. It writes `verification.md` and `verification.json` into the run directory and is **advisory**: it exits 0 after a successful report regardless of what it found, and exits non-zero only when the run directory does not exist or the report could not be written. A non-zero exit from the verifier therefore means the check did not run, not that the digest failed.
 
 Read every ERROR and WARN from `verification.md` and report them. They describe artifact-level problems — citation integrity, catalogue consistency, body length against the style budget, the run-key marker, operational-data leaks — that the runner does not gate on. Treat a finding as information about the artifact, never as permission to edit the artifact or to withhold delivery.
 
-`tools/verify-replay.mjs` is a different tool for a different job: it checks the migration's architectural claims against a **replay** run and is not part of a live delivery. It is not required for a normal digest run.
+`scripts/verify-replay.mjs` is a different tool for a different job: it checks the migration's architectural claims against a **replay** run and is not part of a live delivery. It is not required for a normal digest run.
 
 Run commands from the canonical local Digest System root. Do not use a cloud-storage connector, web URL, cloud workspace, task workspace, sandbox directory, or temporary clone to read canonical configuration or create run artifacts. On Windows, use the local Node.js runtime that passed preflight; `node` below denotes that runtime.
 

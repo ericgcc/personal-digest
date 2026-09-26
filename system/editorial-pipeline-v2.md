@@ -80,10 +80,10 @@ A **style profile** is an explicit, versioned declaration of what each style's e
 
 | Concept | Where it lives |
 | --- | --- |
-| The registry: one entry per profile | `tools/pipeline/style-profiles.mjs` |
+| The registry: one entry per profile | `src/editorial/prompts/style-profiles.mjs` |
 | Operational stage documents for a style | `system/style-pipelines/<style>/` |
 | The style's identity and output requirements | `styles/<style>.md` — unchanged, and still authoritative |
-| The numeric body-length policy | `tools/pipeline/budgets.mjs`, referenced by every profile |
+| The numeric body-length policy | `src/editorial/budgets.mjs`, referenced by every profile |
 
 A profile declares, per stage, the style-derived `documents` (and, for the evaluation stages, `contracts`) that stage receives; and once for the profile as a whole, its **budget policy**, its **composition constraints** and its **evaluation rubric**. `analyze` receives the style's selection model through its profile, which is why it can select for the style's composition unit rather than for article quality in general.
 
@@ -94,7 +94,7 @@ Rules:
 * **Preflight is mandatory.** Before the first model call, every document and every declared section is resolved. A missing document, a section its style does not declare, or a style file missing a mandated section is a configuration error, reported with all other problems at once rather than discovered as a thinner prompt mid-run.
 * **Selectivity is audited.** Each stage's `attempt.json` records `style_sections_excluded`: the sections its style declares that this stage was deliberately not given.
 * **Rendering is style-scoped, not profile-scoped.** An editorial profile version never changes how the digest looks.
-* **The runtime documents state requirements; the reasoning lives elsewhere.** `system/style-pipelines/<style>/*.md` are part of a stage's prompt, so they carry executable responsibilities, required fields, decision rules and prohibited behaviours. Why a rule exists, and the historical evidence for it, is in `docs/style-pipeline-rationale.md` — which is delivered to no model. Assembled context is measured with `node tools/pipeline/measure-context.mjs`, and a test asserts that no requirement disappeared in the trimming.
+* **The runtime documents state requirements; the reasoning lives elsewhere.** `system/style-pipelines/<style>/*.md` are part of a stage's prompt, so they carry executable responsibilities, required fields, decision rules and prohibited behaviours. Why a rule exists, and the historical evidence for it, is in `docs/history/style-pipeline-rationale.md` — which is delivered to no model. Assembled context is measured with `node scripts/measure-context.mjs`, and a test asserts that no requirement disappeared in the trimming.
 
 ### The four adapter contracts
 
@@ -116,7 +116,7 @@ The evaluation stages do not receive inlined documents; they hand instructions t
 * **Routing** — which part of the style each stage receives, which stage documents are added, and which constraints are enforced. This is per profile, and `<style>-legacy` restores it exactly.
 * **The style's own contract** — its composition unit, thread range, source bounds, structure and voice. This is per style, and a revision to it applies to every profile of that style, including the rollback profile.
 
-A consequence worth stating plainly: once a style file is revised, `<style>-legacy` is a rollback of the *routing* and not of the style's content. Reverting a style file requires reverting the style file. `tools/pipeline/style-context-isolation.test.mjs` keeps a `REVISED_SINCE_BASELINE` record naming each style revised since the historical runs and why, and it fails if a style is edited without being recorded there or recorded without being edited — so the drift is always visible and always attributed.
+A consequence worth stating plainly: once a style file is revised, `<style>-legacy` is a rollback of the *routing* and not of the style's content. Reverting a style file requires reverting the style file. `tests/integration/style-context-isolation.test.mjs` keeps a `REVISED_SINCE_BASELINE` record naming each style revised since the historical runs and why, and it fails if a style is edited without being recorded there or recorded without being edited — so the drift is always visible and always attributed.
 
 ### Profile selection
 

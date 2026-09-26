@@ -2,8 +2,10 @@
 
 The loader derives everything from real pipeline metadata:
 
-* the ordered stage list and stage artifact filenames come from the ``STAGES``
-  declaration in ``tools/digest_runner.mjs``;
+* the ordered stage list and stage artifact filenames come from the static v1
+  descriptor at ``config/pipeline-v1-stages.json`` — preserved as data so historical
+  runs that predate ``run-summary.json`` stage records remain describable without an
+  executable v1 runner;
 * a run's own stage order comes from its ``run-summary.json``, which the runner
   writes only when a pipeline completes;
 * the digest language and style come from the digest frontmatter the pipeline
@@ -40,28 +42,37 @@ _PHASE_HEADING = re.compile(r"^#{1,6}\s+(?:\d+\.\s*)?([A-Za-z][A-Za-z&\s]*?)\s*(
 
 
 def parse_stage_specs(runner_path: str | Path) -> tuple[StageSpec, ...]:
-    """Parse the ordered ``STAGES`` declaration out of the Node runner.
+    """Parse the ordered stage list from the static v1 descriptor.
+
+    ``runner_path`` is accepted for compatibility with the historical call shape; the
+    stage list itself is read from ``config/pipeline-v1-stages.json`` beside the
+    project root, which is the one authoritative copy of the retired v1 stage table.
 
     Raises:
-        FileNotFoundError: the runner is missing.
-        ValueError: the runner exists but declares no stages.
+        FileNotFoundError: the descriptor is missing.
+        ValueError: the descriptor exists but declares no stages.
     """
     path = Path(runner_path)
-    source = path.read_text(encoding="utf-8")
-    block = _STAGES_BLOCK.search(source)
-    if block is None:
-        raise ValueError(f"Could not locate the STAGES declaration in {path}")
+    # `runner_path` is `<root>/tools/digest_runner.mjs`, so the project root is its
+    # grandparent directory.
+    root = path.parents[1].resolve()
+    descriptor = (root / "config" / "pipeline-v1-stages.json").resolve()
+    if not descriptor.is_file():
+        raise FileNotFoundError(f"v1 stage descriptor missing: {descriptor}")
+    raw = json.loads(descriptor.read_text(encoding="utf-8"))
+    if not isinstance(raw, list):
+        raise ValueError(f"v1 stage descriptor at {descriptor} is not a list")
     specs = tuple(
         StageSpec(
-            name=match.group(1),
-            artifact=match.group(2),
-            declared_type=match.group(3),
-            task=match.group(4),
+            name=str(entry["name"]),
+            artifact=str(entry["artifact"]),
+            declared_type=str(entry["type"]),
+            task=str(entry.get("task", "")),
         )
-        for match in _STAGE_ENTRY.finditer(block.group(1))
+        for entry in raw
     )
     if not specs:
-        raise ValueError(f"No stage entries parsed from the STAGES declaration in {path}")
+        raise ValueError(f"No stage entries in the v1 descriptor {descriptor}")
     return specs
 
 

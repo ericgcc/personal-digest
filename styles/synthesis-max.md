@@ -1,7 +1,7 @@
 # Synthesis MAX
 One selective cross-source explanatory briefing: no separate article summaries and no single-source threads. Integrate the strongest material around concrete topics, questions, mechanisms, developments, or tensions that at least two sources make easier to understand together, with links back to every source.
 
-This file is authoritative for what Synthesis MAX *is* and must produce. Which stage receives which part of it is declared by the `synthesis-max` style profiles in `tools/pipeline/style-profiles.mjs`; the stage-specific operational instructions those profiles name live in `system/style-pipelines/synthesis-max/`. See `system/editorial-pipeline-v2.md` §3.1.
+This file is authoritative for what Synthesis MAX *is* and must produce. Which stage receives which part of it is declared by the `synthesis-max` style profiles in `src/editorial/prompts/style-profiles.mjs`; the stage-specific operational instructions those profiles name live in `system/style-pipelines/synthesis-max/`. See `system/editorial-pipeline-v2.md` §3.1.
 
 
 ## Style interface

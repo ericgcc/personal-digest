@@ -79,7 +79,13 @@ class ProjectPaths:
 
     @property
     def runner_path(self) -> Path:
+        # The runner is now a thin CLI entry point with no stage declaration. The
+        # historical v1 stage list lives as static metadata, kept for this loader.
         return self.root / "tools" / "digest_runner.mjs"
+
+    @property
+    def v1_stages_path(self) -> Path:
+        return self.root / "config" / "pipeline-v1-stages.json"
 
     @property
     def env_path(self) -> Path:

@@ -345,7 +345,7 @@ evaluation/
 `historical/run_loader.parse_stage_specs` reads the ordered `STAGES` declaration out of
 `tools/digest_runner.mjs`. That declaration is the **v1** pipeline and is deliberately
 unchanged, so the historical corpus keeps its meaning. v2's stages live in
-`tools/pipeline/v2.mjs` and are not in that declaration: a v2 run is discovered through its
+`src/editorial/stages.mjs` and are not in that declaration: a v2 run is discovered through its
 own `pipeline.json` and `stage-records.json`, while the historical evaluator continues to
-reason about the v1 corpus it was built for. `tools/verify-run.mjs --pipeline v2` validates
+reason about the v1 corpus it was built for. `scripts/verify-run.mjs --pipeline v2` validates
 a v2 run's stage set.

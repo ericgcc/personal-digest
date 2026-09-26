@@ -190,8 +190,11 @@ def test_corpus_description_counts(populated_project) -> None:
 
 
 def test_runner_without_stages_is_an_error(project) -> None:
+    import json
+
     import pytest
 
-    project.runner_path.write_text("const OTHER = [];", encoding="utf-8")
+    # An empty v1 descriptor is an error: the loader must not invent a stage list.
+    project.v1_stages_path.write_text(json.dumps([]), encoding="utf-8")
     with pytest.raises(ValueError):
         parse_stage_specs(project.runner_path)

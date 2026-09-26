@@ -15,21 +15,25 @@ import pytest
 
 from evaluation.config import ProjectPaths
 
+#: The retired v1 stage table, kept as static metadata in ``config/pipeline-v1-stages.json``.
+#: The fixture reproduces that descriptor shape so the historical loader reads stage lists
+#: from data rather than from an executable runner.
+V1_STAGES = [
+    {"name": "analyze", "artifact": "analysis.json", "type": "JSON", "task": "SELECT -> ANALYZE: evaluate the corpus."},
+    {"name": "frame", "artifact": "frame.json", "type": "JSON", "task": "FRAME: establish editorial units."},
+    {"name": "draft", "artifact": "draft.md", "type": "Markdown", "task": "DRAFT: write the editorial body."},
+    {"name": "structural-edit", "artifact": "structural-edit.md", "type": "Markdown", "task": "STRUCTURAL EDIT: repair thought."},
+    {"name": "clarity-edit", "artifact": "clarity-edit.md", "type": "Markdown", "task": "CLARITY EDIT: make references clear."},
+    {"name": "voice-edit", "artifact": "voice-edit.md", "type": "Markdown", "task": "VOICE EDIT: apply the style."},
+    {"name": "compression-edit", "artifact": "compression-edit.md", "type": "Markdown", "task": "COMPRESSION EDIT: cut."},
+    {"name": "final-polish", "artifact": "final.md", "type": "Markdown", "task": "FINAL POLISH: publication checks."},
+    {"name": "render", "artifact": "email.html", "type": "HTML", "task": "Render final prose."},
+]
+
+#: Retained as a compatibility marker for tests that need a runner file to exist; the stage
+#: table no longer lives in the runner.
 RUNNER_SOURCE = """\
-import { readFile } from "node:fs/promises";
-
-const STAGES = [
-  ["analyze", "analysis.json", "JSON", "SELECT -> ANALYZE: evaluate the corpus."],
-  ["frame", "frame.json", "JSON", "FRAME: establish editorial units."],
-  ["draft", "draft.md", "Markdown", "DRAFT: write the editorial body."],
-  ["structural-edit", "structural-edit.md", "Markdown", "STRUCTURAL EDIT: repair thought."],
-  ["clarity-edit", "clarity-edit.md", "Markdown", "CLARITY EDIT: make references clear."],
-  ["voice-edit", "voice-edit.md", "Markdown", "VOICE EDIT: apply the style."],
-  ["compression-edit", "compression-edit.md", "Markdown", "COMPRESSION EDIT: cut."],
-  ["final-polish", "final.md", "Markdown", "FINAL POLISH: publication checks."],
-  ["render", "email.html", "HTML", "Render final prose."],
-];
-
+// Compatibility entry point; stage declarations live in src/editorial/stages.mjs.
 export const x = 1;
 """
 
@@ -186,8 +190,10 @@ def project(tmp_path: Path) -> ProjectPaths:
     (tmp_path / "tools").mkdir(parents=True, exist_ok=True)
     (tmp_path / "system").mkdir(parents=True, exist_ok=True)
     (tmp_path / "digests").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "config").mkdir(parents=True, exist_ok=True)
 
     _write(tmp_path / "tools" / "digest_runner.mjs", RUNNER_SOURCE)
+    _write(tmp_path / "config" / "pipeline-v1-stages.json", json.dumps(V1_STAGES, indent=2))
     _write(tmp_path / "system" / "editorial-process.md", EDITORIAL_PROCESS)
     _write(tmp_path / "system" / "registry.yaml", REGISTRY)
     _write(tmp_path / "digests" / "tech-bi-daily.md", DIGEST_TECH)

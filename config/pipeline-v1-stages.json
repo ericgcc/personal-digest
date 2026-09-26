@@ -1,0 +1,11 @@
+[
+  { "name": "analyze", "artifact": "analysis.json", "type": "JSON", "task": "SELECT -> ANALYZE: evaluate the complete reviewed corpus, source fidelity, relationships, qualifications, and candidates." },
+  { "name": "frame", "artifact": "frame.json", "type": "JSON", "task": "FRAME: establish editorial units, reader promises, narrative spines, support, and branches to omit before prose." },
+  { "name": "draft", "artifact": "draft.md", "type": "Markdown", "task": "DRAFT: write the editorial body from the approved frame." },
+  { "name": "structural-edit", "artifact": "structural-edit.md", "type": "Markdown", "task": "STRUCTURAL EDIT: repair thought, progression, source relationships, and selection before sentence polish." },
+  { "name": "clarity-edit", "artifact": "clarity-edit.md", "type": "Markdown", "task": "CLARITY EDIT: make context, mechanisms, references, and claims understandable." },
+  { "name": "voice-edit", "artifact": "voice-edit.md", "type": "Markdown", "task": "VOICE & NATURALNESS EDIT: apply the selected style and audit pattern density without changing approved meaning." },
+  { "name": "compression-edit", "artifact": "compression-edit.md", "type": "Markdown", "task": "COMPRESSION EDIT: remove secondary branches and repetition only after understanding is secure." },
+  { "name": "final-polish", "artifact": "final.md", "type": "Markdown", "task": "FINAL POLISH: complete the publication and source-fidelity checks." },
+  { "name": "render", "artifact": "email.html", "type": "HTML", "task": "Render final-approved prose into the selected profile and template without editorial rewriting." }
+]

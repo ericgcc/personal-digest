@@ -30,6 +30,11 @@
       "sha256": "a83ab924e5c326d15dd4cb58260227e749196693cc5a27e2c02d83d988dddfec"
     },
     {
+      "path": "styles/editorial-base.md",
+      "bytes": 14746,
+      "sha256": "fa95ec1128329ab23559b7637e90eb367b3c492a8bc3b2a0598228a97b5f8251"
+    },
+    {
       "path": "system/contracts/reader-contract.md",
       "bytes": 3465,
       "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
@@ -85,11 +90,6 @@
       "path": "system/style-pipelines/synthesis-max/draft.md",
       "bytes": 4896,
       "sha256": "f286a4dc55a2aca89f89c5ddf7db521c7f683a33821c39fd82a39cdcd2a2dd3a"
-    },
-    {
-      "path": "styles/editorial-base.md",
-      "bytes": 14746,
-      "sha256": "fa95ec1128329ab23559b7637e90eb367b3c492a8bc3b2a0598228a97b5f8251"
     }
   ],
   "blocks": [

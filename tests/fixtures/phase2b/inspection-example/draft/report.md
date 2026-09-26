@@ -16,6 +16,7 @@
 ## Instruction documents
 
 - `system/contracts/draft.md` — 4386 chars, sha256 `a83ab924e5c3`
+- `styles/editorial-base.md` — 14746 chars, sha256 `fa95ec112832`
 - `system/contracts/reader-contract.md` — 3465 chars, sha256 `1e10114ede33`
 - `digests/tech-bi-daily.md` — 3784 chars, sha256 `4bc94b96ab1e`
 
@@ -30,7 +31,6 @@
 - `styles/synthesis-max/modules/10-ending-rules.md` — 313 chars, sha256 `8a33057172b6`
 - `styles/synthesis-max/modules/04-writing-character.md` — 2687 chars, sha256 `5688f4f3d85b`
 - `system/style-pipelines/synthesis-max/draft.md` — 4896 chars, sha256 `f286a4dc55a2`
-- `styles/editorial-base.md` — 14746 chars, sha256 `fa95ec112832`
 
 ## Deliberately omitted style modules
 

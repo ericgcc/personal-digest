@@ -425,3 +425,30 @@ def test_checklist_11_the_cli_renders_synthesis_max_draft_offline():
     assert "You are executing one stage of an autonomous editorial pipeline." in result.stdout
     assert "## Synthesis mode" in result.stdout
     assert "<stage_task>" in result.stdout
+
+
+def test_checklist_11_the_synthesis_max_draft_inspection_is_recorded():
+    """The reference inspection is byte-deterministic and matches the committed example.
+
+    The fixtures are the report's inspection example: the exact system and user prompt, the
+    dependency manifest and the report for `synthesis-max-v1` / `draft`.
+    """
+    from digest_system.editorial.prompts.inspection import inspect_stage
+
+    example = PHASE2B / "inspection-example" / "draft"
+    assert example.is_dir(), "the recorded inspection example is missing"
+    inspection = inspect_stage(
+        digest_id="tech-bi-daily", profile_id="synthesis-max-v1", stage_name="draft"
+    )
+    # The files are written with explicit LF endings, while the composed text carries the line
+    # endings of the canonical documents it inlined, so line endings are normalized here.
+    def lf(text: str) -> str:
+        return text.replace("\r\n", "\n")
+
+    assert lf(inspection.system_text) == lf((example / "system.txt").read_text(encoding="utf-8"))
+    assert lf(inspection.user_text) == lf((example / "user.txt").read_text(encoding="utf-8"))
+    assert inspection.manifest == json.loads((example / "manifest.json").read_text(encoding="utf-8"))
+    assert lf(inspection.report) == lf((example / "report.md").read_text(encoding="utf-8"))
+    # The manifest records a hash for every input, which is what makes it auditable.
+    for entry in inspection.manifest["templates"] + inspection.manifest["documents"] + inspection.manifest["instructions"]:
+        assert len(entry["sha256"]) == 64, f"{entry['path']} has no hash"

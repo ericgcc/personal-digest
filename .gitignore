@@ -29,3 +29,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# Offline prompt inspection output (`python -m digest_system.cli inspect`): derived,
+# reproducible from the templates and profiles, never source
+prompt-inspections/

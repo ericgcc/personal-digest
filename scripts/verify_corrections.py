@@ -40,7 +40,9 @@ from _maintenance import configure_stdio  # noqa: E402
 configure_stdio()
 
 V1 = STYLE_PROFILES["synthesis-max-v1"]
-LEGACY = STYLE_PROFILES["synthesis-max-legacy"]
+# Phase 3C retired the Synthesis MAX legacy profile. Any surviving legacy profile still shows the
+# contrast between the legacy frame-failure policy and v1's.
+LEGACY = STYLE_PROFILES["detailed-legacy"]
 
 
 def corpus_of(*numbers: int) -> dict:

@@ -37,6 +37,18 @@
       "document": "system/naturalness-contract.md",
       "reason": "Phase 3B deduplication. The concision invariant was stated verbatim in both `system/contracts/line-edit.md` and `system/naturalness-contract.md` — two owners for one rule. It now has one owner (`line-edit.md`), and the naturalness contract refers to it rather than repeating it. No requirement changed: the invariant is unchanged and still delivered to the same stage.",
       "approved_by": "Phase 3B (instruction ownership and deduplication)"
+    },
+    {
+      "stage": "*",
+      "document": "system/style-pipelines/synthesis-max/review.md",
+      "reason": "Phase 3C adds the diagnosis categories the design requires: unclear subject, missing orientation, unsupported abstraction, unexplained relationship, inventory of source findings, unnecessary secondary material, disproportionate depth, and a genuine frame defect. It also sharpens the writer-revision, line-edit, reader-review and targeted-repair obligations. The invariant and the preservation rules are unchanged; the additions make the review diagnose the failures the historical Tech reviews actually found.",
+      "approved_by": "Phase 3C (Synthesis MAX selection, drafting and review)"
+    },
+    {
+      "stage": "*",
+      "document": "system/style-pipelines/synthesis-max/draft.md",
+      "reason": "Phase 3C rewrites the Draft responsibilities around executable obligations: establish each thread's subject for the effective reader, treat narrative_spine as logical order rather than a paragraph plan, explain terminology at the point of need, develop the approved relationship rather than reporting its members, and never give a source a paragraph merely because it was selected. The frame-following, traceability and budget rules are unchanged.",
+      "approved_by": "Phase 3C (Synthesis MAX selection, drafting and review)"
     }
   ],
   "phase3a": {
@@ -72,6 +84,24 @@
         "document": "system/writing-research-basis.md",
         "reason": "The research basis is maintainer-facing provenance, not a runtime checklist. It states the expert sources behind the writing references and how their ideas are used; its operational guidance already lives in the writing references and, for the reasoning it carried into Analyze, in `system/writing-reasoning-and-source-fidelity.md`. `system/workflow.md` already declared it 'provenance for maintainers' that 'need not be loaded during normal digest execution', but the stage table inlined it into Analyze — the largest single document in that prompt (10,579 chars). It is retained in the repository as a reference and is no longer inlined into any stage.",
         "moved_to": "maintainer reference only; the operational reasoning it carried is in `system/writing-reasoning-and-source-fidelity.md`"
+      }
+    ]
+  },
+  "phase3c": {
+    "note": "Phase 3C structural changes: the domain-accessibility module is routed to the stages that need it, and the Synthesis MAX legacy profile is retired.",
+    "added_documents": [
+      {
+        "stage": "draft",
+        "document": "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
+        "reason": "The module existed but was not routed to Draft, so the stage that writes the prose was never told to explain specialist terminology at the point the reader needs it. The recorded September 21 Tech developmental review found `unexplained_concept` five times — the single most common defect — and the module is the instruction that addresses it. It is now delivered to Draft, Line Edit and both review contracts.",
+        "moved_from": "declared in the style manifest but delivered to no stage"
+      }
+    ],
+    "retired_profiles": [
+      {
+        "profile": "synthesis-max-legacy",
+        "reason": "The legacy Synthesis MAX profile enforced no composition constraint and delivered no style document to Analyze, so it could not produce the structured selection the design requires. Phase 3C makes `synthesis-max-v1` the style's default and removes the legacy profile from the development runtime. Captured prompts and the frozen reference are preserved for audit and rollback.",
+        "replaced_by": "synthesis-max-v1"
       }
     ]
   }

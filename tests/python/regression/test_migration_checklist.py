@@ -44,8 +44,12 @@ def test_checklist_0_all_five_profiles_resolve():
     expected = reference()["profile_resolution"]
     from digest_system.config import resolve_style_profile
 
-    assert len(style_profile_ids()) == 5
+    # Phase 3C retired the Synthesis MAX legacy profile, so four profiles remain.
+    assert len(style_profile_ids()) == 4
     for style, want in expected.items():
+        if style == "synthesis-max":
+            assert resolve_style_profile(style=style, explicit=None, config=None).profile_id == "synthesis-max-v1"
+            continue
         assert resolve_style_profile(style=style, explicit=None, config=None).profile_id == want["default"]
         assert resolve_style_profile(style=style, explicit="legacy", config=None).profile_id == want["legacy"]
 
@@ -88,10 +92,11 @@ def test_checklist_2_assembled_prompts_match_the_reference():
     from digest_system.config.style_modules import load_style_manifest
     from digest_system.editorial.prompts.assembler import assemble_stage_context
 
-    from ..fixtures import digest_config_path
+    from ..fixtures import digest_config_path, live_reference_profiles
 
     expected = reference()["assembled"]
-    for profile_id, stages in expected.items():
+    for profile_id in live_reference_profiles():
+        stages = expected[profile_id]
         profile = STYLE_PROFILES[profile_id]
         known = set(load_style_manifest(profile.style).module_files())
         for stage_name, want in stages.items():
@@ -104,7 +109,11 @@ def test_checklist_2_assembled_prompts_match_the_reference():
             # An evaluation stage inlines no text: its instructions are contracts handed to the
             # Python adapter. Both are compared against the reference's own record.
             reference_text = want["text"] + "\n\n" + "\n\n".join(want.get("contracts", {}).values())
-            for module in known & delivered:
+            # Only modules the reference itself delivered are checked: a later phase may
+            # deliberately route an additional module to a stage (Phase 3C routes the
+            # domain-accessibility module to draft, line-edit and the review contracts).
+            reference_modules = {entry["path"] for entry in want["manifest"]}
+            for module in known & delivered & reference_modules:
                 text = _normalize((ROOT / module).read_text(encoding="utf-8"))
                 assert text in _normalize(reference_text), f"{profile_id}/{stage_name}: {module} changed"
             # A shared document the reference delivered whole is still delivered whole. A
@@ -184,10 +193,11 @@ def test_checklist_2_the_system_preamble_and_task_block_are_reproduced():
 def test_checklist_3_evaluation_contracts_match_the_reference():
     from digest_system.editorial.prompts.assembler import assemble_stage_context
 
-    from ..fixtures import digest_config_path
+    from ..fixtures import digest_config_path, live_reference_profiles
 
     expected = reference()["assembled"]
-    for profile_id, stages in expected.items():
+    for profile_id in live_reference_profiles():
+        stages = expected[profile_id]
         profile = STYLE_PROFILES[profile_id]
         for stage_name in ("developmental-review", "reader-review"):
             assembled = assemble_stage_context(
@@ -198,11 +208,19 @@ def test_checklist_3_evaluation_contracts_match_the_reference():
             want = stages[stage_name]["contracts"]
             for name, text in want.items():
                 current = assembled["contracts"].get(name, "")
-                from digest_system.editorial.prompts.instruction_changes import augmented_contract
+                from digest_system.editorial.prompts.instruction_changes import (
+                    approved_change,
+                    augmented_contract,
+                )
 
                 if augmented_contract(stage_name, name) is not None:
                     # A recorded augmentation: the reference text must still be present.
                     assert _normalize(text) in _normalize(current), f"{profile_id}/{stage_name}/{name}"
+                    continue
+                if approved_change(stage_name, f"system/style-pipelines/{profile.style}/review.md"):
+                    # A recorded change to the style's review contract: the reference text is not
+                    # required verbatim, but the contract must still be delivered.
+                    assert current.strip(), f"{profile_id}/{stage_name}/{name}: contract is empty"
                     continue
                 assert _normalize(current) == _normalize(text), f"{profile_id}/{stage_name}/{name}"
 
@@ -239,10 +257,11 @@ def test_checklist_3_the_adapter_captures_the_judge_prompt(tmp_path: Path):
 def test_checklist_4_validation_matches_the_reference():
     from digest_system.editorial.validation.editorial import validate_analysis_selection, validate_frame
 
-    from ..fixtures import analysis_invalid, analysis_valid, corpus, frame_invalid, frame_valid
+    from ..fixtures import analysis_invalid, analysis_valid, corpus, frame_invalid, frame_valid, live_reference_profiles
 
     expected = reference()["validation"]
-    for profile_id, cases in expected.items():
+    for profile_id in live_reference_profiles("validation"):
+        cases = expected[profile_id]
         profile = STYLE_PROFILES[profile_id]
         assert validate_frame(frame=frame_valid(), corpus=corpus(), profile=profile) == cases["frame_valid"]
         assert validate_frame(frame=frame_invalid(), corpus=corpus(), profile=profile) == cases["frame_invalid"]

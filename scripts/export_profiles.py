@@ -148,7 +148,7 @@ class _Descriptor:
 @dataclass(frozen=True)
 class _Declaration:
     documents: tuple[_Descriptor, ...] = ()
-    contracts: dict[str, _Descriptor] = field(default_factory=dict)
+    contracts: dict[str, tuple[_Descriptor, ...]] = field(default_factory=dict)
 
 
 def _without(headings: Sequence[str], omissions: Sequence[str]) -> tuple[str, ...]:
@@ -184,12 +184,12 @@ def _legacy_profile(style: str) -> dict[str, Any]:
             "frame": _Declaration(documents=(_style_doc(style, composition),)),
             "draft": _Declaration(documents=(_style_doc(style, full),)),
             "developmental-review": _Declaration(
-                contracts={"style": _Descriptor(headings=LEGACY_INTERFACE_SECTIONS, path=f"styles/{style}.md")}
+                contracts={"style": (_Descriptor(headings=LEGACY_INTERFACE_SECTIONS, path=f"styles/{style}.md"),)}
             ),
             "writer-revision": _Declaration(documents=(_style_doc(style, LEGACY_CHARACTER_SECTIONS),)),
             "line-edit": _Declaration(documents=(_style_doc(style, LEGACY_CHARACTER_SECTIONS),)),
             "reader-review": _Declaration(
-                contracts={"style": _Descriptor(headings=LEGACY_EXPECTATION_SECTIONS, path=f"styles/{style}.md")}
+                contracts={"style": (_Descriptor(headings=LEGACY_EXPECTATION_SECTIONS, path=f"styles/{style}.md"),)}
             ),
             "targeted-repair": _Declaration(documents=(_style_doc(style, LEGACY_CHARACTER_SECTIONS),)),
             "copy-verify": _Declaration(documents=(_style_doc(style, composition),)),
@@ -212,16 +212,16 @@ def _synthesis_max_v1() -> dict[str, Any]:
         "version": "2.0.0",
         "style": style,
         "label": "Synthesis MAX — style-isolated pipeline v2",
-        "status": "experimental",
+        "status": "active",
         "frame_failure_policy": "fail",
         "enforced": list(ENFORCEABLE_CONSTRAINTS),
         "notes": [
-            "Opt-in. Selected with --style-profile synthesis-max-v1 or DIGEST_STYLE_PROFILE=synthesis-max-v1.",
-            "Not the production default: production stays on synthesis-max-legacy until a historical replay and an editorial review of the finished digest both pass.",
+            "The active profile for synthesis-max. Selected by default, or with --style-profile synthesis-max-v1 or DIGEST_STYLE_PROFILE=synthesis-max-v1.",
             "Delivers the style's selection and relationship model to analyze, which previously received no style document at all.",
             "Routes every stage through the style's own section set rather than the cross-style union.",
             "Requires a structured cluster schema from analyze and a realizable word plan from frame, and validates both deterministically.",
             "Supplies its review obligations to the Python evaluation stages as the `review` contract, so a style-specific diagnosis can reach the judge.",
+            "Routes the domain-accessibility module to draft, line-edit and both review contracts, so orientation and unexplained-concept failures are instructed and diagnosable.",
             "Stops rather than deriving a recovery frame when the plan cannot satisfy its narrative contract.",
         ],
         "stages": {
@@ -236,26 +236,35 @@ def _synthesis_max_v1() -> dict[str, Any]:
             ),
             "draft": _Declaration(
                 documents=(
-                    style_doc((*COMPOSITION_SECTIONS_BY_STYLE[style], "## Writing character")),
+                    style_doc((*COMPOSITION_SECTIONS_BY_STYLE[style], "## Writing character", "## Domain accessibility in synthesis")),
                     pipeline_doc("draft"),
                 )
             ),
             "developmental-review": _Declaration(
                 contracts={
-                    "style": _Descriptor(headings=LEGACY_INTERFACE_SECTIONS, path=f"styles/{style}.md"),
-                    "review": pipeline_doc("review"),
+                    "style": (_Descriptor(headings=LEGACY_INTERFACE_SECTIONS, path=f"styles/{style}.md"),),
+                    "review": (
+                        pipeline_doc("review"),
+                        style_doc(("## Domain accessibility in synthesis",)),
+                    ),
                 }
             ),
             "writer-revision": _Declaration(
                 documents=(style_doc(LEGACY_CHARACTER_SECTIONS), pipeline_doc("review"))
             ),
             "line-edit": _Declaration(
-                documents=(style_doc(LEGACY_CHARACTER_SECTIONS), pipeline_doc("review"))
+                documents=(
+                    style_doc(("## Writing character", "## Domain accessibility in synthesis")),
+                    pipeline_doc("review"),
+                )
             ),
             "reader-review": _Declaration(
                 contracts={
-                    "style": _Descriptor(headings=LEGACY_EXPECTATION_SECTIONS, path=f"styles/{style}.md"),
-                    "review": pipeline_doc("review"),
+                    "style": (_Descriptor(headings=LEGACY_EXPECTATION_SECTIONS, path=f"styles/{style}.md"),),
+                    "review": (
+                        pipeline_doc("review"),
+                        style_doc(("## Domain accessibility in synthesis",)),
+                    ),
                 }
             ),
             "targeted-repair": _Declaration(
@@ -277,7 +286,6 @@ PROFILE_SOURCES: dict[str, dict[str, Any]] = {
         _legacy_profile("curated-discovery"),
         _legacy_profile("concise"),
         _legacy_profile("detailed"),
-        _legacy_profile("synthesis-max"),
         _synthesis_max_v1(),
     )
 }
@@ -309,7 +317,10 @@ def _declaration(declaration: _Declaration, style: str) -> dict[str, Any]:
     for descriptor in declaration.documents:
         value["documents"].extend(_entries(descriptor, style))
     if declaration.contracts:
-        value["contracts"] = {name: _entries(descriptor, style) for name, descriptor in declaration.contracts.items()}
+        value["contracts"] = {
+            name: [entry for descriptor in descriptors for entry in _entries(descriptor, style)]
+            for name, descriptors in declaration.contracts.items()
+        }
     return value
 
 

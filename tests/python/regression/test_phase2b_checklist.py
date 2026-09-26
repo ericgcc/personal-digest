@@ -52,7 +52,7 @@ def _run(args: list[str]) -> subprocess.CompletedProcess:
 def test_checklist_1_every_profile_resolves_every_required_stage():
     from digest_system.config.profiles import preflight_style_profile, validate_style_profile
 
-    assert len(style_profile_ids()) == 5
+    assert len(style_profile_ids()) == 4
     for profile_id in style_profile_ids():
         profile = STYLE_PROFILES[profile_id]
         assert validate_style_profile(profile).ok, profile_id
@@ -279,7 +279,7 @@ def test_checklist_7_an_html_template_placeholder_is_preserved():
     from digest_system.editorial.prompts.offline import build_context, seed_artifacts, stage_inputs
     from digest_system.editorial.stages import stage_v2
 
-    profile = STYLE_PROFILES["synthesis-max-legacy"]
+    profile = STYLE_PROFILES["detailed-legacy"]
     context = seed_artifacts(build_context(profile=profile))
     inputs = stage_inputs("render", context)
     composed = compose_stage_prompt(
@@ -346,7 +346,7 @@ def test_checklist_9_every_prompt_change_is_classified():
         f"{row.get('old_context')} -> {row.get('new_context')}"
         for row in unapproved
     )
-    assert len(payload["rows"]) == 50, "the diff did not cover every profile/stage pair"
+    assert len(payload["rows"]) == 40, "the diff did not cover every profile/stage pair"
 
 
 def test_checklist_9_the_approved_change_is_recorded_and_real():

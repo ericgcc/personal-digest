@@ -82,9 +82,14 @@
       "sha256": "5688f4f3d85b9c8273a87ffeda05dddfd7545bb2c7640c462aa8444b40081073"
     },
     {
+      "path": "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
+      "bytes": 1819,
+      "sha256": "d52388c4ae228078148c1c3cb72d0c603c514018e2371ec84531d85a39f507db"
+    },
+    {
       "path": "system/style-pipelines/synthesis-max/draft.md",
-      "bytes": 3993,
-      "sha256": "bd4d65b01d791372dce7776f831581c15c4091958f2ecdd3f43125cbbfd6d3e9"
+      "bytes": 5740,
+      "sha256": "ad078932a42b87ebfce16f936459b43dba52f3f056d34caa420c5eb1b15741f8"
     }
   ],
   "blocks": [
@@ -107,9 +112,8 @@
   ],
   "omitted": [
     "styles/synthesis-max/modules/02-writing-reference-profile.md",
-    "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
     "styles/synthesis-max/modules/11-quality-control.md"
   ],
-  "system_bytes": 46684,
+  "system_bytes": 50252,
   "user_bytes": 6548
 }

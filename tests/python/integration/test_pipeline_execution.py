@@ -333,7 +333,8 @@ def test_a_legacy_profile_derives_the_documented_recovery_frame(workspace):
     """The legacy rollback must keep the pre-profile recovery behaviour.
 
     The legacy profile enforces no composition constraint, so an empty plan passes validation;
-    the recovery path is reached when the frame's model call itself fails.
+    the recovery path is reached when the frame's model call itself fails. Phase 3C retired the
+    Synthesis MAX legacy profile, so this uses another style's legacy profile.
     """
     provider = MockProvider(_responses(), fail_stages={"frame"})
     source_path = workspace / ".digest-runs" / "mock-recovery" / "source-acquisition" / "sources.json"
@@ -343,11 +344,11 @@ def test_a_legacy_profile_derives_the_documented_recovery_frame(workspace):
         run_id="mock-recovery",
         digest_id="tech-bi-daily",
         config_path=workspace / "digests" / "tech-bi-daily.md",
-        style="synthesis-max",
+        style="detailed",
         language="English",
         source_path=source_path,
         timeout_seconds=60,
-        style_profile=STYLE_PROFILES["synthesis-max-legacy"],
+        style_profile=STYLE_PROFILES["detailed-legacy"],
         style_profile_source="explicit",
         root=workspace,
         provider=provider,

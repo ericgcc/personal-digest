@@ -46,6 +46,7 @@ from ..fixtures import (
     digest_config_path,
     frame_invalid,
     frame_valid,
+    live_reference_profiles,
     reference,
     reference_section,
 )
@@ -120,7 +121,12 @@ def test_vocabularies_match_the_reference():
     assert list(ANALYSIS_EDITORIAL_CODES) == expected["analysis_editorial_codes"]
     assert list(CATALOG_HEADINGS) == expected["catalog_headings"]
     assert list(LEAK_MARKERS) == expected["leak_markers"]
-    assert DEFAULT_STYLE_PROFILE_BY_STYLE == expected["default_style_profile_by_style"]
+    # Phase 3C retired the Synthesis MAX legacy profile and made v1 the style's default. The
+    # reference records the pre-Phase-3C mapping; the change is an approved difference.
+    assert DEFAULT_STYLE_PROFILE_BY_STYLE == {
+        **expected["default_style_profile_by_style"],
+        "synthesis-max": "synthesis-max-v1",
+    }
 
 
 # ---------------------------------------------------------------------------------------
@@ -139,7 +145,7 @@ def test_vocabularies_match_the_reference():
 # stage so a lost sentence is a test failure rather than a review finding.
 
 
-@pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))
+@pytest.mark.parametrize("profile_id", live_reference_profiles())
 def test_every_instruction_document_reaches_its_stage(profile_id):
     """Each document the reference inlined is delivered, with its text unchanged.
 
@@ -175,7 +181,7 @@ def test_every_instruction_document_reaches_its_stage(profile_id):
             assert current_contracts.get(path) == text, f"{profile_id}/{stage_name}: {path} changed"
 
 
-@pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))
+@pytest.mark.parametrize("profile_id", live_reference_profiles())
 def test_evaluation_contracts_are_unchanged(profile_id):
     """The evaluation stages hand the adapter the same contract text as before.
 
@@ -203,15 +209,25 @@ def test_evaluation_contracts_are_unchanged(profile_id):
                     f"{profile_id}/{stage_name}/{name}: the reference contract text is no longer present"
                 )
                 continue
+            if _approved_instruction_change(stage_name, f"system/style-pipelines/{profile.style}/review.md"):
+                # A recorded change to the style's review contract: the reference text is not
+                # required verbatim, but the contract must still be delivered and non-empty.
+                assert current.strip(), f"{profile_id}/{stage_name}/{name}: contract is empty"
+                continue
             assert _normalize(current) == _normalize(text), f"{profile_id}/{stage_name}/{name}"
 
 
-@pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))
+@pytest.mark.parametrize("profile_id", live_reference_profiles())
 def test_every_style_module_reaches_its_stage_verbatim(profile_id):
-    """A style rule's text is delivered exactly as the style's module declares it."""
+    """A style rule's text is delivered exactly as the style's module declares it.
+
+    The check is against the *current* assembled prompt, because a later phase may deliberately
+    route an additional module to a stage (Phase 3C routes the domain-accessibility module to
+    draft, line-edit and the review contracts). What must never happen is a module being
+    delivered with altered text.
+    """
     from digest_system.config.style_modules import load_style_manifest
 
-    expected = reference()["assembled"][profile_id]
     profile = STYLE_PROFILES[profile_id]
     manifest = load_style_manifest(profile.style)
     known = set(manifest.module_files())
@@ -221,8 +237,9 @@ def test_every_style_module_reaches_its_stage_verbatim(profile_id):
             profile=profile,
             digest_config_relative=digest_config_path(profile.style),
         )
-        want = expected[stage_name]
-        prompt = _normalize(want["text"] + "\n\n" + "\n\n".join(want.get("contracts", {}).values()))
+        prompt = _normalize(
+            assembled.get("text", "") + "\n\n" + "\n\n".join(assembled.get("contracts", {}).values())
+        )
         for entry in assembled["manifest"]:
             path = entry["path"]
             if path not in known:
@@ -290,7 +307,7 @@ def _augmented_contract(stage: str, contract: str) -> bool:
     return augmented_contract(stage, contract) is not None
 
 
-@pytest.mark.parametrize("profile_id", sorted(reference()["assembled"].keys()))
+@pytest.mark.parametrize("profile_id", live_reference_profiles())
 def test_assembled_contexts_declare_only_existing_files(profile_id):
     """Every document a stage delivers exists and is reported exactly once."""
     expected = reference()["assembled"][profile_id]
@@ -312,7 +329,7 @@ def test_assembled_contexts_declare_only_existing_files(profile_id):
 # ---------------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("profile_id", sorted(reference()["validation"].keys()))
+@pytest.mark.parametrize("profile_id", live_reference_profiles("validation"))
 def test_frame_and_analysis_validation_matches_the_reference(profile_id):
     expected = reference()["validation"][profile_id]
     profile = STYLE_PROFILES[profile_id]

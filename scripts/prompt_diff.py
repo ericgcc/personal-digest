@@ -174,6 +174,10 @@ def diff_all(profile_id: str | None = None) -> list[dict]:
     for pid, stages in historical["profiles"].items():
         if profile_id and pid != profile_id:
             continue
+        if pid not in STYLE_PROFILES:
+            # A profile retired after the historical capture (Phase 3C retired
+            # synthesis-max-legacy) has no current prompt to compare against.
+            continue
         profile = STYLE_PROFILES[pid]
         config = DIGEST_CONFIG_BY_STYLE[profile.style]
         for stage_name in stage_names_v2():
@@ -182,12 +186,12 @@ def diff_all(profile_id: str | None = None) -> list[dict]:
             )
             result = compare(_instruction_text(stages[stage_name]), _instruction_text(current))
             if result["status"] != "packaging-only":
-                result = _classify(stage_name, stages[stage_name], current, result)
+                result = _classify(stage_name, stages[stage_name], current, result, profile.style)
             rows.append({"profile": pid, "stage": stage_name, **result})
     return rows
 
 
-def _classify(stage_name: str, old: dict, new: dict, result: dict) -> dict:
+def _classify(stage_name: str, old: dict, new: dict, result: dict, style: str) -> dict:
     """Attach a document and an approval status to a non-packaging difference."""
     # An evaluation stage inlines no text: its instruction is the contracts it hands the judge.
     if old.get("contracts") or new.get("contracts"):
@@ -200,6 +204,17 @@ def _classify(stage_name: str, old: dict, new: dict, result: dict) -> dict:
                     "status": "approved-instruction-change",
                     "document": f"contract:{contract}",
                     "reason": augmentation["reason"],
+                }
+            # A style's review contract is delivered as a contract to the review stages. A
+            # deliberate change to it is recorded against the document path.
+            review_document = f"system/style-pipelines/{style}/review.md"
+            approval = _approval_for(stage_name, review_document)
+            if approval is not None:
+                return {
+                    **result,
+                    "status": "approved-instruction-change",
+                    "document": f"contract:{contract}",
+                    "reason": approval["reason"],
                 }
             return {**result, "document": f"contract:{contract}"}
         return result

@@ -117,14 +117,21 @@ def compare_documents(stage_name: str, old_text: str, new_text: str) -> list[str
     return problems
 
 
-def compare_contracts(stage_name: str, old: dict, new: dict) -> list[str]:
-    """Compare an evaluation stage's contracts, honoring a recorded augmentation."""
+def compare_contracts(stage_name: str, old: dict, new: dict, style: str) -> list[str]:
+    """Compare an evaluation stage's contracts, honoring a recorded augmentation or change."""
     problems: list[str] = []
+    review_document = f"system/style-pipelines/{style}/review.md"
     for name, text in old.items():
         current = new.get(name, "")
         if augmented_contract(stage_name, name):
             if _normalize(text) not in _normalize(current):
                 problems.append(f"contract {name} no longer contains the reference text")
+            continue
+        if approved_change(stage_name, review_document):
+            # A recorded change to the style's review contract: the reference text is not
+            # required verbatim, but the contract must still be delivered.
+            if not current.strip():
+                problems.append(f"contract {name} is empty")
             continue
         if _normalize(current) != _normalize(text):
             problems.append(f"contract {name} changed")
@@ -146,7 +153,9 @@ def main(argv: list[str] | None = None) -> int:
             want = reference[profile_id][stage_name]
             checked += 1
             if stage_v2(stage_name).executor == "evaluation":
-                problems = compare_contracts(stage_name, want["contracts"], new_contracts(profile, stage_name))
+                problems = compare_contracts(
+                    stage_name, want["contracts"], new_contracts(profile, stage_name), profile.style
+                )
             else:
                 problems = compare_documents(stage_name, want["text"], new_system_text(profile, stage_name))
             if problems:

@@ -263,7 +263,7 @@ def test_checklist_10_every_prompt_change_is_classified():
     assert not unapproved, "unapproved instruction changes:\n" + "\n".join(
         f"{row['profile']}/{row['stage']} ({row.get('document')})" for row in unapproved
     )
-    assert len(payload["rows"]) == 50
+    assert len(payload["rows"]) == 40
 
 
 def test_checklist_10_the_phase3a_changes_are_recorded():

@@ -311,8 +311,15 @@ def _discover_profile_ids(root: Path | None = None) -> list[str]:
 #: Every selectable profile, by id. Loaded once from the declaration files.
 STYLE_PROFILES: dict[str, StyleProfile] = {pid: load_style_profile(pid) for pid in _discover_profile_ids()}
 
-#: What a style runs when no profile is named.
-DEFAULT_STYLE_PROFILE_BY_STYLE: dict[str, str] = {style: f"{style}-legacy" for style in CANONICAL_STYLES}
+#: What a style runs when no profile is named. Synthesis MAX's legacy profile was retired in
+#: Phase 3C once the new implementation passed its behavioural and regression tests; the others
+#: retain their legacy baseline, which reproduces the pre-profile assembled context.
+DEFAULT_STYLE_PROFILE_BY_STYLE: dict[str, str] = {
+    "curated-discovery": "curated-discovery-legacy",
+    "concise": "concise-legacy",
+    "detailed": "detailed-legacy",
+    "synthesis-max": "synthesis-max-v1",
+}
 
 
 def style_profile_ids() -> list[str]:
@@ -338,7 +345,7 @@ def profiles_for_style(style: str) -> list[StyleProfile]:
 PROFILE_ALIASES: dict[str, Any] = {
     "default": lambda style: DEFAULT_STYLE_PROFILE_BY_STYLE.get(style),
     "legacy": lambda style: f"{style}-legacy",
-    "current": lambda style: f"{style}-legacy",
+    "current": lambda style: DEFAULT_STYLE_PROFILE_BY_STYLE.get(style),
     "v1": lambda style: f"{style}-v1",
 }
 

@@ -32,7 +32,29 @@ APPROVED_DIFFERENCES: tuple[tuple[str, Any, Any], ...] = (
         "src/editorial/budgets.mjs",
         "digest_system/config/budgets.py",
     ),
+    (
+        # Phase 3C retired the Synthesis MAX legacy profile and made the new implementation the
+        # style's default. The reference records the pre-Phase-3C default; the retirement is
+        # declared here so it cannot happen silently.
+        "vocabularies.default_style_profile_by_style.synthesis-max",
+        "synthesis-max-legacy",
+        "synthesis-max-v1",
+    ),
+    (
+        # Phase 3C promoted synthesis-max-v1 from experimental to the active default.
+        "profiles.synthesis-max-v1.describe.status",
+        "experimental",
+        "active",
+    ),
 )
+
+#: Profiles the frozen reference records that a later phase deliberately retired. A test that
+#: iterates the reference's profiles skips these, and the retirement is asserted instead.
+RETIRED_PROFILES: frozenset[str] = frozenset({"synthesis-max-legacy"})
+
+
+def retired_profile(profile_id: str) -> bool:
+    return profile_id in RETIRED_PROFILES
 
 
 def approved_difference(path: str) -> tuple[Any, Any] | None:
@@ -81,6 +103,13 @@ def reference_section(name: str) -> Any:
     ``profiles.*.describe.budget_source`` matches a value read from ``reference()["profiles"]``.
     """
     return normalize_reference(reference()[name], name)
+
+
+def live_reference_profiles(section: str = "assembled") -> list[str]:
+    """The reference's profile ids, minus the ones a later phase retired."""
+    return sorted(
+        profile_id for profile_id in reference()[section] if not retired_profile(profile_id)
+    )
 
 
 def digest_config_path(style: str) -> str:

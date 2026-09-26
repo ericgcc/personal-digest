@@ -42,7 +42,7 @@ from digest_system.editorial.prompts.assembler import assemble_stage_context
 from digest_system.editorial.stages import stage_names_v2
 from digest_system.runtime.artifacts import ROOT
 
-from ..fixtures import digest_config_path, reference
+from ..fixtures import digest_config_path, live_reference_profiles, reference
 
 _STYLE_PREFIX = "styles/"
 
@@ -122,7 +122,8 @@ def test_every_reference_section_still_reaches_its_stage_as_a_module():
     the profile names.
     """
     expected = reference()["assembled"]
-    for profile_id, stages in expected.items():
+    for profile_id in live_reference_profiles():
+        stages = expected[profile_id]
         profile = STYLE_PROFILES[profile_id]
         for stage_name, want in stages.items():
             declared = _declared_paths(profile, stage_name)
@@ -136,20 +137,32 @@ def test_every_reference_section_still_reaches_its_stage_as_a_module():
                         )
 
 
-def test_every_style_module_text_appears_verbatim_in_the_reference_prompt():
-    """The instruction text is unchanged; only its packaging moved."""
-    expected = reference()["assembled"]
-    for profile_id, stages in expected.items():
+def test_every_style_module_text_appears_verbatim_in_the_assembled_prompt():
+    """The instruction text is unchanged; only its packaging moved.
+
+    The check is against the *current* assembled prompt, because a later phase may deliberately
+    route an additional module to a stage (Phase 3C routes the domain-accessibility module to
+    draft, line-edit and the review contracts). What must never happen is a module being
+    delivered with altered text.
+    """
+    for profile_id in live_reference_profiles():
         profile = STYLE_PROFILES[profile_id]
-        for stage_name, want in stages.items():
-            if want.get("contracts"):
-                continue
-            prompt = _normalize(want["text"])
+        for stage_name in stage_names_v2():
+            assembled = assemble_stage_context(
+                stage_name=stage_name,
+                profile=profile,
+                digest_config_relative=digest_config_path(profile.style),
+            )
+            prompt = _normalize(
+                assembled.get("text", "")
+                + "\n\n"
+                + "\n\n".join(assembled.get("contracts", {}).values())
+            )
             for path in _declared_paths(profile, stage_name):
                 if path not in _style_modules(profile):
                     continue
                 text = _normalize((ROOT / path).read_text(encoding="utf-8"))
-                assert text in prompt, f"{profile_id}/{stage_name}: {path} is not present in the reference prompt"
+                assert text in prompt, f"{profile_id}/{stage_name}: {path} is not present verbatim"
 
 
 def test_the_style_module_documents_are_byte_identical_to_the_notes_they_compose():
@@ -212,8 +225,18 @@ def test_excluded_sections_are_reported_by_module():
 
 
 def test_analyze_still_receives_no_style_document_under_the_default_profile():
+    """The legacy profiles deliver no style document to analyze.
+
+    Phase 3C made the Synthesis MAX v1 profile the style's default, and v1 deliberately delivers
+    the style's selection and relationship model to analyze. Every other style's default is still
+    its legacy profile, which delivers nothing to analyze.
+    """
     for style in CANONICAL_STYLES:
-        assert _default_profile(style).stages["analyze"].documents == (), style
+        profile = _default_profile(style)
+        if profile.id == "synthesis-max-v1":
+            assert profile.stages["analyze"].documents, style
+            continue
+        assert profile.stages["analyze"].documents == (), style
 
 
 def test_no_stage_silently_receives_nothing():
@@ -339,11 +362,18 @@ def test_the_operational_part_of_every_stage_context_is_identical_across_styles(
 
 
 def test_the_synthesis_max_profile_is_the_only_one_that_diverges():
-    """Every other style's default profile is its legacy profile, so production is unchanged."""
+    """Every other style's default profile is its legacy profile, so production is unchanged.
+
+    Phase 3C retired the Synthesis MAX legacy profile and made v1 the style's default, so
+    Synthesis MAX is the one style whose default is not a legacy profile.
+    """
     for style in CANONICAL_STYLES:
+        if style == "synthesis-max":
+            assert default_style_profile_id(style) == "synthesis-max-v1"
+            assert STYLE_PROFILES["synthesis-max-v1"].status == "active"
+            continue
         assert default_style_profile_id(style) == f"{style}-legacy"
         assert STYLE_PROFILES[f"{style}-legacy"].status == "active"
-    assert STYLE_PROFILES["synthesis-max-v1"].status == "experimental"
 
 
 def test_the_registry_contains_exactly_the_expected_profiles():
@@ -351,6 +381,5 @@ def test_the_registry_contains_exactly_the_expected_profiles():
         "concise-legacy",
         "curated-discovery-legacy",
         "detailed-legacy",
-        "synthesis-max-legacy",
         "synthesis-max-v1",
     ]

@@ -135,7 +135,6 @@ def test_measure_context_runs_offline_and_reports_every_profile():
         "concise-legacy",
         "curated-discovery-legacy",
         "detailed-legacy",
-        "synthesis-max-legacy",
         "synthesis-max-v1",
     ]
     for row in payload["profiles"]:
@@ -154,10 +153,11 @@ def test_measure_context_matches_the_frozen_reference():
     from digest_system.editorial.prompts.assembler import assemble_stage_context
     from digest_system.editorial.stages import stage_names_v2
 
-    from ..fixtures import digest_config_path, reference
+    from ..fixtures import digest_config_path, live_reference_profiles, reference
 
     expected = reference()["assembled"]
-    for profile_id, stages in expected.items():
+    for profile_id in live_reference_profiles():
+        stages = expected[profile_id]
         profile = STYLE_PROFILES[profile_id]
         for stage_name in stage_names_v2():
             assembled = assemble_stage_context(

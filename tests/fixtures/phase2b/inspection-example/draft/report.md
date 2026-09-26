@@ -2,7 +2,7 @@
 
 - Digest: `tech-bi-daily`
 - Style: `synthesis-max`
-- Profile: `synthesis-max-v1` v2.0.0 (experimental)
+- Profile: `synthesis-max-v1` v2.0.0 (active)
 - Stage: `draft` (executor `llm`)
 - Message: system + user
 
@@ -29,12 +29,12 @@
 - `styles/synthesis-max/modules/09-final-source-catalog.md` — 3170 chars, sha256 `b738bba98859`
 - `styles/synthesis-max/modules/10-ending-rules.md` — 313 chars, sha256 `8a33057172b6`
 - `styles/synthesis-max/modules/04-writing-character.md` — 2687 chars, sha256 `5688f4f3d85b`
-- `system/style-pipelines/synthesis-max/draft.md` — 3993 chars, sha256 `bd4d65b01d79`
+- `styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md` — 1819 chars, sha256 `d52388c4ae22`
+- `system/style-pipelines/synthesis-max/draft.md` — 5740 chars, sha256 `ad078932a42b`
 
 ## Deliberately omitted style modules
 
 - `styles/synthesis-max/modules/02-writing-reference-profile.md`
-- `styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md`
 - `styles/synthesis-max/modules/11-quality-control.md`
 
 ## Data blocks
@@ -46,7 +46,7 @@
 
 ## Sizes
 
-- System: 46684 units
+- System: 50252 units
 - User: 6548 units
 
 ## Style modules

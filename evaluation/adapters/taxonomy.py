@@ -38,6 +38,14 @@ ISSUE_TYPE_TO_PROBLEM_TYPE: dict[str, str] = {
     "source_reporting_without_synthesis": "source_reporting_without_synthesis",
     "reader_orientation_loss": "reader_orientation_loss",
     "unsupported_analogy_or_connection": "unsupported_connection",
+    # Phase 4 synthesis-specific diagnoses. Each maps onto the canonical WOPS
+    # problem type that names the same failure, so a v4 diagnosis is still a
+    # usable retrieval key.
+    "unexplained_relationship": "weak_causal_connection",
+    "unnecessary_aggregation": "mixed_kind_grouping",
+    "abstraction_before_explanation": "premature_abstraction",
+    "disproportionate_depth": "miscalibrated_depth",
+    "weak_explanatory_progression": "unclear_sequence",
     # ``other`` is the evaluator's escape hatch and has no canonical equivalent.
     "other": None,  # type: ignore[assignment]
 }
@@ -48,6 +56,10 @@ SECTION_LIST_TO_PROBLEM_TYPE: dict[str, str] = {
     "unexplained_concepts": "unexplained_concept",
     "unclear_referents": "unclear_referent",
     "broken_logical_links": "weak_causal_connection",
+    "unexplained_relationships": "weak_causal_connection",
+    "unnecessary_aggregation": "mixed_kind_grouping",
+    "abstraction_before_explanation": "premature_abstraction",
+    "disproportionate_depth": "miscalibrated_depth",
     "narrative_problem": "weak_cohesion",
 }
 

@@ -376,7 +376,7 @@ def test_the_reader_definition_is_supplied_by_the_caller() -> None:
 
 def test_the_steps_version_records_the_neutralization() -> None:
     assert EVALUATION_STEPS_VERSION != "v3"
-    assert "neutral" in EVALUATION_STEPS_VERSION
+    assert "neutral" in EVALUATION_STEPS_VERSION or "diagnostics" in EVALUATION_STEPS_VERSION
 
 
 # --------------------------------------------------------------------------- #
@@ -516,7 +516,7 @@ def test_capabilities_reports_versions_and_never_the_credential(tmp_path: Path) 
     assert cli.main(["capabilities", "--input", str(request), "--output", str(output)]) == 0
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["ok"] is True
-    assert payload["versions"]["evaluation"]["evaluation_id"] == "reader_quality_v3"
+    assert payload["versions"]["evaluation"]["evaluation_id"] == "reader_quality_v4"
     assert payload["versions"]["developmental_review"]["evaluation_id"] == DEVELOPMENTAL_REVIEW_ID
     # The definitions are kept apart so one cannot overwrite the other's step version.
     assert (

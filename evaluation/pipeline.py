@@ -14,12 +14,15 @@ from typing import Any, Callable, Mapping, Sequence
 
 from .config import load_judge_config
 from .deterministic.evaluator import DeterministicMetrics, evaluate_deterministic
+from .deterministic.requirements import measure_requirements
 from .deterministic.section_metrics import evaluate_section_metrics
 from .deterministic.structure import StructureThresholds
 from .historical.run_model import HistoricalRun
 from .preprocessing.deterministic import PreprocessOptions, prepare_deterministic
 from .preprocessing.semantic import SemanticOptions
 from .sections import SectionOptions, parse_sections
+from .selection import audit_from_run
+from .version import comparable
 from .reporting.report import build_report_inputs, render_report
 from .reporting.results import (
     StageMetricRecord,
@@ -343,6 +346,95 @@ def run_section_metrics_pass(
     return {"runs": per_run}
 
 
+def run_requirements_pass(
+    runs: Sequence[HistoricalRun],
+    *,
+    progress: ProgressCallback = _noop,
+) -> dict[str, Any]:
+    """Measure the objectively checkable requirements for every prose artifact.
+
+    Deterministic and offline: no judge call. Word counts, source membership,
+    duplicate references, required components and valid citation numbers are
+    facts about the artifact, so they are measured rather than judged.
+    """
+    per_run: dict[str, Any] = {}
+    for run in runs:
+        if not run.usable:
+            continue
+        corpus = _read_run_json(run.run_dir / "source-acquisition" / "sources.json")
+        frame = _read_run_json(run.run_dir / "frame" / "output" / "frame.json")
+        stages: dict[str, Any] = {}
+        for stage in run.stages:
+            if not stage.is_evaluable:
+                continue
+            metrics = measure_requirements(
+                prose=stage.read_text(),
+                corpus=corpus,
+                frame=frame,
+            )
+            stages[stage.stage_name] = metrics.to_dict()
+        per_run[run.run_id] = {
+            "digest_id": run.digest_id,
+            "digest_style": run.style,
+            "stages": stages,
+        }
+        progress(f"  requirements {run.run_id}: {len(stages)} stage(s)")
+    return {"runs": per_run}
+
+
+def run_selection_audit_pass(
+    runs: Sequence[HistoricalRun],
+    *,
+    progress: ProgressCallback = _noop,
+) -> dict[str, Any]:
+    """Audit each run's selection from the structured artifacts it already wrote.
+
+    Deterministic and offline: no judge call. The audit reads Analyze's source
+    assessments and the frame's decisions, so it stays inside the routine
+    evaluation-call budget while still answering a question the prose metric
+    cannot — whether the selection itself was defensible.
+    """
+    per_run: dict[str, Any] = {}
+    for run in runs:
+        if not run.usable:
+            continue
+        selection_text = _read_digest_selection(run)
+        audit = audit_from_run(run, selection_text=selection_text)
+        per_run[run.run_id] = audit.to_dict()
+        progress(f"  selection audit {run.run_id}: {audit.reviewed_source_count} source(s)")
+    return {"runs": per_run}
+
+
+def _read_run_json(path: Path) -> Mapping[str, Any] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return payload if isinstance(payload, Mapping) else None
+
+
+def _read_digest_selection(run: HistoricalRun) -> str | None:
+    """The digest's ``## Selection`` text, read from the run's own context copy.
+
+    The run records the digest configuration it used under ``analyze/context``,
+    so the audit reads the selection instructions the run actually saw rather
+    than the current file, which may have changed since.
+    """
+    candidates = [
+        run.run_dir / "analyze" / "context" / "digests" / f"{run.digest_id}.md",
+        run.run_dir / "copy-verify" / "context" / "digests" / f"{run.digest_id}.md",
+    ]
+    for path in candidates:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        marker = "## Selection"
+        if marker in text:
+            return text
+    return None
+
+
 def run_noise_pass(
     runs: Sequence[HistoricalRun],
     *,
@@ -479,6 +571,7 @@ def recompute_deltas(records: Sequence[StageMetricRecord]) -> int:
         ordered = sorted(run_records, key=lambda record: record.stage_index)
         previous_flat: dict[str, Any] | None = None
         previous_semantic: float | None = None
+        previous_evaluation_id: str | None = None
         for record in ordered:
             if not record.evaluated:
                 # A non-prose stage never participates in a prose delta chain.
@@ -486,7 +579,16 @@ def recompute_deltas(records: Sequence[StageMetricRecord]) -> int:
             flat = promote_formulas(record.deterministic)
             new_deltas = compute_deltas(flat, previous_flat)
             score = record.semantic_score
-            if score is not None and previous_semantic is not None:
+            evaluation_id = record.semantic.get("evaluation_id")
+            # A semantic delta is only meaningful within one metric definition.
+            # A record produced by a superseded rubric is preserved but never
+            # compared with one produced by the current rubric, because the
+            # difference would be the rubric change, not an editorial change.
+            if (
+                score is not None
+                and previous_semantic is not None
+                and comparable(evaluation_id, previous_evaluation_id)
+            ):
                 new_deltas["semantic_score"] = round(score - previous_semantic, 6)
             if new_deltas != record.deltas:
                 record.deltas = new_deltas
@@ -496,6 +598,7 @@ def recompute_deltas(records: Sequence[StageMetricRecord]) -> int:
             previous_flat = flat
             if score is not None:
                 previous_semantic = score
+                previous_evaluation_id = evaluation_id
     return changed
 
 
@@ -554,6 +657,20 @@ def load_noise(results_dir: Path) -> NoiseReport | None:
 def write_section_metrics(results_dir: Path, payload: Mapping[str, Any]) -> Path:
     """Persist the cheap per-section deterministic metrics."""
     path = results_dir / "section-metrics.json"
+    write_json(path, payload)
+    return path
+
+
+def write_requirements(results_dir: Path, payload: Mapping[str, Any]) -> Path:
+    """Persist the deterministic requirement measurements."""
+    path = results_dir / "requirements.json"
+    write_json(path, payload)
+    return path
+
+
+def write_selection_audit(results_dir: Path, payload: Mapping[str, Any]) -> Path:
+    """Persist the selection audit."""
+    path = results_dir / "selection-audit.json"
     write_json(path, payload)
     return path
 
@@ -642,7 +759,9 @@ __all__ = [
     "run_comparison_pass",
     "run_deterministic_pass",
     "run_noise_pass",
+    "run_requirements_pass",
     "run_section_metrics_pass",
+    "run_selection_audit_pass",
     "run_semantic_pass",
     "semantic_targets",
     "stage_comparison_pairs",
@@ -650,5 +769,7 @@ __all__ = [
     "write_comparison_results",
     "write_records",
     "write_report",
+    "write_requirements",
     "write_section_metrics",
+    "write_selection_audit",
 ]

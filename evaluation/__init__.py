@@ -49,8 +49,11 @@ from .version import (
     SCORE_DECIMAL_PLACES,
     SCORE_RESOLUTION,
     SEMANTIC_SCOPE,
+    SUPERSEDED_EVALUATION_IDS,
+    comparable,
     developmental_definition,
     evaluation_definition,
+    is_superseded,
     library_versions,
 )
 
@@ -65,7 +68,10 @@ __all__ = [
     "SCORE_DECIMAL_PLACES",
     "SCORE_RESOLUTION",
     "SEMANTIC_SCOPE",
+    "SUPERSEDED_EVALUATION_IDS",
+    "comparable",
     "developmental_definition",
     "evaluation_definition",
+    "is_superseded",
     "library_versions",
 ]

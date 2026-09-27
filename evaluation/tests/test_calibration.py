@@ -75,10 +75,22 @@ def test_shipped_calibration_set_loads() -> None:
     calibration = load_calibration_set()
     assert calibration.available
     assert calibration.version == 1
-    # Only genuinely reported human concerns are labeled.
-    assert len(calibration.labeled) == 2
+    # Only genuinely reported human concerns are labeled. Phase 4 adds the three
+    # Synthesis MAX defects the recorded Tech review identified.
+    assert len(calibration.labeled) == 5
     labels = {item.human_label for item in calibration.expectations}
     assert labels <= HUMAN_LABELS
+
+
+def test_the_synthesis_max_failures_are_calibrated() -> None:
+    """The v4 rubric is calibrated against the historical Tech failures."""
+    calibration = load_calibration_set()
+    synthmax = [item for item in calibration.labeled if item.style == "synthesis-max"]
+    assert len(synthmax) == 3
+    for item in synthmax:
+        assert item.run_id == "tech-bi-daily-20260921-1109"
+        assert "unexplained_domain_concept" in item.expected_issue_types
+        assert item.must_not_exceed == 8.5
 
 
 def test_shipped_calibration_set_cites_the_human_concern() -> None:

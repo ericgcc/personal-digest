@@ -91,6 +91,9 @@ SEMANTIC_RECORD_KEYS: frozenset[str] = frozenset(
         "dim_synthesis_quality",
         "dim_narrative_coherence",
         "dim_reader_orientation",
+        # v4: the two synthesis dimensions.
+        "dim_explanatory_progression",
+        "dim_depth_proportion",
         # v3: comparison mode only.
         "regression_status",
         "regression_material",

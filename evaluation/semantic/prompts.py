@@ -1,4 +1,4 @@
-"""Prompts for ``reader_quality_v3``, rendered from shared Jinja2 templates.
+"""Prompts for ``reader_quality_v4``, rendered from shared Jinja2 templates.
 
 The judge is deliberately *not* given the source articles. This metric measures the reader who
 has not read the sources, so a judge that could see them would silently fill in the context the
@@ -40,7 +40,26 @@ STYLE_RUBRICS: dict[str, str] = {
         "contribute to that argument, and the relationships between ideas (agreement, "
         "tension, cause, consequence) should be clear. Synthesis means the sources were "
         "combined into understanding, not reported one after another. After reading, an "
-        "intelligent reader should be able to explain the overall argument."
+        "intelligent reader should be able to explain the overall argument.\n\n"
+        "Judge this style specifically on the following, and report a failure of any of them "
+        "as a typed issue rather than as a general impression:\n\n"
+        "* **Substantive source relationships.** Where a section combines sources, the "
+        "relationship between them must be explained, not merely asserted. A section that "
+        "lists what each source said is `source_reporting_without_synthesis`; a section that "
+        "claims a connection without explaining it is `unexplained_relationship`.\n"
+        "* **Explanatory progression.** The steps of the explanation must build on one "
+        "another. A section whose points are adjacent rather than progressive is "
+        "`weak_explanatory_progression`.\n"
+        "* **Unnecessary aggregation.** Material grouped because it arrived together, rather "
+        "than because the grouping helps the reader, is `unnecessary_aggregation`.\n"
+        "* **Abstraction before explanation.** A general claim reached before the evidence or "
+        "mechanism that would make it understandable is `abstraction_before_explanation`.\n"
+        "* **Proportionate depth.** Space that does not match explanatory yield — a simple "
+        "idea padded, or a load-bearing one compressed — is `disproportionate_depth`.\n\n"
+        "The question that decides the synthesis dimensions is: **can the reader explain what "
+        "the contributing sources establish together, not merely recall their separate "
+        "findings?** A section that passes every other check but fails this one is not a "
+        "successful Synthesis MAX section."
     ),
     "curated-discovery": (
         "This digest is written in the **Curated Discovery** style. Its selections are "

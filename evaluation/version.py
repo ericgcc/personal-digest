@@ -21,6 +21,16 @@ instruction are now supplied by the caller instead of being hardcoded here. The
 schema, rubric, metric identity, and score scale are unchanged, so scores
 produced before and after this change remain comparable — but the change is
 recorded rather than silent, exactly as this module exists to guarantee.
+
+**Phase 4 introduces ``reader_quality_v4``.** The Synthesis MAX diagnostic
+coverage was extended (substantive source relationships, explanatory
+progression, unnecessary aggregation, abstraction before explanation and
+disproportionate depth), which changes both the rubric's meaning and the
+response schema. A materially changed rubric is a new metric version, so the
+identity, rubric and schema versions all move together. Historical
+``reader_quality_v3`` scores are preserved and are **not** directly comparable
+with v4: :func:`comparable` answers whether two records may be compared, and the
+reporting layer refuses to compute a delta across an incompatible pair.
 """
 
 from __future__ import annotations
@@ -28,12 +38,17 @@ from __future__ import annotations
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
-EVALUATION_ID = "reader_quality_v3"
-EVALUATION_STEPS_VERSION = "v3.1-neutral-contracts"
-RUBRIC_VERSION = "v3"
-SCHEMA_VERSION = "v1"
+EVALUATION_ID = "reader_quality_v4"
+EVALUATION_STEPS_VERSION = "v4.0-style-diagnostics"
+RUBRIC_VERSION = "v4"
+SCHEMA_VERSION = "v2"
 PREPROCESSING_VERSION = "v2"
-DETERMINISTIC_VERSION = "v1"
+DETERMINISTIC_VERSION = "v2"
+
+#: Metric identities that were superseded by a material rubric or schema change.
+#: A record carrying one of these is preserved for history but must never be
+#: compared with a record carrying :data:`EVALUATION_ID`.
+SUPERSEDED_EVALUATION_IDS: tuple[str, ...] = ("reader_quality_v3", "reader_quality_v2", "reader_quality_v1")
 
 DEVELOPMENTAL_REVIEW_ID = "developmental_review_v1"
 DEVELOPMENTAL_STEPS_VERSION = "v1"
@@ -79,6 +94,28 @@ def evaluation_definition() -> dict[str, Any]:
         "semantic_scope": SEMANTIC_SCOPE,
         "score_decimal_places": SCORE_DECIMAL_PLACES,
     }
+
+
+def comparable(left: str | None, right: str | None) -> bool:
+    """Whether two records' semantic scores may be compared directly.
+
+    A metric version is bumped when the rubric's meaning or the response schema
+    changes materially, which makes the scores it produces a different quantity.
+    Comparing across that boundary would report a rubric change as an editorial
+    change, so the reporting layer asks this before computing a semantic delta.
+
+    Two records are comparable when they carry the same evaluation id. A missing
+    id on either side is treated as incomparable rather than assumed equal: an
+    unversioned record cannot be shown to belong to the same definition.
+    """
+    if not left or not right:
+        return False
+    return left == right
+
+
+def is_superseded(evaluation_id: str | None) -> bool:
+    """Whether an evaluation id names a definition this build has replaced."""
+    return bool(evaluation_id) and evaluation_id in SUPERSEDED_EVALUATION_IDS
 
 
 def developmental_definition() -> dict[str, Any]:

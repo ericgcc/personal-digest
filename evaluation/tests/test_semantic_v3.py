@@ -1,4 +1,4 @@
-"""``reader_quality_v3`` metric behaviour.
+"""``reader_quality_v4`` metric behaviour.
 
 No real model call happens here: the judge's transport is replaced, which still
 exercises the whole path — prompt assembly, schema parsing, reconciliation, and
@@ -154,6 +154,12 @@ def test_issue_enum_covers_the_required_taxonomy() -> None:
         "source_reporting_without_synthesis",
         "reader_orientation_loss",
         "unsupported_analogy_or_connection",
+        # Phase 4 synthesis-specific diagnoses.
+        "unexplained_relationship",
+        "unnecessary_aggregation",
+        "abstraction_before_explanation",
+        "disproportionate_depth",
+        "weak_explanatory_progression",
         "other",
     }
     assert {item.value for item in IssueType} == required
@@ -218,16 +224,17 @@ def test_derived_counts_and_ratios() -> None:
     assert evaluation.computed_critical_count == 1
 
 
-def test_section_mean_is_the_average_of_the_four_scores() -> None:
+def test_section_mean_is_the_average_of_the_five_scores() -> None:
     evaluation = ReaderQualityEvaluation.model_validate(_evaluation())
     section = evaluation.section_evaluations[0]
-    assert section.mean_score == pytest.approx((7.5 + 7.0 + 7.0 + 7.5) / 4)
+    # v4 adds synthesis_quality to the section mean; the fixture defaults it to 10.0.
+    assert section.mean_score == pytest.approx((7.5 + 7.0 + 7.0 + 7.5 + 10.0) / 5)
 
 
 def test_dimensions_flatten_with_a_stable_prefix() -> None:
     payload = ReaderQualityEvaluation.model_validate(_evaluation()).dimensions.to_dict()
     assert all(key.startswith("dim_") for key in payload)
-    assert len(payload) == 6
+    assert len(payload) == 8
 
 
 def test_issue_lists_are_bounded_by_truncation_not_rejection() -> None:

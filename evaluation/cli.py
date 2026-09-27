@@ -40,7 +40,9 @@ from .pipeline import (
     run_comparison_pass,
     run_deterministic_pass,
     run_noise_pass,
+    run_requirements_pass,
     run_section_metrics_pass,
+    run_selection_audit_pass,
     run_semantic_pass,
     stage_comparison_pairs,
     write_calibration_report,
@@ -48,7 +50,9 @@ from .pipeline import (
     write_json,
     write_records,
     write_report,
+    write_requirements,
     write_section_metrics,
+    write_selection_audit,
 )
 from .preprocessing.deterministic import PreprocessOptions
 from .preprocessing.semantic import SemanticOptions
@@ -599,6 +603,21 @@ def cmd_all(args: argparse.Namespace, paths: ProjectPaths) -> int:
             semantic_options=_semantic_options(args),
             progress=progress,
         ),
+    )
+
+    # Deterministic requirement metrics: word counts, source membership,
+    # duplicate references, required components and valid citation numbers.
+    progress("Deterministic requirement metrics (no judge calls).")
+    write_requirements(
+        results_dir,
+        run_requirements_pass(deterministic_selection, progress=progress),
+    )
+
+    # Selection audit: separate from the prose metric, and offline.
+    progress("Selection audit (no judge calls).")
+    write_selection_audit(
+        results_dir,
+        run_selection_audit_pass(deterministic_selection, progress=progress),
     )
 
     comparison_results: list[dict] = []

@@ -1,4 +1,4 @@
-"""Structured reader-quality schemas for ``reader_quality_v3``.
+"""Structured reader-quality schemas for ``reader_quality_v4``.
 
 v2 asked the judge for a single number and a prose reason, which meant a digest
 containing four strong sections and one confusing one still scored well: the
@@ -48,6 +48,13 @@ class IssueType(str, Enum):
     This replaces v2's approach of inferring categories afterwards by matching
     keywords over free-form prose, which could not distinguish a real defect from
     a sentence that merely mentioned the same words.
+
+    Phase 4 adds the Synthesis MAX diagnostic categories the design requires:
+    substantive source relationships, explanatory progression, unnecessary
+    aggregation, abstraction before explanation and disproportionate depth. They
+    are added to the shared taxonomy rather than a style-only one, because a
+    Curated Discovery item can exhibit the same failures; the style rubric decides
+    which of them a given style is judged on.
     """
 
     MISSING_CONTEXT = "missing_context"
@@ -61,6 +68,12 @@ class IssueType(str, Enum):
     SOURCE_REPORTING_WITHOUT_SYNTHESIS = "source_reporting_without_synthesis"
     READER_ORIENTATION_LOSS = "reader_orientation_loss"
     UNSUPPORTED_ANALOGY_OR_CONNECTION = "unsupported_analogy_or_connection"
+    # Phase 4: Synthesis MAX diagnostic coverage.
+    UNEXPLAINED_RELATIONSHIP = "unexplained_relationship"
+    UNNECESSARY_AGGREGATION = "unnecessary_aggregation"
+    ABSTRACTION_BEFORE_EXPLANATION = "abstraction_before_explanation"
+    DISPROPORTIONATE_DEPTH = "disproportionate_depth"
+    WEAK_EXPLANATORY_PROGRESSION = "weak_explanatory_progression"
     OTHER = "other"
 
 
@@ -168,6 +181,16 @@ class SectionEvaluation(BaseModel):
     context_sufficiency: float = Field(ge=MIN_SCORE, le=MAX_SCORE)
     explanatory_clarity: float = Field(ge=MIN_SCORE, le=MAX_SCORE)
     logical_progression: float = Field(ge=MIN_SCORE, le=MAX_SCORE)
+    synthesis_quality: float = Field(
+        default=MAX_SCORE,
+        ge=MIN_SCORE,
+        le=MAX_SCORE,
+        description=(
+            "Does the section combine its sources into understanding, rather than "
+            "reporting them one after another? Phase 4 adds this per-section so a "
+            "single source-inventory section is visible on its own."
+        ),
+    )
 
     understandable_on_first_read: bool
     reader_can_explain_why_it_matters: bool
@@ -183,12 +206,49 @@ class SectionEvaluation(BaseModel):
         default=True, description="Is the significance stated rather than left to infer?"
     )
 
+    # Phase 4: Synthesis MAX diagnostic coverage. These are the reader-facing
+    # questions the design requires the evaluator to answer, so a section that
+    # merely lists what each source said is visible as a failure rather than
+    # passing on fluent prose.
+    sources_establish_together: bool = Field(
+        default=True,
+        description=(
+            "Can the reader explain what the contributing sources establish together, "
+            "rather than only recalling their separate findings?"
+        ),
+    )
+    relationship_is_explained: bool = Field(
+        default=True,
+        description="Is the connection between the sources explained, not merely asserted?",
+    )
+    abstraction_is_grounded: bool = Field(
+        default=True,
+        description="Is any general claim reached only after the evidence that carries it?",
+    )
+    depth_is_proportionate: bool = Field(
+        default=True,
+        description="Does the space given match the explanatory yield of the material?",
+    )
+
     missing_context: list[str] = Field(default_factory=list, max_length=MAX_ISSUES_PER_SECTION)
     unexplained_concepts: list[str] = Field(
         default_factory=list, max_length=MAX_ISSUES_PER_SECTION
     )
     unclear_referents: list[str] = Field(default_factory=list, max_length=MAX_ISSUES_PER_SECTION)
     broken_logical_links: list[str] = Field(
+        default_factory=list, max_length=MAX_ISSUES_PER_SECTION
+    )
+    # Phase 4: the Synthesis MAX diagnostic lists.
+    unexplained_relationships: list[str] = Field(
+        default_factory=list, max_length=MAX_ISSUES_PER_SECTION
+    )
+    unnecessary_aggregation: list[str] = Field(
+        default_factory=list, max_length=MAX_ISSUES_PER_SECTION
+    )
+    abstraction_before_explanation: list[str] = Field(
+        default_factory=list, max_length=MAX_ISSUES_PER_SECTION
+    )
+    disproportionate_depth: list[str] = Field(
         default_factory=list, max_length=MAX_ISSUES_PER_SECTION
     )
 
@@ -220,6 +280,10 @@ class SectionEvaluation(BaseModel):
                 "unexplained_concepts": MAX_ISSUES_PER_SECTION,
                 "unclear_referents": MAX_ISSUES_PER_SECTION,
                 "broken_logical_links": MAX_ISSUES_PER_SECTION,
+                "unexplained_relationships": MAX_ISSUES_PER_SECTION,
+                "unnecessary_aggregation": MAX_ISSUES_PER_SECTION,
+                "abstraction_before_explanation": MAX_ISSUES_PER_SECTION,
+                "disproportionate_depth": MAX_ISSUES_PER_SECTION,
             },
         )
         if notes:
@@ -233,6 +297,7 @@ class SectionEvaluation(BaseModel):
             self.context_sufficiency,
             self.explanatory_clarity,
             self.logical_progression,
+            self.synthesis_quality,
         )
         return round(sum(values) / len(values), 4)
 
@@ -246,6 +311,11 @@ class DocumentDimensions(BaseModel):
     synthesis_quality: float = Field(ge=MIN_SCORE, le=MAX_SCORE)
     narrative_coherence: float = Field(ge=MIN_SCORE, le=MAX_SCORE)
     reader_orientation: float = Field(ge=MIN_SCORE, le=MAX_SCORE)
+    # Phase 4: the two Synthesis MAX dimensions the design names that the v3
+    # dimensions did not separate out. Defaulted so a v3-shaped response still
+    # parses; the v4 prompt always supplies them.
+    explanatory_progression: float = Field(default=MAX_SCORE, ge=MIN_SCORE, le=MAX_SCORE)
+    depth_proportion: float = Field(default=MAX_SCORE, ge=MIN_SCORE, le=MAX_SCORE)
 
     def to_dict(self) -> dict[str, float]:
         return {
@@ -255,6 +325,8 @@ class DocumentDimensions(BaseModel):
             "dim_synthesis_quality": self.synthesis_quality,
             "dim_narrative_coherence": self.narrative_coherence,
             "dim_reader_orientation": self.reader_orientation,
+            "dim_explanatory_progression": self.explanatory_progression,
+            "dim_depth_proportion": self.depth_proportion,
         }
 
 
@@ -311,6 +383,10 @@ class ReaderQualityEvaluation(BaseModel):
                         "unexplained_concepts": MAX_ISSUES_PER_SECTION,
                         "unclear_referents": MAX_ISSUES_PER_SECTION,
                         "broken_logical_links": MAX_ISSUES_PER_SECTION,
+                        "unexplained_relationships": MAX_ISSUES_PER_SECTION,
+                        "unnecessary_aggregation": MAX_ISSUES_PER_SECTION,
+                        "abstraction_before_explanation": MAX_ISSUES_PER_SECTION,
+                        "disproportionate_depth": MAX_ISSUES_PER_SECTION,
                     },
                 )
                 if section_notes:
@@ -383,6 +459,10 @@ def section_issues(section: SectionEvaluation) -> list[str]:
         ("unexplained_domain_concept", section.unexplained_concepts),
         ("unclear_referent", section.unclear_referents),
         ("weak_causal_connection", section.broken_logical_links),
+        ("unexplained_relationship", section.unexplained_relationships),
+        ("unnecessary_aggregation", section.unnecessary_aggregation),
+        ("abstraction_before_explanation", section.abstraction_before_explanation),
+        ("disproportionate_depth", section.disproportionate_depth),
     )
     values: list[str] = []
     for name, items in mapping:

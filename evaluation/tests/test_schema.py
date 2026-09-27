@@ -68,8 +68,17 @@ def _evaluation(**overrides) -> dict:
 
 
 def test_the_issue_taxonomy_is_the_documented_set() -> None:
-    assert len(IssueType) == 12
+    # v3 had 12 types; Phase 4 adds the five synthesis-specific diagnoses.
+    assert len(IssueType) == 17
     assert IssueType.READER_ORIENTATION_LOSS.value == "reader_orientation_loss"
+    for name in (
+        "unexplained_relationship",
+        "unnecessary_aggregation",
+        "abstraction_before_explanation",
+        "disproportionate_depth",
+        "weak_explanatory_progression",
+    ):
+        assert name in {member.value for member in IssueType}
 
 
 def test_severity_has_three_levels() -> None:
@@ -164,13 +173,14 @@ def test_section_critical_failure_defaults_to_false() -> None:
     assert SectionEvaluation.model_validate(_section()).critical_failure is False
 
 
-def test_mean_score_averages_the_four_reader_dimensions() -> None:
+def test_mean_score_averages_the_five_reader_dimensions() -> None:
     section = SectionEvaluation.model_validate(
         _section(
             first_pass_comprehension=8.0,
             context_sufficiency=6.0,
             explanatory_clarity=7.0,
             logical_progression=7.0,
+            synthesis_quality=7.0,
         )
     )
     assert section.mean_score == pytest.approx(7.0)
@@ -239,7 +249,8 @@ def test_section_issues_map_onto_the_taxonomy() -> None:
 def test_dimensions_flatten_with_a_stable_prefix() -> None:
     payload = DocumentDimensions(**{name: 7.0 for name in DocumentDimensions.model_fields})
     flattened = payload.to_dict()
-    assert len(flattened) == 6
+    # v3 had six dimensions; Phase 4 adds explanatory_progression and depth_proportion.
+    assert len(flattened) == 8
     assert all(key.startswith("dim_") for key in flattened)
 
 

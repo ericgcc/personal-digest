@@ -46,6 +46,23 @@ APPROVED_DIFFERENCES: tuple[tuple[str, Any, Any], ...] = (
         "experimental",
         "active",
     ),
+    (
+        # Phase 4 moved the reader-quality metric to v4: the rubric's meaning and
+        # the response schema changed materially, so the version moved with them.
+        "profiles.*.describe.evaluation.metric",
+        "reader_quality_v3",
+        "reader_quality_v4",
+    ),
+    (
+        "profiles.*.describe.evaluation.rubric",
+        "v3",
+        "v4",
+    ),
+    (
+        "profiles.*.describe.evaluation.steps_version",
+        "v3.1-neutral-contracts",
+        "v4.0-style-diagnostics",
+    ),
 )
 
 #: Profiles the frozen reference records that a later phase deliberately retired. A test that

@@ -98,7 +98,7 @@ class MockEvaluation:
                 "problem_types": ["clarity"],
                 "problem_type_vocabulary_source": "mock",
             },
-            "versions": {"evaluation": {"evaluation_id": "reader_quality_v3"}},
+            "versions": {"evaluation": {"evaluation_id": "reader_quality_v4"}},
             "usage": {"judge_prompt_tokens": 100, "judge_completion_tokens": 20},
             "adapter": {"python": "mock", "duration_ms": 1},
         }
@@ -116,7 +116,7 @@ class MockEvaluation:
                 "semantic_issues": [],
                 "problem_types": [],
             },
-            "versions": {"evaluation": {"evaluation_id": "reader_quality_v3"}},
+            "versions": {"evaluation": {"evaluation_id": "reader_quality_v4"}},
             "usage": {"judge_prompt_tokens": 100, "judge_completion_tokens": 20},
             "adapter": {"python": "mock", "duration_ms": 1},
         }

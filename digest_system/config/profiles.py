@@ -122,11 +122,15 @@ ENFORCEABLE_CONSTRAINTS: tuple[str, ...] = (
 )
 
 #: The semantic metric the review stages report against.
+#:
+#: Phase 4 moved the reader-quality metric to ``reader_quality_v4``: the rubric's
+#: meaning and the response schema changed materially, so the version moved with
+#: them. The developmental review is unchanged.
 EVALUATION_BY_STYLE: dict[str, dict[str, Any]] = {
     style: {
-        "metric": "reader_quality_v3",
-        "rubric": "v3",
-        "steps_version": "v3.1-neutral-contracts",
+        "metric": "reader_quality_v4",
+        "rubric": "v4",
+        "steps_version": "v4.0-style-diagnostics",
         "developmental": "developmental_review_v1",
         "style_criteria": [],
     }

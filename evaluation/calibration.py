@@ -12,6 +12,11 @@ artifacts it describes.
 Only genuinely reported human concerns are labeled. Every other sample stays
 ``unlabeled_control`` until a human reviews it; no "human approved" examples are
 invented.
+
+Phase 4 extends the set with the Synthesis MAX writing defects the Tech reviews
+already identified — the ``unexplained_concept`` failures the recorded
+developmental review found five times — so the v4 rubric is calibrated against
+real historical failures rather than a synthetic example.
 """
 
 from __future__ import annotations
@@ -289,11 +294,27 @@ def check_calibration(
             ("unexplained_domain_concept", "unexplained_concepts"),
             ("unclear_referent", "unclear_referents"),
             ("weak_causal_connection", "broken_logical_links"),
+            # v4 synthesis-specific lists.
+            ("unexplained_relationship", "unexplained_relationships"),
+            ("unnecessary_aggregation", "unnecessary_aggregation"),
+            ("abstraction_before_explanation", "abstraction_before_explanation"),
+            ("disproportionate_depth", "disproportionate_depth"),
         ):
             if section.get(key):
                 detected.append(name)
         if section.get("requires_rereading"):
             detected.append("dense_or_overcompressed")
+        # v4 boolean flags: a section that fails one of these is exhibiting the
+        # corresponding synthesis failure even when the judge did not also list
+        # it as a typed issue.
+        if section.get("sources_establish_together") is False:
+            detected.append("source_reporting_without_synthesis")
+        if section.get("relationship_is_explained") is False:
+            detected.append("unexplained_relationship")
+        if section.get("abstraction_is_grounded") is False:
+            detected.append("abstraction_before_explanation")
+        if section.get("depth_is_proportionate") is False:
+            detected.append("disproportionate_depth")
         # The judge may report a section's problem as a document-level issue that
         # names the section, which is the common shape for a single cross-cutting
         # defect. Those must count here, or a correctly diagnosed section would

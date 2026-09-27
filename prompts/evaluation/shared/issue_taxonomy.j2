@@ -2,6 +2,15 @@
 
 Report problems as typed issues rather than prose. Allowed `type` values:
 
-`missing_context`, `unexplained_domain_concept`, `unclear_referent`, `dense_or_overcompressed`, `weak_causal_connection`, `abrupt_transition`, `headline_body_disconnect`, `missing_significance`, `source_reporting_without_synthesis`, `reader_orientation_loss`, `unsupported_analogy_or_connection`, `other`
+`missing_context`, `unexplained_domain_concept`, `unclear_referent`, `dense_or_overcompressed`, `weak_causal_connection`, `abrupt_transition`, `headline_body_disconnect`, `missing_significance`, `source_reporting_without_synthesis`, `reader_orientation_loss`, `unsupported_analogy_or_connection`, `unexplained_relationship`, `unnecessary_aggregation`, `abstraction_before_explanation`, `disproportionate_depth`, `weak_explanatory_progression`, `other`
 
 Allowed `severity`: `minor`, `major`, `critical`.
+
+The synthesis-specific types are the ones this style is judged on. Use them precisely:
+
+- `unexplained_relationship` — the text asserts that two sources belong together, or that one thing follows from another, without explaining the connection.
+- `unnecessary_aggregation` — material is grouped because it arrived together, not because the grouping helps the reader understand it.
+- `abstraction_before_explanation` — a general claim is reached before the evidence or mechanism that would make it understandable.
+- `disproportionate_depth` — the space given to a point does not match its explanatory yield: a simple idea is padded, or a load-bearing one is compressed.
+- `weak_explanatory_progression` — the section's steps do not build on one another, so the reader cannot follow how the understanding develops.
+- `source_reporting_without_synthesis` — the section walks source by source through what each one said instead of combining them into one explanation.

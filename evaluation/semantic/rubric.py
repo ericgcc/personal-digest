@@ -1,14 +1,17 @@
-"""The ``reader_quality_v3`` score bands.
+"""The ``reader_quality_v4`` score bands.
 
 v2's bands were too generous: a digest with one confusing section but otherwise
 fluent prose sat comfortably in the top band, and "minor" issues were named
-without moving the score. The v3 bands are stricter, state explicitly that good
+without moving the score. The v3 bands were stricter, state explicitly that good
 prose elsewhere does not erase a local failure, and reserve the top band for
 output where **no** substantive section requires the reader to supply missing
 context.
 
-The bands are defined here as data, and the judge prompt is rendered from them so
-the two can never drift apart.
+v4 keeps the v3 bands and adds the synthesis-specific calibration the design
+requires: the top band now also requires that the reader can explain what the
+contributing sources establish **together**, and the "material problems" band
+names the synthesis failures explicitly. The bands are defined here as data, and
+the judge prompt is rendered from them so the two can never drift apart.
 """
 
 from __future__ import annotations
@@ -45,14 +48,15 @@ RUBRIC_BANDS: tuple[ScoreBand, ...] = (
         "All substantive sections are understandable on first read. No critical failures. "
         "The reader can explain what each section is about, why it matters, and how the "
         "important ideas connect. Domain concepts receive context before they become "
-        "load-bearing.",
+        "load-bearing. Where sources are combined, the reader can explain what they establish "
+        "together, not merely recall their separate findings.",
     ),
     ScoreBand(
         8.0,
         8.9,
         "Strong",
         "No major comprehension failures. A few localized explanations could be clearer, but "
-        "the reader never loses orientation.",
+        "the reader never loses orientation and the synthesis holds.",
     ),
     ScoreBand(
         7.0,
@@ -67,14 +71,15 @@ RUBRIC_BANDS: tuple[ScoreBand, ...] = (
         6.9,
         "Material editorial problems",
         "One or more substantive sections are hard to understand, context is missing, domain "
-        "facts substitute for explanation, or important logical connections are implicit.",
+        "facts substitute for explanation, important logical connections are implicit, or a "
+        "section reports its sources one after another instead of synthesizing them.",
     ),
     ScoreBand(
         3.0,
         4.9,
         "Frequently difficult to follow",
         "The reader can identify the topic but repeatedly has to reconstruct what the writer "
-        "means.",
+        "means, or cannot say what the combined sources establish.",
     ),
     ScoreBand(
         0.0,
@@ -88,7 +93,9 @@ RUBRIC_BANDS: tuple[ScoreBand, ...] = (
 #: deliberately not a production threshold.
 CALIBRATION_RULE = (
     "A digest containing a clearly critical section should almost never receive a 9+ "
-    "overall score. Good prose in other sections does not erase a local failure."
+    "overall score. Good prose in other sections does not erase a local failure. A section "
+    "that lists what each source said, without explaining what they establish together, is a "
+    "material synthesis failure even when every sentence is clear."
 )
 
 

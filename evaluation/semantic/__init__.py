@@ -1,9 +1,15 @@
-"""Semantic reader-quality evaluation (``reader_quality_v3``).
+"""Semantic reader-quality evaluation (``reader_quality_v4``).
 
-v3 replaces v2's single-scalar G-Eval with one custom DeepEval metric call that
+v3 replaced v2's single-scalar G-Eval with one custom DeepEval metric call that
 returns a structured, style-aware reader assessment: document dimensions,
 per-section reader reconstructions and scores, critical-failure flags, and typed
 issues. The budget is unchanged — one judge request per evaluated artifact.
+
+Phase 4 extends the diagnostic coverage for Synthesis MAX (substantive source
+relationships, explanatory progression, unnecessary aggregation, abstraction
+before explanation and disproportionate depth) and moves the metric identity to
+``reader_quality_v4``, because a materially changed rubric is a new metric
+version. Historical v3 scores are preserved and are not directly comparable.
 """
 
 from __future__ import annotations

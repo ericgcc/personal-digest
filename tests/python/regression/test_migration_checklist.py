@@ -231,7 +231,8 @@ def test_checklist_3_the_evaluator_retains_its_prompt_builders_and_schemas():
     from evaluation.version import developmental_definition, evaluation_definition
 
     assert set(COMMANDS) == set(_HANDLERS)
-    assert evaluation_definition()["evaluation_id"] == "reader_quality_v3"
+    # Phase 4 moved the reader-quality metric to v4; the developmental review is unchanged.
+    assert evaluation_definition()["evaluation_id"] == "reader_quality_v4"
     assert developmental_definition()["evaluation_id"] == "developmental_review_v1"
 
 

@@ -1,4 +1,4 @@
-# Human calibration set for reader_quality_v3.
+# Human calibration set for reader_quality_v4.
 #
 # Each expectation records a judgment a human reader actually made about a
 # specific section of a specific historical artifact. The prose is NOT duplicated
@@ -88,3 +88,79 @@ expectations:
     style: curated-discovery
     human_label: unlabeled_control
     human_notes: "Not reviewed by a human. Present for context only."
+
+  # ---------------------------------------------------------------------------
+  # Synthesis MAX historical failures. These are the writing defects the Tech
+  # reviews already identified, recorded here so the v4 rubric is calibrated
+  # against them rather than against a synthetic example. The prose is resolved
+  # from the run at check time; only the human judgment is recorded.
+  #
+  # The recorded developmental review of this run found `unexplained_concept`
+  # five times — the single most common defect — and the sections below are
+  # where it occurred. A v4 evaluator that does not flag them is not detecting
+  # the known failures.
+  # ---------------------------------------------------------------------------
+  - id: synthmax-agent-security-unexplained-concept
+    run_id: tech-bi-daily-20260921-1109
+    stage: copy-verify
+    section: "02"
+    style: synthesis-max
+    human_label: not_publication_quality
+    human_notes: >
+      Reported by the developmental review as a major defect. Prompt injection
+      is introduced only as a label — it "tops the standard list of LLM risks
+      and has no single fix" — and the Hacktron narrative names "Opus 4.8" and
+      "Opus 5" without saying whose models these are or that they are the
+      attackers' models. The reader is expected to supply the domain context
+      the digest never gives. This should not receive exceptional clarity.
+    expected_issue_types:
+      - unexplained_domain_concept
+      - missing_context
+    must_not_exceed: 8.5
+
+  - id: synthmax-harness-unexplained-concept
+    run_id: tech-bi-daily-20260921-1109
+    stage: copy-verify
+    section: "03"
+    style: synthesis-max
+    human_label: not_publication_quality
+    human_notes: >
+      Reported by the developmental review as a major defect. The thread's
+      principal research evidence rests on "bash alone" beating "a catalog of
+      typed tools," but what a typed tool is, and why the comparison matters,
+      is never established. The reader cannot evaluate the claim without
+      outside knowledge.
+    expected_issue_types:
+      - unexplained_domain_concept
+    must_not_exceed: 8.5
+
+  - id: synthmax-production-trust-unexplained-concept
+    run_id: tech-bi-daily-20260921-1109
+    stage: copy-verify
+    section: "04"
+    style: synthesis-max
+    human_label: not_publication_quality
+    human_notes: >
+      Reported by the developmental review as a major defect. "Reward hacking
+      leaves an internal signal that can be watched at scale" is the only
+      appearance of reward hacking, and the monitoring example stacks
+      "high-cardinality span attribute," "metric series," "trace volume," and
+      "saturating a shared resource" without explaining any of them. The
+      significance is also left implicit.
+    expected_issue_types:
+      - unexplained_domain_concept
+      - missing_significance
+    must_not_exceed: 8.5
+
+  # ---------------------------------------------------------------------------
+  # A control from the same Synthesis MAX run: the decision-layer section, which
+  # the recorded review did not flag at all. It must not be treated as a
+  # critical failure, which is the false-positive guard for this style.
+  # ---------------------------------------------------------------------------
+  - id: synthmax-decision-layer-control
+    run_id: tech-bi-daily-20260921-1109
+    stage: copy-verify
+    section: "01"
+    style: synthesis-max
+    human_label: unlabeled_control
+    human_notes: "Not reviewed by a human as a failure. Present for context only."

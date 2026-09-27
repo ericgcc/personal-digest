@@ -1,4 +1,4 @@
-"""``reader_quality_v3``: a structured, style-aware reader-quality metric.
+"""``reader_quality_v4``: a structured, style-aware reader-quality metric.
 
 v2 used stock ``GEval`` to produce one scalar plus prose. That shape could not
 express the failure we actually care about — a digest is only as good as its

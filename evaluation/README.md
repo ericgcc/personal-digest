@@ -110,6 +110,8 @@ Written to `evaluation-results-v3/` (git-ignored; fully reproducible):
 | `stage-summary.csv` | Aggregates by digest style, stage and language. |
 | `section-metrics.json` | Per-section structural metrics and per-stage change from the previous stage. |
 | `semantic-reasons.json` | Structured per-section assessments, issues and revision priorities. |
+| `requirements.json` | Deterministic requirement metrics: word counts, source membership, duplicate references, required components, valid citation numbers. |
+| `selection-audit.json` | The selection audit: featured/demoted/omitted sources, declared priority, unaccounted sources. Offline. |
 | `comparison.json` | Before/after regression verdicts when `--comparison` is used. |
 | `report.md` | The human-readable diagnostic report. |
 | `analysis.json` | Transitions, verdicts, correlations, the structured issue summary, regression examples. |

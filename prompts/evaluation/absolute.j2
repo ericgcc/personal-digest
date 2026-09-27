@@ -51,7 +51,9 @@ Return one JSON object with exactly this shape:
     "explanatory_clarity": <0-10>,
     "synthesis_quality": <0-10>,
     "narrative_coherence": <0-10>,
-    "reader_orientation": <0-10>
+    "reader_orientation": <0-10>,
+    "explanatory_progression": <0-10>,
+    "depth_proportion": <0-10>
   },
   "section_evaluations": [
     {
@@ -66,16 +68,25 @@ Return one JSON object with exactly this shape:
       "context_sufficiency": <0-10>,
       "explanatory_clarity": <0-10>,
       "logical_progression": <0-10>,
+      "synthesis_quality": <0-10>,
       "understandable_on_first_read": <true|false>,
       "reader_can_explain_why_it_matters": <true|false>,
       "requires_rereading": <true|false>,
       "headline_sets_expectation": <true|false>,
       "body_fulfills_expectation": <true|false>,
       "takeaway_is_explicit": <true|false>,
+      "sources_establish_together": <true|false>,
+      "relationship_is_explained": <true|false>,
+      "abstraction_is_grounded": <true|false>,
+      "depth_is_proportionate": <true|false>,
       "missing_context": ["<short>", "..."],
       "unexplained_concepts": ["<short>", "..."],
       "unclear_referents": ["<short>", "..."],
       "broken_logical_links": ["<short>", "..."],
+      "unexplained_relationships": ["<short>", "..."],
+      "unnecessary_aggregation": ["<short>", "..."],
+      "abstraction_before_explanation": ["<short>", "..."],
+      "disproportionate_depth": ["<short>", "..."],
       "narrative_problem": "<one sentence or null>",
       "critical_failure": <true|false>,
       "critical_failure_reason": "<one sentence or null>"

@@ -293,9 +293,11 @@ def test_the_evaluator_retains_its_version_metadata_and_prompt_capture(tmp_path:
     from evaluation.version import evaluation_definition
 
     definition = evaluation_definition()
-    assert definition["evaluation_id"] == "reader_quality_v3"
-    assert definition["evaluation_steps_version"] == "v3.1-neutral-contracts"
-    assert definition["rubric_version"] == "v3"
+    # Phase 4 moved the metric identity to v4: the rubric's meaning and the
+    # response schema changed materially, so the version moved with them.
+    assert definition["evaluation_id"] == "reader_quality_v4"
+    assert definition["evaluation_steps_version"] == "v4.0-style-diagnostics"
+    assert definition["rubric_version"] == "v4"
 
     adapter = create_evaluation_adapter()
     work_dir = tmp_path / "stage"

@@ -478,7 +478,7 @@ def test_deterministic_checks_match_the_reference():
         budget=STYLE_BUDGET["synthesis-max"],
         exempt_length=False,
     )
-    assert actual == expected["deterministic_checks"]
+    _assert_checks_preserved(actual, expected["deterministic_checks"])
 
     catalog_only = run_deterministic_checks(
         prose=PROSE,
@@ -491,7 +491,27 @@ def test_deterministic_checks_match_the_reference():
         budget=STYLE_BUDGET["synthesis-max"],
         exempt_length=True,
     )
-    assert catalog_only == expected["deterministic_checks_catalog_only"]
+    _assert_checks_preserved(catalog_only, expected["deterministic_checks_catalog_only"])
+
+
+#: Checks Phase 5 adds to the deterministic pass. They are additions, not changes: every check
+#: the reference recorded is still produced with the same status and note.
+PHASE5_ADDED_CHECKS: frozenset[str] = frozenset(
+    {"provenance:identities", "provenance:notes-resolve", "callouts:authorized"}
+)
+
+
+def _assert_checks_preserved(actual: dict, expected: dict) -> None:
+    """Every reference check is still produced unchanged; only recorded additions are allowed."""
+    by_id = {check["id"]: check for check in actual["checks"]}
+    for check in expected["checks"]:
+        assert check["id"] in by_id, f"check {check['id']} is no longer produced"
+        assert by_id[check["id"]] == check, f"check {check['id']} changed"
+    added = set(by_id) - {check["id"] for check in expected["checks"]}
+    assert added <= PHASE5_ADDED_CHECKS, f"unrecorded new checks: {sorted(added - PHASE5_ADDED_CHECKS)}"
+    # The non-check fields are unchanged.
+    for key in ("citations", "catalogue_numbers", "body_words", "total_words", "catalogue_detection"):
+        assert actual[key] == expected[key], key
 
 
 def test_copy_guard_matches_the_reference():

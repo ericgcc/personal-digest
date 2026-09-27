@@ -153,6 +153,29 @@ class OfflineContext:
         """Rendering notes are a property of a real run's resolved values; none offline."""
         return []
 
+    # --- callouts and canonical provenance ---------------------------------------------
+
+    def callout_registry(self):
+        """The callouts the digest authorizes, resolved from its own `## Optional highlights`."""
+        from ...config.callouts import registry_for
+
+        return registry_for(
+            self.instructions().get("Optional highlights"),
+            source=self.digest_config_relative,
+        )
+
+    def source_note_manifest(self):
+        """The canonical source-note manifest, built from the frame and the reviewed corpus."""
+        from ..provenance import build_source_note_manifest
+
+        frame = self.artifacts.get("frame")
+        return build_source_note_manifest(
+            frame=frame.json if frame is not None else None,
+            corpus=self.corpus,
+            digest_id=self.digest_id,
+            style=self.style,
+        )
+
 
 # ---------------------------------------------------------------------------------------
 # Deterministic synthetic data

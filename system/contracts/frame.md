@@ -53,6 +53,7 @@ Each substantive unit must explicitly contain information equivalent to:
 | `branches_to_cut` | Correct or interesting material that belongs to the sources but not to this unit. |
 | `single_idea_check` | One sentence confirming the unit carries one idea, or naming the reason it does not. |
 | `depth_target_words` | The space this unit should occupy, per the style's depth model, as an exact number. A range cannot be added up, and a budget that cannot be added up cannot be checked. |
+| `callout` | Optional. A proposed callout for this unit, or omitted. When present it carries `type` (a signal the digest's `## Optional highlights` section authorizes), `text` (one or two sentences), and `source_numbers` (the contributing sources). Propose one only when the digest authorizes it and the material genuinely warrants it; an edition with no callout is valid. |
 
 Style-specific fields that the style's composition model needs — a shared throughline for a synthesised style, a source line, a label, a working title — are added alongside these, never instead of them.
 

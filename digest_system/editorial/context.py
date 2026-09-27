@@ -138,6 +138,40 @@ class RunContext:
         """
         return self.instructions().reader_section
 
+    # --- callouts -----------------------------------------------------------------------
+
+    def callout_registry(self):
+        """The callouts this digest authorizes, resolved from its own `## Optional highlights`.
+
+        The vocabulary is the digest's, not the pipeline's: a digest that invents a new signal
+        needs no code change. The registry is built from the section the run actually read.
+        """
+        from ..config.callouts import registry_for
+
+        return registry_for(
+            self.instructions().get("Optional highlights"),
+            source=self.digest_config_relative,
+        )
+
+    # --- canonical provenance -----------------------------------------------------------
+
+    def source_note_manifest(self):
+        """The canonical source-note manifest: one identity per source, per retained unit.
+
+        Built from the frame's units and the reviewed corpus, so the render stage consumes a
+        canonical manifest instead of reconstructing identities and URLs from model-written
+        prose (baseline defect D6).
+        """
+        from .provenance import build_source_note_manifest
+
+        frame = self.artifacts.get("frame")
+        return build_source_note_manifest(
+            frame=frame.json if frame is not None else None,
+            corpus=self.corpus,
+            digest_id=self.digest_id,
+            style=self.style,
+        )
+
     # --- rendering values ---------------------------------------------------------------
 
     def rendering_values(self) -> dict[str, Any]:

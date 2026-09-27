@@ -42,6 +42,15 @@ You do **not** receive the workflow, the instructions for later stages, the rend
 7. **Keep each source's contribution recoverable.** Where the frame assigns a source a role, the reader must be able to see what that source contributes. Do not reduce a source to a stray example when the frame made it central.
 8. **Write prose, not HTML.** The output is Markdown. Do not let a template, a component count, or a neighbouring length decide your paragraph count.
 9. **Respect the budget.** The length target is a binding constraint for the body. It is a whole-edition budget: allocate it per unit as the frame directs, and do not spend it on restatement.
+10. **Write an authorized callout, when the frame proposed one.** A callout is a small elevated component, not a heading and not a paragraph. When the frame proposed one for a unit, write it in the exact form below, using the frame's `type` and `source_numbers` and your own one-or-two-sentence `text`. When the frame proposed none, write none: an edition without a callout is valid, and inventing one is not permitted.
+
+    ```text
+    <!-- callout: <type> sources: <n,n> -->
+    <one or two sentences>
+    <!-- /callout -->
+    ```
+
+    The `type` must be a signal the digest's `## Optional highlights` section authorizes. Do not invent a label, do not restyle the component, and do not add a callout the frame did not propose.
 
 ## What the style decides, and what it does not
 

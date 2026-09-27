@@ -15,7 +15,7 @@
 
 ## Instruction documents
 
-- `system/contracts/draft.md` — 4593 chars, sha256 `c417d4763856`
+- `system/contracts/draft.md` — 5332 chars, sha256 `374f1cf7adda`
 - `styles/editorial-base.md` — 14746 chars, sha256 `fa95ec112832`
 - `system/contracts/reader-contract.md` — 3465 chars, sha256 `1e10114ede33`
 
@@ -46,7 +46,7 @@
 
 ## Sizes
 
-- System: 50252 units
+- System: 50991 units
 - User: 6548 units
 
 ## Style modules

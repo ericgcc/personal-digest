@@ -916,6 +916,7 @@ def _run_copy_verify_stage(
         catalogue_required=catalogue_required,
         budget=context.profile.budget,
         exempt_length=catalog_only_edition,
+        highlights_text=context.instructions().get("Optional highlights"),
     )
     record["deterministic_checks"] = checks["counts"]
 
@@ -1019,6 +1020,7 @@ def _run_copy_verify_stage(
         catalogue_required=catalogue_required,
         budget=context.profile.budget,
         exempt_length=catalog_only_edition,
+        highlights_text=context.instructions().get("Optional highlights"),
     )
     record["deterministic_checks"] = published["counts"]
 

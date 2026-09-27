@@ -303,6 +303,27 @@ STAGES_V2: tuple[Stage, ...] = (
                     "provenance": "delivery",
                 },
             },
+            # The canonical source-note manifest: the renderer consumes this instead of
+            # reconstructing source identities and URLs from the prose (baseline defect D6).
+            {
+                "tag": "source_note_manifest",
+                "payload": _json(ctx.source_note_manifest().to_dict()),
+                "source": {
+                    "stage": "frame",
+                    "path": "frame/output/frame.json",
+                    "provenance": "canonical",
+                },
+            },
+            # The callouts the digest authorizes, resolved from its own section. The renderer
+            # converts an approved callout into the shared HTML primitive; it never invents one.
+            {
+                "tag": "callout_registry",
+                "payload": _json(ctx.callout_registry().to_dict()),
+                "source": {
+                    "path": ctx.digest_config_relative,
+                    "sections": ["Optional highlights"],
+                },
+            },
             (
                 {
                     "tag": "rendering_notes",

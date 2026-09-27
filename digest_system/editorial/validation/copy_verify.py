@@ -14,6 +14,9 @@ import re
 from typing import Any, Mapping, Sequence
 
 from ...config.budgets import STYLE_BUDGET
+from ...config.callouts import registry_for
+from ..callouts import enforce_limits, parse_callouts, validate_callouts
+from ..provenance import duplicate_rendered_identities
 
 LEAK_MARKERS: tuple[str, ...] = (
     "prompt_cache_hit_tokens",
@@ -218,6 +221,26 @@ def _check(check_id: str, status: str, note: str, details: Any = None) -> dict[s
     return value
 
 
+#: A source-note reference: a name followed by a citation pill, e.g. ``AI Realist [13]``.
+_SOURCE_NOTE_REFERENCE = re.compile(r"[^·\[\]\n]+?\s*\[(\d{1,3})\]")
+
+
+def _source_note_numbers(text: str) -> set[int]:
+    """Every source number referenced in a source-note line.
+
+    A source-note line is a line that carries two or more ``Name [n]`` references separated by
+    ``·``. A single citation in ordinary prose is not a source note, so it is not counted here.
+    """
+    numbers: set[int] = set()
+    for line in normalize_newlines(text).split("\n"):
+        if "·" not in line:
+            continue
+        references = _SOURCE_NOTE_REFERENCE.findall(line)
+        if len(references) >= 2:
+            numbers.update(int(value) for value in references)
+    return numbers
+
+
 def _budget_field(budget: Any, field: str) -> Any:
     """Read one budget field from either a ``StyleBudget`` or a plain mapping.
 
@@ -242,6 +265,7 @@ def run_deterministic_checks(
     catalogue_required: bool | None = None,
     budget: Any = None,
     exempt_length: bool = False,
+    highlights_text: str | None = None,
 ) -> dict[str, Any]:
     """Run every deterministic publication check over one artifact.
 
@@ -365,8 +389,66 @@ def run_deterministic_checks(
         )
     )
 
-    # --- frame authority ------------------------------------------------------------
+    # --- provenance: canonical source identities ------------------------------------
+    # The D6 defect: one source rendered as two linked identities pointing at the same
+    # article. The canonical manifest makes it impossible by construction, but a rendered
+    # artifact can reintroduce it, so it is checked here.
+    rendered_duplicates = duplicate_rendered_identities(document)
+    checks.append(
+        _check("provenance:identities", "pass", "no source is rendered as more than one identity")
+        if not rendered_duplicates
+        else _check(
+            "provenance:identities",
+            "fail",
+            f"{len(rendered_duplicates)} source-note line(s) render one source as more than one identity",
+            {"duplicates": rendered_duplicates},
+        )
+    )
+    # A source-note line names a source; that source must be one the corpus carries.
+    note_numbers = _source_note_numbers(document)
+    unknown_notes = sorted(number for number in note_numbers if number not in corpus_numbers)
+    if note_numbers:
+        checks.append(
+            _check("provenance:notes-resolve", "pass", f"{len(note_numbers)} source-note reference(s), all in the corpus")
+            if not unknown_notes
+            else _check(
+                "provenance:notes-resolve",
+                "fail",
+                f"source-note reference(s) not in the corpus: {', '.join(map(str, unknown_notes))}",
+                {"unknown": unknown_notes},
+            )
+        )
+
+    # --- callouts -------------------------------------------------------------------
+    # A callout is optional. When one is present it must be authorized by the digest's own
+    # `## Optional highlights` section, and its sources must be declared narrative evidence.
     declared = narrative_evidence_numbers(frame)
+    callout_set = parse_callouts(document)
+    if callout_set.callouts:
+        registry = registry_for(highlights_text)
+        callout_findings = list(callout_set.findings)
+        callout_findings += validate_callouts(
+            callout_set.callouts,
+            registry=registry,
+            narrative_sources=declared or None,
+        )
+        callout_findings += enforce_limits(callout_set.callouts, registry)
+        checks.append(
+            _check(
+                "callouts:authorized",
+                "pass" if not callout_findings else "fail",
+                (
+                    f"{len(callout_set.callouts)} callout(s), all authorized and sourced"
+                    if not callout_findings
+                    else "; ".join(callout_findings)
+                ),
+                {"callouts": [callout.to_dict(registry) for callout in callout_set.callouts]},
+            )
+        )
+    else:
+        checks.append(_check("callouts:authorized", "pass", "no callout present; callouts are optional"))
+
+    # --- frame authority ------------------------------------------------------------
     if declared:
         body_citations = extract_citations(body)
         undeclared = sorted(value for value in body_citations if value not in declared and value in corpus_numbers)

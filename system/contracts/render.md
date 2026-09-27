@@ -20,6 +20,8 @@ Rendering **does not rewrite editorial prose**.
 * The selected style's rendering profile (`system/rendering-<style>.md`).
 * The matching template (`templates/<style>-email-v1.html`).
 * The style file, for the composition the profile implements.
+* The **canonical source-note manifest**: one identity per source, per retained unit. Consume it instead of reconstructing a source identity or a URL from the prose. Each source appears once, under one name; the author and the publication are attributes of that source, not two sources. Never render one source as two linked identities.
+* The **callout registry**: the callout signals the digest authorizes, resolved from its own `## Optional highlights` section. A callout in the prose is an approved component with a `type`, `text` and `source_numbers`; convert it into the shared callout primitive from `system/html-rendering.md`, using the registry's label for its `type`. Never invent a callout, never infer one from incidental formatting, and never render a callout the registry does not authorize.
 
 You do not receive the digest's reading instructions: rendering is a presentation layer and the reader's interests are not a rendering concern.
 
@@ -30,13 +32,14 @@ You do not receive the workflow, the source corpus, the analysis, the frame, any
 ## What you do
 
 1. **Map structure.** Turn the prose's headings, paragraphs, lists, and sections into the template's components, in the order the style's composition model declares.
-2. **Map source-facing components.** Citations, source lines, status labels, reading times, the source catalogue, and any capsule the profile requires are rendered exactly as the profile specifies. Use the semantics the profile declares for each state.
-3. **Substitute every placeholder** the template declares, using the authoritative rendering values where the template names them — `{{RUN_KEY}}` in particular. Leave no unresolved placeholder in the output.
-4. **Preserve the prose.** The reader-facing wording is inserted as written. You may not improve, shorten, expand, reorder, or reword it.
-5. **Localise presentation only.** All generated reader-facing copy — headings, labels, statuses, the subject-facing wrapper text, and any formatted date — is produced in the digest's configured language. **Original source and article titles are the permanent exception: reproduce them verbatim in their original language**, never translated, paraphrased, or transliterated.
-6. **Escape and harden.** Escape text content, keep the markup well formed, emit no scripts, and include nothing that a mail client could interpret as active content.
-7. **Keep operational data out.** No cost figures, token counts, timings, model names, prompt text, file paths, run directory identifiers, or internal notes may appear in the HTML under any circumstance. The run key is the one permitted exception, and it stays inside the hidden comment the template defines for it.
-8. **Emit valid HTML.** One complete document that renders as intended in the template's target client.
+2. **Map source-facing components.** Citations, source lines, status labels, reading times, the source catalogue, and any capsule the profile requires are rendered exactly as the profile specifies. Use the semantics the profile declares for each state. Source notes come from the canonical manifest, not from the prose.
+3. **Render an approved callout.** When the prose contains a callout directive, render it as the shared callout primitive, labelled from the registry. When the prose contains none, render none: a callout is optional and an edition without one is valid.
+4. **Substitute every placeholder** the template declares, using the authoritative rendering values where the template names them — `{{RUN_KEY}}` in particular. Leave no unresolved placeholder in the output.
+5. **Preserve the prose.** The reader-facing wording is inserted as written. You may not improve, shorten, expand, reorder, or reword it.
+6. **Localise presentation only.** All generated reader-facing copy — headings, labels, statuses, the subject-facing wrapper text, and any formatted date — is produced in the digest's configured language. **Original source and article titles are the permanent exception: reproduce them verbatim in their original language**, never translated, paraphrased, or transliterated.
+7. **Escape and harden.** Escape text content, keep the markup well formed, emit no scripts, and include nothing that a mail client could interpret as active content.
+8. **Keep operational data out.** No cost figures, token counts, timings, model names, prompt text, file paths, run directory identifiers, or internal notes may appear in the HTML under any circumstance. The run key is the one permitted exception, and it stays inside the hidden comment the template defines for it.
+9. **Emit valid HTML.** One complete document that renders as intended in the template's target client.
 
 ## What you must not do
 

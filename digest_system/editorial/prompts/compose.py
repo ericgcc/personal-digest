@@ -47,6 +47,8 @@ BLOCK_TAGS: tuple[str, ...] = (
     "deterministic_check_findings",
     "approved_frame_citations",
     "rendering_values",
+    "source_note_manifest",
+    "callout_registry",
     "stage_task",
 )
 

@@ -17,14 +17,14 @@
     {
       "stage": "*",
       "document": "system/contracts/frame.md",
-      "reason": "Phase 3A stops inlining the digest configuration. Frame now receives its `## Reader`, `## Content preferences` and `## Optional highlights` sections as a reading-instructions block, and its 'What you receive' list names them.",
-      "approved_by": "Phase 3A (reading-instructions contract)"
+      "reason": "Phase 3A stops inlining the digest configuration. Frame now receives its `## Reader`, `## Content preferences` and `## Optional highlights` sections as a reading-instructions block, and its 'What you receive' list names them. Phase 5 adds the optional `callout` field to the unit field table, so Frame may propose a callout with a type, text and contributing sources.",
+      "approved_by": "Phase 3A (reading-instructions contract); Phase 5 (optional callouts)"
     },
     {
       "stage": "*",
       "document": "system/contracts/draft.md",
-      "reason": "Phase 3A stops inlining the digest configuration. Draft now receives its `## Reader`, `## Content preferences` and `## Optional highlights` sections as a reading-instructions block, and its 'What you receive' list names them.",
-      "approved_by": "Phase 3A (reading-instructions contract)"
+      "reason": "Phase 3A stops inlining the digest configuration. Draft now receives its `## Reader`, `## Content preferences` and `## Optional highlights` sections as a reading-instructions block, and its 'What you receive' list names them. Phase 5 adds responsibility 10: write an authorized callout in the exact directive form when the frame proposed one, and write none when it did not — before this, no stage was accountable for producing a callout (baseline defect D7).",
+      "approved_by": "Phase 3A (reading-instructions contract); Phase 5 (optional callouts)"
     },
     {
       "stage": "*",
@@ -49,6 +49,24 @@
       "document": "system/style-pipelines/synthesis-max/draft.md",
       "reason": "Phase 3C rewrites the Draft responsibilities around executable obligations: establish each thread's subject for the effective reader, treat narrative_spine as logical order rather than a paragraph plan, explain terminology at the point of need, develop the approved relationship rather than reporting its members, and never give a source a paragraph merely because it was selected. The frame-following, traceability and budget rules are unchanged.",
       "approved_by": "Phase 3C (Synthesis MAX selection, drafting and review)"
+    },
+    {
+      "stage": "*",
+      "document": "system/contracts/copy-verify.md",
+      "reason": "Phase 5 adds two verification items: canonical source identities (a source-note line must not name one source twice or link two names to one article — baseline defect D6) and callout authorization and provenance. The existing items are renumbered but unchanged.",
+      "approved_by": "Phase 5 (canonical provenance and optional callouts)"
+    },
+    {
+      "stage": "*",
+      "document": "system/rendering-synthesis-max.md",
+      "reason": "Phase 5 rewrites the Callouts section. Before, the renderer was told to infer a callout from incidental formatting and to invent its copy; now it converts an approved callout from the callout registry into the shared HTML primitive and never invents one. The source-note and rendering rules are unchanged.",
+      "approved_by": "Phase 5 (canonical provenance and optional callouts)"
+    },
+    {
+      "stage": "render",
+      "document": "templates/synthesis-max-email-v1.html",
+      "reason": "Phase 5 adds the `{{CALLOUT_HTML_OPTIONAL}}` placeholder to the thread section, so the renderer has one approved slot for a callout's HTML primitive. The placeholder is empty when the edition carries no callout, so an edition without one renders exactly as before.",
+      "approved_by": "Phase 5 (canonical provenance and optional callouts)"
     }
   ],
   "phase3a": {

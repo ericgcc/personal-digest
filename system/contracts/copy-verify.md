@@ -15,14 +15,16 @@ The publication requirements, in this order:
 1. **Citation integrity.** Every citation marker corresponds to a source number that exists, and supports the sentence it follows. Report a mismatch; do not silently retarget a citation.
 2. **Source provenance.** Each named source is the reviewed source it claims to be. Reading times, statuses, and catalogue membership are consistent with the supplied provenance. Original source and article titles are reproduced **verbatim** in their original language — never translated, paraphrased, normalised, or transliterated.
 3. **Source catalogue consistency.** The catalogue matches the recorded selection outcomes: one entry per catalogued source, no duplicates, no source appearing under two statuses, and no body citation to a source that the catalogue does not account for.
-4. **Subject naming.** People, organisations, products, and systems are named consistently across the digest, and consistently with the provenance given.
-5. **Output-language completeness.** All reader-facing copy, headings, labels, and statuses are in the digest's configured language. Only original source titles are exempt.
-6. **Required structure.** The style's required sections and components are present, in order.
-7. **Markdown correctness.** Headings, links, emphasis, lists, and code spans are well formed and will render as intended.
-8. **Terminology consistency.** A concept is named the same way throughout, unless the sources use different names and the difference is meaningful.
-9. **Grammar, punctuation, and typography.** Correct, in the digest's language.
-10. **Length sanity.** The body is within the length discipline the style declares.
-11. **Renderability.** The prose contains nothing that would break template mapping: no unescaped markup, no unresolved placeholder, no operational or internal text.
+4. **Canonical source identities.** Each source appears once, under one identity. A source-note line must not name the same source twice, and must not link two names to the same article. The publication and the author are attributes of one source, not two sources.
+5. **Callout authorization and provenance.** A callout is optional. When one is present, its `type` must be a signal the digest's `## Optional highlights` section authorizes, its `source_numbers` must be declared narrative evidence, and its text must be the writer's, not invented here. A callout the digest does not authorize is a finding, not something to relabel.
+6. **Subject naming.** People, organisations, products, and systems are named consistently across the digest, and consistently with the provenance given.
+7. **Output-language completeness.** All reader-facing copy, headings, labels, and statuses are in the digest's configured language. Only original source titles are exempt.
+8. **Required structure.** The style's required sections and components are present, in order.
+9. **Markdown correctness.** Headings, links, emphasis, lists, and code spans are well formed and will render as intended.
+10. **Terminology consistency.** A concept is named the same way throughout, unless the sources use different names and the difference is meaningful.
+11. **Grammar, punctuation, and typography.** Correct, in the digest's language.
+12. **Length sanity.** The body is within the length discipline the style declares.
+13. **Renderability.** The prose contains nothing that would break template mapping: no unescaped markup, no unresolved placeholder, no operational or internal text.
 
 ## What you may change
 

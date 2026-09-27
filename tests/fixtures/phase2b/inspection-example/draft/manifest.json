@@ -26,8 +26,8 @@
   "documents": [
     {
       "path": "system/contracts/draft.md",
-      "bytes": 4593,
-      "sha256": "c417d4763856e46930f9626009dc7783836e7b66d39fa87cfe6a3a0ab4d24bbd"
+      "bytes": 5332,
+      "sha256": "374f1cf7adda1ea88f4d59b741b8e9ea09f25cb54bf3f4c92e4e39d709fdf4b6"
     },
     {
       "path": "styles/editorial-base.md",
@@ -114,6 +114,6 @@
     "styles/synthesis-max/modules/02-writing-reference-profile.md",
     "styles/synthesis-max/modules/11-quality-control.md"
   ],
-  "system_bytes": 50252,
+  "system_bytes": 50991,
   "user_bytes": 6548
 }

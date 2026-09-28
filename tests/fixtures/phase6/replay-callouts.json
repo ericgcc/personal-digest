@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "note": "The r1 replay's Draft wrote three callouts in the directive form, using the digest's own rendered labels rather than internal slugs. This fixture records the exact directives so the callout-survival check has durable evidence even when the (gitignored) run directory is absent. The parser normalizes both the label form (`🔥 TREND`) and the slug form (`trend`) to the same id.",
+  "source_run": "tech-bi-daily-20260921-1109-r1",
+  "digest_id": "tech-bi-daily",
+  "style": "synthesis-max",
+  "draft_callout_directives": [
+    "<!-- callout: 🔥 TREND sources: 14,24,30 -->\nA second model class is emerging alongside generative models: non-generative decision models that return calibrated probabilities instead of prose.\n<!-- /callout -->",
+    "<!-- callout: 🛠 PRACTICAL sources: 35 -->\nCap the queue and shed load deliberately: a team that lets a failing dependency drain its queue keeps the failure local instead of turning it into an outage.\n<!-- /callout -->",
+    "<!-- callout: ✍️ WRITE sources: 1,38,41 -->\nThe gap between how fast AI writes code and how fast a team can absorb it is the story worth telling: measure the constraint, not the generation.\n<!-- /callout -->"
+  ],
+  "expected_slug_ids": ["practical", "trend", "write"]
+}

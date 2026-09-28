@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "note": "The Medium 2026-09-22 run recorded the provenance defect D6 and the three oversized/compressed/enumerative sections the design names. These are the exact facts from that run's artifacts, kept as a fixture so the Phase 6 regression checks are verified against the real historical defect rather than a synthesized one. The run directory itself is gitignored, so the fixture is the durable record.",
+  "source_run": "medium-bi-daily-20260922T131947Z-15d2",
+  "digest_id": "medium-bi-daily",
+  "style": "curated-discovery",
+  "defect": "D6 — one source rendered as two linked identities pointing at the same article: the publication half did not exist in the corpus and was reconstructed from the URL path segment.",
+  "defective_source_note_lines": [
+    "CodeX [29] · Eresh Gorantla [29]",
+    "The Engineering Review [23] · Devrim Ozcay [23]",
+    "Write A Catalyst [31] · Greg Henriquez [31]",
+    "Python in Plain English [14] · Mahad Nadeem [14]",
+    "Obsidian Observer · PARAZETTEL [25] · Zoya Vasquez [25]",
+    "Medium Blog [13] · Scott Lamb [13]",
+    "The Useful Life [24] · Raja Sekar [24]"
+  ],
+  "canonical_source_note_lines": [
+    "CodeX [29]",
+    "The Engineering Review [23]",
+    "Write A Catalyst [31]",
+    "Python in Plain English [14]",
+    "Obsidian Observer · PARAZETTEL [25]",
+    "Medium Blog [13]",
+    "The Useful Life [24]"
+  ],
+  "named_sections": [
+    {
+      "title": "01 · FEATURED · One Expired Key, One Dead Database",
+      "body_words": 369,
+      "recorded_defect": "oversized — a single featured item dominated the edition"
+    },
+    {
+      "title": "02 · The Code You Can't Explain Under Pressure",
+      "body_words": 148,
+      "recorded_defect": "compressed — the story was told in fewer words than it needed"
+    },
+    {
+      "title": "05 · Your Notes Are Not the Model's Memory",
+      "body_words": 194,
+      "recorded_defect": "enumerative — presented as a list of points rather than one developed idea"
+    }
+  ]
+}

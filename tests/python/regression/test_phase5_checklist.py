@@ -332,6 +332,52 @@ def test_checklist_9_the_per_unit_limit_is_enforced():
     assert any("at most one" in finding for finding in findings)
 
 
+def test_checklist_9_a_callout_is_attributed_to_the_section_it_sits_in():
+    """The per-unit limit is per thread, so several threads may each carry one callout.
+
+    Without this, every callout in a document is attributed to one "(document)" group and the
+    per-unit limit wrongly rejects a valid edition that put one callout in each of its threads.
+    """
+    prose = "\n".join(
+        [
+            "## 1. First thread",
+            "",
+            "Body [1].",
+            "",
+            "<!-- callout: trend sources: 1 -->",
+            "A pattern.",
+            "<!-- /callout -->",
+            "",
+            "## 2. Second thread",
+            "",
+            "Body [2].",
+            "",
+            "<!-- callout: practical sources: 2 -->",
+            "A technique.",
+            "<!-- /callout -->",
+            "",
+        ]
+    )
+    parsed = parse_callouts(prose)
+    assert len(parsed.callouts) == 2
+    assert parsed.callouts[0].unit_id == "1. First thread"
+    assert parsed.callouts[1].unit_id == "2. Second thread"
+    registry = registry_for(resolve_digest("tech-bi-daily").reading_instructions.get("Optional highlights"))
+    # Two threads, one callout each: permitted, not a per-unit violation.
+    assert not enforce_limits(parsed.callouts, registry)
+
+
+def test_checklist_9_a_callout_written_as_a_label_resolves_to_its_slug():
+    """A writer naturally writes the digest's label (`🔥 TREND`), not the internal slug."""
+    prose = "## 1. A thread\n\nBody [1].\n\n<!-- callout: 🔥 TREND sources: 1 -->\nA pattern.\n<!-- /callout -->\n"
+    parsed = parse_callouts(prose)
+    assert len(parsed.callouts) == 1
+    assert parsed.callouts[0].type == "trend"
+    assert parsed.callouts[0].source_numbers == (1,)
+    registry = registry_for(resolve_digest("tech-bi-daily").reading_instructions.get("Optional highlights"))
+    assert registry.by_id(parsed.callouts[0].type) is not None
+
+
 # ---------------------------------------------------------------------------------------
 # 10. Callouts are optional
 # ---------------------------------------------------------------------------------------

@@ -201,9 +201,13 @@ def _report_output(result: dict[str, Any] | None, run_id: str) -> None:
 # ---------------------------------------------------------------------------------------
 
 
-def _common_run_kwargs(args: argparse.Namespace, config_path: Path, style: str) -> dict[str, Any]:
+def _common_run_kwargs(
+    args: argparse.Namespace, config_path: Path, style: str, *, digest_id: str | None = None
+) -> dict[str, Any]:
+    # `replay` resolves the digest from the historical corpus rather than from `--digest`, so
+    # its subparser does not define the attribute; the caller passes the resolved id instead.
     return {
-        "digest_id": args.digest,
+        "digest_id": digest_id if digest_id is not None else args.digest,
         "config_path": config_path,
         "style": style,
         "language": frontmatter_value(config_path, "language"),
@@ -306,7 +310,7 @@ def command_replay(args: argparse.Namespace) -> int:
         stop_after=args.until_stage,
         style_profile=selection.profile,
         style_profile_source=selection.source,
-        **_common_run_kwargs(args, resolved.config_path, style),
+        **_common_run_kwargs(args, resolved.config_path, style, digest_id=prepared["digestId"]),
     )
     summary = _write_run_summary(args.run_id, prepared["digestId"], style)
     print(

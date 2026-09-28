@@ -27,7 +27,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
-from ..config.callouts import CalloutDefinition, CalloutRegistry
+from ..config.callouts import CalloutDefinition, CalloutRegistry, slugify
 
 #: The Markdown form a callout takes in the prose, so the editing stages can see and preserve it
 #: and the deterministic checks can find it. It is an HTML comment directive rather than a
@@ -35,11 +35,19 @@ from ..config.callouts import CalloutDefinition, CalloutRegistry
 CALLOUT_OPEN = "<!-- callout:"
 CALLOUT_CLOSE = "-->"
 
+#: The type token is whatever the writer put between `callout:` and the optional `sources:` or the
+#: closing `-->`. A writer naturally writes the digest's *label* (`🔥 TREND`), not the internal
+#: slug, so the token is normalized with the same :func:`slugify` the registry uses — which makes
+#: the rendered label and the registry id agree by construction.
 _CALLOUT_BLOCK = re.compile(
-    r"<!--\s*callout:\s*(?P<type>[a-z0-9_]+)\s*(?:sources:\s*(?P<sources>[0-9,\s]+))?\s*-->\s*"
+    r"<!--\s*callout:\s*(?P<type>.+?)\s*(?:sources:\s*(?P<sources>[0-9,\s]+))?\s*-->\s*"
     r"(?P<text>.+?)\s*<!--\s*/callout\s*-->",
     re.DOTALL | re.IGNORECASE,
 )
+
+#: An ATX heading, used to attribute a callout to the section it sits in when the caller does not
+#: supply a unit id. Only the heading that starts *before* the callout is its owner.
+_HEADING = re.compile(r"^(#{1,6})[ \t]*(.+?)[ \t]*$", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -106,12 +114,33 @@ def parse_callouts(text: str, *, unit_id: str | None = None) -> CalloutSet:
     A callout that is malformed — no text — is reported as a finding rather than silently
     dropped, so a broken callout is visible. Whether its type is *authorized* is a separate
     question answered by :func:`validate_callouts`, because authorization depends on the digest.
+
+    When ``unit_id`` is not supplied, each callout is attributed to the section it sits in: the
+    nearest preceding ``##`` heading. The per-unit limit is about callouts *inside one thread*,
+    so attributing them all to one document would wrongly collapse several threads' callouts
+    into a single unit.
     """
+    document = text or ""
+    headings = list(_HEADING.finditer(document))
     callouts: list[Callout] = []
     findings: list[str] = []
-    for match in _CALLOUT_BLOCK.finditer(text or ""):
-        type_id = match.group("type").strip().lower()
+    for match in _CALLOUT_BLOCK.finditer(document):
+        raw_type = match.group("type").strip()
+        # The writer may write the digest's rendered label (`🔥 TREND`) or the internal slug
+        # (`trend`). `slugify` maps both to the same id, so the callout is identified stably
+        # regardless of which form the prose used.
+        type_id = slugify(raw_type)
         body = match.group("text").strip()
+        # The owning section is the nearest heading that starts before the callout.
+        owner = unit_id
+        if owner is None:
+            heading = None
+            for candidate in headings:
+                if candidate.start() < match.start():
+                    heading = candidate
+                else:
+                    break
+            owner = heading.group(2).strip() if heading else None
         raw_sources = match.group("sources") or ""
         numbers: list[int] = []
         for part in raw_sources.split(","):
@@ -125,7 +154,7 @@ def parse_callouts(text: str, *, unit_id: str | None = None) -> CalloutSet:
                 type=type_id,
                 text=body,
                 source_numbers=tuple(numbers),
-                unit_id=unit_id,
+                unit_id=owner,
             )
         )
     return CalloutSet(callouts=tuple(callouts), findings=tuple(findings))

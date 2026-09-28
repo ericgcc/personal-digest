@@ -272,27 +272,37 @@ def duplicate_identities(manifest: SourceNoteManifest) -> list[dict[str, Any]]:
     return duplicates
 
 
-#: A rendered source-note line: ``Name [12] · Name [13]``. Each entry is a name followed by a
-#: citation pill. The D6 defect renders one source number twice in such a line.
-_SOURCE_NOTE_ENTRY = re.compile(r"(?P<name>[^·\[\]]+?)\s*\[(?P<number>\d{1,3})\]")
+#: A numeric citation pill, e.g. ``[29]``. A rendered source note attaches one to a name.
+_CITATION_PILL = re.compile(r"\[(?P<number>\d{1,3})\]")
+
+#: The separator a rendered source note uses between entries: ``Name [12] · Name [13]``. A line
+#: with it and two or more citation pills is a source-note line; ordinary prose is not, even
+#: when it happens to cite the same source twice in one sentence.
+_NOTE_SEPARATOR = "·"
 
 
 def duplicate_rendered_identities(text: str) -> list[dict[str, Any]]:
-    """Source numbers rendered more than once in a single source-note line.
+    """Source numbers rendered more than once in a single rendered source-note line.
 
-    This is the deterministic control the baseline said did not exist (D6): it parses the
-    rendered source-note lines and reports a source number that appears twice, which is exactly
-    the ``CodeX [29] · Eresh Gorantla [29]`` symptom. It reads the artifact, so it catches a
-    duplication the manifest cannot — one the renderer or a later edit reintroduced.
+    This is the deterministic control the baseline said did not exist (D6): it reads the
+    *rendered* artifact and reports a source number that appears twice in one source note,
+    which is exactly the ``CodeX [29] · Eresh Gorantla [29]`` symptom — one article linked
+    under two identities. It catches a duplication the manifest cannot, one the renderer or a
+    later edit reintroduced.
+
+    Only a source-note line is considered: a line whose entries are joined by ``·`` and which
+    carries two or more citation pills. Ordinary prose that cites one source twice is not a
+    duplicate identity, so it is not reported.
     """
     findings: list[dict[str, Any]] = []
     for line in (text or "").splitlines():
-        entries = list(_SOURCE_NOTE_ENTRY.finditer(line))
-        if len(entries) < 2:
+        if _NOTE_SEPARATOR not in line:
+            continue
+        numbers = [int(match.group("number")) for match in _CITATION_PILL.finditer(line)]
+        if len(numbers) < 2:
             continue
         counts: dict[int, int] = {}
-        for entry in entries:
-            number = int(entry.group("number"))
+        for number in numbers:
             counts[number] = counts.get(number, 0) + 1
         for number, count in counts.items():
             if count > 1:

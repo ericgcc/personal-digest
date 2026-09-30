@@ -449,6 +449,23 @@ def stage_inputs(stage_name: str, context: OfflineContext) -> dict[str, Any]:
     return {"stage": stage, "documents": documents, "projection": projection}
 
 
+def stage_extra_blocks(stage_name: str, context: OfflineContext) -> dict[str, Any]:
+    """The stage-specific blocks the executor computes outside the stage declaration.
+
+    Both the baseline capture and the inspection must compose with these, or the recorded
+    prompt diverges from what a run actually sends for the stages whose executor injects
+    blocks the stage declaration does not name.
+    """
+    if stage_name == "copy-verify":
+        return {
+            "deterministic_check_findings": json.dumps({"counts": {}, "checks": []}, indent=2),
+            "approved_frame_citations": json.dumps({"declared_source_numbers": [1, 2, 3, 5]}, indent=2),
+        }
+    if stage_name == "render":
+        return {"rendering_values": json.dumps(context.rendering_values(), ensure_ascii=False, indent=2)}
+    return {}
+
+
 __all__ = [
     "DIGEST_CONFIG_BY_STYLE",
     "STYLE_BY_PROFILE",

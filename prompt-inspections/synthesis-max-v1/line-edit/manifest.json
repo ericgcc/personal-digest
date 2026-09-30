@@ -1,0 +1,82 @@
+{
+  "system_template": "stages/line-edit/system.j2",
+  "user_template": "stages/line-edit/user.j2",
+  "templates": [
+    {
+      "path": "prompts/stages/line-edit/system.j2",
+      "bytes": 154,
+      "sha256": "29c0ffe06efaca5dead05ad3e271f0f517faed4f3010c410721e523882594873"
+    },
+    {
+      "path": "prompts/shared/preamble.j2",
+      "bytes": 463,
+      "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
+    },
+    {
+      "path": "prompts/stages/line-edit/user.j2",
+      "bytes": 117,
+      "sha256": "70ab0bc67eb52e1a228fbdef3a8321aad93bcbd17809c62140050a1dc6b9dd46"
+    },
+    {
+      "path": "prompts/shared/task.j2",
+      "bytes": 992,
+      "sha256": "d12ba969b789e4e2e361fcce24b6e3dc29635420b9ec9b91d608863f5659e417"
+    }
+  ],
+  "documents": [
+    {
+      "path": "system/contracts/line-edit.md",
+      "bytes": 4066,
+      "sha256": "553b953201598502f739d09a4e70a0e50949a46a12f8e8972a4b57f64e140f78"
+    },
+    {
+      "path": "system/naturalness-contract.md",
+      "bytes": 3796,
+      "sha256": "c19b2da688a5bfe2c8b3c22a30abffc7a32d2664216f497315b628249b92f69a"
+    }
+  ],
+  "instructions": [
+    {
+      "path": "styles/synthesis-max/modules/04-writing-character.md",
+      "bytes": 2687,
+      "sha256": "5688f4f3d85b9c8273a87ffeda05dddfd7545bb2c7640c462aa8444b40081073"
+    },
+    {
+      "path": "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
+      "bytes": 1819,
+      "sha256": "d52388c4ae228078148c1c3cb72d0c603c514018e2371ec84531d85a39f507db"
+    },
+    {
+      "path": "system/style-pipelines/synthesis-max/review.md",
+      "bytes": 7945,
+      "sha256": "65a6445d9e400efa0f4f2f293c0447322a9ff7aceecde4a42267e872e9783fe3"
+    }
+  ],
+  "blocks": [
+    {
+      "tag": "previous_stage_artifact",
+      "bytes": 332
+    },
+    {
+      "tag": "reading_instructions",
+      "bytes": 766
+    },
+    {
+      "tag": "stage_task",
+      "bytes": 715
+    }
+  ],
+  "omitted": [
+    "styles/synthesis-max/modules/01-style-interface.md",
+    "styles/synthesis-max/modules/02-writing-reference-profile.md",
+    "styles/synthesis-max/modules/03-synthesis-mode.md",
+    "styles/synthesis-max/modules/06-length-and-density.md",
+    "styles/synthesis-max/modules/07-required-structure.md",
+    "styles/synthesis-max/modules/08-citations.md",
+    "styles/synthesis-max/modules/09-final-source-catalog.md",
+    "styles/synthesis-max/modules/10-ending-rules.md",
+    "styles/synthesis-max/modules/11-quality-control.md"
+  ],
+  "system_bytes": 20772,
+  "user_bytes": 1918
+}

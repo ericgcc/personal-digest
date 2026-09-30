@@ -1,0 +1,87 @@
+{
+  "system_template": null,
+  "user_template": null,
+  "templates": [
+    {
+      "path": "prompts/evaluation/comparison.j2",
+      "bytes": 0,
+      "sha256": "1fed12fb14fe61ec512676789591cba1f2f9f827bd1e4ff34893fa15234b147b"
+    },
+    {
+      "path": "prompts/evaluation/shared/anti_leniency.j2",
+      "bytes": 0,
+      "sha256": "459cfb8e80e6c8990d561cdbc09608006904b069e2244337eecd8e6ff1a91a9c"
+    },
+    {
+      "path": "prompts/evaluation/shared/dimensions.j2",
+      "bytes": 0,
+      "sha256": "f21d9324ceec938f9390fd8b2245f2f7411d89bd5085e68484fb728d0c5e6482"
+    },
+    {
+      "path": "prompts/evaluation/shared/issue_taxonomy.j2",
+      "bytes": 0,
+      "sha256": "f2e2901a1b0612597f4ec9d573576f4c44aeff642f6c72c70a1dd1471e66be5c"
+    },
+    {
+      "path": "prompts/evaluation/shared/critical_failure.j2",
+      "bytes": 0,
+      "sha256": "73d2d4e23c838fef6a36e3e4f057457a6a36e15dd1cc0826c843e79265c641e8"
+    },
+    {
+      "path": "prompts/evaluation/shared/citation_note.j2",
+      "bytes": 0,
+      "sha256": "04d4ee07408f15740539e5d871cd77c0d3e86cf7ac1c1bc044ca9c84c16c74d0"
+    },
+    {
+      "path": "prompts/evaluation/shared/compactness.j2",
+      "bytes": 0,
+      "sha256": "9cdf748639508093d37bc523e6f43b72aa0ac8f69303d368b2c07e88de30cc18"
+    }
+  ],
+  "documents": [],
+  "instructions": [
+    {
+      "path": "system/contracts/reader-review.md",
+      "bytes": 3944,
+      "sha256": "171e6dfe66f1966c4da0cef871326e8ff179af95f6504d19a7ef8a4924b21f3a"
+    },
+    {
+      "path": "system/contracts/reader-contract.md",
+      "bytes": 3399,
+      "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
+    },
+    {
+      "path": "styles/synthesis-max/modules/01-style-interface.md",
+      "bytes": 2769,
+      "sha256": "35e389151e7acbd2964f043602b1e5b809050910337625fd5eb200e52daafd00"
+    },
+    {
+      "path": "styles/synthesis-max/modules/07-required-structure.md",
+      "bytes": 3938,
+      "sha256": "8bc77aca136c612d442cdacbf1eaafdd3038981544fd6e6f3e891e030a4006e7"
+    },
+    {
+      "path": "system/style-pipelines/synthesis-max/review.md",
+      "bytes": 7868,
+      "sha256": "65a6445d9e400efa0f4f2f293c0447322a9ff7aceecde4a42267e872e9783fe3"
+    },
+    {
+      "path": "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
+      "bytes": 1720,
+      "sha256": "d52388c4ae228078148c1c3cb72d0c603c514018e2371ec84531d85a39f507db"
+    }
+  ],
+  "blocks": [],
+  "omitted": [
+    "styles/synthesis-max/modules/02-writing-reference-profile.md",
+    "styles/synthesis-max/modules/03-synthesis-mode.md",
+    "styles/synthesis-max/modules/04-writing-character.md",
+    "styles/synthesis-max/modules/06-length-and-density.md",
+    "styles/synthesis-max/modules/08-citations.md",
+    "styles/synthesis-max/modules/09-final-source-catalog.md",
+    "styles/synthesis-max/modules/10-ending-rules.md",
+    "styles/synthesis-max/modules/11-quality-control.md"
+  ],
+  "system_bytes": 0,
+  "user_bytes": 0
+}

@@ -27,7 +27,7 @@ from ..evaluation_prompts import compose_evaluation_prompts
 from ..stages import stage_names_v2, stage_v2
 from .assembler import assemble_evaluation_contracts
 from .compose import compose_stage_prompt
-from .offline import build_context, seed_artifacts, stage_inputs, synthetic_corpus
+from .offline import build_context, seed_artifacts, stage_extra_blocks, stage_inputs, synthetic_corpus
 
 #: The digest configuration each style's prompts are measured with.
 DIGEST_CONFIG_BY_STYLE: dict[str, str] = {
@@ -80,6 +80,7 @@ def stage_prompt(
         documents=inputs["documents"],
         projection=inputs["projection"],
         blocks=stage.blocks(context),
+        extra_blocks=stage_extra_blocks(stage_name, context),
     )
     return {"executor": stage.executor, "system_text": composed.system_text, "user_text": composed.user_text}
 

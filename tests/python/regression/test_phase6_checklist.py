@@ -490,6 +490,43 @@ def test_checklist_11_the_prompt_parity_check_passes():
 
 
 # ---------------------------------------------------------------------------------------
+# 11b. The recorded prompt artifacts cannot drift silently
+# ---------------------------------------------------------------------------------------
+
+
+def test_checklist_11b_the_recorded_prompt_baseline_is_current():
+    """The committed offline baseline matches a fresh composition, via the script's --check."""
+    result = _run([str(SCRIPTS / "capture_prompt_baseline.py"), "--check"])
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_checklist_11b_the_recorded_prompt_inspections_are_current():
+    """The committed human-friendly inspection output matches a fresh regeneration."""
+    from digest_system.editorial.prompts.inspection import inspect_all
+
+    for digest_id, profile_id in [
+        ("tech-bi-daily", "synthesis-max-v1"),
+        ("medium-bi-daily", "curated-discovery-legacy"),
+    ]:
+        inspections = inspect_all(digest_id=digest_id, profile_id=profile_id)
+        profile_root = ROOT / "prompt-inspections" / profile_id
+        for inspection in inspections:
+            directory = profile_root / inspection.stage
+            if inspection.combined_text:
+                expected = {"prompt.txt": inspection.combined_text}
+            else:
+                expected = {"system.txt": inspection.system_text, "user.txt": inspection.user_text}
+            for name, text in expected.items():
+                path = directory / name
+                assert path.is_file(), f"{path.relative_to(ROOT).as_posix()} is missing"
+                recorded = path.read_text(encoding="utf-8")
+                assert recorded == text.replace("\r\n", "\n"), (
+                    f"{path.relative_to(ROOT).as_posix()} is out of date; regenerate with "
+                    "`python -m digest_system.cli inspect`"
+                )
+
+
+# ---------------------------------------------------------------------------------------
 # 12. All existing tests pass
 # ---------------------------------------------------------------------------------------
 

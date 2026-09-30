@@ -1,0 +1,99 @@
+{
+  "system_template": "stages/frame/system.j2",
+  "user_template": "stages/frame/user.j2",
+  "templates": [
+    {
+      "path": "prompts/stages/frame/system.j2",
+      "bytes": 197,
+      "sha256": "347d7eebd76490f381ccebe85e17ab7d7e102b2c6a867503e6ae304fed86af20"
+    },
+    {
+      "path": "prompts/shared/preamble.j2",
+      "bytes": 463,
+      "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
+    },
+    {
+      "path": "prompts/stages/frame/user.j2",
+      "bytes": 82,
+      "sha256": "9ffb1544aae216d9f4da4a90372fee42de975761e0f9d42e7bfbd9d319ef30f7"
+    },
+    {
+      "path": "prompts/shared/task.j2",
+      "bytes": 992,
+      "sha256": "d12ba969b789e4e2e361fcce24b6e3dc29635420b9ec9b91d608863f5659e417"
+    }
+  ],
+  "documents": [
+    {
+      "path": "system/contracts/frame.md",
+      "bytes": 10877,
+      "sha256": "8d198f02f8356ed661c5e3032154ac630a400a5d3aff3252920729cf8278605b"
+    },
+    {
+      "path": "system/style-contract.md",
+      "bytes": 8617,
+      "sha256": "da020ae07e7df4cac743cfb965f2bcd65cfbf04529b5b6d3f3d2d3eb480dc8e7"
+    },
+    {
+      "path": "system/contracts/reader-contract.md",
+      "bytes": 3465,
+      "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
+    }
+  ],
+  "instructions": [
+    {
+      "path": "styles/synthesis-max/modules/01-style-interface.md",
+      "bytes": 2850,
+      "sha256": "35e389151e7acbd2964f043602b1e5b809050910337625fd5eb200e52daafd00"
+    },
+    {
+      "path": "styles/synthesis-max/modules/03-synthesis-mode.md",
+      "bytes": 3282,
+      "sha256": "a6b32685788b52e4439d6d5d23d02943be15df63a02c1ab0e35580dabbff1de1"
+    },
+    {
+      "path": "styles/synthesis-max/modules/07-required-structure.md",
+      "bytes": 4022,
+      "sha256": "8bc77aca136c612d442cdacbf1eaafdd3038981544fd6e6f3e891e030a4006e7"
+    },
+    {
+      "path": "styles/synthesis-max/modules/06-length-and-density.md",
+      "bytes": 1518,
+      "sha256": "72af0519f874c0899b1ada2816b71f185110424ae988d5c24f979701e44c3f32"
+    },
+    {
+      "path": "styles/synthesis-max/modules/08-citations.md",
+      "bytes": 1576,
+      "sha256": "cdeee64d04c3e021628a13e8b865230c56f01b6745b765dce78cf7dec8eb7b91"
+    },
+    {
+      "path": "styles/synthesis-max/modules/09-final-source-catalog.md",
+      "bytes": 3170,
+      "sha256": "b738bba9885958ffd3d1928348ec7996e7afbaa9744e2364a352bf930ff3adce"
+    },
+    {
+      "path": "system/style-pipelines/synthesis-max/frame.md",
+      "bytes": 9709,
+      "sha256": "16585fbc971d0504a756cc1386a22d3d492c7c6dd9d30580801c88f78013a2f5"
+    }
+  ],
+  "blocks": [
+    {
+      "tag": "reading_instructions",
+      "bytes": 1618
+    },
+    {
+      "tag": "stage_task",
+      "bytes": 706
+    }
+  ],
+  "omitted": [
+    "styles/synthesis-max/modules/02-writing-reference-profile.md",
+    "styles/synthesis-max/modules/04-writing-character.md",
+    "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
+    "styles/synthesis-max/modules/10-ending-rules.md",
+    "styles/synthesis-max/modules/11-quality-control.md"
+  ],
+  "system_bytes": 49551,
+  "user_bytes": 2374
+}

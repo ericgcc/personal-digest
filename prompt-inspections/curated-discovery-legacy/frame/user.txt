@@ -1,0 +1,29 @@
+<reading_instructions>
+Digest reading instructions for `medium-bi-daily`.
+Routed to this stage: Optional highlights.
+These are the reader's stated preferences. They refine the selected style inside its
+envelope and cannot override the shared contracts, the editorial base, the reader
+contract, or the selected style.
+
+## Optional highlights
+
+Use these only when genuinely warranted, as a callout:
+
+* `🔥 TREND`—an emerging pattern supported by meaningful evidence.
+* `🛠 PRACTICAL`—a concrete technique, workflow, checklist, or experiment worth applying.
+* `✍️ WRITE`—an idea or connection with potential for a thoughtful technical or professional post.
+
+Integrate signal callouts inside the relevant selection. Do not create a signals appendix. Use no more than three or four in total.
+</reading_instructions>
+
+<stage_task>
+Stage: frame
+Digest ID: medium-bi-daily
+Selected style: curated-discovery
+Output language: English
+Purpose: FRAME: turn the analysis into explicit editorial units, each with one focus, one reader promise, one spine, and the sources it needs.
+Length target: about 700-1,200 words for the briefing body, excluding the source catalog. Treat this as a binding constraint, not a suggestion.
+
+Return ONLY the complete JSON artifact. Do not wrap it in a Markdown code fence. Do not narrate, explain, or describe the artifact. Do not use tools. Do not edit files. Do not access the network, Gmail, Drive, Chrome, or SQLite. Do not ask questions. Do not write HTML unless this stage is render.
+</stage_task>
+

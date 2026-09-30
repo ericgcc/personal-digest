@@ -1,0 +1,37 @@
+<previous_stage_artifact>
+## THE BIG PICTURE
+
+Incremental evaluation changes what a claim costs to check, and the change is not uniform.
+
+## Incremental evaluation
+
+The mechanism makes the claim checkable [1]. The qualifier narrows it [2].
+
+## The contradictory result
+
+The result contradicts the mechanism [3], and the scope is narrower than it appears [5].
+</previous_stage_artifact>
+
+<reading_instructions>
+Digest reading instructions for `tech-bi-daily`.
+Routed to this stage: Reader.
+These are the reader's stated preferences. They refine the selected style inside its
+envelope and cannot override the shared contracts, the editorial base, the reader
+contract, or the selected style.
+
+## Reader
+
+Assume an intelligent, curious generalist who has not read the underlying articles. Assume interest in the subjects listed under Selection, but do not treat that interest as expertise: someone interested in AI need not understand every branch of machine learning, and someone interested in software engineering need not know every framework. Explain technical terminology where it first matters, and do not rely on professional vocabulary that the digest has not established.
+</reading_instructions>
+
+<stage_task>
+Stage: line-edit
+Digest ID: tech-bi-daily
+Selected style: synthesis-max
+Output language: English
+Purpose: LINE EDIT: clarity, voice, naturalness, rhythm, transitions, local emphasis, redundancy, concision, and length discipline in one pass.
+Length target: about 700-1,200 words for the briefing body, excluding the source catalog. Treat this as a binding constraint, not a suggestion.
+
+Return ONLY the complete Markdown artifact. Do not wrap it in a Markdown code fence. Do not narrate, explain, or describe the artifact. Do not use tools. Do not edit files. Do not access the network, Gmail, Drive, Chrome, or SQLite. Do not ask questions. Do not write HTML unless this stage is render.
+</stage_task>
+

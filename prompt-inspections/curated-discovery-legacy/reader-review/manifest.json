@@ -1,0 +1,84 @@
+{
+  "system_template": null,
+  "user_template": null,
+  "templates": [
+    {
+      "path": "prompts/evaluation/comparison.j2",
+      "bytes": 0,
+      "sha256": "1fed12fb14fe61ec512676789591cba1f2f9f827bd1e4ff34893fa15234b147b"
+    },
+    {
+      "path": "prompts/evaluation/shared/anti_leniency.j2",
+      "bytes": 0,
+      "sha256": "459cfb8e80e6c8990d561cdbc09608006904b069e2244337eecd8e6ff1a91a9c"
+    },
+    {
+      "path": "prompts/evaluation/shared/dimensions.j2",
+      "bytes": 0,
+      "sha256": "f21d9324ceec938f9390fd8b2245f2f7411d89bd5085e68484fb728d0c5e6482"
+    },
+    {
+      "path": "prompts/evaluation/shared/issue_taxonomy.j2",
+      "bytes": 0,
+      "sha256": "f2e2901a1b0612597f4ec9d573576f4c44aeff642f6c72c70a1dd1471e66be5c"
+    },
+    {
+      "path": "prompts/evaluation/shared/critical_failure.j2",
+      "bytes": 0,
+      "sha256": "73d2d4e23c838fef6a36e3e4f057457a6a36e15dd1cc0826c843e79265c641e8"
+    },
+    {
+      "path": "prompts/evaluation/shared/citation_note.j2",
+      "bytes": 0,
+      "sha256": "04d4ee07408f15740539e5d871cd77c0d3e86cf7ac1c1bc044ca9c84c16c74d0"
+    },
+    {
+      "path": "prompts/evaluation/shared/compactness.j2",
+      "bytes": 0,
+      "sha256": "9cdf748639508093d37bc523e6f43b72aa0ac8f69303d368b2c07e88de30cc18"
+    }
+  ],
+  "documents": [],
+  "instructions": [
+    {
+      "path": "system/contracts/reader-review.md",
+      "bytes": 3944,
+      "sha256": "171e6dfe66f1966c4da0cef871326e8ff179af95f6504d19a7ef8a4924b21f3a"
+    },
+    {
+      "path": "system/contracts/reader-contract.md",
+      "bytes": 3399,
+      "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
+    },
+    {
+      "path": "styles/curated-discovery/modules/01-style-interface.md",
+      "bytes": 2566,
+      "sha256": "ad54235cddc9ead0cf1112b39c7e5d346b25a36e0fc32f151f4e8b06a4a6a339"
+    },
+    {
+      "path": "styles/curated-discovery/modules/10-required-structure.md",
+      "bytes": 3471,
+      "sha256": "dbb7a800db05a2bda9f7bdf4190f2a98fe35338b4a1c70d7c6159da2e92e7d3f"
+    }
+  ],
+  "blocks": [],
+  "omitted": [
+    "styles/curated-discovery/modules/02-writing-reference-profile.md",
+    "styles/curated-discovery/modules/03-core-principle-digest-first-reading.md",
+    "styles/curated-discovery/modules/04-curation-process.md",
+    "styles/curated-discovery/modules/05-relationship-between-sources.md",
+    "styles/curated-discovery/modules/06-editorial-depth.md",
+    "styles/curated-discovery/modules/07-understanding-over-extraction.md",
+    "styles/curated-discovery/modules/08-writing-character.md",
+    "styles/curated-discovery/modules/09-length-and-density.md",
+    "styles/curated-discovery/modules/11-optional-depth-cue.md",
+    "styles/curated-discovery/modules/12-organization.md",
+    "styles/curated-discovery/modules/13-citations.md",
+    "styles/curated-discovery/modules/14-section-level-source-lines.md",
+    "styles/curated-discovery/modules/15-final-source-catalog.md",
+    "styles/curated-discovery/modules/16-ending-rules.md",
+    "styles/curated-discovery/modules/17-quality-control.md"
+  ],
+  "system_bytes": 0,
+  "user_bytes": 0
+}

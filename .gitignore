@@ -31,5 +31,6 @@ __pycache__/
 !.env.example
 
 # Offline prompt inspection output (`python -m digest_system.cli inspect`): derived,
-# reproducible from the templates and profiles, never source
-prompt-inspections/
+# reproducible from the templates and profiles, never source. Committed and guarded by
+# `inspect --check` (tests/python/regression/test_phase6_checklist.py) so prompt drift is visible.
+#prompt-inspections/

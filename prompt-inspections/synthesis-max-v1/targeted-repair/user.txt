@@ -1,0 +1,96 @@
+<source_corpus>
+{
+  "digest_id": "tech-bi-daily",
+  "style": "synthesis-max",
+  "language": "English",
+  "acquisition_time": "2026-09-20T06:30:00.000Z",
+  "html_lang": "en",
+  "delivery": {
+    "subject": "Tech Bi-Daily — 20 September 2026",
+    "invisible_html_run_marker": "<!-- run-key: tech-bi-daily-synthesis-max-fixture -->"
+  },
+  "sources": [
+    {
+      "source_number": 1,
+      "title": "A mechanism for incremental evaluation",
+      "author_or_publication": "Fixture Press",
+      "canonical_url": "https://example.invalid/a",
+      "resolved_locator": "https://example.invalid/a",
+      "reading_time_minutes": 12,
+      "reading_outcome": "read",
+      "received_at": "2026-09-19T08:00:00.000Z",
+      "originating_gmail_message_id": "msg-003"
+    },
+    {
+      "source_number": 2,
+      "title": "Qualifying the evaluation claim",
+      "author_or_publication": "Fixture Press",
+      "canonical_url": "https://example.invalid/b",
+      "resolved_locator": "https://example.invalid/b",
+      "reading_time_minutes": 8,
+      "reading_outcome": "read",
+      "received_at": "2026-09-19T09:00:00.000Z",
+      "originating_gmail_message_id": "msg-001"
+    },
+    {
+      "source_number": 3,
+      "title": "A contradictory result",
+      "author_or_publication": "Fixture Review",
+      "canonical_url": "https://example.invalid/c",
+      "resolved_locator": "https://example.invalid/c",
+      "reading_time_minutes": 15,
+      "reading_outcome": "read",
+      "received_at": "2026-09-20T05:00:00.000Z",
+      "originating_gmail_message_id": "msg-002"
+    },
+    {
+      "source_number": 5,
+      "title": "A short note",
+      "author_or_publication": "Fixture Notes",
+      "canonical_url": "https://example.invalid/e",
+      "resolved_locator": "https://example.invalid/e",
+      "reading_time_minutes": 3,
+      "reading_outcome": "read",
+      "received_at": "2026-09-20T05:45:00.000Z",
+      "originating_gmail_message_id": "msg-005"
+    }
+  ]
+}
+</source_corpus>
+
+<previous_stage_artifact>
+## THE BIG PICTURE
+
+Incremental evaluation changes what a claim costs to check, and the change is not uniform.
+
+## Incremental evaluation
+
+The mechanism makes the claim checkable [1]. The qualifier narrows it [2].
+
+## The contradictory result
+
+The result contradicts the mechanism [3], and the scope is narrower than it appears [5].
+</previous_stage_artifact>
+
+<reading_instructions>
+Digest reading instructions for `tech-bi-daily`.
+Routed to this stage: Reader.
+These are the reader's stated preferences. They refine the selected style inside its
+envelope and cannot override the shared contracts, the editorial base, the reader
+contract, or the selected style.
+
+## Reader
+
+Assume an intelligent, curious generalist who has not read the underlying articles. Assume interest in the subjects listed under Selection, but do not treat that interest as expertise: someone interested in AI need not understand every branch of machine learning, and someone interested in software engineering need not know every framework. Explain technical terminology where it first matters, and do not rely on professional vocabulary that the digest has not established.
+</reading_instructions>
+
+<stage_task>
+Stage: targeted-repair
+Digest ID: tech-bi-daily
+Selected style: synthesis-max
+Output language: English
+Purpose: TARGETED REPAIR: repair one diagnosed reader-facing problem. Runs at most once, and only when the reader review found a material, repairable problem.
+
+Return ONLY the complete Markdown artifact. Do not wrap it in a Markdown code fence. Do not narrate, explain, or describe the artifact. Do not use tools. Do not edit files. Do not access the network, Gmail, Drive, Chrome, or SQLite. Do not ask questions. Do not write HTML unless this stage is render.
+</stage_task>
+

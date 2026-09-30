@@ -1,0 +1,46 @@
+<deterministic_check_findings>
+{
+  "counts": {},
+  "checks": []
+}
+</deterministic_check_findings>
+
+<approved_frame_citations>
+{
+  "declared_source_numbers": [
+    1,
+    2,
+    3,
+    5
+  ]
+}
+</approved_frame_citations>
+
+<reading_instructions>
+Digest reading instructions for `medium-bi-daily`.
+Routed to this stage: Optional highlights.
+These are the reader's stated preferences. They refine the selected style inside its
+envelope and cannot override the shared contracts, the editorial base, the reader
+contract, or the selected style.
+
+## Optional highlights
+
+Use these only when genuinely warranted, as a callout:
+
+* `🔥 TREND`—an emerging pattern supported by meaningful evidence.
+* `🛠 PRACTICAL`—a concrete technique, workflow, checklist, or experiment worth applying.
+* `✍️ WRITE`—an idea or connection with potential for a thoughtful technical or professional post.
+
+Integrate signal callouts inside the relevant selection. Do not create a signals appendix. Use no more than three or four in total.
+</reading_instructions>
+
+<stage_task>
+Stage: copy-verify
+Digest ID: medium-bi-daily
+Selected style: curated-discovery
+Output language: English
+Purpose: COPY / VERIFY: verify citations, provenance, structure, language, Markdown, and length; correct copy only. Never rewrite editorially.
+
+Return the complete Markdown artifact, then a line containing exactly ---VERIFICATION---, then the verification JSON object. Do not wrap either in a Markdown code fence. Do not narrate or explain. Do not use tools. Do not access the network, Gmail, Drive, Chrome, or SQLite. Do not ask questions.
+</stage_task>
+

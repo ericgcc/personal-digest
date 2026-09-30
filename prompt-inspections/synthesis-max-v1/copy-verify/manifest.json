@@ -1,0 +1,96 @@
+{
+  "system_template": "stages/copy-verify/system.j2",
+  "user_template": "stages/copy-verify/user.j2",
+  "templates": [
+    {
+      "path": "prompts/stages/copy-verify/system.j2",
+      "bytes": 108,
+      "sha256": "0a510af0dbf6e874da58783af39b7b6cf08c391ab88cea2183a4378659790d0b"
+    },
+    {
+      "path": "prompts/shared/preamble.j2",
+      "bytes": 463,
+      "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
+    },
+    {
+      "path": "prompts/stages/copy-verify/user.j2",
+      "bytes": 151,
+      "sha256": "efa5901b9eedec4c205e2984e49b877e47a92e0f79d8f9d91aeda5cf8844bd7b"
+    },
+    {
+      "path": "prompts/shared/task.j2",
+      "bytes": 992,
+      "sha256": "d12ba969b789e4e2e361fcce24b6e3dc29635420b9ec9b91d608863f5659e417"
+    }
+  ],
+  "documents": [
+    {
+      "path": "system/contracts/copy-verify.md",
+      "bytes": 5488,
+      "sha256": "52715e882c9223bb77718575e3881d2c23e162de93d03e4c0ab5d8d4bcb3be80"
+    }
+  ],
+  "instructions": [
+    {
+      "path": "styles/synthesis-max/modules/01-style-interface.md",
+      "bytes": 2850,
+      "sha256": "35e389151e7acbd2964f043602b1e5b809050910337625fd5eb200e52daafd00"
+    },
+    {
+      "path": "styles/synthesis-max/modules/07-required-structure.md",
+      "bytes": 4022,
+      "sha256": "8bc77aca136c612d442cdacbf1eaafdd3038981544fd6e6f3e891e030a4006e7"
+    },
+    {
+      "path": "styles/synthesis-max/modules/06-length-and-density.md",
+      "bytes": 1518,
+      "sha256": "72af0519f874c0899b1ada2816b71f185110424ae988d5c24f979701e44c3f32"
+    },
+    {
+      "path": "styles/synthesis-max/modules/08-citations.md",
+      "bytes": 1576,
+      "sha256": "cdeee64d04c3e021628a13e8b865230c56f01b6745b765dce78cf7dec8eb7b91"
+    },
+    {
+      "path": "styles/synthesis-max/modules/09-final-source-catalog.md",
+      "bytes": 3170,
+      "sha256": "b738bba9885958ffd3d1928348ec7996e7afbaa9744e2364a352bf930ff3adce"
+    },
+    {
+      "path": "styles/synthesis-max/modules/10-ending-rules.md",
+      "bytes": 313,
+      "sha256": "8a33057172b643ed1ee8fc72a8e120b87ba3089cce9de8c245507af2e92b5b00"
+    }
+  ],
+  "blocks": [
+    {
+      "tag": "source_corpus",
+      "bytes": 2215
+    },
+    {
+      "tag": "reading_instructions",
+      "bytes": 760
+    },
+    {
+      "tag": "deterministic_check_findings",
+      "bytes": 34
+    },
+    {
+      "tag": "approved_frame_citations",
+      "bytes": 65
+    },
+    {
+      "tag": "stage_task",
+      "bytes": 567
+    }
+  ],
+  "omitted": [
+    "styles/synthesis-max/modules/02-writing-reference-profile.md",
+    "styles/synthesis-max/modules/03-synthesis-mode.md",
+    "styles/synthesis-max/modules/04-writing-character.md",
+    "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
+    "styles/synthesis-max/modules/11-quality-control.md"
+  ],
+  "system_bytes": 19402,
+  "user_bytes": 1598
+}

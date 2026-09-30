@@ -1,0 +1,58 @@
+{
+  "system_template": null,
+  "user_template": null,
+  "templates": [
+    {
+      "path": "prompts/evaluation/developmental.j2",
+      "bytes": 0,
+      "sha256": "5618e036b8a9b3b5eb92ec600de87d31209085c2bc2cfcf4f6c890abfd6fbe80"
+    },
+    {
+      "path": "prompts/evaluation/shared/developmental_discipline.j2",
+      "bytes": 0,
+      "sha256": "0d74242eb5dff0f4f8673d07b66e90f2afe086088de0c3a8c2f91d0019561b04"
+    }
+  ],
+  "documents": [],
+  "instructions": [
+    {
+      "path": "system/contracts/developmental-review.md",
+      "bytes": 5384,
+      "sha256": "212991d3aa430573a2d7f32630eff1fd1a2f866cadbffbf4330e3e06463d7ffc"
+    },
+    {
+      "path": "system/contracts/reader-contract.md",
+      "bytes": 3399,
+      "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
+    },
+    {
+      "path": "styles/synthesis-max/modules/01-style-interface.md",
+      "bytes": 2769,
+      "sha256": "35e389151e7acbd2964f043602b1e5b809050910337625fd5eb200e52daafd00"
+    },
+    {
+      "path": "system/style-pipelines/synthesis-max/review.md",
+      "bytes": 7868,
+      "sha256": "65a6445d9e400efa0f4f2f293c0447322a9ff7aceecde4a42267e872e9783fe3"
+    },
+    {
+      "path": "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
+      "bytes": 1720,
+      "sha256": "d52388c4ae228078148c1c3cb72d0c603c514018e2371ec84531d85a39f507db"
+    }
+  ],
+  "blocks": [],
+  "omitted": [
+    "styles/synthesis-max/modules/02-writing-reference-profile.md",
+    "styles/synthesis-max/modules/03-synthesis-mode.md",
+    "styles/synthesis-max/modules/04-writing-character.md",
+    "styles/synthesis-max/modules/06-length-and-density.md",
+    "styles/synthesis-max/modules/07-required-structure.md",
+    "styles/synthesis-max/modules/08-citations.md",
+    "styles/synthesis-max/modules/09-final-source-catalog.md",
+    "styles/synthesis-max/modules/10-ending-rules.md",
+    "styles/synthesis-max/modules/11-quality-control.md"
+  ],
+  "system_bytes": 0,
+  "user_bytes": 0
+}

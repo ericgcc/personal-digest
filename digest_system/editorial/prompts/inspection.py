@@ -29,7 +29,7 @@ from ...runtime.artifacts import ROOT, RunnerError
 from ..evaluation_prompts import compose_evaluation_prompts
 from ..stages import stage_names_v2, stage_v2
 from .compose import ComposedPrompt, compose_stage_prompt
-from .offline import OfflineContext, build_context, seed_artifacts, stage_inputs
+from .offline import OfflineContext, build_context, seed_artifacts, stage_extra_blocks, stage_inputs
 
 
 @dataclass
@@ -247,7 +247,7 @@ def inspect_stage(
         return inspection
 
     inputs = stage_inputs(stage_name, offline)
-    extra_blocks = _extra_blocks(stage_name, offline)
+    extra_blocks = stage_extra_blocks(stage_name, offline)
     composed: ComposedPrompt = compose_stage_prompt(
         stage=stage,
         context=offline,
@@ -288,18 +288,6 @@ SYNTHETIC_DRAFT_FOR_EVALUATION = "\n".join(
 
 def _command_for(stage_name: str) -> str:
     return "evaluate-developmental-review" if stage_name == "developmental-review" else "compare-reader-quality"
-
-
-def _extra_blocks(stage_name: str, context: OfflineContext) -> dict[str, Any]:
-    """The stage-specific blocks the executor computes outside the stage declaration."""
-    if stage_name == "copy-verify":
-        return {
-            "deterministic_check_findings": json.dumps({"counts": {}, "checks": []}, indent=2),
-            "approved_frame_citations": json.dumps({"declared_source_numbers": [1, 2, 3, 5]}, indent=2),
-        }
-    if stage_name == "render":
-        return {"rendering_values": json.dumps(context.rendering_values(), ensure_ascii=False, indent=2)}
-    return {}
 
 
 def inspect_all(

@@ -344,6 +344,8 @@ def command_inspect(args: argparse.Namespace) -> int:
         if args.stage
         else inspect_all(digest_id=args.digest, profile_id=profile.profile_id)
     )
+    if args.check:
+        return _check_inspections(selected, root / profile.profile_id)
     for inspection in selected:
         if args.print_prompt:
             print(inspection.prompt_text)
@@ -355,6 +357,41 @@ def command_inspect(args: argparse.Namespace) -> int:
             f"{directory.relative_to(ROOT) if directory.is_relative_to(ROOT) else directory}",
             file=sys.stderr,
         )
+    return 0
+
+
+def _check_inspections(inspections, profile_root: Path) -> int:
+    """Verify the recorded inspection files match a fresh in-memory regeneration."""
+    import json
+
+    failures: list[str] = []
+    for inspection in inspections:
+        directory = profile_root / inspection.stage
+        expected: dict[str, str] = {}
+        if inspection.combined_text:
+            expected["prompt.txt"] = inspection.combined_text
+        else:
+            expected["system.txt"] = inspection.system_text
+            expected["user.txt"] = inspection.user_text
+        expected["manifest.json"] = json.dumps(inspection.manifest, ensure_ascii=False, indent=2) + "\n"
+        expected["report.md"] = inspection.report
+        for name, text in expected.items():
+            path = directory / name
+            # `Inspection.write` normalizes newlines on disk; the in-memory text carries the
+            # platform newlines of the template files it was assembled from.
+            if not path.is_file():
+                failures.append(f"{path.relative_to(ROOT).as_posix()}: missing")
+            elif path.read_text(encoding="utf-8") != text.replace("\r\n", "\n"):
+                failures.append(f"{path.relative_to(ROOT).as_posix()}: out of date")
+    if failures:
+        for failure in failures:
+            print(f"FAIL {failure}")
+        print(
+            f"FAIL the recorded prompt inspection for {profile_root.name} is out of date; "
+            "regenerate with: python -m digest_system.cli inspect"
+        )
+        return 1
+    print(f"verified the recorded prompt inspection for {profile_root.name}")
     return 0
 
 
@@ -462,6 +499,11 @@ def build_parser() -> argparse.ArgumentParser:
     inspect_parser.add_argument("--style-profile", default=None, help="Style profile id or alias")
     inspect_parser.add_argument("--stage", default=None, help="One stage; omit for every stage")
     inspect_parser.add_argument("--output", default=None, help="Directory to write into")
+    inspect_parser.add_argument(
+        "--check",
+        action="store_true",
+        help="verify the recorded inspection output is current instead of writing it",
+    )
     inspect_parser.add_argument(
         "--print", dest="print_prompt", action="store_true", help="Print the prompt instead of writing files"
     )

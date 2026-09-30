@@ -45,12 +45,13 @@
 - `source_corpus` — 1949 chars
 - `previous_stage_artifact` — 332 chars
 - `approved_frame` — 2190 chars
+- `reading_instructions` — 920 chars
 - `stage_task` — 699 chars
 
 ## Sizes
 
 - System: 6103 units
-- User: 5298 units
+- User: 6267 units
 
 ## Style modules
 

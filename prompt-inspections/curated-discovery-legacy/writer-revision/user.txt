@@ -173,6 +173,22 @@ The result contradicts the mechanism [3], and the scope is narrower than it appe
 }
 </approved_frame>
 
+<reading_instructions>
+Digest reading instructions for `medium-bi-daily`.
+Routed to this stage: Reader.
+These are the reader's stated preferences. They refine the selected style inside its
+envelope and cannot override the shared contracts, the editorial base, the reader
+contract, or the selected style.
+
+## Reader
+
+The reader is a technically experienced professional with broad interests across software, AI, data, productivity, learning, technology, business, and personal development.
+
+Assume strong general analytical ability and familiarity with common software and technology concepts, but do not assume expertise in the particular domain of each selected article. The subject matter may vary considerably from one discovery to the next.
+
+The reader values learning something substantive quickly: a useful idea, mechanism, mental model, practical technique, or perspective that can be understood without having read the original source.
+</reading_instructions>
+
 <stage_task>
 Stage: writer-revision
 Digest ID: medium-bi-daily

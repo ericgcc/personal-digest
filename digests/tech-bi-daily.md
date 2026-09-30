@@ -52,7 +52,11 @@ Prefer omission over completeness. Optimize for useful knowledge, practical idea
 
 ## Reader
 
-Assume an intelligent, curious generalist who has not read the underlying articles. Assume interest in the subjects listed under Selection, but do not treat that interest as expertise: someone interested in AI need not understand every branch of machine learning, and someone interested in software engineering need not know every framework. Explain technical terminology where it first matters, and do not rely on professional vocabulary that the digest has not established.
+The reader is an experienced software and data professional who is comfortable with Python, software engineering, data systems, machine learning, cloud platforms, APIs, and common AI/LLM concepts.
+
+Assume familiarity with mainstream engineering terminology and the practical realities of building and maintaining production systems. Do not assume specialist knowledge of every framework, research area, infrastructure stack, or newly introduced AI technique.
+
+The reader is primarily interested in understanding how things work, what trade-offs matter, and what can transfer into real engineering practice. Explanations should preserve technical substance without spending space teaching broadly familiar software-engineering fundamentals.
 
 ## Content preferences
 

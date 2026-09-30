@@ -13,7 +13,6 @@ from evaluation.selection import (
     FEATURED,
     OMITTED,
     audit_selection,
-    declared_priority,
 )
 
 SELECTION = """\
@@ -56,28 +55,30 @@ def _frame(featured: list[int], catalog_only: list[int] | None = None) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# Declared priority
+# Verbatim preservation of the digest's instructions
 # --------------------------------------------------------------------------- #
 
 
-def test_declared_priority_reads_the_order_the_digest_wrote() -> None:
-    assert declared_priority(SELECTION) == (
-        "Teach me something",
-        "Give me something I can apply",
-        "Show me an interesting idea or pattern",
-        "Tell me what happened",
+def test_the_selection_text_is_preserved_verbatim_for_auditability() -> None:
+    """The audit records the digest's own prose; it does not interpret it."""
+    audit = audit_selection(
+        analysis=_analysis([1]),
+        frame=_frame(featured=[1]),
+        selection_text=SELECTION,
     )
+    assert audit.selection_text == SELECTION
 
 
-def test_declared_priority_is_empty_without_a_selection_section() -> None:
-    assert declared_priority(None) == ()
-    assert declared_priority("## Reader\n\nSome reader text.") == ()
-
-
-def test_declared_priority_follows_a_reordered_digest() -> None:
-    """A digest that reorders its priority is audited against its own order."""
-    reordered = "Tell me what happened > Teach me something"
-    assert declared_priority(reordered) == ("Tell me what happened", "Teach me something")
+def test_the_audit_does_not_interpret_selection_prose() -> None:
+    """Arbitrary free-text instructions are valid input and never matched."""
+    prose = "## Selection\n\nFavor sources about deep-sea cartography; avoid anything promotional."
+    audit = audit_selection(
+        analysis=_analysis([1]),
+        frame=_frame(featured=[1]),
+        selection_text=prose,
+    )
+    assert audit.selection_text == prose
+    assert not audit.findings
 
 
 # --------------------------------------------------------------------------- #
@@ -159,7 +160,7 @@ def test_the_audit_serializes_to_json_safe_data() -> None:
     )
     payload = audit.to_dict()
     assert json.loads(json.dumps(payload))["accounted_ratio"] == 1.0
-    assert payload["declared_priority"][0] == "Teach me something"
+    assert payload["selection_text"] == SELECTION
 
 
 def test_the_audit_makes_no_judge_call() -> None:

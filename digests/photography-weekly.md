@@ -54,7 +54,11 @@ When editorial value is otherwise comparable, place local opportunities and offe
 
 ## Reader
 
-Assume an intelligent, curious generalist who has not read the underlying articles. Assume an interest in photography and a desire to improve at it, but do not treat that interest as advanced expertise: someone interested in photography need not know every photographic technique, and unfamiliar techniques, controls, and terminology must be explained where they first matter.
+The reader is an actively learning enthusiast photographer who understands the basic exposure triangle and everyday camera operation, but is still developing stronger technical intuition, visual judgment, and practical shooting experience.
+
+Assume familiarity with common concepts such as aperture, shutter speed, ISO, focal length, autofocus, and basic composition, but do not assume advanced knowledge of lighting, flash, color theory, post-processing, specialized genres, or professional photographic practice.
+
+The reader values explanations that connect technique to visible photographic results and that make it clear when, why, and under what conditions a technique is useful.
 
 ## Content preferences
 

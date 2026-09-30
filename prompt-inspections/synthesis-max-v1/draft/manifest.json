@@ -103,7 +103,7 @@
     },
     {
       "tag": "reading_instructions",
-      "bytes": 1618
+      "bytes": 1882
     },
     {
       "tag": "stage_task",
@@ -115,5 +115,5 @@
     "styles/synthesis-max/modules/11-quality-control.md"
   ],
   "system_bytes": 50991,
-  "user_bytes": 6548
+  "user_bytes": 6812
 }

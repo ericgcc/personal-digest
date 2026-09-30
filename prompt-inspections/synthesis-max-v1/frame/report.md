@@ -39,13 +39,13 @@
 
 ## Data blocks
 
-- `reading_instructions` — 1618 chars
+- `reading_instructions` — 1882 chars
 - `stage_task` — 706 chars
 
 ## Sizes
 
 - System: 49551 units
-- User: 2374 units
+- User: 2638 units
 
 ## Style modules
 

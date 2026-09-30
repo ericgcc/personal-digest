@@ -10,14 +10,23 @@ pipeline already produces:
 
 * **Analyze's structured source assessments** — every reviewed source's central
   thesis, why it is worth opening, its key details and its selection judgment.
-* **The digest's ``## Selection`` instructions** — the priority the digest
-  declares (for example "teach me something > give me something I can apply").
+* **The digest's ``## Selection`` instructions** — preserved verbatim for
+  auditability, so a human or semantic reviewer can compare the recorded
+  decisions against whatever the digest actually asked for.
 * **The frame's decisions** — which sources were featured, demoted or omitted.
 
 It is deliberately **deterministic and offline**: it introduces no judge call, so
-it stays inside the existing routine evaluation-call budget. It reports what the
-recorded decisions were and whether they are internally consistent with the
-declared priority; it does not pretend to re-rank the corpus.
+it stays inside the existing routine evaluation-call budget. It checks
+**structure and traceability** — that every reviewed source has a recorded
+outcome, that every decision has a rationale, that no source silently
+disappears between Analyze and Frame — and nothing more.
+
+It does **not** interpret the digest's ``## Selection`` prose. Whether a
+selection actually satisfies the reader's free-text instructions is a semantic
+judgment that belongs to Analyze or to an explicitly semantic evaluator; no
+deterministic keyword or phrase matcher can make it for an arbitrary digest.
+The exact ``## Selection`` text used for the run is recorded in the audit
+payload so that semantic review remains possible.
 
 During historical evaluation the audit compares selected and rejected candidates
 against the available source evidence. In production the same function reads the
@@ -28,16 +37,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
-
-#: The declared priority orderings a digest may state in ``## Selection``. The
-#: audit reads the digest's own text rather than assuming one, so a digest that
-#: changes its priority is audited against the priority it actually declared.
-PRIORITY_MARKERS: tuple[str, ...] = (
-    "Teach me something",
-    "Give me something I can apply",
-    "Show me an interesting idea or pattern",
-    "Tell me what happened",
-)
 
 #: Selection decisions the frame may record for a source.
 FEATURED = "featured"
@@ -95,7 +94,9 @@ class SelectionAudit:
 
     digest_id: str | None = None
     style: str | None = None
-    declared_priority: tuple[str, ...] = ()
+    #: The digest's ``## Selection`` instructions, verbatim. Recorded for
+    #: auditability only; the audit does not interpret them.
+    selection_text: str | None = None
     reviewed_source_count: int = 0
     featured: tuple[int, ...] = ()
     demoted: tuple[int, ...] = ()
@@ -122,7 +123,7 @@ class SelectionAudit:
         return {
             "digest_id": self.digest_id,
             "style": self.style,
-            "declared_priority": list(self.declared_priority),
+            "selection_text": self.selection_text,
             "reviewed_source_count": self.reviewed_source_count,
             "featured": list(self.featured),
             "demoted": list(self.demoted),
@@ -134,25 +135,6 @@ class SelectionAudit:
             "findings": list(self.findings),
             "notes": list(self.notes),
         }
-
-
-def declared_priority(selection_text: str | None) -> tuple[str, ...]:
-    """The priority ordering a digest's ``## Selection`` section states, in order.
-
-    The digest states its priority as a chain ("Teach me something > Give me
-    something I can apply > …"). The audit reads the order the digest actually
-    wrote rather than assuming one, so a digest that reorders its priority is
-    audited against its own declaration.
-    """
-    if not selection_text:
-        return ()
-    positions = [
-        (selection_text.find(marker), marker)
-        for marker in PRIORITY_MARKERS
-        if marker in selection_text
-    ]
-    positions.sort()
-    return tuple(marker for _, marker in positions)
 
 
 def _assessments(analysis: Mapping[str, Any] | None) -> tuple[SourceAssessment, ...]:
@@ -245,9 +227,10 @@ def audit_selection(
     """Audit one run's selection from the structured artifacts it already wrote.
 
     This is deterministic and offline: it reads Analyze's assessments and the
-    frame's decisions and reports whether every reviewed source was accounted
-    for, and whether the featured set is consistent with the declared priority.
-    It never calls a model.
+    frame's decisions and checks structure and traceability — that every
+    reviewed source was accounted for with a recorded rationale, and that no
+    source silently disappeared between Analyze and Frame. It never calls a
+    model and never interprets the digest's ``## Selection`` prose.
     """
     assessments = _assessments(analysis)
     decisions = _decisions(frame)
@@ -287,19 +270,35 @@ def audit_selection(
                 "structured assessment, so the reason they were featured is not recorded."
             )
 
-    # The declared priority is a claim about what the digest values. The audit
-    # reports it so a reader can check the featured set against it; it does not
-    # re-rank, because that would require the source text the audit does not read.
-    priority = declared_priority(selection_text)
-    if priority:
+    # Decisions without a recorded rationale are traceability gaps: the audit
+    # cannot tell a considered rejection from an accidental omission. Whether a
+    # rationale is *good* is a semantic judgment this audit does not make.
+    unexplained = [
+        d.source_number
+        for d in decisions
+        if not d.reason and d.decision != OMITTED
+    ]
+    if unexplained:
+        findings.append(
+            f"selection decision(s) for source(s) {', '.join(map(str, sorted(set(unexplained))))} "
+            "have no recorded rationale."
+        )
+
+    # The digest's own instructions are preserved verbatim so a human or semantic
+    # reviewer can check the recorded decisions against them. The audit itself
+    # does not interpret the prose: no deterministic matcher can judge whether a
+    # selection satisfies arbitrary free-text preferences.
+    if selection_text:
         notes.append(
-            "Declared selection priority, in order: " + " > ".join(priority) + "."
+            "The digest's ## Selection instructions are recorded verbatim in "
+            "selection_text for semantic review; this audit checks structure and "
+            "traceability only."
         )
 
     return SelectionAudit(
         digest_id=digest_id,
         style=style,
-        declared_priority=priority,
+        selection_text=selection_text,
         reviewed_source_count=len(reviewed),
         featured=featured,
         demoted=demoted,
@@ -349,11 +348,9 @@ __all__ = [
     "FEATURED",
     "DEMOTED",
     "OMITTED",
-    "PRIORITY_MARKERS",
     "SelectionAudit",
     "SelectionDecision",
     "SourceAssessment",
     "audit_from_run",
     "audit_selection",
-    "declared_priority",
 ]

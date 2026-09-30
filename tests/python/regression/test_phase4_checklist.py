@@ -188,7 +188,7 @@ def test_checklist_6_the_audit_uses_assessments_selection_text_and_corpus() -> N
     assert audit.reviewed_source_count == 2
     assert audit.featured == (1,)
     assert audit.unaccounted == (2,)
-    assert audit.declared_priority == ("Teach me something", "Tell me what happened")
+    assert audit.selection_text == "Teach me something > Tell me what happened"
 
 
 def test_checklist_7_the_audit_makes_no_judge_call() -> None:

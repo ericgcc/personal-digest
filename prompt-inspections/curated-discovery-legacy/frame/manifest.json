@@ -115,7 +115,7 @@
   "blocks": [
     {
       "tag": "reading_instructions",
-      "bytes": 763
+      "bytes": 1411
     },
     {
       "tag": "stage_task",
@@ -128,5 +128,5 @@
     "styles/curated-discovery/modules/17-quality-control.md"
   ],
   "system_bytes": 44680,
-  "user_bytes": 1525
+  "user_bytes": 2173
 }

@@ -45,13 +45,13 @@
 ## Data blocks
 
 - `source_corpus` — 2355 chars
-- `reading_instructions` — 3878 chars
+- `reading_instructions` — 4526 chars
 - `stage_task` — 558 chars
 
 ## Sizes
 
 - System: 15746 units
-- User: 6876 units
+- User: 7524 units
 
 ## Style modules
 

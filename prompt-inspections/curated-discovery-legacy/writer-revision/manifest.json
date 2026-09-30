@@ -51,6 +51,10 @@
       "bytes": 2190
     },
     {
+      "tag": "reading_instructions",
+      "bytes": 920
+    },
+    {
       "tag": "stage_task",
       "bytes": 699
     }
@@ -74,5 +78,5 @@
     "styles/curated-discovery/modules/17-quality-control.md"
   ],
   "system_bytes": 6103,
-  "user_bytes": 5298
+  "user_bytes": 6267
 }

@@ -65,6 +65,14 @@ When several articles cover the same area, select the one with the strongest sub
 
 With a small source set, a shorter edition containing only genuinely strong material is preferable to lowering the selection threshold.
 
+## Reader
+
+The reader is a technically experienced professional with broad interests across software, AI, data, productivity, learning, technology, business, and personal development.
+
+Assume strong general analytical ability and familiarity with common software and technology concepts, but do not assume expertise in the particular domain of each selected article. The subject matter may vary considerably from one discovery to the next.
+
+The reader values learning something substantive quickly: a useful idea, mechanism, mental model, practical technique, or perspective that can be understood without having read the original source.
+
 ## Optional highlights
 
 Use these only when genuinely warranted, as a callout:

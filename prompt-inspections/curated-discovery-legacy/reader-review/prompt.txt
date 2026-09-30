@@ -112,6 +112,17 @@ The digest's interest profile is a **selection** signal. It is never a licence t
 * Review, evaluate, and diagnose in terms of the reader described here, not in terms of a domain.
 * Do not import examples, terminology, or failure modes from any previous corpus into a diagnosis. A problem is a problem because of the text in front of you.
 * Localization does not change this contract. A digest written in another language owes its reader the same orientation and explanation, expressed in that language.
+
+
+# Digest reader brief
+
+This digest explicitly describes its reader. That description narrows the reader contract above for this digest; it never removes its requirements, and it is used only as written.
+
+The reader is a technically experienced professional with broad interests across software, AI, data, productivity, learning, technology, business, and personal development.
+
+Assume strong general analytical ability and familiarity with common software and technology concepts, but do not assume expertise in the particular domain of each selected article. The subject matter may vary considerably from one discovery to the next.
+
+The reader values learning something substantive quickly: a useful idea, mechanism, mental model, practical technique, or perspective that can be understood without having read the original source.
 Both versions are written in **English**. Judge them in their own language, but write your JSON string values in English.
 
 This digest is written in the **Curated Discovery** style. Its selections are independent discoveries, not chapters of one argument. Do **not** require a single unified thesis, and do not penalize the digest for covering unrelated subjects. Instead require that each major item is understandable on its own, gives a clear reason it matters, supplies enough context to be understood without opening the source, and explains rather than compresses the original article. Where the editorial framing claims a connection between items, that claimed connection must be supported.

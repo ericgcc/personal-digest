@@ -44,12 +44,13 @@
 ## Data blocks
 
 - `previous_stage_artifact` — 332 chars
+- `reading_instructions` — 920 chars
 - `stage_task` — 721 chars
 
 ## Sizes
 
 - System: 10010 units
-- User: 1109 units
+- User: 2078 units
 
 ## Style modules
 

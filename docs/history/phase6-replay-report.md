@@ -50,11 +50,14 @@ central Phase 6 instruction (*"replay `tech-bi-daily-20260921-1109`"*) was not e
 Two replays were run under the same pinned configuration (`synthesis-max-v1` v2.0.0,
 DeepSeek), from the same historical corpus, to examine variability.
 
-| Run | Status | Cost (peak) | Wall time | Tokens (hit/miss/out) |
-| --- | --- | --- | --- | --- |
-| `tech-bi-daily-20260921-1109-r1` | **completed, 0 degraded** | $0.3941 | 999.7 s | 16,640 / 302,067 / 252,806 |
-| `tech-bi-daily-20260921-1109-r2` | **completed, 0 degraded** | $0.3123 | 879.3 s | 170,752 / 165,445 / 218,038 |
-| `tech-bi-daily-20260921-1109` *(original)* | completed | $0.2118 | 1,050.5 s | 39,168 / 343,430 / 266,897 |
+| Run | Status | Band | Cost (as billed) | Off-peak equivalent | Wall time | Tokens (hit/miss/out) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `tech-bi-daily-20260921-1109-r1` | **completed, 0 degraded** | peak | $0.3941 | **$0.1970** | 999.7 s | 16,640 / 302,067 / 252,806 |
+| `tech-bi-daily-20260921-1109-r2` | **completed, 0 degraded** | peak | $0.3123 | **$0.1562** | 879.3 s | 170,752 / 165,445 / 218,038 |
+| `tech-bi-daily-20260921-1109` *(original)* | completed | off-peak | $0.2118 | $0.2118 | 1,050.5 s | 39,168 / 343,430 / 266,897 |
+
+The replays ran at peak and the original off-peak, so the raw figures are not comparable; at
+the same band the replays are cheaper (§4).
 
 A replay creates a new run directory, copies only the historical `sources.json`, and records
 its own `replay.json` (`"replay_of"`, `"pipeline": "editorial-pipeline-v2"`, and a note that it
@@ -79,9 +82,21 @@ Deterministic, from each run's `stage-records.json` and `run-summary.json`:
 | copy-verify | completed | 88.5 / 139.6 | 18,949 / 23,702 | 20,061 / 33,651 | $0.0306 / $0.0229 |
 | render | completed | 40.9 / 43.2 | 45,330 / 46,374 | 15,175 / 16,588 | $0.0234 / $0.0107 |
 
-The higher cost is expected: the replay reads the *reviewed* corpus through the profile's
-style documents, which are larger than the pre-Phase-3 documents the original inlined, and the
-peak billing band differs. Targeted repair was skipped in both, as designed (it is optional).
+The raw cost looks higher, but the difference is almost entirely the **billing band**, not the
+work. The original ran off-peak; both replays ran at peak, and peak is exactly 2× off-peak
+(`if_all_peak / if_all_off_peak = 2.000` in every run). Normalized to the same band:
+
+| | r1 | r2 | original |
+| --- | --- | --- | --- |
+| actual (as billed) | $0.3941 (peak) | $0.3123 (peak) | $0.2118 (off-peak) |
+| **off-peak equivalent** | **$0.1970** | **$0.1562** | **$0.2118** |
+| total tokens | 571,513 | 554,235 | 649,495 |
+| input tokens | 318,707 | 336,197 | 382,598 |
+| output tokens | 252,806 | 218,038 | 266,897 |
+
+At the same band, **r1 is 7 % cheaper than the original and r2 is 26 % cheaper**, on 12–15 %
+fewer tokens. The style-isolated implementation is not more expensive; the replay simply ran
+during peak hours. Targeted repair was skipped in both, as designed (it is optional).
 
 ## 5. The frame's units (r1 vs the original)
 
@@ -171,7 +186,7 @@ proven by the Phase 5 and Phase 6 tests over the same artifacts.
   | citations resolve | 11, all in corpus | 12, all in corpus |
   | reader-review | 8.1 | 8.5 |
   | developmental issues | 12 (4 major) | 11 (4 major) |
-  | cost | $0.3941 | $0.3123 |
+  | cost (off-peak equivalent) | $0.1970 | $0.1562 |
 
   The **contract invariants hold in both**: four threads, exactly three sources each, no
   duplicate identity, every citation resolving, and every callout authorized. The **free
@@ -264,8 +279,9 @@ to the frame's orientation instruction rather than a broad addition to every sta
   deliberate, documented choice, not a hidden tolerance.
 * The `provenance:identities` check reads the *rendered* artifact, so it only catches a
   duplication that reached the prose. The canonical manifest prevents it upstream.
-* r1 costs ~86 % more than the original edition, chiefly because the profile delivers larger
-  reviewed-corpus context; that is a known trade of the style-isolated implementation.
+* Cost must be compared at the same billing band. The replays ran at peak and the original
+  off-peak, so the raw figures ($0.3941 vs $0.2118) overstate the difference by 2×; at the same
+  band the replays are cheaper (§4). A future comparison should pin the band or normalize it.
 * The remaining `unexplained_concept` findings are recorded, not masked. The design's rule —
   identify the originating stage and make the smallest relevant correction, never add broad
   instructions to every stage — applies to them in Phase 7.

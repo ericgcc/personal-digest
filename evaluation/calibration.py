@@ -13,7 +13,7 @@ Only genuinely reported human concerns are labeled. Every other sample stays
 ``unlabeled_control`` until a human reviews it; no "human approved" examples are
 invented.
 
-Phase 4 extends the set with the Synthesis MAX writing defects the Tech reviews
+The editorial evaluation extends the set with the Synthesis MAX writing defects the Tech reviews
 already identified — the ``unexplained_concept`` failures the recorded
 developmental review found five times — so the v4 rubric is calibrated against
 real historical failures rather than a synthetic example.

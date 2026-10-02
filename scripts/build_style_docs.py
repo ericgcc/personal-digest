@@ -1,6 +1,6 @@
 """Generate ``styles/<style>.md`` from the authoritative style modules.
 
-Phase 2b makes the style's rules individually addressable: a stage references the module
+The prompt migration makes the style's rules individually addressable: a stage references the module
 that carries the rule it needs instead of asking a Markdown heading to act as an identifier.
 The readable ``styles/<style>.md`` document is retained as the style's specification, and it
 is *generated* from those modules so the two can never drift apart.

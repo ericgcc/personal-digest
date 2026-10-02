@@ -4,7 +4,7 @@
 Run with the pre-2b commit checked out:
 
     git worktree add ../digy-pre2b 8ad4287
-    python ../digy-pre2b/scripts/capture_pre2b_prompts.py --output tests/fixtures/phase2b/pre2b-prompts.json
+    python ../digy-pre2b/scripts/capture_pre2b_prompts.py --output tests/fixtures/prompt_migration/legacy-prompt-reference.json
 
 This reconstructs each stage's system and user prompt exactly as the pre-Jinja2 executor built
 it — the preamble, the inlined documents, the evidence projection, the data blocks, the task

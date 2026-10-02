@@ -1,6 +1,6 @@
 """Freeze and compare the exact prompts each stage produces.
 
-The migration's baseline is the record of what the pre-Phase-2b implementation sent, captured
+The migration's baseline is the record of what the pre-migration implementation sent, captured
 before the prompt code changed. This module provides the read side of that record and the
 capture that produces it, so the tests, the maintenance script and the final report all agree.
 
@@ -37,7 +37,7 @@ DIGEST_CONFIG_BY_STYLE: dict[str, str] = {
     "detailed": "digests/tech-bi-daily.md",
 }
 
-BASELINE_RELATIVE = "tests/fixtures/phase2b/prompt-baseline.json"
+BASELINE_RELATIVE = "tests/fixtures/prompt_migration/prompt-baseline.json"
 
 
 def baseline_path(root: Path | None = None) -> Path:

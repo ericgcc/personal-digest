@@ -141,7 +141,7 @@ def test_every_style_module_text_appears_verbatim_in_the_assembled_prompt():
     """The instruction text is unchanged; only its packaging moved.
 
     The check is against the *current* assembled prompt, because a later phase may deliberately
-    route an additional module to a stage (Phase 3C routes the domain-accessibility module to
+    route an additional module to a stage (The Synthesis MAX refinement routes the domain-accessibility module to
     draft, line-edit and the review contracts). What must never happen is a module being
     delivered with altered text.
     """
@@ -227,7 +227,7 @@ def test_excluded_sections_are_reported_by_module():
 def test_analyze_still_receives_no_style_document_under_the_default_profile():
     """The legacy profiles deliver no style document to analyze.
 
-    Phase 3C made the Synthesis MAX v1 profile the style's default, and v1 deliberately delivers
+    The Synthesis MAX refinement made the v1 profile the style's default, and v1 deliberately delivers
     the style's selection and relationship model to analyze. Every other style's default is still
     its legacy profile, which delivers nothing to analyze.
     """
@@ -364,7 +364,7 @@ def test_the_operational_part_of_every_stage_context_is_identical_across_styles(
 def test_the_synthesis_max_profile_is_the_only_one_that_diverges():
     """Every other style's default profile is its legacy profile, so production is unchanged.
 
-    Phase 3C retired the Synthesis MAX legacy profile and made v1 the style's default, so
+    The Synthesis MAX refinement retired the legacy profile and made v1 the style's default, so
     Synthesis MAX is the one style whose default is not a legacy profile.
     """
     for style in CANONICAL_STYLES:

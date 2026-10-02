@@ -1,7 +1,7 @@
 """The evaluator's three judge prompts, rendered from the same Jinja2 templates.
 
 The Python evaluator owns section parsing, judge execution, response validation and scoring. It
-does not own the prompt *text*: Phase 2b moved that into templates under ``prompts/evaluation``,
+does not own the prompt *text*: The prompt migration moved that into templates under ``prompts/evaluation``,
 so the editorial pipeline and the evaluator share one template engine, one loader and one
 strictness policy.
 

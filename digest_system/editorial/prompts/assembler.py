@@ -1,6 +1,6 @@
 """Prompt assembly: turning a stage's declared documents into its instruction context.
 
-A stage's documents are named **files**. Phase 2b removed the heading extractor that used to
+A stage's documents are named **files**. The prompt migration removed the heading extractor that used to
 sit here: a profile named ``##`` sections of ``styles/<style>.md`` and this module parsed the
 Markdown to find them. Now a profile names a module under ``styles/<style>/modules/``, and
 this module reads the file as it is.

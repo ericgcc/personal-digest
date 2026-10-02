@@ -17,10 +17,10 @@ Synthesis MAX was already activated in Phase 3C (`synthesis-max-v1` is the style
 | --- | --- |
 | `digest_system/editorial/regression.py` | The first-production-trial audits: `audit_threads` (2–4 materially contributing sources, word allocation, concrete subject and relationship, citations resolving) and `audit_publication` (duplicate identities, citation resolution, membership, callout authorization). Offline and deterministic. |
 | `scripts/replay_compare.py` | Stage-by-stage comparison of a replay against the run it replays, plus the two audits. No model call, no write. |
-| `tests/fixtures/phase6/medium-provenance.json` | The Medium run's recorded D6 defect and its three named sections, as durable evidence. |
-| `tests/fixtures/phase6/replay-callouts.json` | The r1 replay's three draft callout directives, as durable evidence of callout survival. |
+| `tests/fixtures/replay_validation/medium-provenance-regression.json` | The Medium run's recorded D6 defect and its three named sections, as durable evidence. |
+| `tests/fixtures/replay_validation/callout-survival-regression.json` | The r1 replay's three draft callout directives, as durable evidence of callout survival. |
 | `tests/python/regression/test_phase6_checklist.py` | The Phase 6 acceptance checklist (28 tests). |
-| `docs/history/phase6-replay-report.md` | This report. |
+| `docs/history/historical-replay-report.md` | This report. |
 
 ### Changed
 

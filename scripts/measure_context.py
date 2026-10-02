@@ -3,7 +3,7 @@
 
 Python port of ``scripts/measure-context.mjs``.
 
-Correction 6 of the Phase 2 review requires the runtime stage documents to be trimmed of
+Correction 6 of the pre-migration review requires the runtime stage documents to be trimmed of
 maintainer-facing rationale, and requires the trimming to be *measured* rather than assumed:
 the difference has to be visible, and no substantive requirement may have disappeared in the
 process. This script is how that is shown, and it is runnable again after any later edit.

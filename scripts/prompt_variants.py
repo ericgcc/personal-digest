@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-"""Phase 3B: compare the three controlled prompt variants, offline and reproducibly.
+"""Prompt-structure work: compare the three controlled prompt variants, offline and reproducibly.
 
-Phase 3B compares three temporary variants (design §3B.3):
+The prompt-structure work compares three temporary variants (design §3B.3):
 
 * **A — Baseline**: the current instruction content with the reading-instructions contract.
 * **B — Structured**: a clearer instruction hierarchy and deduplication.

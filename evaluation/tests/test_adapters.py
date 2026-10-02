@@ -386,7 +386,7 @@ def test_the_steps_version_records_the_neutralization() -> None:
 # The three contracts this evaluator accepted before — role, reader and style interface —
 # establish who is judging and what the artifact claims to be, but none of them states what a
 # reviewer of a particular style must look for and must not ask for. Without that, a
-# style-specific diagnostic could not be delivered to the judge at all, so a Phase 3 review
+# style-specific diagnostic could not be delivered to the judge at all, so a pre-evaluation review
 # requirement would have been inert no matter how well it was written.
 
 

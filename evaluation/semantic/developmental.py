@@ -46,7 +46,7 @@ MAX_PROBLEM_TYPES = 4
 MAX_OBLIGATIONS = 8
 MAX_PRIORITIES = 5
 
-#: The review discipline text. Phase 2b moved the prompt *text* into
+#: The review discipline text. The prompt migration moved the prompt *text* into
 #: ``prompts/evaluation/shared/developmental_discipline.j2``; this constant is retained because
 #: the module is a documented entry point for the discipline and tests assert on it. The
 #: template is the authoritative copy — it is what the judge actually receives.

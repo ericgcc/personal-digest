@@ -1,6 +1,6 @@
 """The authoritative style module manifest.
 
-Phase 2b replaces heading extraction with named files. Each style's rules live in an ordered
+The prompt migration replaces heading extraction with named files. Each style's rules live in an ordered
 set of modules under ``styles/<style>/modules/``, described by ``styles/<style>/style.yaml``,
 and the readable ``styles/<style>.md`` is generated from them by
 ``scripts/build_style_docs.py``.

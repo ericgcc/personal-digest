@@ -1,4 +1,4 @@
-"""Phase 4 acceptance: the model integration and the evaluator connection.
+"""Model integration acceptance: the model integration and the evaluator connection.
 
 The gate is: mocked model calls and evaluator results traverse the complete Python pipeline,
 and all existing Python evaluation tests continue to pass.
@@ -293,7 +293,7 @@ def test_the_evaluator_retains_its_version_metadata_and_prompt_capture(tmp_path:
     from evaluation.version import evaluation_definition
 
     definition = evaluation_definition()
-    # Phase 4 moved the metric identity to v4: the rubric's meaning and the
+    # The editorial evaluation moved the metric identity to v4: the rubric's meaning and the
     # response schema changed materially, so the version moved with them.
     assert definition["evaluation_id"] == "reader_quality_v4"
     assert definition["evaluation_steps_version"] == "v4.0-style-diagnostics"

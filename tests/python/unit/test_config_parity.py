@@ -1,4 +1,4 @@
-"""Phase 1 acceptance: the Python configuration resolver matches the JavaScript reference.
+"""Configuration parity: the Python configuration resolver matches the JavaScript reference.
 
 The gate is: the Python configuration resolver produces equivalent results for every
 existing digest and profile, and an invalid profile fails before creating a run directory.
@@ -52,7 +52,7 @@ def test_profile_registry_matches_the_reference():
         profile = STYLE_PROFILES[profile_id]
         actual = describe_style_profile(profile, source="registry")
         if profile_id == "synthesis-max-v1":
-            # Phase 3C promoted this profile to the active default and rewrote its notes. The
+            # The Synthesis MAX refinement promoted this profile to the active default and rewrote its notes. The
             # status change is an approved difference; the notes are maintainer-facing prose that
             # the promotion necessarily rewrote, so they are compared for presence, not equality.
             assert actual["notes"], profile_id
@@ -73,7 +73,7 @@ def test_retired_profiles_are_gone_and_recorded():
 def test_profile_stage_declarations_match_the_reference():
     """Every stage's declared documents resolve to the files the reference produced.
 
-    Phase 2b changed the *unit* of a declaration: where the reference recorded one
+    The prompt migration changed the *unit* of a declaration: where the reference recorded one
     ``styles/<style>.md`` descriptor with a list of ``##`` sections, the profile now names one
     module file per section. The instruction text each stage receives is unchanged — that is
     asserted by the prompt-parity checks — so this test compares the resolved file set.
@@ -87,7 +87,7 @@ def test_profile_stage_declarations_match_the_reference():
             declaration = profile.stages[stage]
             expected_paths = _reference_document_paths(profile.style, stage_want, profile_id)
             if profile_id == "synthesis-max-v1":
-                # Phase 3C deliberately adds the domain-accessibility module to draft, line-edit
+                # The Synthesis MAX refinement deliberately adds the domain-accessibility module to draft, line-edit
                 # and the two review contracts; that is an instruction change, not a lost file.
                 assert set(expected_paths) <= set(_document_paths(declaration)), f"{profile_id}/{stage}"
                 continue
@@ -184,7 +184,7 @@ def test_profile_resolution_matches_the_reference():
     expected = reference()["profile_resolution"]
     for style, want in expected.items():
         if style == "synthesis-max":
-            # Phase 3C retired the legacy profile and made v1 the default. The aliases now resolve
+            # The Synthesis MAX refinement retired the legacy profile and made v1 the default. The aliases now resolve
             # to the live implementation, and `legacy` is an unknown profile rather than a fallback.
             assert resolve_style_profile(style=style, explicit=None, config=None).profile_id == "synthesis-max-v1"
             assert resolve_style_profile(style=style, explicit="default", config=None).profile_id == "synthesis-max-v1"
@@ -230,7 +230,7 @@ def test_an_unknown_profile_is_an_error_before_any_run_directory_exists():
 
 
 def test_every_canonical_style_has_a_default_profile():
-    """Every style resolves to a live default. Synthesis MAX's was retired in Phase 3C, so its
+    """Every style resolves to a live default. Synthesis MAX's was retired by the Synthesis MAX refinement, so its
     default is the new implementation rather than its legacy baseline."""
     for style in CANONICAL_STYLES:
         assert profiles_for_style(style)

@@ -49,7 +49,7 @@ class IssueType(str, Enum):
     keywords over free-form prose, which could not distinguish a real defect from
     a sentence that merely mentioned the same words.
 
-    Phase 4 adds the Synthesis MAX diagnostic categories the design requires:
+    The editorial evaluation adds the Synthesis MAX diagnostic categories the design requires:
     substantive source relationships, explanatory progression, unnecessary
     aggregation, abstraction before explanation and disproportionate depth. They
     are added to the shared taxonomy rather than a style-only one, because a
@@ -68,7 +68,7 @@ class IssueType(str, Enum):
     SOURCE_REPORTING_WITHOUT_SYNTHESIS = "source_reporting_without_synthesis"
     READER_ORIENTATION_LOSS = "reader_orientation_loss"
     UNSUPPORTED_ANALOGY_OR_CONNECTION = "unsupported_analogy_or_connection"
-    # Phase 4: Synthesis MAX diagnostic coverage.
+    # Synthesis MAX diagnostic coverage.
     UNEXPLAINED_RELATIONSHIP = "unexplained_relationship"
     UNNECESSARY_AGGREGATION = "unnecessary_aggregation"
     ABSTRACTION_BEFORE_EXPLANATION = "abstraction_before_explanation"
@@ -187,7 +187,7 @@ class SectionEvaluation(BaseModel):
         le=MAX_SCORE,
         description=(
             "Does the section combine its sources into understanding, rather than "
-            "reporting them one after another? Phase 4 adds this per-section so a "
+            "reporting them one after another? The editorial evaluation adds this per-section so a "
             "single source-inventory section is visible on its own."
         ),
     )
@@ -206,7 +206,7 @@ class SectionEvaluation(BaseModel):
         default=True, description="Is the significance stated rather than left to infer?"
     )
 
-    # Phase 4: Synthesis MAX diagnostic coverage. These are the reader-facing
+    # Synthesis MAX diagnostic coverage. These are the reader-facing
     # questions the design requires the evaluator to answer, so a section that
     # merely lists what each source said is visible as a failure rather than
     # passing on fluent prose.
@@ -238,7 +238,7 @@ class SectionEvaluation(BaseModel):
     broken_logical_links: list[str] = Field(
         default_factory=list, max_length=MAX_ISSUES_PER_SECTION
     )
-    # Phase 4: the Synthesis MAX diagnostic lists.
+    # The Synthesis MAX diagnostic lists.
     unexplained_relationships: list[str] = Field(
         default_factory=list, max_length=MAX_ISSUES_PER_SECTION
     )
@@ -311,7 +311,7 @@ class DocumentDimensions(BaseModel):
     synthesis_quality: float = Field(ge=MIN_SCORE, le=MAX_SCORE)
     narrative_coherence: float = Field(ge=MIN_SCORE, le=MAX_SCORE)
     reader_orientation: float = Field(ge=MIN_SCORE, le=MAX_SCORE)
-    # Phase 4: the two Synthesis MAX dimensions the design names that the v3
+    # The two Synthesis MAX dimensions the design names that the v3
     # dimensions did not separate out. Defaulted so a v3-shaped response still
     # parses; the v4 prompt always supplies them.
     explanatory_progression: float = Field(default=MAX_SCORE, ge=MIN_SCORE, le=MAX_SCORE)

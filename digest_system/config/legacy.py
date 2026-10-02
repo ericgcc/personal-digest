@@ -1,6 +1,6 @@
-"""The frozen pre-Phase-2b profile vocabulary, retained as historical reference.
+"""The frozen pre-migration profile vocabulary, retained as historical reference.
 
-Phase 2b replaced heading-based section selection with named module files. The old section sets
+The prompt migration replaced heading-based section selection with named module files. The old section sets
 are no longer read by the runtime — a profile names files — but they are still meaningful:
 
 * They are the recorded vocabulary the frozen migration reference asserts against, so they are
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
-#: The pre-Phase-1 union, unchanged. Reference and test data only: no stage reads it.
+#: The pre-migration union, unchanged. Reference and test data only: no stage reads it.
 LEGACY_COMPOSITION_SECTIONS: tuple[str, ...] = (
     "## Style interface",
     "## Synthesis mode",

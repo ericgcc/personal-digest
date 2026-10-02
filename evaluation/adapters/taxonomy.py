@@ -38,7 +38,7 @@ ISSUE_TYPE_TO_PROBLEM_TYPE: dict[str, str] = {
     "source_reporting_without_synthesis": "source_reporting_without_synthesis",
     "reader_orientation_loss": "reader_orientation_loss",
     "unsupported_analogy_or_connection": "unsupported_connection",
-    # Phase 4 synthesis-specific diagnoses. Each maps onto the canonical WOPS
+    # Synthesis MAX-specific diagnoses. Each maps onto the canonical WOPS
     # problem type that names the same failure, so a v4 diagnosis is still a
     # usable retrieval key.
     "unexplained_relationship": "weak_causal_connection",

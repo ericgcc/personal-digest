@@ -16,7 +16,7 @@ result."* Each change below is recorded in that form.
 | File | Responsibility |
 | --- | --- |
 | `tests/python/regression/test_phase3c_checklist.py` | The Phase 3C acceptance checklist (23 tests). |
-| `docs/history/phase3c-synthesis-max-report.md` | This report. |
+| `docs/history/synthesis-max-editorial-refinement.md` | This report. |
 
 ### Changed
 
@@ -30,8 +30,8 @@ result."* Each change below is recorded in that form.
 | `scripts/prompt_diff.py` | Skips a retired profile; classifies a changed style review contract as an approved change. |
 | `scripts/check_prompt_parity.py` | Honors a recorded change to a style's review contract. |
 | `scripts/verify_corrections.py` | Uses a surviving legacy profile for the legacy-policy contrast. |
-| `tests/fixtures/phase2b/approved-instruction-changes.json` | Records the Phase 3C wording changes, the domain-module addition and the legacy retirement. |
-| `tests/fixtures/phase2b/inspection-example/draft/*` | Regenerated. |
+| `tests/fixtures/prompt_migration/approved-prompt-changes.json` | Records the Phase 3C wording changes, the domain-module addition and the legacy retirement. |
+| `tests/fixtures/prompt_migration/inspection-example/draft/*` | Regenerated. |
 | `tests/python/**` | Parity, isolation, CLI, pipeline and checklist tests updated for the retirement and the deliberate additions. |
 
 ### Removed

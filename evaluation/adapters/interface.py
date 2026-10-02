@@ -1,7 +1,7 @@
 """The evaluation package's supported in-process interface.
 
 The digest pipeline executes two stages through the Python evaluator: the developmental review
-and the reader review. Before Phase 2b it reached into the adapter CLI's private ``_HANDLERS``
+and the reader review. Before the prompt migration it reached into the adapter CLI's private ``_HANDLERS``
 registry, which made an internal detail of one module into another package's contract.
 
 This module is the supported interface instead. It is a thin, documented, timed wrapper around

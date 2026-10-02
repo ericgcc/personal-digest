@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Export the style profiles to declarative YAML.
 
-Phase 2b moves each profile's stage declarations out of Python and into
+The prompt migration moves each profile's stage declarations out of Python and into
 ``prompts/profiles/<profile-id>.yaml``. This script performs the one-time translation from
 the pre-Phase-2b definitions, which selected ``##`` sections of ``styles/<style>.md``, to
 named module files.
@@ -345,7 +345,7 @@ def export_profile(record: dict[str, Any]) -> dict[str, Any]:
 
 def document(record: dict[str, Any]) -> str:
     header = (
-        "# Phase 2b profile: a profile selects named files, never Markdown headings. Each entry\n"
+        "# Prompt-migration profile: a profile selects named files, never Markdown headings. Each entry\n"
         "# below is a module under styles/<style>/modules/ or a canonical instruction document.\n"
         "# Reproducible with scripts/export_profiles.py.\n"
     )

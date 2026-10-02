@@ -22,7 +22,7 @@ schema, rubric, metric identity, and score scale are unchanged, so scores
 produced before and after this change remain comparable — but the change is
 recorded rather than silent, exactly as this module exists to guarantee.
 
-**Phase 4 introduces ``reader_quality_v4``.** The Synthesis MAX diagnostic
+**The editorial evaluation introduces ``reader_quality_v4``.** The Synthesis MAX diagnostic
 coverage was extended (substantive source relationships, explanatory
 progression, unnecessary aggregation, abstraction before explanation and
 disproportionate depth), which changes both the rubric's meaning and the

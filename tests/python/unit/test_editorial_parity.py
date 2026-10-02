@@ -1,4 +1,4 @@
-"""Phase 2 acceptance: deterministic golden comparisons against the JavaScript reference.
+"""Editorial parity: deterministic golden comparisons against the JavaScript reference.
 
 The gate is: all deterministic golden comparisons pass, including prompts, validation
 findings, evidence projections and style isolation.
@@ -121,7 +121,7 @@ def test_vocabularies_match_the_reference():
     assert list(ANALYSIS_EDITORIAL_CODES) == expected["analysis_editorial_codes"]
     assert list(CATALOG_HEADINGS) == expected["catalog_headings"]
     assert list(LEAK_MARKERS) == expected["leak_markers"]
-    # Phase 3C retired the Synthesis MAX legacy profile and made v1 the style's default. The
+    # The Synthesis MAX refinement retired the legacy profile and made v1 the style's default. The
     # reference records the pre-Phase-3C mapping; the change is an approved difference.
     assert DEFAULT_STYLE_PROFILE_BY_STYLE == {
         **expected["default_style_profile_by_style"],
@@ -133,7 +133,7 @@ def test_vocabularies_match_the_reference():
 # Assembled contexts
 # ---------------------------------------------------------------------------------------
 #
-# Phase 2b replaced one assembled string per stage with explicit Jinja2 templates. That changes
+# The prompt migration replaced one assembled string per stage with explicit Jinja2 templates. That changes
 # the *packaging* of a prompt — the file paths, the document wrappers and the whitespace — and
 # deliberately so, because a style rule is now a named module rather than a heading inside one
 # document. What must not change is the *instruction text*.
@@ -151,7 +151,7 @@ def test_every_instruction_document_reaches_its_stage(profile_id):
 
     A document whose text legitimately had to change — the stale JavaScript path in
     ``system/style-contract.md``, which is inlined into the frame prompt — is listed in
-    ``tests/fixtures/phase2b/approved-instruction-changes.json``. Its change is asserted there
+    ``tests/fixtures/prompt_migration/approved-prompt-changes.json``. Its change is asserted there
     and here, so it can never be silent.
     """
     expected = reference()["assembled"][profile_id]
@@ -222,7 +222,7 @@ def test_every_style_module_reaches_its_stage_verbatim(profile_id):
     """A style rule's text is delivered exactly as the style's module declares it.
 
     The check is against the *current* assembled prompt, because a later phase may deliberately
-    route an additional module to a stage (Phase 3C routes the domain-accessibility module to
+    route an additional module to a stage (The Synthesis MAX refinement routes the domain-accessibility module to
     draft, line-edit and the review contracts). What must never happen is a module being
     delivered with altered text.
     """
@@ -282,7 +282,7 @@ def _whole_documents(text: str) -> dict[str, str]:
 def _approved_instruction_changes() -> set[tuple[str, str]]:
     import json
 
-    path = ROOT / "tests" / "fixtures" / "phase2b" / "approved-instruction-changes.json"
+    path = ROOT / "tests" / "fixtures" / "prompt_migration" / "approved-prompt-changes.json"
     if not path.is_file():
         return set()
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -494,9 +494,9 @@ def test_deterministic_checks_match_the_reference():
     _assert_checks_preserved(catalog_only, expected["deterministic_checks_catalog_only"])
 
 
-#: Checks Phase 5 adds to the deterministic pass. They are additions, not changes: every check
+#: Checks canonical provenance adds to the deterministic pass. They are additions, not changes: every check
 #: the reference recorded is still produced with the same status and note.
-PHASE5_ADDED_CHECKS: frozenset[str] = frozenset(
+PROVENANCE_ADDED_CHECKS: frozenset[str] = frozenset(
     {"provenance:identities", "provenance:notes-resolve", "callouts:authorized"}
 )
 
@@ -508,7 +508,7 @@ def _assert_checks_preserved(actual: dict, expected: dict) -> None:
         assert check["id"] in by_id, f"check {check['id']} is no longer produced"
         assert by_id[check["id"]] == check, f"check {check['id']} changed"
     added = set(by_id) - {check["id"] for check in expected["checks"]}
-    assert added <= PHASE5_ADDED_CHECKS, f"unrecorded new checks: {sorted(added - PHASE5_ADDED_CHECKS)}"
+    assert added <= PROVENANCE_ADDED_CHECKS, f"unrecorded new checks: {sorted(added - PROVENANCE_ADDED_CHECKS)}"
     # The non-check fields are unchanged.
     for key in ("citations", "catalogue_numbers", "body_words", "total_words", "catalogue_detection"):
         assert actual[key] == expected[key], key

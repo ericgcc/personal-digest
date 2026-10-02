@@ -1,6 +1,6 @@
 """Offline prompt inspection: what a stage will actually send, and where every part came from.
 
-The core result of Phase 2b is that a developer can open a stage template, read its declared
+The core result of the prompt migration is that a developer can open a stage template, read its declared
 dependencies, inspect the profile that selects them, and generate exactly what the model will
 receive — without reading the executor and without spending anything.
 

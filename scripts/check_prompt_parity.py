@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-"""Confirm that Phase 2b's templates preserve every editorial instruction.
+﻿#!/usr/bin/env python
+"""Confirm that the prompt migration's templates preserve every editorial instruction.
 
 The migration changes how a prompt is *packaged*: instead of one ``<document>`` wrapper around
 extracted ``##`` sections, each style rule is now its own module file with its own wrapper, and
@@ -94,11 +94,11 @@ def _normalize(text: str) -> str:
 def compare_documents(stage_name: str, old_text: str, new_text: str) -> list[str]:
     """Compare the instruction documents of two prompts, by path.
 
-    Phase 2b turns one ``styles/<style>.md`` document into several module files, and Phase 3A
+    The prompt migration turns one ``styles/<style>.md`` document into several module files, and the reading-instruction migration
     replaces the whole digest-configuration document with parsed reading-instruction sections.
     The unit of comparison is therefore the document *text*, not the block sequence: every
     document the reference delivered must still be delivered with its text unchanged, unless the
-    change is recorded in ``approved-instruction-changes.json``.
+    change is recorded in ``approved-prompt-changes.json``.
     """
     problems: list[str] = []
     old_docs = documents_by_path(old_text)

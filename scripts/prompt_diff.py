@@ -2,7 +2,7 @@
 """Instruction-level diff between the pre-Phase-2b prompts and the current ones.
 
 This is the evidence that the migration repackaged prompts rather than rewriting them. For every
-profile and stage it compares the historical prompts (captured at ``8ad4287`` before any Phase 2b
+profile and stage it compares the historical prompts (captured at ``8ad4287`` before the prompt migration
 change) with what the current implementation produces, and classifies the difference:
 
 * **packaging-only** — the instruction text is identical once document wrappers and whitespace are
@@ -43,8 +43,8 @@ from digest_system.runtime.artifacts import ROOT  # noqa: E402
 
 from _maintenance import configure_stdio  # noqa: E402
 
-PRE2B_PATH = ROOT / "tests" / "fixtures" / "phase2b" / "pre2b-prompts.json"
-APPROVED_PATH = ROOT / "tests" / "fixtures" / "phase2b" / "approved-instruction-changes.json"
+PRE2B_PATH = ROOT / "tests" / "fixtures" / "prompt_migration" / "legacy-prompt-reference.json"
+APPROVED_PATH = ROOT / "tests" / "fixtures" / "prompt_migration" / "approved-prompt-changes.json"
 
 #: Content that the templates add as framing, or that the wrappers contribute. Removing it lets
 #: the comparison isolate the *instruction* text the two implementations delivered.
@@ -86,7 +86,7 @@ def _instruction_text(entry: dict) -> str:
     happened to use, not of the template migration, so comparing them would report fixture noise
     as an instruction change.
 
-    Documents are joined in **path order**, not prompt order. Phase 3B is explicitly allowed to
+    Documents are joined in **path order**, not prompt order. The prompt-structure work is explicitly allowed to
     test and adjust the component order for the selected model (design §3B.1), so a pure
     reordering of unchanged documents is packaging, not an instruction change.
     """
@@ -175,7 +175,7 @@ def diff_all(profile_id: str | None = None) -> list[dict]:
         if profile_id and pid != profile_id:
             continue
         if pid not in STYLE_PROFILES:
-            # A profile retired after the historical capture (Phase 3C retired
+            # A profile retired after the historical capture (the Synthesis MAX refinement retired
             # synthesis-max-legacy) has no current prompt to compare against.
             continue
         profile = STYLE_PROFILES[pid]

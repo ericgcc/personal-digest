@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Freeze the offline prompt baseline for every profile and stage.
 
-Phase 2b replaces the heading-based assembler with Jinja2 templates. This script captures the
+The prompt migration replaces the heading-based assembler with Jinja2 templates. This script captures the
 exact prompts the implementation produces, offline and deterministically, so the migration has a
 recorded starting point and any later change to composition is visible as a diff.
 

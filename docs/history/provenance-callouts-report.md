@@ -17,7 +17,7 @@ and the digest's own `## Optional highlights` section.
 | `digest_system/editorial/callouts.py` | The approved semantic representation of a callout (`type`, `text`, `source_numbers`, `unit_id`), its Markdown directive form, parsing, authorization/provenance validation and limit enforcement. |
 | `digest_system/editorial/provenance.py` | The canonical source-note manifest: one identity per source, per retained unit. Splits the ambiguous `author_or_publication` field, and detects duplicate rendered identities (the D6 symptom). |
 | `tests/python/regression/test_phase5_checklist.py` | The Phase 5 acceptance checklist (32 tests). |
-| `docs/history/phase5-provenance-callouts-report.md` | This report. |
+| `docs/history/provenance-callouts-report.md` | This report. |
 
 ### Changed
 
@@ -36,8 +36,8 @@ and the digest's own `## Optional highlights` section.
 | `system/contracts/render.md` | The render stage is told it receives the source-note manifest and the callout registry, and renders an approved callout. |
 | `system/rendering-synthesis-max.md` | The Callouts section is rewritten: convert an approved callout, never infer one from formatting. |
 | `templates/synthesis-max-email-v1.html` | Added the `{{CALLOUT_HTML_OPTIONAL}}` slot in the thread section. |
-| `tests/fixtures/phase2b/approved-instruction-changes.json` | Records the `copy-verify.md`, `rendering-synthesis-max.md` and template changes. |
-| `tests/fixtures/phase2b/inspection-example/draft/*` | Regenerated (the draft contract changed). |
+| `tests/fixtures/prompt_migration/approved-prompt-changes.json` | Records the `copy-verify.md`, `rendering-synthesis-max.md` and template changes. |
+| `tests/fixtures/prompt_migration/inspection-example/draft/*` | Regenerated (the draft contract changed). |
 | `tests/python/unit/test_editorial_parity.py` | The deterministic-check parity test allows the three recorded Phase 5 additions. |
 
 ## 2. Canonical source notes (5.1)

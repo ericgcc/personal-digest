@@ -45,7 +45,7 @@ whitespace are normalized. The single approved change is the same document in ev
 
 | Document | Stage | Change | Reason |
 | --- | --- | --- | --- |
-| `system/style-contract.md` | `frame` | A profile is now said to live in `prompts/profiles/<profile-id>.yaml`, and to select module files rather than headings. | The document told the model that a profile lives in `src/editorial/prompts/style-profiles.mjs`, a path removed when JavaScript was retired. This is step 7's "correct stale instructions", and it is recorded with its reason in `tests/fixtures/phase2b/approved-instruction-changes.json`. |
+| `system/style-contract.md` | `frame` | A profile is now said to live in `prompts/profiles/<profile-id>.yaml`, and to select module files rather than headings. | The document told the model that a profile lives in `src/editorial/prompts/style-profiles.mjs`, a path removed when JavaScript was retired. This is step 7's "correct stale instructions", and it is recorded with its reason in `tests/fixtures/prompt_migration/approved-prompt-changes.json`. |
 
 No other instruction text changed. The tool exits non-zero on an unapproved change, and
 `tests/python/regression/test_phase2b_checklist.py` asserts that.
@@ -58,7 +58,7 @@ python scripts/prompt_diff.py --json          # machine-readable
 python scripts/prompt_diff.py --profile synthesis-max-v1 --stage draft
 ```
 
-The pre-Phase-2b capture is `tests/fixtures/phase2b/pre2b-prompts.json`, produced by
+The pre-Phase-2b capture is `tests/fixtures/prompt_migration/legacy-prompt-reference.json`, produced by
 `scripts/capture_pre2b_prompts.py` run inside a worktree at `8ad4287`.
 
 ## 3. Files that became authoritative
@@ -157,7 +157,7 @@ python -m digest_system.cli inspect --digest tech-bi-daily \
 ```
 
 Writes `system.txt`, `user.txt`, `manifest.json` and `report.md`. The committed example is
-`tests/fixtures/phase2b/inspection-example/draft/`, and a test asserts it is byte-reproducible.
+`tests/fixtures/prompt_migration/inspection-example/draft/`, and a test asserts it is byte-reproducible.
 
 `report.md`:
 
@@ -258,7 +258,7 @@ New coverage this phase:
 # 1. The pre-Jinja2 capture (one-off; requires the historical commit)
 git worktree add ../digy-pre2b 8ad4287
 copy scripts/capture_pre2b_prompts.py ../digy-pre2b/scripts/
-python ../digy-pre2b/scripts/capture_pre2b_prompts.py --output tests/fixtures/phase2b/pre2b-prompts.json
+python ../digy-pre2b/scripts/capture_pre2b_prompts.py --output tests/fixtures/prompt_migration/legacy-prompt-reference.json
 git worktree remove ../digy-pre2b
 
 # 2. The current baseline and the diff

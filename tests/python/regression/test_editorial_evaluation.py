@@ -1,6 +1,6 @@
-"""Phase 4 acceptance: style-specific editorial evaluation.
+﻿"""Style-specific editorial evaluation acceptance.
 
-Each item is asserted here so the phase's completion is a test result rather than
+Each item is asserted here so the acceptance is a test result rather than
 a claim:
 
 1.  The existing evaluator and the two review calls are retained; no extra
@@ -59,21 +59,21 @@ def _run(args: list[str]) -> subprocess.CompletedProcess:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_1_the_evaluator_is_retained() -> None:
+def test_the_evaluator_is_retained() -> None:
     from evaluation.semantic import evaluate_reader_quality, evaluate_regression
 
     assert callable(evaluate_reader_quality)
     assert callable(evaluate_regression)
 
 
-def test_checklist_1_the_two_review_stages_still_run_through_the_evaluator() -> None:
+def test_the_two_review_stages_still_run_through_the_evaluator() -> None:
     from digest_system.editorial.stages import stage_v2
 
     for stage_name in ("developmental-review", "reader-review"):
         assert stage_v2(stage_name).executor == "evaluation", stage_name
 
 
-def test_checklist_1_no_extra_mandatory_judge_call_is_added() -> None:
+def test_no_extra_mandatory_judge_call_is_added() -> None:
     """The semantic pass still makes exactly one call per evaluated artifact."""
     from evaluation.semantic.metric import MODE_ABSOLUTE, MODE_COMPARISON
 
@@ -86,7 +86,7 @@ def test_checklist_1_no_extra_mandatory_judge_call_is_added() -> None:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_2_the_reader_contract_reaches_both_review_prompts() -> None:
+def test_the_reader_contract_reaches_both_review_prompts() -> None:
     from evaluation.sections import parse_sections
     from evaluation.semantic.prompts import absolute_prompt
 
@@ -105,7 +105,7 @@ def test_checklist_2_the_reader_contract_reaches_both_review_prompts() -> None:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_3_the_five_synthesis_failures_are_in_the_taxonomy() -> None:
+def test_the_five_synthesis_failures_are_in_the_taxonomy() -> None:
     from evaluation.semantic.schema import IssueType
 
     values = {member.value for member in IssueType}
@@ -119,7 +119,7 @@ def test_checklist_3_the_five_synthesis_failures_are_in_the_taxonomy() -> None:
         assert name in values, name
 
 
-def test_checklist_3_the_style_rubric_names_the_synthesis_criteria() -> None:
+def test_the_style_rubric_names_the_synthesis_criteria() -> None:
     from evaluation.semantic.prompts import style_rubric
 
     rubric = style_rubric("synthesis-max")
@@ -133,7 +133,7 @@ def test_checklist_3_the_style_rubric_names_the_synthesis_criteria() -> None:
         assert phrase in rubric, phrase
 
 
-def test_checklist_4_the_evaluator_asks_what_the_sources_establish_together() -> None:
+def test_the_evaluator_asks_what_the_sources_establish_together() -> None:
     from evaluation.semantic.prompts import style_rubric
 
     rubric = style_rubric("synthesis-max")
@@ -141,7 +141,7 @@ def test_checklist_4_the_evaluator_asks_what_the_sources_establish_together() ->
     assert "not merely recall their separate findings" in rubric
 
 
-def test_checklist_4_the_section_schema_carries_the_synthesis_flags() -> None:
+def test_the_section_schema_carries_the_synthesis_flags() -> None:
     from evaluation.semantic.schema import SectionEvaluation
 
     fields = SectionEvaluation.model_fields
@@ -160,7 +160,7 @@ def test_checklist_4_the_section_schema_carries_the_synthesis_flags() -> None:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_5_selection_evaluation_is_separate_from_prose_evaluation() -> None:
+def test_selection_evaluation_is_separate_from_prose_evaluation() -> None:
     """The audit is its own module and its own output file."""
     assert (EVALUATION / "selection.py").is_file()
     from evaluation import selection
@@ -172,7 +172,7 @@ def test_checklist_5_selection_evaluation_is_separate_from_prose_evaluation() ->
     assert not hasattr(metric, "audit_selection")
 
 
-def test_checklist_6_the_audit_uses_assessments_selection_text_and_corpus() -> None:
+def test_the_audit_uses_assessments_selection_text_and_corpus() -> None:
     from evaluation.selection import audit_selection
 
     audit = audit_selection(
@@ -191,13 +191,13 @@ def test_checklist_6_the_audit_uses_assessments_selection_text_and_corpus() -> N
     assert audit.selection_text == "Teach me something > Tell me what happened"
 
 
-def test_checklist_7_the_audit_makes_no_judge_call() -> None:
+def test_the_audit_makes_no_judge_call() -> None:
     text = (EVALUATION / "selection.py").read_text(encoding="utf-8")
     assert "DeepSeekJudge" not in text
     assert "evaluate_reader_quality" not in text
 
 
-def test_checklist_7_the_audit_runs_offline_over_the_corpus() -> None:
+def test_the_audit_runs_offline_over_the_corpus() -> None:
     result = _run(["-m", "evaluation", "all", "--last-runs", "0", "--quiet"])
     # A zero-run selection still exercises the offline passes without a judge.
     assert result.returncode == 0, result.stdout + result.stderr
@@ -208,7 +208,7 @@ def test_checklist_7_the_audit_runs_offline_over_the_corpus() -> None:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_8_the_calibration_set_covers_the_historical_failures() -> None:
+def test_the_calibration_set_covers_the_historical_failures() -> None:
     from evaluation.calibration import load_calibration_set
 
     calibration = load_calibration_set()
@@ -219,7 +219,7 @@ def test_checklist_8_the_calibration_set_covers_the_historical_failures() -> Non
         assert "unexplained_domain_concept" in item.expected_issue_types
 
 
-def test_checklist_8_the_calibration_set_has_controls() -> None:
+def test_the_calibration_set_has_controls() -> None:
     from evaluation.calibration import load_calibration_set
 
     calibration = load_calibration_set()
@@ -232,7 +232,7 @@ def test_checklist_8_the_calibration_set_has_controls() -> None:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_9_the_requirement_metrics_cover_the_named_requirements() -> None:
+def test_the_requirement_metrics_cover_the_named_requirements() -> None:
     from evaluation.deterministic.requirements import measure_requirements
 
     metrics = measure_requirements(
@@ -248,7 +248,7 @@ def test_checklist_9_the_requirement_metrics_cover_the_named_requirements() -> N
     assert "citations:resolve" in codes
 
 
-def test_checklist_9_a_missing_input_is_unknown_not_pass() -> None:
+def test_a_missing_input_is_unknown_not_pass() -> None:
     from evaluation.deterministic.requirements import measure_requirements
 
     metrics = measure_requirements(prose="## A\n\nText.", corpus=None, frame=None)
@@ -262,18 +262,18 @@ def test_checklist_9_a_missing_input_is_unknown_not_pass() -> None:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_10_a_material_rubric_change_is_a_new_version() -> None:
+def test_a_material_rubric_change_is_a_new_version() -> None:
     assert EVALUATION_ID == "reader_quality_v4"
     assert RUBRIC_VERSION == "v4"
     assert SCHEMA_VERSION == "v2"
 
 
-def test_checklist_10_incompatible_versions_are_not_compared() -> None:
+def test_incompatible_versions_are_not_compared() -> None:
     assert not comparable("reader_quality_v3", "reader_quality_v4")
     assert comparable("reader_quality_v4", "reader_quality_v4")
 
 
-def test_checklist_11_historical_v3_scores_are_preserved() -> None:
+def test_historical_v3_scores_are_preserved() -> None:
     assert "reader_quality_v3" in SUPERSEDED_EVALUATION_IDS
     # The archived v3 results are still on disk.
     archive = ROOT / "evaluation-results" / "archive"
@@ -285,7 +285,7 @@ def test_checklist_11_historical_v3_scores_are_preserved() -> None:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_12_the_metric_declares_one_call_per_artifact() -> None:
+def test_the_metric_declares_one_call_per_artifact() -> None:
     """The metric is a single custom DeepEval metric, not a chain of calls."""
     from evaluation.semantic.metric import ReaderQualityMetric
 
@@ -294,7 +294,7 @@ def test_checklist_12_the_metric_declares_one_call_per_artifact() -> None:
     assert hasattr(ReaderQualityMetric, "measure")
 
 
-def test_checklist_12_the_offline_passes_add_no_judge_call() -> None:
+def test_the_offline_passes_add_no_judge_call() -> None:
     """The requirement and selection passes are deterministic by construction."""
     for name in ("requirements.py", "selection.py"):
         text = (EVALUATION / ("deterministic/" + name if name == "requirements.py" else name)).read_text(

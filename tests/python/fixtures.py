@@ -33,7 +33,7 @@ APPROVED_DIFFERENCES: tuple[tuple[str, Any, Any], ...] = (
         "digest_system/config/budgets.py",
     ),
     (
-        # Phase 3C retired the Synthesis MAX legacy profile and made the new implementation the
+        # The Synthesis MAX refinement retired the legacy profile and made the new implementation the
         # style's default. The reference records the pre-Phase-3C default; the retirement is
         # declared here so it cannot happen silently.
         "vocabularies.default_style_profile_by_style.synthesis-max",
@@ -41,13 +41,13 @@ APPROVED_DIFFERENCES: tuple[tuple[str, Any, Any], ...] = (
         "synthesis-max-v1",
     ),
     (
-        # Phase 3C promoted synthesis-max-v1 from experimental to the active default.
+        # The Synthesis MAX refinement promoted synthesis-max-v1 from experimental to the active default.
         "profiles.synthesis-max-v1.describe.status",
         "experimental",
         "active",
     ),
     (
-        # Phase 4 moved the reader-quality metric to v4: the rubric's meaning and
+        # The editorial evaluation moved the reader-quality metric to v4: the rubric's meaning and
         # the response schema changed materially, so the version moved with them.
         "profiles.*.describe.evaluation.metric",
         "reader_quality_v3",

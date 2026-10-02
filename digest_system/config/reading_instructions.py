@@ -1,6 +1,6 @@
 """Canonical reading instructions: the four optional sections in a digest's Markdown body.
 
-Phase 3A replaces the old arrangement — where a stage received the digest configuration file
+The reading-instruction migration replaces the old arrangement — where a stage received the digest configuration file
 *whole*, frontmatter and unrestricted Markdown together — with a small, deterministic contract:
 
 * the YAML frontmatter stays operational configuration and is never an editorial instruction;

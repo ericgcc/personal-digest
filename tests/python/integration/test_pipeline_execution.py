@@ -1,4 +1,4 @@
-"""Phase 3 acceptance: a mocked pipeline can execute, fail, retry, resume and replay.
+"""Pipeline execution acceptance: a mocked pipeline can execute, fail, retry, resume and replay.
 
 The gate is: a mocked Python pipeline can execute, fail, retry, resume and perform partial
 replays while producing compatible artifacts. No test here invokes a paid model or modifies
@@ -333,7 +333,7 @@ def test_a_legacy_profile_derives_the_documented_recovery_frame(workspace):
     """The legacy rollback must keep the pre-profile recovery behaviour.
 
     The legacy profile enforces no composition constraint, so an empty plan passes validation;
-    the recovery path is reached when the frame's model call itself fails. Phase 3C retired the
+    the recovery path is reached when the frame's model call itself fails. The Synthesis MAX refinement retired the
     Synthesis MAX legacy profile, so this uses another style's legacy profile.
     """
     provider = MockProvider(_responses(), fail_stages={"frame"})

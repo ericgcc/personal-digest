@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Compare a replay against the historical run it replays, stage by stage.
 
-Phase 6 requires a repeated historical replay and a comparison that shows, per stage, what
+The replay validation requires a repeated historical replay and a comparison that shows, per stage, what
 changed. This tool is the deterministic half of that: it reads both run directories and
 reports the facts a reviewer should not have to compute — per-stage status, model identity,
 tokens, cost and duration; the frame's units and their allocations; the thread-quality audit

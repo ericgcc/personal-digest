@@ -1,14 +1,16 @@
 """The record of deliberate instruction changes to documents a prompt inlines.
 
-A frozen reference records what the pipeline sent before a migration. When a later phase
-*deliberately* changes an instruction, the change must be declared rather than hidden: the
-reference cannot be edited (it is the audit record), and a silent difference is a defect.
+A frozen reference records what the pipeline sent before the prompt migration. When the
+implementation *deliberately* changes an instruction, the change must be declared rather than
+hidden: the reference cannot be edited (it is the audit record), and a silent difference is a
+defect.
 
-Phase 2b introduced this record for one corrected document. Phase 3A extends it with a
-structural change of its own — the digest configuration is no longer inlined as one document;
-each stage now receives only the reading-instruction sections routed to it. That change is not a
-lost instruction, it is a different delivery of the same preferences, and it is recorded here so
-the parity tests and the diff tool agree on exactly what changed and why.
+The prompt migration introduced this record for one corrected document. The reading-instruction
+migration extended it with a structural change of its own — the digest configuration is no
+longer inlined as one document; each stage now receives only the reading-instruction sections
+routed to it. That change is not a lost instruction, it is a different delivery of the same
+preferences, and it is recorded here so the parity tests and the diff tool agree on exactly
+what changed and why.
 
 The record is data, not policy: this module only loads it and answers questions about it.
 """
@@ -22,7 +24,18 @@ from typing import Any
 
 from ...runtime.artifacts import ROOT
 
-RECORD_RELATIVE = "tests/fixtures/phase2b/approved-instruction-changes.json"
+RECORD_RELATIVE = "tests/fixtures/prompt_migration/approved-prompt-changes.json"
+
+#: The record keys that hold structural-change sections. Each section describes one
+#: deliberate change category by its own name (``reading_instruction_migration``,
+#: ``prompt_structure_cleanup``, ``synthesis_max_refinement``) with the same shape,
+#: so a new category does not have to edit this loader and a structural change is
+#: still declared rather than inferred.
+STRUCTURAL_SECTION_KEYS = (
+    "reading_instruction_migration",
+    "prompt_structure_cleanup",
+    "synthesis_max_refinement",
+)
 
 
 def _path(root: Path | None = None) -> Path:
@@ -32,7 +45,7 @@ def _path(root: Path | None = None) -> Path:
 def load_record(root: Path | None = None) -> dict[str, Any]:
     path = _path(root)
     if not path.is_file():
-        return {"schema_version": 1, "approved": [], "phase3a": {}}
+        return {"schema_version": 1, "approved": [], "reading_instruction_migration": {}}
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -40,14 +53,13 @@ def _matches(pattern: str, value: str) -> bool:
     return pattern == "*" or fnmatch(value, pattern)
 
 
-def _phase_sections(payload: dict[str, Any]) -> list[dict[str, Any]]:
-    """Every phase's structural-change section, whatever the phase is named.
-
-    A phase records its structural changes under its own key (``phase3a``, ``phase3b``, …) with
-    the same shape. Scanning them by pattern means a later phase does not have to edit this
-    loader, and a structural change is still declared rather than inferred.
-    """
-    return [value for key, value in payload.items() if key.startswith("phase") and isinstance(value, dict)]
+def _structural_sections(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Every structural-change section, whatever category it is named under."""
+    return [
+        value
+        for key, value in payload.items()
+        if key in STRUCTURAL_SECTION_KEYS and isinstance(value, dict)
+    ]
 
 
 def approved_change(stage: str, document: str, *, root: Path | None = None) -> dict[str, Any] | None:
@@ -67,7 +79,7 @@ def removed_document(stage: str, document: str, *, root: Path | None = None) -> 
     A removal is a deliberate delivery change: the instruction was not dropped, it moved. The
     entry records where it moved to so an auditor can follow it.
     """
-    for section in _phase_sections(load_record(root)):
+    for section in _structural_sections(load_record(root)):
         for entry in section.get("removed_documents", []):
             if _matches(str(entry.get("stage", "")), stage) and _matches(str(entry.get("document", "")), document):
                 return entry
@@ -81,7 +93,7 @@ def augmented_contract(stage: str, contract: str, *, root: Path | None = None) -
     section. The shared text is unchanged; the digest text is appended. That is an augmentation,
     not a rewrite, and the parity test asserts the reference text is still present verbatim.
     """
-    for section in _phase_sections(load_record(root)):
+    for section in _structural_sections(load_record(root)):
         for entry in section.get("augmented_contracts", []):
             if _matches(str(entry.get("stage", "")), stage) and _matches(str(entry.get("contract", "")), contract):
                 return entry

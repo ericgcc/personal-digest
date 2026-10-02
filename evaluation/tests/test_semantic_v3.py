@@ -154,7 +154,7 @@ def test_issue_enum_covers_the_required_taxonomy() -> None:
         "source_reporting_without_synthesis",
         "reader_orientation_loss",
         "unsupported_analogy_or_connection",
-        # Phase 4 synthesis-specific diagnoses.
+        # Synthesis MAX-specific diagnoses.
         "unexplained_relationship",
         "unnecessary_aggregation",
         "abstraction_before_explanation",

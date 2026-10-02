@@ -329,7 +329,7 @@ def command_replay(args: argparse.Namespace) -> int:
 def command_inspect(args: argparse.Namespace) -> int:
     """Render a stage's exact prompt and its dependency manifest, offline.
 
-    This is the maintenance interface Phase 2b exists to provide: an operator can see what a
+    This is the maintenance interface the prompt migration exists to provide: an operator can see what a
     stage will send, and where each part came from, without spending anything and without
     reading the executor.
     """

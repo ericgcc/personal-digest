@@ -1,4 +1,4 @@
-"""Phase 3A acceptance: the canonical reading-instructions contract.
+"""Reading-instructions acceptance: the canonical reading-instructions contract.
 
 The gate: all three existing digests retain their substantive reading preferences; an entirely
 empty custom-instruction body works; unsupported headings produce preflight errors; stage routing

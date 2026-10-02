@@ -68,7 +68,7 @@ def _evaluation(**overrides) -> dict:
 
 
 def test_the_issue_taxonomy_is_the_documented_set() -> None:
-    # v3 had 12 types; Phase 4 adds the five synthesis-specific diagnoses.
+    # v3 had 12 types; the editorial evaluation adds the five synthesis-specific diagnoses.
     assert len(IssueType) == 17
     assert IssueType.READER_ORIENTATION_LOSS.value == "reader_orientation_loss"
     for name in (
@@ -249,7 +249,7 @@ def test_section_issues_map_onto_the_taxonomy() -> None:
 def test_dimensions_flatten_with_a_stable_prefix() -> None:
     payload = DocumentDimensions(**{name: 7.0 for name in DocumentDimensions.model_fields})
     flattened = payload.to_dict()
-    # v3 had six dimensions; Phase 4 adds explanatory_progression and depth_proportion.
+    # v3 had six dimensions; the editorial evaluation adds explanatory_progression and depth_proportion.
     assert len(flattened) == 8
     assert all(key.startswith("dim_") for key in flattened)
 

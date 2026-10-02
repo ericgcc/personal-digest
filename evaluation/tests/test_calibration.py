@@ -75,7 +75,7 @@ def test_shipped_calibration_set_loads() -> None:
     calibration = load_calibration_set()
     assert calibration.available
     assert calibration.version == 1
-    # Only genuinely reported human concerns are labeled. Phase 4 adds the three
+    # Only genuinely reported human concerns are labeled. The editorial evaluation adds the three
     # Synthesis MAX defects the recorded Tech review identified.
     assert len(calibration.labeled) == 5
     labels = {item.human_label for item in calibration.expectations}

@@ -34,8 +34,8 @@ complete baseline of the resolved prompts before any editorial wording changes.
 | `prompts/stages/{analyze,frame,draft,copy-verify,render}/system.j2` | Remove the whole digest-config document reference. |
 | `system/contracts/{analyze,frame,draft,render}.md` | "What you receive" now names the reading-instruction sections instead of the whole digest file. |
 | `digests/{tech-bi-daily,medium-bi-daily,photography-weekly}.md` | Migrated to the four canonical sections. |
-| `tests/fixtures/phase2b/approved-instruction-changes.json` | Records the Phase 3A wording changes, the digest-config removal and the reader-contract augmentation. |
-| `tests/fixtures/phase2b/prompt-baseline.json`, `tests/fixtures/phase2b/inspection-example/draft/*` | Regenerated. |
+| `tests/fixtures/prompt_migration/approved-prompt-changes.json` | Records the Phase 3A wording changes, the digest-config removal and the reader-contract augmentation. |
+| `tests/fixtures/prompt_migration/prompt-baseline.json`, `tests/fixtures/prompt_migration/inspection-example/draft/*` | Regenerated. |
 | `scripts/prompt_diff.py`, `scripts/check_prompt_parity.py` | Honor the approval record; compare documents by path. |
 | `tests/python/**` (parity, migration, phase2b, cli-and-scripts) | Honor the approval record. |
 | `docs/guides/configuring-digests.md` | Rewritten section 3: the four canonical sections, permitted influence, the default reader and the routing table. |

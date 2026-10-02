@@ -1,6 +1,6 @@
-"""Phase 3A acceptance: the reading-instructions implementation checklist.
+﻿"""The reading-instructions implementation acceptance checklist.
 
-Each item is asserted here so the phase's completion is a test result rather than a claim:
+Each item is asserted here so the acceptance is a test result rather than a claim:
 
 1.  The canonical contract exists and defines the four sections, precedence and routing.
 2.  Every digest's reading instructions parse and retain their substantive preferences.
@@ -30,7 +30,7 @@ from digest_system.editorial.stages import STAGES_V2, stage_names_v2
 from digest_system.runtime.artifacts import ROOT
 
 PYTHON = sys.executable
-PHASE2B = ROOT / "tests" / "fixtures" / "phase2b"
+PROMPT_MIGRATION = ROOT / "tests" / "fixtures" / "prompt_migration"
 
 
 def _run(args: list[str]) -> subprocess.CompletedProcess:
@@ -49,7 +49,7 @@ def _run(args: list[str]) -> subprocess.CompletedProcess:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_1_the_canonical_contract_exists():
+def test_the_canonical_contract_exists():
     contract = ROOT / "system" / "contracts" / "reading-instructions.md"
     assert contract.is_file()
     text = contract.read_text(encoding="utf-8")
@@ -59,7 +59,7 @@ def test_checklist_1_the_canonical_contract_exists():
     assert "Stage routing" in text
 
 
-def test_checklist_1_the_contract_is_not_inlined_into_any_prompt():
+def test_the_contract_is_not_inlined_into_any_prompt():
     """It is a specification, not an instruction the model receives."""
     for profile_id in style_profile_ids():
         profile = STYLE_PROFILES[profile_id]
@@ -75,7 +75,7 @@ def test_checklist_1_the_contract_is_not_inlined_into_any_prompt():
 
 
 @pytest.mark.parametrize("digest_id", ["tech-bi-daily", "medium-bi-daily", "photography-weekly"])
-def test_checklist_2_every_digest_parses_and_keeps_its_preferences(digest_id: str):
+def test_every_digest_parses_and_keeps_its_preferences(digest_id: str):
     instructions = resolve_digest(digest_id).reading_instructions
     assert instructions.present(), digest_id
     assert instructions.has("Selection"), digest_id
@@ -83,7 +83,7 @@ def test_checklist_2_every_digest_parses_and_keeps_its_preferences(digest_id: st
     assert len(instructions.get("Selection")) > 200, digest_id
 
 
-def test_checklist_3_an_empty_body_is_valid(tmp_path: Path):
+def test_an_empty_body_is_valid(tmp_path: Path):
     from digest_system.config.reading_instructions import read_reading_instructions
 
     config = tmp_path / "digests" / "empty.md"
@@ -102,7 +102,7 @@ def test_checklist_3_an_empty_body_is_valid(tmp_path: Path):
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_4_an_unsupported_heading_is_an_error(tmp_path: Path):
+def test_an_unsupported_heading_is_an_error(tmp_path: Path):
     from digest_system.config.reading_instructions import read_reading_instructions
     from digest_system.runtime.artifacts import RunnerError
 
@@ -117,7 +117,7 @@ def test_checklist_4_an_unsupported_heading_is_an_error(tmp_path: Path):
         read_reading_instructions(config, digest_id="bad")
 
 
-def test_checklist_4_a_duplicate_heading_is_an_error(tmp_path: Path):
+def test_a_duplicate_heading_is_an_error(tmp_path: Path):
     from digest_system.config.reading_instructions import read_reading_instructions
     from digest_system.runtime.artifacts import RunnerError
 
@@ -137,14 +137,14 @@ def test_checklist_4_a_duplicate_heading_is_an_error(tmp_path: Path):
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_5_routing_is_declared_for_every_stage():
+def test_routing_is_declared_for_every_stage():
     for stage in stage_names_v2():
         assert stage in STAGE_SECTIONS, stage
     assert STAGE_SECTIONS["render"] == ()
     assert STAGE_SECTIONS["analyze"] == ("Selection", "Reader")
 
 
-def test_checklist_6_no_stage_declares_the_digest_configuration_document():
+def test_no_stage_declares_the_digest_configuration_document():
     """The stage table no longer names the digest config; the reading instructions are a block."""
     for stage in STAGES_V2:
         for declaration in stage.documents(_FakeContext()):
@@ -195,7 +195,7 @@ class _FakeContext:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_7_the_reader_brief_reaches_both_evaluation_stages():
+def test_the_reader_brief_reaches_both_evaluation_stages():
     from digest_system.editorial.prompts.inspection import inspect_stage
 
     reader = resolve_digest("tech-bi-daily").reading_instructions.reader_section
@@ -211,7 +211,7 @@ def test_checklist_7_the_reader_brief_reaches_both_evaluation_stages():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_8_the_pipeline_record_carries_the_reading_instructions():
+def test_the_pipeline_record_carries_the_reading_instructions():
     """The orchestrator writes the version and the per-stage routing into pipeline.json."""
     source = (ROOT / "digest_system" / "editorial" / "orchestrator.py").read_text(encoding="utf-8")
     assert '"reading_instructions"' in source
@@ -224,7 +224,7 @@ def test_checklist_8_the_pipeline_record_carries_the_reading_instructions():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_9_the_audit_script_runs_offline():
+def test_the_audit_script_runs_offline():
     result = _run([str(ROOT / "scripts" / "audit_prompts.py"), "--json"])
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -240,7 +240,7 @@ def test_checklist_9_the_audit_script_runs_offline():
                 assert entry["role"] in {"shared", "style", "supporting", "rendering", "other"}
 
 
-def test_checklist_9_the_audit_records_reading_instruction_routing():
+def test_the_audit_records_reading_instruction_routing():
     result = _run([str(ROOT / "scripts" / "audit_prompts.py"), "--profile", "synthesis-max-v1", "--json"])
     assert result.returncode == 0
     payload = json.loads(result.stdout)
@@ -255,7 +255,7 @@ def test_checklist_9_the_audit_records_reading_instruction_routing():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_10_every_prompt_change_is_classified():
+def test_every_prompt_change_is_classified():
     result = _run([str(ROOT / "scripts" / "prompt_diff.py"), "--json"])
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
@@ -266,15 +266,15 @@ def test_checklist_10_every_prompt_change_is_classified():
     assert len(payload["rows"]) == 40
 
 
-def test_checklist_10_the_phase3a_changes_are_recorded():
-    payload = json.loads((PHASE2B / "approved-instruction-changes.json").read_text(encoding="utf-8"))
-    phase3a = payload.get("phase3a", {})
-    assert phase3a.get("removed_documents"), "the digest-config removal is not recorded"
-    removed = phase3a["removed_documents"][0]
+def test_the_reading_instruction_changes_are_recorded():
+    payload = json.loads((PROMPT_MIGRATION / "approved-prompt-changes.json").read_text(encoding="utf-8"))
+    migration = payload.get("reading_instruction_migration", {})
+    assert migration.get("removed_documents"), "the digest-config removal is not recorded"
+    removed = migration["removed_documents"][0]
     assert "digests/" in removed["document"]
     assert removed["moved_to"]
-    assert phase3a.get("augmented_contracts"), "the reader-contract augmentation is not recorded"
-    assert {entry["contract"] for entry in phase3a["augmented_contracts"]} == {"reader"}
+    assert migration.get("augmented_contracts"), "the reader-contract augmentation is not recorded"
+    assert {entry["contract"] for entry in migration["augmented_contracts"]} == {"reader"}
 
 
 # ---------------------------------------------------------------------------------------
@@ -282,6 +282,6 @@ def test_checklist_10_the_phase3a_changes_are_recorded():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_11_the_suite_collects_without_credentials():
+def test_the_suite_collects_without_credentials():
     result = _run(["-m", "pytest", "-q", "--collect-only"])
     assert result.returncode == 0, result.stderr

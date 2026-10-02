@@ -4,7 +4,7 @@ The judge is deliberately *not* given the source articles. This metric measures 
 has not read the sources, so a judge that could see them would silently fill in the context the
 digest itself failed to supply.
 
-Phase 2b moved the prompt *text* into ``prompts/evaluation`` so the editorial pipeline and the
+The prompt migration moved the prompt *text* into ``prompts/evaluation`` so the editorial pipeline and the
 evaluator share one template engine. This module is the evaluator's call site: it supplies the
 parsed sections, the rubric data and the caller's contracts, and renders the template. The
 scoring rubrics, response schemas, issue taxonomy and diagnostic behaviour are unchanged; they
@@ -32,7 +32,7 @@ from .rubric import overall_rubric_text
 _ROOT = Path(__file__).resolve().parents[2]
 
 #: The style rubrics, owned here because they are data the evaluator selects; the templates
-#: render whichever one applies. Kept byte-identical to the pre-Phase-2b constants.
+#: render whichever one applies. Kept byte-identical to the pre-migration constants.
 STYLE_RUBRICS: dict[str, str] = {
     "synthesis-max": (
         "This digest is written in the **Synthesis MAX** style. It must build one coherent "

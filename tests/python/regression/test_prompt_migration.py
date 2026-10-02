@@ -1,6 +1,6 @@
-"""Phase 2b acceptance: the prompt migration's own checklist.
+﻿"""The prompt migration's own acceptance checklist.
 
-Each item is asserted here so the migration's completion is a test result rather than a claim.
+Each item is asserted here so the acceptance is a test result rather than a claim.
 The checklist:
 
 1.  Every configured profile resolves every required stage.
@@ -30,7 +30,7 @@ from digest_system.editorial.stages import stage_names_v2
 from digest_system.runtime.artifacts import ROOT
 
 PYTHON = sys.executable
-PHASE2B = ROOT / "tests" / "fixtures" / "phase2b"
+PROMPT_MIGRATION = ROOT / "tests" / "fixtures" / "prompt_migration"
 
 
 def _run(args: list[str]) -> subprocess.CompletedProcess:
@@ -49,7 +49,7 @@ def _run(args: list[str]) -> subprocess.CompletedProcess:
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_1_every_profile_resolves_every_required_stage():
+def test_every_profile_resolves_every_required_stage():
     from digest_system.config.profiles import preflight_style_profile, validate_style_profile
 
     assert len(style_profile_ids()) == 4
@@ -62,7 +62,7 @@ def test_checklist_1_every_profile_resolves_every_required_stage():
             assert stage in preflight.stages, f"{profile_id}: stage {stage} did not preflight"
 
 
-def test_checklist_1_a_missing_template_fails_before_any_paid_call(tmp_path: Path):
+def test_a_missing_template_fails_before_any_paid_call(tmp_path: Path):
     """A missing stage template is a preflight failure, not a mid-run surprise."""
     from digest_system.editorial.prompts.compose import compose_stage_prompt, build_prompt_environment
     from digest_system.editorial.prompts.environment import PromptError, render
@@ -80,7 +80,7 @@ def test_checklist_1_a_missing_template_fails_before_any_paid_call(tmp_path: Pat
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_2_every_instruction_has_a_traceable_dependency():
+def test_every_instruction_has_a_traceable_dependency():
     from digest_system.editorial.prompts.baseline import (
         DIGEST_CONFIG_BY_STYLE,
         stage_prompt,
@@ -100,7 +100,7 @@ def test_checklist_2_every_instruction_has_a_traceable_dependency():
             assert entry, f"{profile_id}/{stage_name}: no prompt was composed"
 
 
-def test_checklist_2_the_manifest_records_paths_hashes_and_sizes():
+def test_the_manifest_records_paths_hashes_and_sizes():
     from digest_system.editorial.prompts.inspection import inspect_stage
 
     inspection = inspect_stage(
@@ -121,7 +121,7 @@ def test_checklist_2_the_manifest_records_paths_hashes_and_sizes():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_3_no_prompt_path_extracts_a_section():
+def test_no_prompt_path_extracts_a_section():
     """No module on a prompt-composition path parses Markdown headings."""
     offenders: list[str] = []
     prompt_paths = [
@@ -137,7 +137,7 @@ def test_checklist_3_no_prompt_path_extracts_a_section():
     assert not offenders, f"a prompt path still extracts sections: {offenders}"
 
 
-def test_checklist_3_the_descriptor_model_has_no_section_selector():
+def test_the_descriptor_model_has_no_section_selector():
     from digest_system.config.profiles import Descriptor
 
     assert "sections" not in Descriptor.__dataclass_fields__
@@ -148,7 +148,7 @@ def test_checklist_3_the_descriptor_model_has_no_section_selector():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_4_corpus_policies_are_unchanged():
+def test_corpus_policies_are_unchanged():
     from digest_system.editorial.stages import STAGES_V2
 
     policies = {stage.name: stage.corpus for stage in STAGES_V2}
@@ -166,7 +166,7 @@ def test_checklist_4_corpus_policies_are_unchanged():
     }
 
 
-def test_checklist_4_style_specific_review_contracts_are_preserved():
+def test_style_specific_review_contracts_are_preserved():
     """The Synthesis MAX profile still supplies its review obligations to both review stages."""
     from digest_system.config.profiles import preflight_style_profile
 
@@ -189,7 +189,7 @@ def test_checklist_4_style_specific_review_contracts_are_preserved():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_5_the_evaluation_prompts_come_from_templates():
+def test_the_evaluation_prompts_come_from_templates():
     from digest_system.editorial.prompts.baseline import evaluation_prompts
 
     prompts = evaluation_prompts()
@@ -201,7 +201,7 @@ def test_checklist_5_the_evaluation_prompts_come_from_templates():
         assert (ROOT / "prompts" / "evaluation" / template).is_file(), template
 
 
-def test_checklist_5_the_templates_are_the_only_prompt_text():
+def test_the_templates_are_the_only_prompt_text():
     """The legacy constants are gone: the template is the authoritative prompt."""
     source = (ROOT / "evaluation" / "semantic" / "prompts.py").read_text(encoding="utf-8")
     # ANTI_LENIENCY is rendered from its template rather than defined as a literal.
@@ -214,7 +214,7 @@ def test_checklist_5_the_templates_are_the_only_prompt_text():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_6_an_undefined_variable_fails_the_render():
+def test_an_undefined_variable_fails_the_render():
     from digest_system.editorial.prompts.compose import build_prompt_environment
     from digest_system.editorial.prompts.environment import PromptError, render
 
@@ -226,7 +226,7 @@ def test_checklist_6_an_undefined_variable_fails_the_render():
     assert "undefined" in str(raised.value).lower()
 
 
-def test_checklist_6_undeclared_variables_are_reported_by_preflight():
+def test_undeclared_variables_are_reported_by_preflight():
     from digest_system.editorial.prompts.environment import validate_context
 
     # Every variable a real stage template needs, reported against an empty context.
@@ -243,7 +243,7 @@ def test_checklist_6_undeclared_variables_are_reported_by_preflight():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_7_inert_artifact_strings_are_not_rendered():
+def test_inert_artifact_strings_are_not_rendered():
     """A `{{ ... }}` inside artifact content survives verbatim, unrendered."""
     from digest_system.editorial.prompts.compose import compose_stage_prompt
     from digest_system.editorial.prompts.offline import (
@@ -271,7 +271,7 @@ def test_checklist_7_inert_artifact_strings_are_not_rendered():
     assert "{{ 1 + 1 }}" in composed.user_text
 
 
-def test_checklist_7_an_html_template_placeholder_is_preserved():
+def test_an_html_template_placeholder_is_preserved():
     """The HTML email template's `{{RUN_KEY}}` reaches the model untouched."""
     template = (ROOT / "templates" / "synthesis-max-email-v1.html").read_text(encoding="utf-8")
     assert "{{RUN_KEY}}" in template
@@ -297,13 +297,13 @@ def test_checklist_7_an_html_template_placeholder_is_preserved():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_8_the_frozen_reference_still_parses():
+def test_the_frozen_reference_still_parses():
     reference = json.loads((ROOT / "tests" / "fixtures" / "reference" / "reference.json").read_text(encoding="utf-8"))
     assert reference["schema_version"] == 1
     assert len(reference["profiles"]) == 5
 
 
-def test_checklist_8_pipeline_artifact_contracts_are_unchanged():
+def test_pipeline_artifact_contracts_are_unchanged():
     from digest_system.editorial.stages import STAGES_V2
 
     for stage in STAGES_V2:
@@ -312,7 +312,7 @@ def test_checklist_8_pipeline_artifact_contracts_are_unchanged():
         assert stage.artifact, stage.name
 
 
-def test_checklist_8_failure_policies_are_unchanged():
+def test_failure_policies_are_unchanged():
     assert STYLE_PROFILES["synthesis-max-v1"].frame_failure_policy == "fail"
     for profile_id in style_profile_ids():
         if profile_id == "synthesis-max-v1":
@@ -325,12 +325,12 @@ def test_checklist_8_failure_policies_are_unchanged():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_9_the_historical_prompt_capture_exists():
-    assert (PHASE2B / "pre2b-prompts.json").is_file(), "the pre-Phase-2b prompt capture is missing"
-    assert (PHASE2B / "prompt-baseline.json").is_file(), "the offline prompt baseline is missing"
+def test_the_historical_prompt_capture_exists():
+    assert (PROMPT_MIGRATION / "legacy-prompt-reference.json").is_file(), "the legacy prompt reference is missing"
+    assert (PROMPT_MIGRATION / "prompt-baseline.json").is_file(), "the offline prompt baseline is missing"
 
 
-def test_checklist_9_every_prompt_change_is_classified():
+def test_every_prompt_change_is_classified():
     """The migration's central claim, asserted: no stage's instruction text changed silently.
 
     Every difference is either packaging-only, or an instruction change recorded in the approved
@@ -349,10 +349,10 @@ def test_checklist_9_every_prompt_change_is_classified():
     assert len(payload["rows"]) == 40, "the diff did not cover every profile/stage pair"
 
 
-def test_checklist_9_the_approved_change_is_recorded_and_real():
+def test_the_approved_change_is_recorded_and_real():
     """The one approved instruction change names the document and is actually present."""
     payload = json.loads(
-        (PHASE2B / "approved-instruction-changes.json").read_text(encoding="utf-8")
+        (PROMPT_MIGRATION / "approved-prompt-changes.json").read_text(encoding="utf-8")
     )
     assert payload["approved"], "no instruction change is recorded, so the record proves nothing"
     for entry in payload["approved"]:
@@ -368,7 +368,7 @@ def test_checklist_9_the_approved_change_is_recorded_and_real():
 # ---------------------------------------------------------------------------------------
 
 
-def test_checklist_10_the_backend_and_evaluation_suites_pass():
+def test_the_backend_and_evaluation_suites_pass():
     """The whole suite, collected and run, with no credential and no network."""
     result = _run(["-m", "pytest", "-q", "--collect-only"])
     assert result.returncode == 0, result.stderr
@@ -380,7 +380,7 @@ def test_checklist_10_the_backend_and_evaluation_suites_pass():
 
 
 @pytest.mark.parametrize("profile_id", ["synthesis-max-v1", "concise-legacy"])
-def test_checklist_11_inspection_works_for_every_stage(profile_id: str, tmp_path: Path):
+def test_inspection_works_for_every_stage(profile_id: str, tmp_path: Path):
     from digest_system.editorial.prompts.inspection import inspect_all
 
     inspections = inspect_all(digest_id="tech-bi-daily", profile_id=profile_id)
@@ -399,14 +399,14 @@ def test_checklist_11_inspection_works_for_every_stage(profile_id: str, tmp_path
         assert {"manifest.json", "report.md"} <= names, f"{profile_id}/{inspection.stage}"
 
 
-def test_checklist_11_the_cli_exposes_the_inspection_command():
+def test_the_cli_exposes_the_inspection_command():
     result = _run(["-m", "digest_system.cli", "inspect", "--help"])
     assert result.returncode == 0
     for option in ("--digest", "--style-profile", "--stage", "--output"):
         assert option in result.stdout
 
 
-def test_checklist_11_the_cli_renders_synthesis_max_draft_offline():
+def test_the_cli_renders_synthesis_max_draft_offline():
     result = _run(
         [
             "-m",
@@ -427,7 +427,7 @@ def test_checklist_11_the_cli_renders_synthesis_max_draft_offline():
     assert "<stage_task>" in result.stdout
 
 
-def test_checklist_11_the_synthesis_max_draft_inspection_is_recorded():
+def test_the_synthesis_max_draft_inspection_is_recorded():
     """The reference inspection is byte-deterministic and matches the committed example.
 
     The fixtures are the report's inspection example: the exact system and user prompt, the
@@ -435,7 +435,7 @@ def test_checklist_11_the_synthesis_max_draft_inspection_is_recorded():
     """
     from digest_system.editorial.prompts.inspection import inspect_stage
 
-    example = PHASE2B / "inspection-example" / "draft"
+    example = PROMPT_MIGRATION / "inspection-example" / "draft"
     assert example.is_dir(), "the recorded inspection example is missing"
     inspection = inspect_stage(
         digest_id="tech-bi-daily", profile_id="synthesis-max-v1", stage_name="draft"

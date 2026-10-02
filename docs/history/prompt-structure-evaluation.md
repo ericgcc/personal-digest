@@ -28,8 +28,8 @@ editorial wording of the two styles.
 | `digest_system/editorial/prompts/instruction_changes.py` | Scans every `phase*` section, so a later phase does not have to edit the loader. |
 | `scripts/prompt_diff.py` | Compares instruction text in **path order**, so reordering unchanged documents is packaging, not an instruction change. |
 | `scripts/audit_prompts.py` | Drops the removed research-basis from the classifier. |
-| `tests/fixtures/phase2b/approved-instruction-changes.json` | Records the Phase 3B removal and the naturalness-contract consolidation. |
-| `tests/fixtures/phase2b/{prompt-baseline.json,inspection-example/draft/*}` | Regenerated. |
+| `tests/fixtures/prompt_migration/approved-prompt-changes.json` | Records the Phase 3B removal and the naturalness-contract consolidation. |
+| `tests/fixtures/prompt_migration/{prompt-baseline.json,inspection-example/draft/*}` | Regenerated. |
 | `docs/architecture/prompt-ownership.md` | Adds the standard prompt-composition section. |
 
 ### Removed

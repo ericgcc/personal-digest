@@ -1,7 +1,7 @@
 """Style profiles: an explicit, versioned declaration of what each style's stages receive.
 
 A profile is the only thing that decides which style instructions a stage receives, so adding
-or editing one style's instructions cannot change another style's prompt. Phase 2b changes
+or editing one style's instructions cannot change another style's prompt. The prompt migration changes
 *how* a profile is declared, not what it decides:
 
 * Before, a profile named ``##`` heading text inside ``styles/<style>.md`` and the runtime
@@ -123,7 +123,7 @@ ENFORCEABLE_CONSTRAINTS: tuple[str, ...] = (
 
 #: The semantic metric the review stages report against.
 #:
-#: Phase 4 moved the reader-quality metric to ``reader_quality_v4``: the rubric's
+#: The editorial evaluation work moved the reader-quality metric to ``reader_quality_v4``: the rubric's
 #: meaning and the response schema changed materially, so the version moved with
 #: them. The developmental review is unchanged.
 EVALUATION_BY_STYLE: dict[str, dict[str, Any]] = {
@@ -316,7 +316,7 @@ def _discover_profile_ids(root: Path | None = None) -> list[str]:
 STYLE_PROFILES: dict[str, StyleProfile] = {pid: load_style_profile(pid) for pid in _discover_profile_ids()}
 
 #: What a style runs when no profile is named. Synthesis MAX's legacy profile was retired in
-#: Phase 3C once the new implementation passed its behavioural and regression tests; the others
+#: The Synthesis MAX refinement once the new implementation passed its behavioural and regression tests; the others
 #: retain their legacy baseline, which reproduces the pre-profile assembled context.
 DEFAULT_STYLE_PROFILE_BY_STYLE: dict[str, str] = {
     "curated-discovery": "curated-discovery-legacy",

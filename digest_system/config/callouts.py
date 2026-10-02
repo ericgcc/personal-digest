@@ -1,6 +1,6 @@
 """The central registry of supported callout *capabilities*, not a fixed vocabulary.
 
-A callout is a small, optional, elevated component inside the editorial body. Before Phase 5
+A callout is a small, optional, elevated component inside the editorial body. Before canonical provenance
 there was no supported semantic representation for one anywhere in the pipeline: the only stages
 told about callouts were the ones told to *permit* or *remove* them, so no stage was accountable
 for proposing or writing one, and neither digest ever produced one (baseline defect D7).

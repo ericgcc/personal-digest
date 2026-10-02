@@ -1,6 +1,6 @@
 """Metric versioning: a materially changed rubric is a new metric version.
 
-Phase 4 changes the rubric's meaning and the response schema, so the metric
+The editorial evaluation changes the rubric's meaning and the response schema, so the metric
 identity moves from ``reader_quality_v3`` to ``reader_quality_v4``. Historical v3
 scores are preserved but must never be compared with v4 scores, because the
 difference would be the rubric change rather than an editorial change.

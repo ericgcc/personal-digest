@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Final verification of the Phase 2 review corrections.
+"""Final verification of the pre-migration review corrections.
 
 Python port of ``scripts/verify-corrections.mjs``.
 
@@ -40,7 +40,7 @@ from _maintenance import configure_stdio  # noqa: E402
 configure_stdio()
 
 V1 = STYLE_PROFILES["synthesis-max-v1"]
-# Phase 3C retired the Synthesis MAX legacy profile. Any surviving legacy profile still shows the
+# The Synthesis MAX refinement retired the legacy profile. Any surviving legacy profile still shows the
 # contrast between the legacy frame-failure policy and v1's.
 LEGACY = STYLE_PROFILES["detailed-legacy"]
 
@@ -225,7 +225,7 @@ def main() -> int:
     )
 
     # --- report -------------------------------------------------------------------------
-    print("Phase 2 review corrections — verified behaviour\n")
+    print("Pre-migration review corrections — verified behaviour\n")
     for identifier, requirement, observed in results:
         print(f"C{identifier}  {requirement}")
         print(f"      {observed}")

@@ -1,6 +1,6 @@
-"""Publication regression: the Phase 6 first-production-trial checks, over a run.
+"""Publication regression: the first-production-trial checks, over a run.
 
-Phase 6's acceptance is *manual reading* of a replayed digest, but the design names
+The first production trial's acceptance is *manual reading* of a replayed digest, but the design names
 things a reader should not have to compute by hand. Every retained synthesis thread
 must
 
@@ -17,7 +17,7 @@ the final Markdown and the reviewed corpus — with no model call and no write. 
 :mod:`digest_system.editorial.validation.copy_verify`, which is the production gate the
 pipeline enforces on every run.
 
-It reuses Phase 5's canonical provenance and callout checks rather than restating them, so
+It reuses the canonical provenance and callout checks rather than restating them, so
 a duplicate identity or an unauthorized callout is reported here exactly as copy-verify
 would report it.
 """
@@ -478,7 +478,7 @@ def audit_publication(
 ) -> PublicationAudit:
     """Audit the finished document for provenance, citation and callout regressions.
 
-    These are the Phase 5 guarantees, re-measured on a *rendered* artifact so a replay proves
+    These are the canonical provenance guarantees, re-measured on a *rendered* artifact so a replay proves
     they survive to the finished digest, not merely that the code that builds them exists.
     """
     findings: list[ThreadFinding] = []

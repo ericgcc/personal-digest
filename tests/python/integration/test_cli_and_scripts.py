@@ -1,4 +1,4 @@
-"""Phase 5 acceptance: every documented operational command has a working Python equivalent.
+﻿"""Operational command acceptance: every documented command has a working Python equivalent.
 
 The gate is: every documented operational command has a working Python equivalent, including
 offline verification of an existing historical run.
@@ -185,10 +185,10 @@ def test_measure_context_matches_the_frozen_reference():
 def _approved_instruction_changes() -> set[tuple[str, str]]:
     import json as _json
 
-    path = ROOT / "tests" / "fixtures" / "phase2b" / "approved-instruction-changes.json"
+    path = ROOT / "tests" / "fixtures" / "prompt_migration" / "approved-prompt-changes.json"
     payload = _json.loads(path.read_text(encoding="utf-8"))
     approved = {(entry["stage"], entry["document"]) for entry in payload["approved"]}
-    for entry in payload.get("phase3a", {}).get("removed_documents", []):
+    for entry in payload.get("reading_instruction_migration", {}).get("removed_documents", []):
         approved.add((entry["stage"], entry["document"]))
     return approved
 

@@ -190,7 +190,7 @@ python scripts/prompt_diff.py --json
 `measure_context.py` reports byte counts with no model call. `prompt_diff.py` compares the current
 prompts against the capture taken before the Jinja2 migration and classifies every difference as
 **packaging-only** (wrappers, paths, whitespace) or an **instruction change**. An instruction
-change must be recorded in `tests/fixtures/phase2b/approved-instruction-changes.json` with its
+change must be recorded in `tests/fixtures/prompt_migration/approved-prompt-changes.json` with its
 reason; the tool exits non-zero on any unapproved one, and the Phase 2b checklist asserts that.
 
 ## Validation

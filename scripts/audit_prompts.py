@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Audit every resolved Synthesis MAX prompt, stage by stage, offline.
 
-Phase 3A must establish a complete baseline of the resolved prompts *before* any editorial
+The reading-instruction migration must establish a complete baseline of the resolved prompts *before* any editorial
 wording changes, so a later change can be attributed. This script produces that baseline. For
 every (profile, stage) it records:
 
@@ -18,7 +18,7 @@ It then classifies each supplied instruction document against the stage's role:
 * **reading-instructions** — a section parsed from the digest's Markdown body;
 * **supporting** — a shared writing reference the stage needs but does not own;
 * **duplicated** — a document whose text also appears in another document supplied to the same
-  stage (a candidate for consolidation in Phase 3B).
+  stage (a candidate for consolidation in the prompt-structure work).
 
 Nothing here is a model call and nothing is written unless ``--output`` is given. The estimate
 uses a fixed 4-characters-per-token approximation, labelled as an estimate; the run's own records
@@ -86,7 +86,7 @@ def _classify(path: str, *, style: str) -> str:
 def _duplicates(documents: list[dict]) -> list[dict]:
     """Instruction documents whose text is repeated inside another supplied document.
 
-    A repeated rule has two owners and can drift; Phase 3B is where such a rule is consolidated.
+    A repeated rule has two owners and can drift; The prompt-structure work is where such a rule is consolidated.
     The check is deliberately conservative: it reports a document only when a substantial run of
     its text appears verbatim in another document supplied to the same stage.
     """

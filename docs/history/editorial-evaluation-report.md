@@ -19,7 +19,7 @@ prose metric cannot.
 | `evaluation/tests/test_requirements.py` | The requirement metrics' tests (15). |
 | `evaluation/tests/test_versioning.py` | Metric versioning and comparability tests (8). |
 | `tests/python/regression/test_phase4_checklist.py` | The Phase 4 acceptance checklist (20 tests). |
-| `docs/history/phase4-evaluation-report.md` | This report. |
+| `docs/history/editorial-evaluation-report.md` | This report. |
 
 ### Changed
 

@@ -140,7 +140,7 @@ reason for being supplied" is a verifiable claim rather than an assertion.
 The frozen migration reference (`tests/fixtures/reference/reference.json`) is the audit record of
 what the pipeline sent before the Phase 2b/3A migrations. It is never edited. When a later phase
 must change an inlined instruction, the change is declared in
-`tests/fixtures/phase2b/approved-instruction-changes.json`, which names the stage, the document,
+`tests/fixtures/prompt_migration/approved-prompt-changes.json`, which names the stage, the document,
 and the reason. `scripts/prompt_diff.py` and the parity tests fail on any change that is not
 declared, so an instruction can never change silently.
 

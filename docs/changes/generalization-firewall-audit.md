@@ -15,7 +15,7 @@ general Digest System behavior. `AGENTS.md` is the governing contract.
 | `declared_priority()` keyword-order matcher | `evaluation/selection.py` | **Genuine leak.** Pretended to interpret arbitrary prose by matching a fixed vocabulary. | Removed (see §2) |
 | Tech priority strings in `evaluation/tests/test_selection.py` | test fixtures | Legitimate as *input data*, but three tests asserted the removed keyword-matching behavior. | Tests rewritten around generic behavior |
 | `audit.declared_priority` assertion | `tests/python/regression/test_phase4_checklist.py` | Dependent on the leak. | Rewritten to assert verbatim `selection_text` preservation |
-| Tech priority strings in `tests/fixtures/phase2b/pre2b-prompts.json`, `prompt-baseline.json`, `tests/fixtures/reference/reference.json`, `prompt-inspections/*/analyze/user.txt` | fixtures / generated artifacts | **Legitimate historical evidence.** These record what the pipeline actually sent for those digests. Per AGENTS.md §10, not sanitized. | None |
+| Tech priority strings in `tests/fixtures/prompt_migration/legacy-prompt-reference.json`, `prompt-baseline.json`, `tests/fixtures/reference/reference.json`, `prompt-inspections/*/analyze/user.txt` | fixtures / generated artifacts | **Legitimate historical evidence.** These record what the pipeline actually sent for those digests. Per AGENTS.md §10, not sanitized. | None |
 | Priority strings in `digests/*.md` | digest configuration | **Legitimate.** This is exactly where preferences belong. | None |
 | Priority strings in `docs/history/*.md` | historical reports | **Legitimate historical evidence.** | None |
 | `Nikon`, `Montréal`, `TRY THIS`, `LOCAL & TIMELY`, `LEARNING RESOURCE` | `digests/photography-weekly.md` | **Legitimate.** Digest configuration. | None |
@@ -115,9 +115,9 @@ inspection-example test correctly failed — the recorded artifacts no longer
 matched the composed prompts. This is the drift protection working as designed,
 not a defect. Regenerated:
 
-- `tests/fixtures/phase2b/prompt-baseline.json` (`capture_prompt_baseline.py`);
+- `tests/fixtures/prompt_migration/prompt-baseline.json` (`capture_prompt_baseline.py`);
 - `prompt-inspections/{synthesis-max-v1,curated-discovery-legacy}/` (`inspect`);
-- `tests/fixtures/phase2b/inspection-example/draft/`.
+- `tests/fixtures/prompt_migration/inspection-example/draft/`.
 
 All three `--check` modes verify; the full suite passes. The digest edits
 themselves are the user's preference changes and are preserved exactly.

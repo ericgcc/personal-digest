@@ -178,7 +178,20 @@ def manifest_text(build: StyleBuild) -> str:
     for name, segment in zip(names, build.segments):
         lines.append(f"  - file: {name}")
         lines.append(f'    heading: "## {segment.title}"')
-    return "\n".join(lines) + "\n"
+    text = "\n".join(lines) + "\n"
+    # A style.yaml may carry a hand-maintained ``constraints`` section (the declarative
+    # style facts of the new instruction architecture). The generator owns only the
+    # ``modules`` list, so it preserves the file's own header comment block and the
+    # constraints section verbatim, regenerating only the module list between them.
+    existing = STYLES_DIR / build.style / "style.yaml"
+    if existing.is_file():
+        current = read_text_lf(existing)
+        marker = "\nconstraints:"
+        if marker in current:
+            header = current[: current.index("id:")] if "\nid:" in current else ""
+            body = "\n".join(lines[2:]) + "\n"  # drop the generator's own two header lines
+            text = header + body + current[current.index(marker) :]
+    return text
 
 
 def plan(build: StyleBuild) -> list[tuple[Path, str]]:

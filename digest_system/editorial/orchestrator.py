@@ -99,8 +99,11 @@ def execute_pipeline_v2(
     evaluation = evaluation if evaluation is not None else create_evaluation_adapter(config=config)
 
     corpus = json.loads(read_text_raw(source_path))
+    # The style's interface declaration is the runtime owner of the `## Style interface`
+    # table the deterministic checks parse. The legacy aggregate `styles/<style>.md` was
+    # removed with the old architecture.
     style_text = ""
-    style_path = base / "styles" / f"{style}.md"
+    style_path = base / "styles" / style / "interface.md"
     if style_path.exists():
         style_text = read_text_raw(style_path)
     run_key_record = resolve_run_key(corpus=corpus, digest_id=digest_id, style=style)

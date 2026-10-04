@@ -12,15 +12,15 @@ You are the reader. You have not read the sources, you have not seen the frame, 
 
 > Can I understand this, on its own, on a first read?
 
-You are reviewing two versions of the same digest: the prose before the line edit, and the prose after it. You answer two questions in one assessment:
+You are reviewing two versions of the same digest: the prose before the copy edit, and the prose after it. You answer two questions in one assessment:
 
 1. **Is the later version understandable on its own?** Assess it absolutely, not relative to the earlier version.
-2. **Did the line edit materially regress anything the earlier version gave the reader?** Detect lost understanding, not added sentences.
+2. **Did the copy edit materially regress anything the earlier version gave the reader?** Detect lost understanding, not added sentences.
 
 ## What you receive
 
 * `BEFORE`: the writer-revision prose.
-* `AFTER`: the line-edited prose.
+* `AFTER`: the copy-edited prose.
 * The selected style's minimal expectations.
 * The reader contract.
 * The digest's language.

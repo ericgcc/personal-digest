@@ -39,17 +39,17 @@ from .instructions import (
 #: The shared contracts each stage receives, by stage name. One owner: this table.
 #: ``reader`` is the general reader obligation; ``fidelity`` is source/factual fidelity
 #: as the reasoning reference; ``editorial-base`` is the cross-style quality floor;
-#: ``naturalness`` is the line-edit naturalness contract.
+#: ``naturalness`` is the copy-edit naturalness contract.
 SHARED_CONTRACTS_BY_STAGE: dict[str, tuple[str, ...]] = {
     "analyze": ("fidelity",),
     "frame": ("reader",),
     "draft": ("reader", "editorial-base"),
     "developmental-review": ("reader",),
     "writer-revision": (),
-    "line-edit": ("naturalness",),
+    "copy-edit": ("naturalness",),
     "reader-review": ("reader",),
     "targeted-repair": ("reader",),
-    "copy-verify": (),
+    "publication-verify": (),
     "render": (),
 }
 
@@ -67,11 +67,11 @@ SHARED_CONTRACT_FILES: dict[str, str] = {
 #: The delivery set is declared by the style itself (``constraints.interface_stages`` in
 #: ``styles/<style>/style.yaml``), so a style owns which stages see its interface.
 DEFAULT_INTERFACE_STAGES: frozenset[str] = frozenset(
-    {"analyze", "frame", "draft", "copy-verify", "developmental-review", "reader-review"}
+    {"analyze", "frame", "draft", "publication-verify", "developmental-review", "reader-review"}
 )
 
 #: Stages that receive the resolved declarative constraints block.
-CONSTRAINT_STAGES: frozenset[str] = frozenset({"analyze", "frame", "draft", "copy-verify"})
+CONSTRAINT_STAGES: frozenset[str] = frozenset({"analyze", "frame", "draft", "publication-verify"})
 
 #: The stages the Python evaluation adapter executes. Derived from the stage registry so
 #: the API follows execution responsibility rather than a loosely related grouping.

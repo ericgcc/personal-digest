@@ -249,6 +249,65 @@ def build_source_note_manifest(
     )
 
 
+def build_source_note_manifest_from_prose(
+    *,
+    prose: str,
+    corpus: Mapping[str, Any] | None,
+    digest_id: str | None = None,
+    style: str | None = None,
+) -> SourceNoteManifest:
+    """Build the canonical manifest from the **revised artifact**, not the original Frame.
+
+    Writer Revision may reorder, split, merge or reframe units, so the published structure is
+    the structure the revised prose actually has. This reads the final prose's own section
+    headings and the citation numbers each section carries, and resolves each number to its
+    canonical source identity from the reviewed corpus. The model never reconstructs an
+    identity: the numbers are the ones the prose cites and the metadata is the corpus's.
+
+    The original Frame remains available as planning/audit history; it is not the authority
+    for what is published.
+    """
+    from .validation.copy_verify import extract_citations, heading_texts, split_catalog
+
+    by_number = _corpus_by_number(corpus)
+    units: list[UnitSourceNotes] = []
+    findings: list[str] = []
+
+    body = split_catalog(prose or "")["body"]
+    headings = heading_texts(body)
+    if not headings:
+        # A prose artifact with no headings is one unit: the whole body.
+        sections = [("(document)", body)]
+    else:
+        sections = []
+        for index, heading in enumerate(headings):
+            start = heading["index"]
+            end = headings[index + 1]["index"] if index + 1 < len(headings) else len(body)
+            sections.append((heading["title"] or "(section)", body[start:end]))
+
+    for unit_id, text in sections:
+        identities: list[SourceIdentity] = []
+        for number in sorted(extract_citations(text)):
+            source = by_number.get(number)
+            if source is None:
+                findings.append(
+                    f"section {unit_id} cites source {number}, which the reviewed corpus does not carry"
+                )
+                continue
+            identity = _identity_from_source(source)
+            if identity is not None:
+                identities.append(identity)
+        if identities:
+            units.append(UnitSourceNotes(unit_id=unit_id, sources=tuple(identities)))
+
+    return SourceNoteManifest(
+        digest_id=digest_id,
+        style=style,
+        units=tuple(units),
+        findings=tuple(findings),
+    )
+
+
 def duplicate_identities(manifest: SourceNoteManifest) -> list[dict[str, Any]]:
     """Sources that would render as more than one linked identity.
 
@@ -316,6 +375,7 @@ __all__ = [
     "SourceNoteManifest",
     "UnitSourceNotes",
     "build_source_note_manifest",
+    "build_source_note_manifest_from_prose",
     "duplicate_identities",
     "duplicate_rendered_identities",
     "split_identity",

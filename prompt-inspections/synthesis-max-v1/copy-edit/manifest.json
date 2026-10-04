@@ -1,0 +1,78 @@
+{
+  "system_template": null,
+  "user_template": "stages/copy-edit/user.j2",
+  "templates": [
+    {
+      "path": "prompts/shared/preamble.j2",
+      "bytes": 465,
+      "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
+    },
+    {
+      "path": "prompts/stages/copy-edit/user.j2",
+      "bytes": 117,
+      "sha256": "70ab0bc67eb52e1a228fbdef3a8321aad93bcbd17809c62140050a1dc6b9dd46"
+    },
+    {
+      "path": "prompts/shared/task.j2",
+      "bytes": 863,
+      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+    }
+  ],
+  "documents": [
+    {
+      "path": "editorial/stages/copy-edit.md",
+      "bytes": 4594,
+      "sha256": "9226691b95fab3f77f93745e2db9d1d4ccdf9fcd453c82a530956ed9332cb781",
+      "owner": "shared stage contract"
+    },
+    {
+      "path": "editorial/shared/naturalness.md",
+      "bytes": 3692,
+      "sha256": "2358b8d1d97f96634535679fed38812a54998b4e1dba5decb4590db040d8f6bd",
+      "owner": "shared cross-cutting contract"
+    }
+  ],
+  "instructions": [
+    {
+      "path": "styles/synthesis-max/stages/copy-edit.md",
+      "bytes": 7450,
+      "sha256": "485266ec3dde3911e30b7b71c28f9c5aac3b548f3a1d6136c5482a3f2c029037",
+      "owner": "style-specific stage specialization"
+    }
+  ],
+  "blocks": [
+    {
+      "tag": "previous_stage_artifact",
+      "bytes": 332,
+      "source": {
+        "stage": "writer-revision",
+        "path": ".digest-runs/synthetic/writer-revision/output/writer-revision.md",
+        "provenance": "runner"
+      },
+      "purpose": "prior artifact or digest reading instructions"
+    },
+    {
+      "tag": "reading_instructions",
+      "bytes": 1030,
+      "source": {
+        "path": "digests/tech-bi-daily.md",
+        "sections": [
+          "Reader"
+        ],
+        "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"
+      },
+      "purpose": "prior artifact or digest reading instructions"
+    },
+    {
+      "tag": "stage_task",
+      "bytes": 879,
+      "source": {
+        "path": "prompts/shared/task.j2"
+      },
+      "purpose": "immediate task and output contract"
+    }
+  ],
+  "omitted": [],
+  "system_bytes": 16520,
+  "user_bytes": 2346
+}

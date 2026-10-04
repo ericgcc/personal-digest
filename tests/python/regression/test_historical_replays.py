@@ -208,7 +208,9 @@ def test_the_comparison_reports_every_stage():
     assert [row["stage"] for row in payload["stages"]] == list(stage_names_v2())
     for row in payload["stages"]:
         # A stage is completed or skipped, never silently absent, in a complete historical run.
-        assert row["baseline_status"] in {"completed", "skipped"}
+        # A stage introduced after the historical run (copy-edit, publication-verify) has no
+        # baseline record, so its status is None.
+        assert row["baseline_status"] in {"completed", "skipped", None}
     assert payload["units"]["baseline"], "the frame units were not compared"
     assert "thread_audit" in payload and "publication_audit" in payload
 
@@ -517,7 +519,7 @@ def test_the_recorded_prompt_inspections_are_current():
 
     for digest_id, profile_id in [
         ("tech-bi-daily", "synthesis-max-v1"),
-        ("medium-bi-daily", "curated-discovery-legacy"),
+        ("medium-bi-daily", "curated-discovery-v1"),
     ]:
         inspections = inspect_all(digest_id=digest_id, profile_id=profile_id)
         profile_root = ROOT / "prompt-inspections" / profile_id

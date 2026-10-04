@@ -32,8 +32,6 @@ from .offline import build_context, seed_artifacts, stage_extra_blocks, stage_in
 DIGEST_CONFIG_BY_STYLE: dict[str, str] = {
     "synthesis-max": "digests/tech-bi-daily.md",
     "curated-discovery": "digests/medium-bi-daily.md",
-    "concise": "digests/tech-bi-daily.md",
-    "detailed": "digests/tech-bi-daily.md",
 }
 
 BASELINE_RELATIVE = "tests/fixtures/prompt_migration/prompt-baseline.json"

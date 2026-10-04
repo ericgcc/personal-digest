@@ -34,8 +34,22 @@ from _maintenance import configure_stdio, flag, option, try_json, try_text  # no
 
 STAGE_ARTIFACT = {stage.name: stage.artifact for stage in STAGES_V2}
 STAGE_FORMAT = {stage.name: stage.format for stage in STAGES_V2}
-FINAL_STAGE = "copy-verify"
+FINAL_STAGE = "publication-verify"
+#: Historical runs were produced before the stage rename, so their final artifact lives under
+#: the retired ``copy-verify`` directory. The comparison reads whichever exists.
+LEGACY_FINAL_STAGE = "copy-verify"
 RENDER_STAGE = "render"
+
+
+def _final_prose(root: Path) -> str | None:
+    for stage in (FINAL_STAGE, LEGACY_FINAL_STAGE):
+        artifact = STAGE_ARTIFACT.get(stage)
+        if artifact is None:
+            continue
+        text = try_text(root / stage / "output" / artifact)
+        if text:
+            return text
+    return None
 
 
 def _read_run(run_id: str) -> dict:
@@ -51,7 +65,7 @@ def _read_run(run_id: str) -> dict:
         "records": try_json(root / "stage-records.json"),
         "corpus": try_json(root / "source-acquisition" / "sources.json"),
         "frame": try_json(root / "frame" / "output" / "frame.json"),
-        "final": try_text(root / FINAL_STAGE / "output" / STAGE_ARTIFACT[FINAL_STAGE]),
+        "final": _final_prose(root),
         "html": try_text(root / RENDER_STAGE / "output" / STAGE_ARTIFACT[RENDER_STAGE]),
     }
 

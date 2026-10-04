@@ -67,7 +67,14 @@ APPROVED_DIFFERENCES: tuple[tuple[str, Any, Any], ...] = (
 
 #: Profiles the frozen reference records that a later phase deliberately retired. A test that
 #: iterates the reference's profiles skips these, and the retirement is asserted instead.
-RETIRED_PROFILES: frozenset[str] = frozenset({"synthesis-max-legacy"})
+#:
+#: The editorial-architecture simplification removed the out-of-scope Concise and Detailed
+#: styles from the active runtime and retired the Curated Discovery legacy profile; Curated
+#: Discovery will be rebuilt fresh against the new architecture. Only ``synthesis-max-v1``
+#: survives from the reference's profile set.
+RETIRED_PROFILES: frozenset[str] = frozenset(
+    {"synthesis-max-legacy", "concise-legacy", "curated-discovery-legacy", "detailed-legacy"}
+)
 
 
 def retired_profile(profile_id: str) -> bool:

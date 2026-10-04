@@ -1,0 +1,87 @@
+{
+  "system_template": null,
+  "user_template": null,
+  "templates": [
+    {
+      "path": "prompts/evaluation/comparison.j2",
+      "bytes": 0,
+      "sha256": "1fed12fb14fe61ec512676789591cba1f2f9f827bd1e4ff34893fa15234b147b"
+    },
+    {
+      "path": "prompts/evaluation/shared/anti_leniency.j2",
+      "bytes": 0,
+      "sha256": "459cfb8e80e6c8990d561cdbc09608006904b069e2244337eecd8e6ff1a91a9c"
+    },
+    {
+      "path": "prompts/evaluation/shared/dimensions.j2",
+      "bytes": 0,
+      "sha256": "f21d9324ceec938f9390fd8b2245f2f7411d89bd5085e68484fb728d0c5e6482"
+    },
+    {
+      "path": "prompts/evaluation/shared/issue_taxonomy.j2",
+      "bytes": 0,
+      "sha256": "f2e2901a1b0612597f4ec9d573576f4c44aeff642f6c72c70a1dd1471e66be5c"
+    },
+    {
+      "path": "prompts/evaluation/shared/critical_failure.j2",
+      "bytes": 0,
+      "sha256": "73d2d4e23c838fef6a36e3e4f057457a6a36e15dd1cc0826c843e79265c641e8"
+    },
+    {
+      "path": "prompts/evaluation/shared/citation_note.j2",
+      "bytes": 0,
+      "sha256": "04d4ee07408f15740539e5d871cd77c0d3e86cf7ac1c1bc044ca9c84c16c74d0"
+    },
+    {
+      "path": "prompts/evaluation/shared/compactness.j2",
+      "bytes": 0,
+      "sha256": "9cdf748639508093d37bc523e6f43b72aa0ac8f69303d368b2c07e88de30cc18"
+    }
+  ],
+  "documents": [],
+  "instructions": [
+    {
+      "path": "editorial/shared/reader.md",
+      "bytes": 3357,
+      "sha256": "c653190e817921ec7f45a2477cb58d110342debc3d1d0eaa366339209a073a06",
+      "owner": "reader"
+    },
+    {
+      "path": "digests/medium-bi-daily.md",
+      "bytes": 627,
+      "sha256": "c8381ec2fd362e740c0c499f7a8ec513532bb5151422740318f5e8b11ec9370a",
+      "owner": "reader"
+    },
+    {
+      "path": "editorial/stages/reader-review.md",
+      "bytes": 3879,
+      "sha256": "2a1a9a13ba961058780914bfb2efa9f6a0b7cbd95964278155c180aa73d5f86d",
+      "owner": "role"
+    },
+    {
+      "path": "styles/curated-discovery/interface.md",
+      "bytes": 2566,
+      "sha256": "ad54235cddc9ead0cf1112b39c7e5d346b25a36e0fc32f151f4e8b06a4a6a339",
+      "owner": "style"
+    }
+  ],
+  "blocks": [
+    {
+      "tag": "evaluation_input",
+      "bytes": 20179,
+      "purpose": "combined judge prompt",
+      "source": {
+        "kind": "evaluation-adapter",
+        "contracts": [
+          "reader",
+          "review",
+          "role",
+          "style"
+        ]
+      }
+    }
+  ],
+  "omitted": [],
+  "system_bytes": 0,
+  "user_bytes": 0
+}

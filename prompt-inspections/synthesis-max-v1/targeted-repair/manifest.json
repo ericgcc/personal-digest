@@ -14,15 +14,15 @@
     },
     {
       "path": "prompts/shared/task.j2",
-      "bytes": 992,
-      "sha256": "d12ba969b789e4e2e361fcce24b6e3dc29635420b9ec9b91d608863f5659e417"
+      "bytes": 863,
+      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
     }
   ],
   "documents": [
     {
       "path": "editorial/stages/targeted-repair.md",
-      "bytes": 2554,
-      "sha256": "10c45823da76537f2b0d802f92bcd928296875d37895c37212310370551fcdc1",
+      "bytes": 2656,
+      "sha256": "344a956c7bb7e8f1e62886e7579dff8ab89e17c401cbc194b37c077ebfcfe2dd",
       "owner": "shared stage contract"
     },
     {
@@ -98,8 +98,8 @@
       "tag": "previous_stage_artifact",
       "bytes": 332,
       "source": {
-        "stage": "line-edit",
-        "path": ".digest-runs/synthetic/line-edit/output/line-edit.md",
+        "stage": "copy-edit",
+        "path": ".digest-runs/synthetic/copy-edit/output/copy-edit.md",
         "provenance": "runner"
       },
       "purpose": "prior artifact or digest reading instructions"
@@ -126,6 +126,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 12135,
+  "system_bytes": 12237,
   "user_bytes": 4043
 }

@@ -124,17 +124,25 @@ class RunContext:
     # --- canonical provenance -----------------------------------------------------------
 
     def source_note_manifest(self):
-        """The canonical source-note manifest: one identity per source, per retained unit.
+        """The canonical source-note manifest: one identity per source, per published unit.
 
-        Built from the frame's units and the reviewed corpus, so the render stage consumes a
-        canonical manifest instead of reconstructing identities and URLs from model-written
-        prose (baseline defect D6).
+        Built from the **revised artifact** — the prose that will actually be published — and
+        the reviewed corpus, so the render stage consumes a canonical manifest instead of
+        reconstructing identities and URLs from model-written prose (baseline defect D6).
+        Writer Revision may reorder, split, merge or reframe units, so the published structure
+        is the structure the revised prose has, not the original Frame's. The original Frame
+        remains available as planning/audit history.
         """
-        from .provenance import build_source_note_manifest
+        from .provenance import build_source_note_manifest_from_prose
 
-        frame = self.artifacts.get("frame")
-        return build_source_note_manifest(
-            frame=frame.json if frame is not None else None,
+        prose = ""
+        for name in ("publication-verify", "targeted-repair", "copy-edit", "writer-revision"):
+            artifact = self.artifacts.get(name)
+            if artifact is not None and artifact.text:
+                prose = artifact.text
+                break
+        return build_source_note_manifest_from_prose(
+            prose=prose,
             corpus=self.corpus,
             digest_id=self.digest_id,
             style=self.style,
@@ -144,11 +152,11 @@ class RunContext:
 
     def rendering_values(self) -> dict[str, Any]:
         """Computed lazily: the digest reading time depends on the approved prose, which does
-        not exist until copy/verify has produced it."""
+        not exist until publication-verify has produced it."""
         prose = ""
-        for name in ("copy-verify", "line-edit"):
+        for name in ("publication-verify", "targeted-repair", "copy-edit", "writer-revision"):
             artifact = self.artifacts.get(name)
-            if artifact is not None:
+            if artifact is not None and artifact.text:
                 prose = artifact.text
                 break
         resolved = resolve_rendering_values(

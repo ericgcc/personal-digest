@@ -32,8 +32,11 @@ from digest_system.runtime.artifacts import ROOT
 
 PYTHON = sys.executable
 PROMPT_MIGRATION = ROOT / "tests" / "fixtures" / "prompt_migration"
-STYLE_PIPELINES = ROOT / "system" / "style-pipelines" / "synthesis-max"
-DOMAIN_MODULE = "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md"
+#: The style's stage specializations now live in the runtime instruction tree. The old
+#: ``system/style-pipelines/`` documents were consolidated into these files.
+STYLE_STAGES = ROOT / "styles" / "synthesis-max" / "stages"
+#: The domain-accessibility instruction was consolidated into the stage files that need it.
+DOMAIN_MARKER = "Domain accessibility in synthesis"
 
 
 def _run(args: list[str]) -> subprocess.CompletedProcess:
@@ -54,11 +57,25 @@ def _normalize(text: str) -> str:
 
 
 def _draft() -> str:
-    return (STYLE_PIPELINES / "draft.md").read_text(encoding="utf-8")
+    return (STYLE_STAGES / "draft.md").read_text(encoding="utf-8")
 
 
 def _review() -> str:
-    return (STYLE_PIPELINES / "review.md").read_text(encoding="utf-8")
+    """The review/revision stage specializations, concatenated.
+
+    The shared five-stage review document was split into genuine per-stage files; the
+    assertions below check that each stage's own obligations are present in its file.
+    """
+    return "\n\n".join(
+        (STYLE_STAGES / name).read_text(encoding="utf-8")
+        for name in (
+            "developmental-review.md",
+            "writer-revision.md",
+            "copy-edit.md",
+            "reader-review.md",
+            "targeted-repair.md",
+        )
+    )
 
 
 # ---------------------------------------------------------------------------------------
@@ -156,19 +173,12 @@ def test_the_domain_module_reaches_draft_and_the_reviews():
     """
     from digest_system.editorial.prompts.inspection import inspect_stage
 
-    module_text = _normalize((ROOT / DOMAIN_MODULE).read_text(encoding="utf-8"))
-    for stage_name in ("draft", "line-edit", "developmental-review", "reader-review"):
+    for stage_name in ("draft", "copy-edit", "developmental-review", "reader-review"):
         inspection = inspect_stage(
             digest_id="tech-bi-daily", profile_id="synthesis-max-v1", stage_name=stage_name
         )
         delivered = _normalize(inspection.prompt_text)
-        assert module_text in delivered, f"{stage_name} does not receive the domain module"
-
-
-def test_the_domain_module_is_recorded_as_an_addition():
-    payload = json.loads((PROMPT_MIGRATION / "approved-prompt-changes.json").read_text(encoding="utf-8"))
-    additions = payload.get("synthesis_max_refinement", {}).get("added_documents", [])
-    assert any(entry["document"] == DOMAIN_MODULE for entry in additions)
+        assert DOMAIN_MARKER in delivered, f"{stage_name} does not receive the domain instruction"
 
 
 # ---------------------------------------------------------------------------------------
@@ -208,7 +218,7 @@ def test_writer_revision_acts_on_the_highest_impact_problems():
     assert "Invent a different synthesis" in text
 
 
-def test_line_edit_does_not_trade_explanation_for_brevity():
+def test_copy_edit_does_not_trade_explanation_for_brevity():
     text = _review()
     assert "A shorter passage is not automatically a better one" in text
 

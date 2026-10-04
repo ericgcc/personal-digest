@@ -131,12 +131,17 @@ class OfflineContext:
         )
 
     def source_note_manifest(self):
-        """The canonical source-note manifest, built from the frame and the reviewed corpus."""
-        from ..provenance import build_source_note_manifest
+        """The canonical source-note manifest, built from the revised artifact and the corpus."""
+        from ..provenance import build_source_note_manifest_from_prose
 
-        frame = self.artifacts.get("frame")
-        return build_source_note_manifest(
-            frame=frame.json if frame is not None else None,
+        prose = ""
+        for name in ("publication-verify", "targeted-repair", "copy-edit", "writer-revision"):
+            artifact = self.artifacts.get(name)
+            if artifact is not None and artifact.text:
+                prose = artifact.text
+                break
+        return build_source_note_manifest_from_prose(
+            prose=prose,
             corpus=self.corpus,
             digest_id=self.digest_id,
             style=self.style,
@@ -150,16 +155,11 @@ class OfflineContext:
 DIGEST_CONFIG_BY_STYLE: dict[str, str] = {
     "synthesis-max": "digests/tech-bi-daily.md",
     "curated-discovery": "digests/medium-bi-daily.md",
-    "concise": "digests/tech-bi-daily.md",
-    "detailed": "digests/tech-bi-daily.md",
 }
 
 STYLE_BY_PROFILE: dict[str, str] = {
-    "synthesis-max-legacy": "synthesis-max",
     "synthesis-max-v1": "synthesis-max",
-    "curated-discovery-legacy": "curated-discovery",
-    "concise-legacy": "concise",
-    "detailed-legacy": "detailed",
+    "curated-discovery-v1": "curated-discovery",
 }
 
 
@@ -384,7 +384,7 @@ def seed_artifacts(context: OfflineContext, *, stages: list[str] | None = None) 
         suffix=".json",
     )
     context.artifacts["writer-revision"] = _artifact("writer-revision", SYNTHETIC_PROSE)
-    context.artifacts["line-edit"] = _artifact("line-edit", SYNTHETIC_PROSE)
+    context.artifacts["copy-edit"] = _artifact("copy-edit", SYNTHETIC_PROSE)
     context.artifacts["reader-review"] = _artifact(
         "reader-review",
         json.dumps(SYNTHETIC_READER_REVIEW, ensure_ascii=False, indent=2),
@@ -393,7 +393,7 @@ def seed_artifacts(context: OfflineContext, *, stages: list[str] | None = None) 
     )
     # The writing-operations artifact shares the developmental-review stage directory, so it is
     # registered under its own name for the stages that read it as `wops.json`.
-    context.artifacts["copy-verify"] = _artifact("copy-verify", SYNTHETIC_PROSE)
+    context.artifacts["publication-verify"] = _artifact("publication-verify", SYNTHETIC_PROSE)
     return context
 
 
@@ -422,11 +422,6 @@ def stage_extra_blocks(stage_name: str, context: OfflineContext) -> dict[str, An
     prompt diverges from what a run actually sends for the stages whose executor injects
     blocks the stage declaration does not name.
     """
-    if stage_name == "copy-verify":
-        return {
-            "deterministic_check_findings": json.dumps({"counts": {}, "checks": []}, indent=2),
-            "approved_frame_citations": json.dumps({"declared_source_numbers": [1, 2, 3, 5]}, indent=2),
-        }
     if stage_name == "render":
         return {"rendering_values": json.dumps(context.rendering_values(), ensure_ascii=False, indent=2)}
     return {}

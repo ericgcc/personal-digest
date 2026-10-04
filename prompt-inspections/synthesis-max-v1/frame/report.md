@@ -10,7 +10,7 @@
 
 - `prompts/shared/preamble.j2` — 465 units, sha256 `8f60794abad6`
 - `prompts/stages/frame/user.j2` — 82 units, sha256 `9ffb1544aae2`
-- `prompts/shared/task.j2` — 992 units, sha256 `d12ba969b789`
+- `prompts/shared/task.j2` — 863 units, sha256 `dc71250d7421`
 
 ## Instruction documents
 
@@ -21,7 +21,7 @@
 
 - `styles/synthesis-max/stages/frame.md` — 22670 chars; owner: style-specific stage specialization; sha256 `4c195267086e`
 - `styles/synthesis-max/interface.md` — 2758 chars; owner: style interface declaration; sha256 `be4b146191d8`
-- `styles/synthesis-max/style.yaml` — 808 chars; owner: declarative style constraints; sha256 `5d6de26ddacf`
+- `styles/synthesis-max/style.yaml` — 808 chars; owner: declarative style constraints; sha256 `94164faee23e`
 
 ## Data blocks
 

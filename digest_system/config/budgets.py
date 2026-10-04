@@ -15,7 +15,7 @@ class StyleBudget:
     prose: str
 
 
-_STYLES = ("curated-discovery", "concise", "detailed", "synthesis-max")
+_STYLES = ("curated-discovery", "synthesis-max")
 
 
 def _budget(style: str) -> StyleBudget:

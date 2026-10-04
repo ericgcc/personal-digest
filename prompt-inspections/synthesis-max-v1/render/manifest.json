@@ -14,15 +14,15 @@
     },
     {
       "path": "prompts/shared/task.j2",
-      "bytes": 992,
-      "sha256": "d12ba969b789e4e2e361fcce24b6e3dc29635420b9ec9b91d608863f5659e417"
+      "bytes": 863,
+      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
     }
   ],
   "documents": [
     {
       "path": "editorial/stages/render.md",
-      "bytes": 5740,
-      "sha256": "efa7b4b4ff9b6f578949d76590afe812e60f13b23148e5017f0a8ea367e0f8db",
+      "bytes": 5739,
+      "sha256": "46ceae244f4e93bbca0d5698e831674c2da435a3ac11a7a61b65b14987577e8c",
       "owner": "shared stage contract"
     },
     {
@@ -51,8 +51,8 @@
       "tag": "previous_stage_artifact",
       "bytes": 332,
       "source": {
-        "stage": "copy-verify",
-        "path": ".digest-runs/synthetic/copy-verify/output/copy-verify.md",
+        "stage": "publication-verify",
+        "path": ".digest-runs/synthetic/publication-verify/output/publication-verify.md",
         "provenance": "runner"
       },
       "purpose": "prior artifact or digest reading instructions"
@@ -69,10 +69,10 @@
     },
     {
       "tag": "source_note_manifest",
-      "bytes": 2678,
+      "bytes": 2720,
       "source": {
-        "stage": "frame",
-        "path": "frame/output/frame.json",
+        "stage": "publication-verify",
+        "path": "publication-verify/output/final.md",
         "provenance": "canonical"
       },
       "purpose": "prior artifact or digest reading instructions"
@@ -106,6 +106,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 41596,
-  "user_bytes": 5105
+  "system_bytes": 41595,
+  "user_bytes": 5147
 }

@@ -1,0 +1,91 @@
+{
+  "system_template": null,
+  "user_template": "stages/publication-verify/user.j2",
+  "templates": [
+    {
+      "path": "prompts/shared/preamble.j2",
+      "bytes": 465,
+      "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
+    },
+    {
+      "path": "prompts/stages/publication-verify/user.j2",
+      "bytes": 72,
+      "sha256": "da734c8880199ba699158cc42df6c31af85bb86189671de1b7e1c1b2df3d33ea"
+    },
+    {
+      "path": "prompts/shared/task.j2",
+      "bytes": 863,
+      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+    }
+  ],
+  "documents": [
+    {
+      "path": "editorial/stages/publication-verify.md",
+      "bytes": 3008,
+      "sha256": "2b6b2b5c5c07195dfa027e36a01872de60aab0ad7028b7f198317711b459f6b9",
+      "owner": "shared stage contract"
+    }
+  ],
+  "instructions": [
+    {
+      "path": "styles/curated-discovery/interface.md",
+      "bytes": 2566,
+      "sha256": "ad54235cddc9ead0cf1112b39c7e5d346b25a36e0fc32f151f4e8b06a4a6a339",
+      "owner": "style interface declaration"
+    },
+    {
+      "path": "styles/curated-discovery/style.yaml",
+      "bytes": 546,
+      "sha256": "7aa6c4c0b7e69b3b830455f5ff2d2c0085d61d579cdb1611020f5437dd33ad37",
+      "owner": "declarative style constraints"
+    }
+  ],
+  "blocks": [
+    {
+      "tag": "source_corpus",
+      "bytes": 2215,
+      "source": {
+        "kind": "evidence-projection",
+        "requested_policy": "provenance",
+        "effective_policy": "provenance",
+        "source_count": 5,
+        "source_numbers": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "declared_source_numbers": [],
+        "missing_source_numbers": [],
+        "recovery": null,
+        "warning": null,
+        "bytes": 2215
+      },
+      "purpose": "stage-permitted source evidence"
+    },
+    {
+      "tag": "reading_instructions",
+      "bytes": 763,
+      "source": {
+        "path": "digests/medium-bi-daily.md",
+        "sections": [
+          "Optional highlights"
+        ],
+        "version": "7afce8bdab3412768aaebf25669b29fb890b013c868dfc4a1850b3617380cd00"
+      },
+      "purpose": "prior artifact or digest reading instructions"
+    },
+    {
+      "tag": "stage_task",
+      "bytes": 454,
+      "source": {
+        "path": "prompts/shared/task.j2"
+      },
+      "purpose": "immediate task and output contract"
+    }
+  ],
+  "omitted": [],
+  "system_bytes": 6803,
+  "user_bytes": 1267
+}

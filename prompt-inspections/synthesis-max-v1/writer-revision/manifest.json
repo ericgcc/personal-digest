@@ -14,15 +14,15 @@
     },
     {
       "path": "prompts/shared/task.j2",
-      "bytes": 992,
-      "sha256": "d12ba969b789e4e2e361fcce24b6e3dc29635420b9ec9b91d608863f5659e417"
+      "bytes": 863,
+      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
     }
   ],
   "documents": [
     {
       "path": "editorial/stages/writer-revision.md",
-      "bytes": 3834,
-      "sha256": "a7454e47cba212dfdb0d72a90e13f86654f6d58a5a45711061aefe9210728718",
+      "bytes": 5722,
+      "sha256": "3d8494ba1a4653dee10cb2f16f99d163c387fd449521cbebb533fe01e8db79ed",
       "owner": "shared stage contract"
     }
   ],
@@ -130,6 +130,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 10222,
+  "system_bytes": 12110,
   "user_bytes": 6371
 }

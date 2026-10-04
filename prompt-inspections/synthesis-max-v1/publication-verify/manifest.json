@@ -1,0 +1,91 @@
+{
+  "system_template": null,
+  "user_template": "stages/publication-verify/user.j2",
+  "templates": [
+    {
+      "path": "prompts/shared/preamble.j2",
+      "bytes": 465,
+      "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
+    },
+    {
+      "path": "prompts/stages/publication-verify/user.j2",
+      "bytes": 72,
+      "sha256": "da734c8880199ba699158cc42df6c31af85bb86189671de1b7e1c1b2df3d33ea"
+    },
+    {
+      "path": "prompts/shared/task.j2",
+      "bytes": 863,
+      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+    }
+  ],
+  "documents": [
+    {
+      "path": "editorial/stages/publication-verify.md",
+      "bytes": 3008,
+      "sha256": "2b6b2b5c5c07195dfa027e36a01872de60aab0ad7028b7f198317711b459f6b9",
+      "owner": "shared stage contract"
+    }
+  ],
+  "instructions": [
+    {
+      "path": "styles/synthesis-max/interface.md",
+      "bytes": 2758,
+      "sha256": "be4b146191d85c5da9680e408b001361a107a577303b572d82d9978cdfce1812",
+      "owner": "style interface declaration"
+    },
+    {
+      "path": "styles/synthesis-max/style.yaml",
+      "bytes": 808,
+      "sha256": "94164faee23e4cbc4958acc3078335b2290fc4c7149aba33f957373558a7817c",
+      "owner": "declarative style constraints"
+    }
+  ],
+  "blocks": [
+    {
+      "tag": "source_corpus",
+      "bytes": 2215,
+      "source": {
+        "kind": "evidence-projection",
+        "requested_policy": "provenance",
+        "effective_policy": "provenance",
+        "source_count": 5,
+        "source_numbers": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "declared_source_numbers": [],
+        "missing_source_numbers": [],
+        "recovery": null,
+        "warning": null,
+        "bytes": 2215
+      },
+      "purpose": "stage-permitted source evidence"
+    },
+    {
+      "tag": "reading_instructions",
+      "bytes": 760,
+      "source": {
+        "path": "digests/tech-bi-daily.md",
+        "sections": [
+          "Optional highlights"
+        ],
+        "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"
+      },
+      "purpose": "prior artifact or digest reading instructions"
+    },
+    {
+      "tag": "stage_task",
+      "bytes": 448,
+      "source": {
+        "path": "prompts/shared/task.j2"
+      },
+      "purpose": "immediate task and output contract"
+    }
+  ],
+  "omitted": [],
+  "system_bytes": 7253,
+  "user_bytes": 1258
+}

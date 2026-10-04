@@ -11,8 +11,7 @@ Rendering **does not rewrite editorial prose**.
 ## What you receive
 
 * The approved, verified prose (`final.md`), which already contains the source catalogue the style requires.
-* The **authoritative rendering values**: the run key, the digest identity and display name, the style, the declared language, the digest date, and the reading-time figures. These are computed by the orchestrator, and they are not yours to invent or alter.
-  * `run_key` fills the template's `{{RUN_KEY}}` placeholder. The duplicate-delivery guard checks Gmail Sent for exactly this string.
+* The **authoritative rendering values**: the run key, the digest identity and display name, the style, the declared language, the digest date, and the reading-time figures. These are computed by the orchestrator, and they are not yours to invent or alter.  * `run_key` fills the template's `{{RUN_KEY}}` placeholder. The duplicate-delivery guard checks Gmail Sent for exactly this string.
   * `delivery_subject`, when present, is the authoritative subject line, already localized, and it carries the digest date. Use it rather than formatting a date of your own. `date_iso`, when present, is the same fact in ISO form if you need to format it for the target language.
   * `reviewed_source_minutes`, `digest_minutes`, and `time_saved_minutes` are the measured and derived halves of the reading-time capsule. `reviewed_source_count` and `digest_body_words` record what each figure was computed from. If a figure is absent, use the contract's degraded capsule form — never render a missing source time as a measured value.
   * `html_lang`, when present, is the resolved BCP 47 tag. When it is absent, resolving one from the declared language is your job.

@@ -125,10 +125,12 @@ def test_vocabularies_match_the_reference():
     assert list(ANALYSIS_EDITORIAL_CODES) == expected["analysis_editorial_codes"]
     assert list(CATALOG_HEADINGS) == expected["catalog_headings"]
     assert list(LEAK_MARKERS) == expected["leak_markers"]
-    # The Synthesis MAX refinement retired the legacy profile and made v1 the style's default. The
-    # reference records the pre-Phase-3C mapping; the change is an approved difference.
+    # The Synthesis MAX refinement retired the legacy profile and made v1 the style's default.
+    # The editorial-architecture simplification then removed the out-of-scope Concise and
+    # Detailed styles and retired the Curated Discovery legacy profile. The reference records
+    # the pre-migration mapping; the changes are approved differences.
     assert DEFAULT_STYLE_PROFILE_BY_STYLE == {
-        **expected["default_style_profile_by_style"],
+        "curated-discovery": "curated-discovery-v1",
         "synthesis-max": "synthesis-max-v1",
     }
 
@@ -168,7 +170,12 @@ def test_the_behavioral_gate_proves_instruction_equivalence():
     payload = json.loads(result.stdout)
     assert payload["ok"] is True
     assert payload["unclassified"] == 0
-    assert payload["behavioral"] == 0
+    # The editorial-architecture simplification deliberately changes behavior: Copy Edit
+    # replaces Line Edit and the editorial half of Copy/Verify, Publication Verify replaces the
+    # LLM Copy/Verify, Writer Revision gains explicit structural authority, and Reader Review
+    # compares Writer Revision to Copy Edit. Those changes are classified as behavioral-change
+    # in the gate record; what must never happen is an *unclassified* difference.
+    assert payload["behavioral"] > 0
 
 
 @pytest.mark.parametrize("profile_id", live_reference_profiles())
@@ -202,30 +209,34 @@ def test_every_resolved_instruction_is_a_real_approved_file(profile_id):
 
 @pytest.mark.parametrize("profile_id", live_reference_profiles())
 def test_every_style_module_reaches_its_stage_verbatim(profile_id):
-    """A style rule's text is delivered exactly as the style's module declares it.
+    """Every resolved instruction file is delivered to its stage verbatim.
 
-    The check is against the *current* assembled prompt, because a later phase may deliberately
-    route an additional module to a stage (The Synthesis MAX refinement routes the domain-accessibility module to
-    draft, line-edit and the review contracts). What must never happen is a module being
-    delivered with altered text.
+    The legacy architecture routed style *modules* to stages; the convention composer resolves
+    whole instruction files instead. The invariant is unchanged: an instruction file's text
+    must reach the stage exactly as the file declares it, never altered in transit.
     """
-    from digest_system.config.style_modules import load_style_manifest
+    from digest_system.editorial.prompts.inspection import inspect_stage
 
     profile = STYLE_PROFILES[profile_id]
-    manifest = load_style_manifest(profile.style)
-    known = set(manifest.module_files())
+    digest_id = digest_config_path(profile.style).rsplit("/", 1)[-1].removesuffix(".md")
     for stage_name in stage_names_v2():
-        assembled = assemble_stage_context(
-            stage_name=stage_name,
-            profile=profile,
-            digest_config_relative=digest_config_path(profile.style),
+        inspection = inspect_stage(
+            digest_id=digest_id, profile_id=profile_id, stage_name=stage_name
         )
-        prompt = _normalize(
-            assembled.get("text", "") + "\n\n" + "\n\n".join(assembled.get("contracts", {}).values())
-        )
-        for entry in assembled["manifest"]:
+        # An evaluation stage hands its contracts to the Python adapter rather than inlining
+        # them in the judge prompt, so the verbatim check applies to model-executed stages.
+        if inspection.executor == "evaluation":
+            continue
+        prompt = _normalize(inspection.prompt_text)
+        for entry in inspection.manifest.get("documents", []) + inspection.manifest.get("instructions", []):
             path = entry["path"]
-            if path not in known:
+            # The declarative constraints block is sourced from style.yaml, which is structured
+            # configuration rather than a Markdown instruction file delivered verbatim.
+            if entry.get("mode") == "constraints" or path.endswith("style.yaml"):
+                continue
+            if path.startswith("digests/"):
+                continue
+            if not (ROOT / path).is_file():
                 continue
             text = _normalize((ROOT / path).read_text(encoding="utf-8"))
             assert text in prompt, f"{profile_id}/{stage_name}: {path} is not present verbatim"
@@ -438,18 +449,16 @@ def test_copy_verify_helpers_match_the_reference():
 
 def test_style_interface_parsing_matches_the_reference():
     expected = reference()["copy_verify"]
-    synthesis_max = (ROOT / "styles" / "synthesis-max.md").read_text(encoding="utf-8")
-    concise = (ROOT / "styles" / "concise.md").read_text(encoding="utf-8")
+    synthesis_max = (ROOT / "styles" / "synthesis-max" / "interface.md").read_text(encoding="utf-8")
     assert parse_style_interface(synthesis_max) == expected["style_interface"]
     assert catalog_required(synthesis_max) == expected["catalog_required"]["synthesis-max"]
-    assert catalog_required(concise) == expected["catalog_required"]["concise"]
 
 
 def test_deterministic_checks_match_the_reference():
     from digest_system.config import STYLE_BUDGET
 
     expected = reference()["copy_verify"]
-    style_text = (ROOT / "styles" / "synthesis-max.md").read_text(encoding="utf-8")
+    style_text = (ROOT / "styles" / "synthesis-max" / "interface.md").read_text(encoding="utf-8")
     actual = run_deterministic_checks(
         prose=PROSE,
         corpus=corpus(),

@@ -457,7 +457,7 @@ def test_the_callout_survives_to_the_render_stage():
 
     profile = STYLE_PROFILES["synthesis-max-v1"]
     context = seed_artifacts(build_context(profile=profile))
-    context.artifacts["copy-verify"].text = CALLOUT_PROSE
+    context.artifacts["publication-verify"].text = CALLOUT_PROSE
     inputs = stage_inputs("render", context)
     composed = compose_stage_prompt(
         stage=stage_v2("render"),

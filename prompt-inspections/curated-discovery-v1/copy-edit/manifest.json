@@ -1,0 +1,71 @@
+{
+  "system_template": null,
+  "user_template": "stages/copy-edit/user.j2",
+  "templates": [
+    {
+      "path": "prompts/shared/preamble.j2",
+      "bytes": 465,
+      "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
+    },
+    {
+      "path": "prompts/stages/copy-edit/user.j2",
+      "bytes": 117,
+      "sha256": "70ab0bc67eb52e1a228fbdef3a8321aad93bcbd17809c62140050a1dc6b9dd46"
+    },
+    {
+      "path": "prompts/shared/task.j2",
+      "bytes": 863,
+      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+    }
+  ],
+  "documents": [
+    {
+      "path": "editorial/stages/copy-edit.md",
+      "bytes": 4594,
+      "sha256": "9226691b95fab3f77f93745e2db9d1d4ccdf9fcd453c82a530956ed9332cb781",
+      "owner": "shared stage contract"
+    },
+    {
+      "path": "editorial/shared/naturalness.md",
+      "bytes": 3692,
+      "sha256": "2358b8d1d97f96634535679fed38812a54998b4e1dba5decb4590db040d8f6bd",
+      "owner": "shared cross-cutting contract"
+    }
+  ],
+  "instructions": [],
+  "blocks": [
+    {
+      "tag": "previous_stage_artifact",
+      "bytes": 332,
+      "source": {
+        "stage": "writer-revision",
+        "path": ".digest-runs/synthetic/writer-revision/output/writer-revision.md",
+        "provenance": "runner"
+      },
+      "purpose": "prior artifact or digest reading instructions"
+    },
+    {
+      "tag": "reading_instructions",
+      "bytes": 920,
+      "source": {
+        "path": "digests/medium-bi-daily.md",
+        "sections": [
+          "Reader"
+        ],
+        "version": "7afce8bdab3412768aaebf25669b29fb890b013c868dfc4a1850b3617380cd00"
+      },
+      "purpose": "prior artifact or digest reading instructions"
+    },
+    {
+      "tag": "stage_task",
+      "bytes": 885,
+      "source": {
+        "path": "prompts/shared/task.j2"
+      },
+      "purpose": "immediate task and output contract"
+    }
+  ],
+  "omitted": [],
+  "system_bytes": 8945,
+  "user_bytes": 2242
+}

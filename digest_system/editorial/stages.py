@@ -1,7 +1,7 @@
 """Editorial pipeline stage declarations.
 
     analyze -> frame -> draft -> developmental-review (+ wops) -> writer-revision
-      -> line-edit -> reader-review -> [targeted-repair] -> copy-verify -> render
+      -> copy-edit -> reader-review -> [targeted-repair] -> publication-verify -> render
 
 Python port of ``src/editorial/stages.mjs``. This module owns the stage table and nothing
 else: it is the single source of truth for stage order, artifacts, corpus policy and
@@ -167,19 +167,19 @@ STAGES_V2: tuple[Stage, ...] = (
         ),
     ),
     Stage(
-        name="line-edit",
-        artifact="line-edit.md",
+        name="copy-edit",
+        artifact="copy-edit.md",
         format="Markdown",
         executor="llm",
         corpus="none",
         on_failure="recoverable",
         effort="medium",
         budget=True,
-        purpose="LINE EDIT: clarity, voice, naturalness, rhythm, transitions, local emphasis, redundancy, concision, and length discipline in one pass.",
+        purpose="COPY EDIT: detailed copyediting — clarity, grammar, syntax, spelling, punctuation, terminology consistency, local redundancy, naturalness, rhythm, awkward phrasing, minor local rewording, citation preservation, and heading/terminology consistency. It may not significantly restructure the document.",
         blocks=lambda ctx: (
             ctx.artifact_block("writer-revision", "previous_stage_artifact"),
             ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),
-            ctx.reading_instructions_block("line-edit"),
+            ctx.reading_instructions_block("copy-edit"),
         ),
     ),
     Stage(
@@ -189,7 +189,7 @@ STAGES_V2: tuple[Stage, ...] = (
         executor="evaluation",
         corpus="none",
         on_failure="recoverable",
-        purpose="READER REVIEW: assess the line-edited prose as a reader, and detect anything the line edit materially regressed.",
+        purpose="READER REVIEW: assess the copy-edited prose as a reader, and detect anything the copy edit materially regressed.",
         blocks=lambda ctx: (),
     ),
     Stage(
@@ -205,23 +205,22 @@ STAGES_V2: tuple[Stage, ...] = (
         effort="medium",
         purpose="TARGETED REPAIR: repair one diagnosed reader-facing problem. Runs at most once, and only when the reader review found a material, repairable problem.",
         blocks=lambda ctx: (
-            ctx.artifact_block("line-edit", "previous_stage_artifact"),
+            ctx.artifact_block("copy-edit", "previous_stage_artifact"),
             ctx.artifact_block("reader-review", "reader_review", "review.json"),
             ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),
             ctx.reading_instructions_block("targeted-repair"),
         ),
     ),
     Stage(
-        name="copy-verify",
+        name="publication-verify",
         artifact="final.md",
         format="Markdown",
-        executor="copy-verify",
+        executor="deterministic",
         corpus="provenance",
         on_failure="recoverable",
-        effort="low",
         extra_artifacts=("verification.json",),
-        purpose="COPY / VERIFY: verify citations, provenance, structure, language, Markdown, and length; correct copy only. Never rewrite editorially.",
-        blocks=lambda ctx: (ctx.reading_instructions_block("copy-verify"),),
+        purpose="PUBLICATION VERIFY: run the deterministic publication checks over the revised prose and produce an auditable report. It never edits prose.",
+        blocks=lambda ctx: (ctx.reading_instructions_block("publication-verify"),),
     ),
     Stage(
         name="render",
@@ -236,7 +235,7 @@ STAGES_V2: tuple[Stage, ...] = (
         # stage may invent: the duplicate-delivery guard checks Gmail Sent for exactly this
         # string. The same is true of the date and the reading-time capsule.
         blocks=lambda ctx: (
-            ctx.artifact_block("copy-verify", "previous_stage_artifact"),
+            ctx.artifact_block("publication-verify", "previous_stage_artifact"),
             {
                 "tag": "rendering_values",
                 "payload": _json(ctx.rendering_values()),
@@ -248,12 +247,14 @@ STAGES_V2: tuple[Stage, ...] = (
             },
             # The canonical source-note manifest: the renderer consumes this instead of
             # reconstructing source identities and URLs from the prose (baseline defect D6).
+            # It is derived from the revised artifact, so the published structure follows the
+            # prose that will actually be published rather than the original Frame.
             {
                 "tag": "source_note_manifest",
                 "payload": _json(ctx.source_note_manifest().to_dict()),
                 "source": {
-                    "stage": "frame",
-                    "path": "frame/output/frame.json",
+                    "stage": "publication-verify",
+                    "path": "publication-verify/output/final.md",
                     "provenance": "canonical",
                 },
             },

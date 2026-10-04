@@ -27,7 +27,7 @@ The result contradicts the mechanism [3], and the scope is narrower than it appe
   "style": "synthesis-max",
   "units": [
     {
-      "unit_id": "T1",
+      "unit_id": "Incremental evaluation",
       "sources": [
         {
           "source_number": 1,
@@ -52,7 +52,7 @@ The result contradicts the mechanism [3], and the scope is narrower than it appe
       ]
     },
     {
-      "unit_id": "T2",
+      "unit_id": "The contradictory result",
       "sources": [
         {
           "source_number": 3,

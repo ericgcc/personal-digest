@@ -168,15 +168,18 @@ def test_every_style_stage_file_text_appears_verbatim_in_the_assembled_prompt():
                 assert text in prompt, f"{style}/{stage_name}: {path} is not present verbatim"
 
 
-def test_the_style_module_documents_are_byte_identical_to_the_notes_they_compose():
-    """The generated style document is reproducible from its modules, byte for byte."""
-    result = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "build_style_docs.py"), "--check"],
-        capture_output=True,
-        text=True,
-        cwd=str(ROOT),
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
+def test_the_style_module_documents_are_retired_with_the_old_architecture():
+    """The aggregate style documents and their generator were removed.
+
+    The legacy architecture kept a readable ``styles/<style>.md`` generated from
+    ``styles/<style>/modules/``. The convention composer has one active representation per
+    style, so the aggregate document and its generator are gone rather than kept as a second
+    representation.
+    """
+    assert not (ROOT / "scripts" / "build_style_docs.py").exists()
+    for style in CANONICAL_STYLES:
+        assert not (ROOT / "styles" / f"{style}.md").exists(), style
+        assert not (ROOT / "styles" / style / "modules").exists(), style
 
 
 # ---------------------------------------------------------------------------------------
@@ -205,26 +208,25 @@ def test_no_profile_declaration_carries_a_section_selector():
 
 
 def test_every_declared_module_is_one_the_style_owns():
+    """The convention composer routes no modules, so no active profile declares one."""
     for style in CANONICAL_STYLES:
-        known = set(load_style_manifest(style).module_files())
         for profile in profiles_for_style(style):
             for stage, declaration in profile.stages.items():
                 for descriptor in declaration.documents:
                     path = descriptor.path.replace("<style>", style)
-                    if path.startswith(f"styles/{style}/modules/"):
-                        assert path in known, f"{profile.id}/{stage}: unknown module {path}"
+                    assert "/modules/" not in path, f"{profile.id}/{stage}: {path} is a legacy module"
 
 
 def test_excluded_sections_are_reported_by_module():
+    """The convention composer withholds no module, so no stage reports an excluded module."""
     for style in CANONICAL_STYLES:
-        known = set(load_style_manifest(style).module_files())
         for profile in profiles_for_style(style):
             preflight = preflight_style_profile(profile)
             for stage in profile.stages:
-                for path in excluded_sections(
+                excluded = excluded_sections(
                     profile=profile, stage=stage, style_headings=preflight.style_headings
-                ):
-                    assert path in known, f"{profile.id}/{stage}: {path} is not a module"
+                )
+                assert excluded == [], f"{profile.id}/{stage}: {excluded}"
 
 
 def test_analyze_style_delivery_is_declared_by_each_style():
@@ -324,24 +326,18 @@ def test_the_operational_part_of_every_stage_context_is_identical_across_styles(
 
 
 def test_the_synthesis_max_profile_is_the_only_one_that_diverges():
-    """Every other style's default profile is its legacy profile, so production is unchanged.
+    """Every active style's default profile is its v1 profile.
 
-    The Synthesis MAX refinement retired the legacy profile and made v1 the style's default, so
-    Synthesis MAX is the one style whose default is not a legacy profile.
+    The Synthesis MAX refinement retired the legacy profile and made v1 the style's default;
+    the editorial-architecture simplification retired the Curated Discovery legacy profile too.
     """
     for style in CANONICAL_STYLES:
-        if style == "synthesis-max":
-            assert default_style_profile_id(style) == "synthesis-max-v1"
-            assert STYLE_PROFILES["synthesis-max-v1"].status == "active"
-            continue
-        assert default_style_profile_id(style) == f"{style}-legacy"
-        assert STYLE_PROFILES[f"{style}-legacy"].status == "active"
+        assert default_style_profile_id(style) == f"{style}-v1"
+        assert STYLE_PROFILES[f"{style}-v1"].status == "active"
 
 
 def test_the_registry_contains_exactly_the_expected_profiles():
     assert sorted(style_profile_ids()) == [
-        "concise-legacy",
-        "curated-discovery-legacy",
-        "detailed-legacy",
+        "curated-discovery-v1",
         "synthesis-max-v1",
     ]

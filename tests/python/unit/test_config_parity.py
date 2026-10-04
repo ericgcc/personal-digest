@@ -44,10 +44,11 @@ def test_unknown_digest_and_id_mismatch_are_errors():
 
 
 def test_profile_registry_matches_the_reference():
-    expected = reference_section("profiles")
-    live = {profile_id for profile_id in expected if not retired_profile(profile_id)}
-    assert sorted(style_profile_ids()) == sorted(live)
-    for profile_id in sorted(live):
+    # The editorial-architecture simplification removed the out-of-scope Concise and Detailed
+    # styles and retired the Curated Discovery legacy profile. The reference records the
+    # pre-simplification registry; the live registry is asserted explicitly.
+    assert sorted(style_profile_ids()) == ["curated-discovery-v1", "synthesis-max-v1"]
+    for profile_id in sorted(style_profile_ids()):
         profile = STYLE_PROFILES[profile_id]
         actual = describe_style_profile(profile, source="registry")
         assert actual["id"] == profile_id
@@ -105,11 +106,16 @@ def test_excluded_sections_are_reported_by_module():
     """A stage's withheld style rules are named as module files, not as headings.
 
     The record of what was *not* sent is the audit that the profile's selectivity is deliberate.
+    The convention composer routes no modules, so no stage withholds a module; the check is
+    vacuous for the active profiles and is retained for any profile that still routes.
     """
     from digest_system.config.profiles import excluded_sections
-    from digest_system.config.style_modules import load_style_manifest
 
     for profile_id, profile in STYLE_PROFILES.items():
+        if not profile.stages:
+            continue
+        from digest_system.config.style_modules import load_style_manifest
+
         manifest = load_style_manifest(profile.style)
         preflight = preflight_style_profile(profile)
         for stage in profile.stages:
@@ -141,13 +147,18 @@ def test_preflight_document_paths_come_from_the_runtime_tree():
 def test_profile_resolution_matches_the_reference():
     expected = reference()["profile_resolution"]
     for style, want in expected.items():
-        if style == "synthesis-max":
-            # The Synthesis MAX refinement retired the legacy profile and made v1 the default. The aliases now resolve
-            # to the live implementation, and `legacy` is an unknown profile rather than a fallback.
-            assert resolve_style_profile(style=style, explicit=None, config=None).profile_id == "synthesis-max-v1"
-            assert resolve_style_profile(style=style, explicit="default", config=None).profile_id == "synthesis-max-v1"
-            assert resolve_style_profile(style=style, explicit="current", config=None).profile_id == "synthesis-max-v1"
-            assert resolve_style_profile(style=style, explicit="v1", config=None).profile_id == "synthesis-max-v1"
+        if style in {"concise", "detailed"}:
+            # The out-of-scope styles were removed from the active runtime.
+            assert style not in CANONICAL_STYLES
+            continue
+        if style in {"synthesis-max", "curated-discovery"}:
+            # The legacy profile was retired; the aliases resolve to the live implementation,
+            # and `legacy` is an unknown profile rather than a fallback.
+            live = f"{style}-v1"
+            assert resolve_style_profile(style=style, explicit=None, config=None).profile_id == live
+            assert resolve_style_profile(style=style, explicit="default", config=None).profile_id == live
+            assert resolve_style_profile(style=style, explicit="current", config=None).profile_id == live
+            assert resolve_style_profile(style=style, explicit="v1", config=None).profile_id == live
             with pytest.raises(RunnerError, match="Unknown style profile"):
                 resolve_style_profile(style=style, explicit="legacy", config=None)
             continue
@@ -188,16 +199,14 @@ def test_an_unknown_profile_is_an_error_before_any_run_directory_exists():
 
 
 def test_every_canonical_style_has_a_default_profile():
-    """Every style resolves to a live default. Synthesis MAX's was retired by the Synthesis MAX refinement, so its
-    default is the new implementation rather than its legacy baseline."""
+    """Every active style resolves to a live default profile."""
     for style in CANONICAL_STYLES:
         assert profiles_for_style(style)
         profile_id = DEFAULT_STYLE_PROFILE_BY_STYLE[style]
         assert profile_id in STYLE_PROFILES, f"{style}: default {profile_id} is not a live profile"
         assert default_style_profile_id(style) == profile_id
     assert DEFAULT_STYLE_PROFILE_BY_STYLE["synthesis-max"] == "synthesis-max-v1"
-    for style in ("curated-discovery", "concise", "detailed"):
-        assert DEFAULT_STYLE_PROFILE_BY_STYLE[style] == f"{style}-legacy"
+    assert DEFAULT_STYLE_PROFILE_BY_STYLE["curated-discovery"] == "curated-discovery-v1"
 
 
 def test_preflight_resolves_every_stage_without_profile_routing():
@@ -208,10 +217,16 @@ def test_preflight_resolves_every_stage_without_profile_routing():
 
 
 def test_every_declared_style_module_exists_and_is_an_authoritative_file():
-    """A profile that names a module must name a file the style actually owns."""
-    from digest_system.config.style_modules import load_style_manifest
+    """A profile that names a module must name a file the style actually owns.
 
+    The convention composer routes no modules, so the active profiles declare no module
+    documents; the check is retained for any profile that still routes.
+    """
     for profile_id, profile in STYLE_PROFILES.items():
+        if not profile.stages:
+            continue
+        from digest_system.config.style_modules import load_style_manifest
+
         manifest = load_style_manifest(profile.style)
         known = set(manifest.module_files())
         for stage, declaration in profile.stages.items():
@@ -231,6 +246,10 @@ def test_budgets_match_the_reference():
 
     expected = reference()["budgets"]
     for style, want in expected.items():
+        # The out-of-scope Concise and Detailed styles were removed from the active runtime.
+        if style not in STYLE_BUDGET:
+            assert style in {"concise", "detailed"}
+            continue
         budget = STYLE_BUDGET[style]
         assert {"unit": budget.unit, "min": budget.min, "max": budget.max, "prose": budget.prose} == want
 

@@ -1,6 +1,6 @@
 # Naturalness Contract
 
-This is the small, digest-specific naturalness contract. It is what LINE EDIT enforces at the prose level. It replaces the previous complete naturalness manual as an inline instruction.
+This is the small, digest-specific naturalness contract. It is what COPY EDIT enforces at the prose level. It replaces the previous complete naturalness manual as an inline instruction.
 
 Universal craft principles — the named failure modes, their detection signals, and their repairs — now live in **WOPS** as reusable operations and anti-patterns, and are retrieved per diagnosed problem rather than recited every time. What remains here are the rules that belong to this Digest System specifically, plus the invariants that must never be delegated.
 
@@ -14,11 +14,11 @@ Universal craft principles — the named failure modes, their detection signals,
 6. **Keep the qualification that carries meaning;** remove the ritual caveat that does not.
 7. **Every editorial choice must remain explainable** from the reviewed material: why this idea, why this source here, why this detail, why this ending.
 
-## What LINE EDIT may change
+## What COPY EDIT may change
 
-Rhythm, sentence length and shape, transitions, sentence openings, paragraph shape, local emphasis, word choice, redundancy, and concision — subject to the standing invariant stated in `system/contracts/line-edit.md`: never obtain concision by deleting explanatory setup, definitions, causal bridges, material qualifications, or reader orientation.
+Rhythm, sentence length and shape, transitions, sentence openings, paragraph shape, local emphasis, word choice, redundancy, and concision — subject to the standing invariant stated in `editorial/stages/copy-edit.md`: never obtain concision by deleting explanatory setup, definitions, causal bridges, material qualifications, or reader orientation.
 
-## What LINE EDIT may not change
+## What COPY EDIT may not change
 
 * The frame's selection: which units exist, which ideas each unit carries, which sources support it.
 * The order of units, or the style's required structure.

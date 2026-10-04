@@ -203,15 +203,15 @@ def test_stage_routing_table_matches_the_contract():
     assert STAGE_SECTIONS["analyze"] == ("Selection", "Reader")
     assert STAGE_SECTIONS["frame"] == ("Reader", "Content preferences", "Optional highlights")
     assert STAGE_SECTIONS["draft"] == ("Reader", "Content preferences", "Optional highlights")
-    assert STAGE_SECTIONS["copy-verify"] == ("Optional highlights",)
+    assert STAGE_SECTIONS["publication-verify"] == ("Optional highlights",)
     assert STAGE_SECTIONS["render"] == ()
-    for stage in ("developmental-review", "writer-revision", "line-edit", "reader-review", "targeted-repair"):
+    for stage in ("developmental-review", "writer-revision", "copy-edit", "reader-review", "targeted-repair"):
         assert STAGE_SECTIONS[stage] == ("Reader",), stage
 
 
 def test_analyze_does_not_receive_selection_again_downstream():
     """Selection is recorded by Analyze and Frame; the writing stages do not re-litigate it."""
-    for stage in ("draft", "writer-revision", "line-edit", "reader-review"):
+    for stage in ("draft", "writer-revision", "copy-edit", "reader-review"):
         assert "Selection" not in STAGE_SECTIONS[stage], stage
 
 
@@ -221,7 +221,7 @@ def test_the_render_stage_receives_no_reading_instructions():
     assert "<reading_instructions>" not in inspection.user_text
 
 
-@pytest.mark.parametrize("profile_id", ["synthesis-max-v1", "curated-discovery-legacy"])
+@pytest.mark.parametrize("profile_id", ["synthesis-max-v1", "curated-discovery-v1"])
 def test_routed_sections_reach_their_stage(profile_id):
     """Each stage's prompt contains exactly the sections the contract routes to it.
 
@@ -266,7 +266,7 @@ def test_no_stage_receives_the_digest_configuration_as_a_document():
     source, never as an inlined document.
     """
     for digest_id, style in DIGESTS.items():
-        profile_id = f"{style}-v1" if style == "synthesis-max" else f"{style}-legacy"
+        profile_id = f"{style}-v1"
         from digest_system.config import resolve_digest
 
         resolved = resolve_digest(digest_id)

@@ -131,10 +131,10 @@ def test_measure_context_runs_offline_and_reports_every_profile():
     result = _run([str(SCRIPTS / "measure_context.py"), "--json"])
     assert result.returncode == 0
     payload = json.loads(result.stdout)
+    # The editorial-architecture simplification removed the out-of-scope Concise and Detailed
+    # styles and retired the Curated Discovery legacy profile.
     assert sorted(row["id"] for row in payload["profiles"]) == [
-        "concise-legacy",
-        "curated-discovery-legacy",
-        "detailed-legacy",
+        "curated-discovery-v1",
         "synthesis-max-v1",
     ]
     for row in payload["profiles"]:

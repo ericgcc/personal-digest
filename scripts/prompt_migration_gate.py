@@ -142,6 +142,26 @@ def _classification(record: dict, *, profile: str, stage: str, kind: str, block:
     return None
 
 
+def _classify_finding(record: dict, *, profile: str, stage: str, finding: dict) -> dict:
+    """Attach the recorded classification to one finding, or mark it unclassified."""
+    entry = _classification(
+        record,
+        profile=profile,
+        stage=stage,
+        kind=finding["kind"],
+        block=finding["block"],
+        detail=finding["detail"],
+    )
+    if entry is None:
+        finding["status"] = "unclassified"
+    else:
+        category = entry.get("category")
+        finding["status"] = "classified" if category in CATEGORIES else "invalid-category"
+        finding["category"] = category
+        finding["justification"] = entry.get("justification", "")
+    return finding
+
+
 def _diff_sequence(
     old: list[tuple[str, str]],
     new: list[tuple[str, str]],
@@ -230,21 +250,7 @@ def _diff_sequence(
         findings.append({"kind": "reordered", "role": role, "block": role, "detail": "instruction order changed"})
 
     for finding in findings:
-        entry = _classification(
-            record,
-            profile=profile,
-            stage=stage,
-            kind=finding["kind"],
-            block=finding["block"],
-            detail=finding["detail"],
-        )
-        if entry is None:
-            finding["status"] = "unclassified"
-        else:
-            category = entry.get("category")
-            finding["status"] = "classified" if category in CATEGORIES else "invalid-category"
-            finding["category"] = category
-            finding["justification"] = entry.get("justification", "")
+        _classify_finding(record, profile=profile, stage=stage, finding=finding)
     return findings
 
 
@@ -286,12 +292,103 @@ def gate(stage_filter: str | None = None, *, root: Path | None = None) -> dict:
     current = baseline(base)
     record = _load_record()
     rows: list[dict] = []
-    for profile in sorted(frozen["profiles"]):
-        for stage in stage_names_v2():
+    frozen_profiles = frozen["profiles"]
+    current_profiles = current["profiles"]
+    for profile in sorted(set(frozen_profiles) | set(current_profiles)):
+        if profile not in current_profiles:
+            # A profile the frozen baseline recorded that the active runtime no longer declares.
+            # The whole profile is gone, so every stage it carried is gone with it; the finding
+            # is reported once, at the profile level, rather than once per stage.
+            rows.append(
+                {
+                    "profile": profile,
+                    "stage": "*",
+                    "findings": [
+                        _classify_finding(
+                            record,
+                            profile=profile,
+                            stage="*",
+                            finding={
+                                "kind": "profile-removed",
+                                "role": "profile",
+                                "block": profile,
+                                "detail": "the profile is no longer declared by any active style manifest",
+                            },
+                        )
+                    ],
+                }
+            )
+            continue
+        if profile not in frozen_profiles:
+            rows.append(
+                {
+                    "profile": profile,
+                    "stage": "*",
+                    "findings": [
+                        _classify_finding(
+                            record,
+                            profile=profile,
+                            stage="*",
+                            finding={
+                                "kind": "profile-added",
+                                "role": "profile",
+                                "block": profile,
+                                "detail": "the profile is newly declared by an active style manifest",
+                            },
+                        )
+                    ],
+                }
+            )
+            continue
+        old_stages = frozen_profiles[profile]
+        new_stages = current_profiles[profile]
+        for stage in sorted(set(old_stages) | set(new_stages)):
             if stage_filter and stage != stage_filter:
                 continue
-            old = frozen["profiles"][profile][stage]
-            new = current["profiles"][profile][stage]
+            if stage not in new_stages:
+                rows.append(
+                    {
+                        "profile": profile,
+                        "stage": stage,
+                        "findings": [
+                            _classify_finding(
+                                record,
+                                profile=profile,
+                                stage=stage,
+                                finding={
+                                    "kind": "stage-removed",
+                                    "role": "stage",
+                                    "block": stage,
+                                    "detail": "the stage is no longer part of the active workflow",
+                                },
+                            )
+                        ],
+                    }
+                )
+                continue
+            if stage not in old_stages:
+                rows.append(
+                    {
+                        "profile": profile,
+                        "stage": stage,
+                        "findings": [
+                            _classify_finding(
+                                record,
+                                profile=profile,
+                                stage=stage,
+                                finding={
+                                    "kind": "stage-added",
+                                    "role": "stage",
+                                    "block": stage,
+                                    "detail": "the stage is newly part of the active workflow",
+                                },
+                            )
+                        ],
+                    }
+                )
+                continue
+            old = old_stages[stage]
+            new = new_stages[stage]
             findings = _stage_findings(profile, stage, old, new, record)
             rows.append({"profile": profile, "stage": stage, "findings": findings})
     candidate_sha256 = hashlib.sha256(

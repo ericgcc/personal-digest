@@ -21,10 +21,10 @@ from .style_constraints import (
     style_budget_values,
 )
 
-#: Every profile file, by id, is read from here.
-PROFILES_RELATIVE = "prompts/profiles"
+#: The style manifest that owns each profile's execution policy and declarative constraints.
+STYLE_MANIFEST_RELATIVE = "styles"
 
-CANONICAL_STYLES: tuple[str, ...] = ("curated-discovery", "concise", "detailed", "synthesis-max")
+CANONICAL_STYLES: tuple[str, ...] = ("curated-discovery", "synthesis-max")
 
 # Compatibility vocabulary for historical reports. Runtime composition does not inspect
 # headings or require the archived readable style documents.
@@ -36,10 +36,10 @@ STAGE_NAMES: tuple[str, ...] = (
     "draft",
     "developmental-review",
     "writer-revision",
-    "line-edit",
+    "copy-edit",
     "reader-review",
     "targeted-repair",
-    "copy-verify",
+    "publication-verify",
     "render",
 )
 
@@ -148,9 +148,42 @@ class StyleProfile:
 # ---------------------------------------------------------------------------------------
 
 
-def _profile_path(profile_id: str, root: Path | None = None) -> Path:
-    base = root or ROOT
-    return base / PROFILES_RELATIVE / f"{profile_id}.yaml"
+def _style_manifest_path(style: str, root: Path) -> Path:
+    return root / STYLE_MANIFEST_RELATIVE / style / "style.yaml"
+
+
+def _read_style_manifest(style: str, root: Path) -> dict[str, Any]:
+    path = _style_manifest_path(style, root)
+    if not path.is_file():
+        raise RunnerError(f"style manifest is missing: styles/{style}/style.yaml")
+    try:
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as error:
+        raise RunnerError(f"styles/{style}/style.yaml is not valid YAML: {error}") from error
+    if not isinstance(loaded, Mapping):
+        raise RunnerError(f"styles/{style}/style.yaml must be a mapping")
+    return dict(loaded)
+
+
+def _profile_declaration(style: str, root: Path) -> dict[str, Any]:
+    """The execution-policy declaration a style owns, from ``styles/<style>/style.yaml``."""
+    declaration = _read_style_manifest(style, root).get("profile")
+    if not isinstance(declaration, Mapping):
+        raise RunnerError(f"styles/{style}/style.yaml declares no profile mapping")
+    return dict(declaration)
+
+
+def _style_for_profile(profile_id: str, root: Path) -> str | None:
+    for style in CANONICAL_STYLES:
+        if not _style_manifest_path(style, root).is_file():
+            continue
+        try:
+            declaration = _profile_declaration(style, root)
+        except RunnerError:
+            continue
+        if str(declaration.get("id") or "") == profile_id:
+            return style
+    return None
 
 
 def _descriptors(entries: Any, *, where: str) -> tuple[Descriptor, ...]:
@@ -198,23 +231,21 @@ def _stage_declarations(entries: Any, *, profile_id: str) -> dict[str, StageDecl
 
 
 def load_style_profile(profile_id: str, *, root: Path | None = None) -> StyleProfile:
-    """Read one profile from ``prompts/profiles/<id>.yaml``."""
-    base = root or ROOT
-    path = _profile_path(profile_id, base)
-    if not path.is_file():
-        raise RunnerError(
-            f"Style profile {profile_id} has no declaration at {PROFILES_RELATIVE}/{profile_id}.yaml"
-        )
-    try:
-        loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as error:
-        raise RunnerError(f"{PROFILES_RELATIVE}/{profile_id}.yaml is not valid YAML: {error}") from error
-    if not isinstance(loaded, Mapping):
-        raise RunnerError(f"{PROFILES_RELATIVE}/{profile_id}.yaml must be a mapping")
+    """Read one profile from the style manifest that owns it.
 
-    style = str(loaded.get("style") or "")
+    A profile is execution policy, not instruction content: it selects a style and states how
+    that style's run behaves. It lives beside the style's declarative constraints in
+    ``styles/<style>/style.yaml``, so a style has exactly one active representation and no
+    parallel profile file can drift from it.
+    """
+    base = root or ROOT
+    style = _style_for_profile(profile_id, base)
+    if style is None:
+        raise RunnerError(f"Unknown style profile {profile_id!r}")
+    declaration = _profile_declaration(style, base)
+
     budget = style_budget_values(style, root=base)
-    frame_failure_policy = str(loaded.get("frame_failure_policy") or "recovery-frame")
+    frame_failure_policy = str(declaration.get("frame_failure_policy") or "recovery-frame")
     if frame_failure_policy not in FRAME_FAILURE_POLICIES:
         raise RunnerError(
             f"Style profile {profile_id} declares frame_failure_policy {frame_failure_policy!r}; "
@@ -222,44 +253,50 @@ def load_style_profile(profile_id: str, *, root: Path | None = None) -> StylePro
         )
     composition = profile_composition(style, root=base)
     rendering = rendering_values(style, root=base)
-    notes = loaded.get("notes")
+    notes = declaration.get("notes")
     return StyleProfile(
-        id=str(loaded.get("id") or profile_id),
-        version=str(loaded.get("version") or ""),
+        id=str(declaration.get("id") or profile_id),
+        version=str(declaration.get("version") or ""),
         style=style,
-        label=str(loaded.get("label") or ""),
-        status=str(loaded.get("status") or ""),
+        label=str(declaration.get("label") or ""),
+        status=str(declaration.get("status") or ""),
         notes=tuple(str(note) for note in notes) if isinstance(notes, list) else (),
         budget=dict(budget),
         budget_source=f"styles/{style}/style.yaml",
         composition=composition,
         evaluation=evaluation_values(style, root=base),
         frame_failure_policy=frame_failure_policy,
-        # Historical profiles may still carry stage declarations, but current profiles select
-        # only execution policy. Runtime instructions always resolve by convention.
-        stages=_stage_declarations(loaded.get("stages") or {}, profile_id=profile_id),
+        # A profile selects execution policy only. Runtime instructions always resolve by
+        # convention from the style tree, so no profile routes instruction documents.
+        stages={},
         rendering=rendering,
     )
 
 
 def _discover_profile_ids(root: Path | None = None) -> list[str]:
-    base = (root or ROOT) / PROFILES_RELATIVE
-    if not base.is_dir():
-        raise RunnerError(f"the profile directory is missing: {base}")
-    return sorted(path.stem for path in base.glob("*.yaml"))
+    base = root or ROOT
+    ids: list[str] = []
+    for style in CANONICAL_STYLES:
+        if not _style_manifest_path(style, base).is_file():
+            continue
+        try:
+            declaration = _profile_declaration(style, base)
+        except RunnerError:
+            continue
+        profile_id = str(declaration.get("id") or "")
+        if profile_id:
+            ids.append(profile_id)
+    return sorted(ids)
 
 
-#: Every selectable profile, by id. Loaded once from the declaration files.
+#: Every selectable profile, by id. Loaded once from the style manifests.
 STYLE_PROFILES: dict[str, StyleProfile] = {pid: load_style_profile(pid) for pid in _discover_profile_ids()}
 
-#: What a style runs when no profile is named. Synthesis MAX's legacy profile was retired in
-#: The Synthesis MAX refinement once the new implementation passed its behavioural and regression tests; the others
-#: retain their legacy baseline, which reproduces the pre-profile assembled context.
+#: What a style runs when no profile is named. One owner: the style manifest.
 DEFAULT_STYLE_PROFILE_BY_STYLE: dict[str, str] = {
-    "curated-discovery": "curated-discovery-legacy",
-    "concise": "concise-legacy",
-    "detailed": "detailed-legacy",
-    "synthesis-max": "synthesis-max-v1",
+    style: str(_profile_declaration(style, ROOT).get("id") or "")
+    for style in CANONICAL_STYLES
+    if _style_manifest_path(style, ROOT).is_file()
 }
 
 
@@ -285,7 +322,6 @@ def profiles_for_style(style: str) -> list[StyleProfile]:
 #: Short aliases resolved *within the digest's own style*.
 PROFILE_ALIASES: dict[str, Any] = {
     "default": lambda style: DEFAULT_STYLE_PROFILE_BY_STYLE.get(style),
-    "legacy": lambda style: f"{style}-legacy",
     "current": lambda style: DEFAULT_STYLE_PROFILE_BY_STYLE.get(style),
     "v1": lambda style: f"{style}-v1",
 }
@@ -515,7 +551,7 @@ __all__ = [
     "EVALUATION_BY_STYLE",
     "STAGE_NAMES",
     "FRAME_FAILURE_POLICIES",
-    "PROFILES_RELATIVE",
+    "STYLE_MANIFEST_RELATIVE",
     "Descriptor",
     "StageDeclaration",
     "StyleProfile",

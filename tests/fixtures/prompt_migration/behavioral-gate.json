@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
-  "approved_candidate_sha256": "f65f052bea50413b989fa6c9ab31fa20fad9eae7f76ab536cb4258bf95c31c50",
+  "approved_candidate_sha256": "e78703986d9282a8da849c584d07f6f6899fd85ad15217e97191c03a2734e121",
   "categories": [
     "packaging-only",
     "deduplication-without-semantic-loss",
@@ -316,6 +316,206 @@
       "detail_contains": "Apply this shared contract together with the resolved style rendering profile",
       "category": "deduplication-without-semantic-loss",
       "justification": "The sentence retains the existing requirement to use the resolved style profile/template and stop when they are unavailable, while removing the maintainer-facing architecture table."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "profile-removed",
+      "block": "concise-legacy",
+      "category": "approved-architectural-boundary-removal",
+      "justification": "The out-of-scope Concise style was removed from the active runtime. Its profile is no longer declared; the style is not part of the current product."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "profile-removed",
+      "block": "detailed-legacy",
+      "category": "approved-architectural-boundary-removal",
+      "justification": "The out-of-scope Detailed style was removed from the active runtime. Its profile is no longer declared; the style is not part of the current product."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "profile-removed",
+      "block": "curated-discovery-legacy",
+      "category": "approved-architectural-boundary-removal",
+      "justification": "The Curated Discovery legacy profile was retired. Curated Discovery will be rebuilt fresh against the new architecture; the legacy implementation is not an active alternative."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "profile-added",
+      "block": "curated-discovery-v1",
+      "category": "approved-architectural-boundary-removal",
+      "justification": "The Curated Discovery style now declares a single active profile against the new architecture, replacing the retired legacy profile."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "stage-added",
+      "block": "copy-edit",
+      "category": "behavioral-change",
+      "justification": "Copy Edit is a new stage that replaces the separate Line Edit stage and the editorial half of the LLM Copy/Verify stage. It performs detailed copyediting and may not significantly restructure the document."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "stage-added",
+      "block": "publication-verify",
+      "category": "behavioral-change",
+      "justification": "Publication Verify is a new deterministic stage that replaces the LLM Copy/Verify stage. It runs code only, checks publication invariants, and never edits prose."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "stage-removed",
+      "block": "line-edit",
+      "category": "behavioral-change",
+      "justification": "Line Edit was replaced by the combined Copy Edit stage."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "stage-removed",
+      "block": "copy-verify",
+      "category": "behavioral-change",
+      "justification": "The LLM Copy/Verify stage was replaced by Copy Edit (editorial) and the deterministic Publication Verify stage."
+    },
+    {
+      "profile": "*",
+      "stage": "reader-review",
+      "kind": "removed",
+      "block": "role",
+      "category": "behavioral-change",
+      "justification": "Reader Review now compares Writer Revision to Copy Edit rather than to Line Edit, so its role contract text changed."
+    },
+    {
+      "profile": "*",
+      "stage": "reader-review",
+      "kind": "added",
+      "block": "role",
+      "category": "behavioral-change",
+      "justification": "Reader Review now compares Writer Revision to Copy Edit rather than to Line Edit, so its role contract text changed."
+    },
+    {
+      "profile": "*",
+      "stage": "reader-review",
+      "kind": "content-change",
+      "block": "role",
+      "category": "behavioral-change",
+      "justification": "Reader Review now compares Writer Revision to Copy Edit rather than to Line Edit, so its role contract text changed."
+    },
+    {
+      "profile": "*",
+      "stage": "reader-review",
+      "kind": "novel-content",
+      "block": "role",
+      "category": "behavioral-change",
+      "justification": "Reader Review now compares Writer Revision to Copy Edit rather than to Line Edit, so its role contract text changed."
+    },
+    {
+      "profile": "*",
+      "stage": "reader-review",
+      "kind": "lost-content",
+      "block": "role",
+      "category": "behavioral-change",
+      "justification": "Reader Review now compares Writer Revision to Copy Edit rather than to Line Edit, so its role contract text changed."
+    },
+    {
+      "profile": "*",
+      "stage": "render",
+      "kind": "removed",
+      "block": "source_note_manifest",
+      "category": "behavioral-change",
+      "justification": "The render source-note manifest is now derived deterministically from the revised artifact rather than the original Frame, so its content changed."
+    },
+    {
+      "profile": "*",
+      "stage": "render",
+      "kind": "added",
+      "block": "source_note_manifest",
+      "category": "behavioral-change",
+      "justification": "The render source-note manifest is now derived deterministically from the revised artifact rather than the original Frame, so its content changed."
+    },
+    {
+      "profile": "*",
+      "stage": "render",
+      "kind": "content-change",
+      "block": "source_note_manifest",
+      "category": "behavioral-change",
+      "justification": "The render source-note manifest is now derived deterministically from the revised artifact rather than the original Frame, so its content changed."
+    },
+    {
+      "profile": "*",
+      "stage": "render",
+      "kind": "novel-content",
+      "block": "source_note_manifest",
+      "category": "behavioral-change",
+      "justification": "The render source-note manifest is now derived deterministically from the revised artifact rather than the original Frame, so its content changed."
+    },
+    {
+      "profile": "*",
+      "stage": "targeted-repair",
+      "kind": "removed",
+      "block": "system/contracts/targeted-repair.md",
+      "category": "behavioral-change",
+      "justification": "The Targeted Repair contract moved to editorial/stages/targeted-repair.md and was sharpened to stay one pass, localized and diagnosis-driven."
+    },
+    {
+      "profile": "*",
+      "stage": "targeted-repair",
+      "kind": "added",
+      "block": "editorial/stages/targeted-repair.md",
+      "category": "behavioral-change",
+      "justification": "The Targeted Repair contract moved to editorial/stages/targeted-repair.md and was sharpened to stay one pass, localized and diagnosis-driven."
+    },
+    {
+      "profile": "*",
+      "stage": "targeted-repair",
+      "kind": "novel-content",
+      "block": "editorial/stages/targeted-repair.md",
+      "category": "behavioral-change",
+      "justification": "The Targeted Repair contract moved to editorial/stages/targeted-repair.md and was sharpened to stay one pass, localized and diagnosis-driven."
+    },
+    {
+      "profile": "*",
+      "stage": "targeted-repair",
+      "kind": "lost-content",
+      "block": "system/contracts/targeted-repair.md",
+      "category": "behavioral-change",
+      "justification": "The Targeted Repair contract moved to editorial/stages/targeted-repair.md and was sharpened to stay one pass, localized and diagnosis-driven."
+    },
+    {
+      "profile": "*",
+      "stage": "writer-revision",
+      "kind": "removed",
+      "block": "system/contracts/writer-revision.md",
+      "category": "behavioral-change",
+      "justification": "Writer Revision is now explicitly a substantive revision with structural authority (reorder, expand, cut, split, merge, reframe, rewrite, change headings, redistribute emphasis) bounded by the approved evidence set."
+    },
+    {
+      "profile": "*",
+      "stage": "writer-revision",
+      "kind": "added",
+      "block": "editorial/stages/writer-revision.md",
+      "category": "behavioral-change",
+      "justification": "Writer Revision is now explicitly a substantive revision with structural authority (reorder, expand, cut, split, merge, reframe, rewrite, change headings, redistribute emphasis) bounded by the approved evidence set."
+    },
+    {
+      "profile": "*",
+      "stage": "writer-revision",
+      "kind": "novel-content",
+      "block": "editorial/stages/writer-revision.md",
+      "category": "behavioral-change",
+      "justification": "Writer Revision is now explicitly a substantive revision with structural authority (reorder, expand, cut, split, merge, reframe, rewrite, change headings, redistribute emphasis) bounded by the approved evidence set."
+    },
+    {
+      "profile": "*",
+      "stage": "writer-revision",
+      "kind": "lost-content",
+      "block": "system/contracts/writer-revision.md",
+      "category": "behavioral-change",
+      "justification": "Writer Revision is now explicitly a substantive revision with structural authority (reorder, expand, cut, split, merge, reframe, rewrite, change headings, redistribute emphasis) bounded by the approved evidence set."
     }
   ]
 }

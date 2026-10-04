@@ -10,11 +10,11 @@
 
 - `prompts/shared/preamble.j2` — 465 units, sha256 `8f60794abad6`
 - `prompts/stages/writer-revision/user.j2` — 170 units, sha256 `3b3bc7045b73`
-- `prompts/shared/task.j2` — 992 units, sha256 `d12ba969b789`
+- `prompts/shared/task.j2` — 863 units, sha256 `dc71250d7421`
 
 ## Instruction documents
 
-- `editorial/stages/writer-revision.md` — 3834 chars; owner: shared stage contract; sha256 `a7454e47cba2`
+- `editorial/stages/writer-revision.md` — 5722 chars; owner: shared stage contract; sha256 `3d8494ba1a46`
 
 ## Style-supplied instructions
 
@@ -30,5 +30,5 @@
 
 ## Sizes
 
-- System: 10222 units
+- System: 12110 units
 - User: 6371 units

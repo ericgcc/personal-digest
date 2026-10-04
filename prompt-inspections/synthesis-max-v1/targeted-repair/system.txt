@@ -14,9 +14,9 @@ else.
 
 ## Role
 
-You repair **one** diagnosed reader-facing problem in the line-edited prose. You are not a general revision stage and you do not restart the editorial process.
+You repair **one** diagnosed reader-facing problem in the copy-edited prose. You are not a general revision stage and you do not restart the editorial process.
 
-This stage runs at most once per digest. It exists because some reader problems are worth one surgical fix and not worth a second editorial pass.
+This stage runs at most once per digest. It exists because some reader problems are worth one surgical fix and not worth a second editorial pass. It is localized, evidence-bounded, and diagnosis-driven; it must not become a second Writer Revision.
 
 ## What you receive
 

@@ -55,10 +55,10 @@ TEN_STAGES = (
     "draft",
     "developmental-review",
     "writer-revision",
-    "line-edit",
+    "copy-edit",
     "reader-review",
     "targeted-repair",
-    "copy-verify",
+    "publication-verify",
     "render",
 )
 
@@ -71,10 +71,10 @@ EXPECTED_COMPOSITION: dict[str, dict[str, object]] = {
     "draft": {"style_stage": True, "interface": True, "shared": ("reader", "editorial-base"), "constraints": True},
     "developmental-review": {"style_stage": True, "interface": True, "shared": ("reader",), "constraints": False},
     "writer-revision": {"style_stage": True, "interface": False, "shared": (), "constraints": False},
-    "line-edit": {"style_stage": True, "interface": False, "shared": ("naturalness",), "constraints": False},
+    "copy-edit": {"style_stage": True, "interface": False, "shared": ("naturalness",), "constraints": False},
     "reader-review": {"style_stage": True, "interface": True, "shared": ("reader",), "constraints": False},
     "targeted-repair": {"style_stage": True, "interface": False, "shared": ("reader",), "constraints": False},
-    "copy-verify": {"style_stage": True, "interface": True, "shared": (), "constraints": True},
+    "publication-verify": {"style_stage": False, "interface": True, "shared": (), "constraints": True},
     "render": {"style_stage": False, "interface": False, "shared": (), "constraints": False},
 }
 
@@ -446,7 +446,7 @@ def test_the_evaluation_stage_set_is_derived_from_the_registry():
     assert EVALUATION_STAGES == {"developmental-review", "reader-review"}
 
 
-@pytest.mark.parametrize("stage", ["writer-revision", "line-edit", "targeted-repair", "draft"])
+@pytest.mark.parametrize("stage", ["writer-revision", "copy-edit", "targeted-repair", "draft"])
 def test_the_evaluation_resolver_rejects_non_evaluation_stages(stage: str):
     with pytest.raises(RunnerError):
         resolve_evaluation_contracts(stage=stage, style=STYLE)
@@ -457,9 +457,17 @@ def test_the_evaluation_resolver_rejects_non_evaluation_stages(stage: str):
 # ---------------------------------------------------------------------------------------
 
 
-def test_the_style_doc_generator_still_verifies():
-    result = _run([str(ROOT / "scripts" / "build_style_docs.py"), "--check"])
-    assert result.returncode == 0, result.stdout + result.stderr
+def test_the_style_doc_generator_is_retired():
+    """The aggregate style documents and their generator were removed with the old architecture.
+
+    The legacy architecture kept a readable ``styles/<style>.md`` generated from
+    ``styles/<style>/modules/``. The convention composer has one active representation per
+    style (``styles/<style>/stages/`` plus ``style.yaml``), so the aggregate document and its
+    generator are gone rather than kept as a second representation.
+    """
+    assert not (ROOT / "scripts" / "build_style_docs.py").exists()
+    assert not (ROOT / "styles" / f"{STYLE}.md").exists()
+    assert not (ROOT / "styles" / STYLE / "modules").exists()
 
 
 # ---------------------------------------------------------------------------------------
@@ -473,7 +481,9 @@ def test_the_behavioral_gate_passes_with_zero_unapproved_changes():
     payload = json.loads(result.stdout)
     assert payload["ok"] is True
     assert payload["unclassified"] == 0
-    assert payload["behavioral"] == 0
+    # The editorial-architecture simplification deliberately changes behavior (Copy Edit,
+    # Publication Verify, Writer Revision authority, Reader Review comparison). Those changes
+    # are classified as behavioral-change; an *unclassified* difference is the failure.
 
 
 def _isolated_root(tmp_path: Path) -> Path:

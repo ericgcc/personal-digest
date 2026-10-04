@@ -40,7 +40,9 @@ from _maintenance import configure_stdio  # noqa: E402
 configure_stdio()
 
 V1 = STYLE_PROFILES["synthesis-max-v1"]
-LEGACY = STYLE_PROFILES["detailed-legacy"]
+#: A profile that permits a recovery frame, used to contrast with the strict v1 policy. The
+#: legacy profiles were retired with the old architecture; Curated Discovery permits recovery.
+LEGACY = STYLE_PROFILES["curated-discovery-v1"]
 
 
 def corpus_of(*numbers: int) -> dict:
@@ -122,7 +124,7 @@ def main() -> int:
     legacy_verdicts = [
         f"{profile_id}={'ok' if validate_frame(frame=inconsistent, corpus=corpus_of(1, 2), profile=STYLE_PROFILES[profile_id])['ok'] else 'REJECTED'}"
         for profile_id in style_profile_ids()
-        if profile_id.endswith("-legacy")
+        if STYLE_PROFILES[profile_id].frame_failure_policy == "recovery-frame"
     ]
     exact = validate_frame(
         frame={**with_demoted, "budget": {**with_demoted["budget"], "total_body_words": 9999}},

@@ -1,42 +1,23 @@
-# Declarative runtime constraints plus a non-runtime documentation-module index.
-# Edit constraints here. The modules list only maintains the readable legacy style reference.
+# Curated Discovery — style manifest, execution profile and declarative constraints.
+#
+# The style directory is retained, but its legacy profile and legacy stage
+# implementations were removed. This is a minimal new-architecture style
+# definition: it declares the style's execution policy and the declarative
+# constraints its validators consume. Curated Discovery will be rebuilt fresh
+# against the new architecture later.
 id: curated-discovery
 title: Curated Discovery
-modules:
-  - file: 01-style-interface.md
-    heading: "## Style interface"
-  - file: 02-writing-reference-profile.md
-    heading: "## Writing reference profile"
-  - file: 03-core-principle-digest-first-reading.md
-    heading: "## Core principle: Digest-first reading"
-  - file: 04-curation-process.md
-    heading: "## Curation process"
-  - file: 05-relationship-between-sources.md
-    heading: "## Relationship between sources"
-  - file: 06-editorial-depth.md
-    heading: "## Editorial depth"
-  - file: 07-understanding-over-extraction.md
-    heading: "## Understanding over extraction"
-  - file: 08-writing-character.md
-    heading: "## Writing character"
-  - file: 09-length-and-density.md
-    heading: "## Length and density"
-  - file: 10-required-structure.md
-    heading: "## Required structure"
-  - file: 11-optional-depth-cue.md
-    heading: "## Optional depth cue"
-  - file: 12-organization.md
-    heading: "## Organization"
-  - file: 13-citations.md
-    heading: "## Citations"
-  - file: 14-section-level-source-lines.md
-    heading: "## Section-level source lines"
-  - file: 15-final-source-catalog.md
-    heading: "## Final source catalog"
-  - file: 16-ending-rules.md
-    heading: "## Ending rules"
-  - file: 17-quality-control.md
-    heading: "## Quality control"
+
+profile:
+  id: curated-discovery-v1
+  version: 1.0.0
+  label: Curated Discovery
+  status: active
+  frame_failure_policy: recovery-frame
+  notes:
+    - A minimal new-architecture Curated Discovery definition.
+    - Editorial instructions and constraints resolve from the curated-discovery style tree.
+    - The legacy profile and legacy stage implementations were removed.
 
 constraints:
   version: 1
@@ -47,7 +28,7 @@ constraints:
   interface_stages:
     - frame
     - draft
-    - copy-verify
+    - publication-verify
     - developmental-review
     - reader-review
 

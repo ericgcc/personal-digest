@@ -1,0 +1,92 @@
+{
+  "system_template": null,
+  "user_template": "stages/analyze/user.j2",
+  "templates": [
+    {
+      "path": "prompts/shared/preamble.j2",
+      "bytes": 465,
+      "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
+    },
+    {
+      "path": "prompts/stages/analyze/user.j2",
+      "bytes": 87,
+      "sha256": "1a1239d01f060ffb1de532b4f909d1d29ca3e72f0d8f12c989475b6c4b176a6b"
+    },
+    {
+      "path": "prompts/shared/task.j2",
+      "bytes": 863,
+      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+    }
+  ],
+  "documents": [
+    {
+      "path": "editorial/stages/analyze.md",
+      "bytes": 6748,
+      "sha256": "2226b3936574f15aa07b1469aa762a049213a3b9f043f9ec170e2e2a75465801",
+      "owner": "shared stage contract"
+    },
+    {
+      "path": "editorial/shared/reasoning-fidelity.md",
+      "bytes": 8325,
+      "sha256": "5a41b81c27003c0496f9bcebc09d0397c5c27ff77c1d4f778cc0caf3a32d5710",
+      "owner": "shared cross-cutting contract"
+    }
+  ],
+  "instructions": [
+    {
+      "path": "styles/curated-discovery/style.yaml",
+      "bytes": 546,
+      "sha256": "7aa6c4c0b7e69b3b830455f5ff2d2c0085d61d579cdb1611020f5437dd33ad37",
+      "owner": "declarative style constraints"
+    }
+  ],
+  "blocks": [
+    {
+      "tag": "source_corpus",
+      "bytes": 2355,
+      "source": {
+        "kind": "evidence-projection",
+        "requested_policy": "full",
+        "effective_policy": "full",
+        "source_count": 5,
+        "source_numbers": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "declared_source_numbers": [],
+        "missing_source_numbers": [],
+        "recovery": null,
+        "warning": null,
+        "bytes": 2355
+      },
+      "purpose": "stage-permitted source evidence"
+    },
+    {
+      "tag": "reading_instructions",
+      "bytes": 4526,
+      "source": {
+        "path": "digests/medium-bi-daily.md",
+        "sections": [
+          "Selection",
+          "Reader"
+        ],
+        "version": "7afce8bdab3412768aaebf25669b29fb890b013c868dfc4a1850b3617380cd00"
+      },
+      "purpose": "prior artifact or digest reading instructions"
+    },
+    {
+      "tag": "stage_task",
+      "bytes": 558,
+      "source": {
+        "path": "prompts/shared/task.j2"
+      },
+      "purpose": "immediate task and output contract"
+    }
+  ],
+  "omitted": [],
+  "system_bytes": 16283,
+  "user_bytes": 7524
+}

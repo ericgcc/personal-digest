@@ -1,44 +1,34 @@
-# Synthesis MAX — style manifest and declarative constraints.
+# Synthesis MAX — style manifest, execution profile and declarative constraints.
 #
 # Two things live in this file, each with one owner:
 #
-# 1. ``modules`` — a non-runtime index for the readable legacy style reference.
+# 1. ``profile`` — the style's execution policy: its profile id, version, label,
+#    status and frame-failure behaviour. It is the only active profile declaration
+#    for this style.
 # 2. ``constraints`` — the declarative style facts of the new instruction
 #    architecture. Python validators consume these values directly; the prompt
 #    composer resolves them into one compact <style_constraints> block when a
 #    stage needs them. Editorial judgment and procedure live in the Markdown
 #    files; constraints live here.
 #
-# Derived from the validated behaviour of synthesis-max-v1 (composition
-# constraints, budgets, and the enforced validator set). Changing a value here
-# changes what the deterministic validators accept — it is a behavioural change,
-# not a wording change.
+# Derived from the validated behaviour of the Synthesis MAX implementation
+# (composition constraints, budgets, and the enforced validator set). Changing a
+# value here changes what the deterministic validators accept — it is a
+# behavioural change, not a wording change.
 
 id: synthesis-max
 title: Synthesis MAX
-modules:
-  - file: 01-style-interface.md
-    heading: "## Style interface"
-  - file: 02-writing-reference-profile.md
-    heading: "## Writing reference profile"
-  - file: 03-synthesis-mode.md
-    heading: "## Synthesis mode"
-  - file: 04-writing-character.md
-    heading: "## Writing character"
-  - file: 05-domain-accessibility-in-synthesis.md
-    heading: "## Domain accessibility in synthesis"
-  - file: 06-length-and-density.md
-    heading: "## Length and density"
-  - file: 07-required-structure.md
-    heading: "## Required structure"
-  - file: 08-citations.md
-    heading: "## Citations"
-  - file: 09-final-source-catalog.md
-    heading: "## Final source catalog"
-  - file: 10-ending-rules.md
-    heading: "## Ending rules"
-  - file: 11-quality-control.md
-    heading: "## Quality control"
+
+profile:
+  id: synthesis-max-v1
+  version: 2.1.0
+  label: Synthesis MAX
+  status: active
+  frame_failure_policy: fail
+  notes:
+    - The active Synthesis MAX execution policy.
+    - Editorial instructions and constraints resolve from the synthesis-max style tree.
+    - Frame failures stop rather than deriving a recovery frame.
 
 constraints:
   version: 1
@@ -50,7 +40,7 @@ constraints:
     - analyze
     - frame
     - draft
-    - copy-verify
+    - publication-verify
     - developmental-review
     - reader-review
 

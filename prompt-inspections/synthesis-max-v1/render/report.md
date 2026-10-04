@@ -10,11 +10,11 @@
 
 - `prompts/shared/preamble.j2` — 465 units, sha256 `8f60794abad6`
 - `prompts/stages/render/user.j2` — 133 units, sha256 `e1ff6d0effce`
-- `prompts/shared/task.j2` — 992 units, sha256 `d12ba969b789`
+- `prompts/shared/task.j2` — 863 units, sha256 `dc71250d7421`
 
 ## Instruction documents
 
-- `editorial/stages/render.md` — 5740 chars; owner: shared stage contract; sha256 `efa7b4b4ff9b`
+- `editorial/stages/render.md` — 5739 chars; owner: shared stage contract; sha256 `46ceae244f4e`
 - `rendering/shared.md` — 18524 chars; owner: shared rendering contract; sha256 `f46b9afa91a1`
 - `templates/synthesis-max-email-v1.html` — 9598 chars; owner: HTML email template; sha256 `dd378e0edbae`
 
@@ -24,14 +24,14 @@
 
 ## Data blocks
 
-- `previous_stage_artifact` — 332 chars; prior artifact or digest reading instructions; source `{"path": ".digest-runs/synthetic/copy-verify/output/copy-verify.md", "provenance": "runner", "stage": "copy-verify"}`
+- `previous_stage_artifact` — 332 chars; prior artifact or digest reading instructions; source `{"path": ".digest-runs/synthetic/publication-verify/output/publication-verify.md", "provenance": "runner", "stage": "publication-verify"}`
 - `rendering_values` — 139 chars; prior artifact or digest reading instructions; source `{"path": "source-acquisition/sources.json", "provenance": "delivery", "stage": "source-acquisition"}`
-- `source_note_manifest` — 2678 chars; prior artifact or digest reading instructions; source `{"path": "frame/output/frame.json", "provenance": "canonical", "stage": "frame"}`
+- `source_note_manifest` — 2720 chars; prior artifact or digest reading instructions; source `{"path": "publication-verify/output/final.md", "provenance": "canonical", "stage": "publication-verify"}`
 - `callout_registry` — 1236 chars; prior artifact or digest reading instructions; source `{"path": "digests/tech-bi-daily.md", "sections": ["Optional highlights"]}`
 - `rendering_values` — 139 chars; stage-specific runtime input; source `{"kind": "executor-derived"}`
 - `stage_task` — 533 chars; immediate task and output contract; source `{"path": "prompts/shared/task.j2"}`
 
 ## Sizes
 
-- System: 41596 units
-- User: 5105 units
+- System: 41595 units
+- User: 5147 units

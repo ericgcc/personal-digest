@@ -13,10 +13,10 @@
     "draft",
     "developmental-review",
     "writer-revision",
-    "line-edit",
+    "copy-edit",
     "reader-review",
     "targeted-repair",
-    "copy-verify",
+    "publication-verify",
     "render"
   ],
   "stage_table": [
@@ -98,8 +98,8 @@
       "validation_severity": null
     },
     {
-      "name": "line-edit",
-      "artifact": "line-edit.md",
+      "name": "copy-edit",
+      "artifact": "copy-edit.md",
       "format": "Markdown",
       "executor": "llm",
       "corpus": "none",
@@ -109,7 +109,7 @@
       "optional": false,
       "thinking": null,
       "extraArtifacts": [],
-      "purpose": "LINE EDIT: clarity, voice, naturalness, rhythm, transitions, local emphasis, redundancy, concision, and length discipline in one pass.",
+      "purpose": "COPY EDIT: detailed copyediting — clarity, grammar, syntax, spelling, punctuation, terminology consistency, local redundancy, naturalness, rhythm, awkward phrasing, minor local rewording, citation preservation, and heading/terminology consistency. It may not significantly restructure the document.",
       "validation_severity": null
     },
     {
@@ -124,7 +124,7 @@
       "optional": false,
       "thinking": null,
       "extraArtifacts": [],
-      "purpose": "READER REVIEW: assess the line-edited prose as a reader, and detect anything the line edit materially regressed.",
+      "purpose": "READER REVIEW: assess the copy-edited prose as a reader, and detect anything the copy edit materially regressed.",
       "validation_severity": null
     },
     {
@@ -143,20 +143,20 @@
       "validation_severity": null
     },
     {
-      "name": "copy-verify",
+      "name": "publication-verify",
       "artifact": "final.md",
       "format": "Markdown",
-      "executor": "copy-verify",
+      "executor": "deterministic",
       "corpus": "provenance",
       "onFailure": "recoverable",
-      "effort": "low",
+      "effort": null,
       "budget": false,
       "optional": false,
       "thinking": null,
       "extraArtifacts": [
         "verification.json"
       ],
-      "purpose": "COPY / VERIFY: verify citations, provenance, structure, language, Markdown, and length; correct copy only. Never rewrite editorially.",
+      "purpose": "PUBLICATION VERIFY: run the deterministic publication checks over the revised prose and produce an auditable report. It never edits prose.",
       "validation_severity": null
     },
     {
@@ -206,8 +206,6 @@
   "vocabularies": {
     "canonical_styles": [
       "curated-discovery",
-      "concise",
-      "detailed",
       "synthesis-max"
     ],
     "mandated_style_sections": [
@@ -5478,48 +5476,6 @@
         }
       }
     },
-    "copy-verify:provenance": {
-      "with_frame": {
-        "text": "{\n  \"digest_id\": \"tech-bi-daily\",\n  \"style\": \"synthesis-max\",\n  \"language\": \"English\",\n  \"acquisition_time\": \"2026-09-20T06:30:00.000Z\",\n  \"html_lang\": \"en\",\n  \"delivery\": {\n    \"subject\": \"Tech Bi-Daily — 20 September 2026\",\n    \"invisible_html_run_marker\": \"<!-- run-key: tech-bi-daily-synthesis-max-fixture -->\"\n  },\n  \"sources\": [\n    {\n      \"source_number\": 1,\n      \"title\": \"A mechanism for incremental evaluation\",\n      \"author_or_publication\": \"Fixture Press\",\n      \"canonical_url\": \"https://example.invalid/a\",\n      \"resolved_locator\": \"https://example.invalid/a\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 12,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 2,\n      \"title\": \"Qualifying the evaluation claim\",\n      \"author_or_publication\": \"Fixture Press\",\n      \"canonical_url\": \"https://example.invalid/b\",\n      \"resolved_locator\": \"https://example.invalid/b\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 8,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 3,\n      \"title\": \"A contradictory result\",\n      \"author_or_publication\": \"Fixture Review\",\n      \"canonical_url\": \"https://example.invalid/c\",\n      \"resolved_locator\": \"https://example.invalid/c\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 15,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 4,\n      \"title\": \"An inaccessible item\",\n      \"author_or_publication\": \"Fixture Review\",\n      \"canonical_url\": \"https://example.invalid/d\",\n      \"resolved_locator\": \"https://example.invalid/d\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 20,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"inaccessible\"\n    },\n    {\n      \"source_number\": 5,\n      \"title\": \"A short note\",\n      \"author_or_publication\": \"Fixture Notes\",\n      \"canonical_url\": \"https://example.invalid/e\",\n      \"resolved_locator\": \"https://example.invalid/e\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 3,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    }\n  ]\n}",
-        "record": {
-          "requested_policy": "provenance",
-          "effective_policy": "provenance",
-          "source_count": 5,
-          "source_numbers": [
-            1,
-            2,
-            3,
-            4,
-            5
-          ],
-          "declared_source_numbers": [],
-          "missing_source_numbers": [],
-          "recovery": null,
-          "warning": null,
-          "bytes": 2215
-        }
-      },
-      "without_frame": {
-        "text": "{\n  \"digest_id\": \"tech-bi-daily\",\n  \"style\": \"synthesis-max\",\n  \"language\": \"English\",\n  \"acquisition_time\": \"2026-09-20T06:30:00.000Z\",\n  \"html_lang\": \"en\",\n  \"delivery\": {\n    \"subject\": \"Tech Bi-Daily — 20 September 2026\",\n    \"invisible_html_run_marker\": \"<!-- run-key: tech-bi-daily-synthesis-max-fixture -->\"\n  },\n  \"sources\": [\n    {\n      \"source_number\": 1,\n      \"title\": \"A mechanism for incremental evaluation\",\n      \"author_or_publication\": \"Fixture Press\",\n      \"canonical_url\": \"https://example.invalid/a\",\n      \"resolved_locator\": \"https://example.invalid/a\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 12,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 2,\n      \"title\": \"Qualifying the evaluation claim\",\n      \"author_or_publication\": \"Fixture Press\",\n      \"canonical_url\": \"https://example.invalid/b\",\n      \"resolved_locator\": \"https://example.invalid/b\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 8,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 3,\n      \"title\": \"A contradictory result\",\n      \"author_or_publication\": \"Fixture Review\",\n      \"canonical_url\": \"https://example.invalid/c\",\n      \"resolved_locator\": \"https://example.invalid/c\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 15,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 4,\n      \"title\": \"An inaccessible item\",\n      \"author_or_publication\": \"Fixture Review\",\n      \"canonical_url\": \"https://example.invalid/d\",\n      \"resolved_locator\": \"https://example.invalid/d\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 20,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"inaccessible\"\n    },\n    {\n      \"source_number\": 5,\n      \"title\": \"A short note\",\n      \"author_or_publication\": \"Fixture Notes\",\n      \"canonical_url\": \"https://example.invalid/e\",\n      \"resolved_locator\": \"https://example.invalid/e\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 3,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    }\n  ]\n}",
-        "record": {
-          "requested_policy": "provenance",
-          "effective_policy": "provenance",
-          "source_count": 5,
-          "source_numbers": [
-            1,
-            2,
-            3,
-            4,
-            5
-          ],
-          "declared_source_numbers": [],
-          "missing_source_numbers": [],
-          "recovery": null,
-          "warning": null,
-          "bytes": 2215
-        }
-      }
-    },
     "recovery_frame": {
       "digest_id": "tech-bi-daily",
       "style": "synthesis-max",
@@ -5595,7 +5551,49 @@
       3,
       5
     ],
-    "evidence_refs_outside_selection": []
+    "evidence_refs_outside_selection": [],
+    "publication-verify:provenance": {
+      "with_frame": {
+        "text": "{\n  \"digest_id\": \"tech-bi-daily\",\n  \"style\": \"synthesis-max\",\n  \"language\": \"English\",\n  \"acquisition_time\": \"2026-09-20T06:30:00.000Z\",\n  \"html_lang\": \"en\",\n  \"delivery\": {\n    \"subject\": \"Tech Bi-Daily — 20 September 2026\",\n    \"invisible_html_run_marker\": \"<!-- run-key: tech-bi-daily-synthesis-max-fixture -->\"\n  },\n  \"sources\": [\n    {\n      \"source_number\": 1,\n      \"title\": \"A mechanism for incremental evaluation\",\n      \"author_or_publication\": \"Fixture Press\",\n      \"canonical_url\": \"https://example.invalid/a\",\n      \"resolved_locator\": \"https://example.invalid/a\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 12,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 2,\n      \"title\": \"Qualifying the evaluation claim\",\n      \"author_or_publication\": \"Fixture Press\",\n      \"canonical_url\": \"https://example.invalid/b\",\n      \"resolved_locator\": \"https://example.invalid/b\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 8,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 3,\n      \"title\": \"A contradictory result\",\n      \"author_or_publication\": \"Fixture Review\",\n      \"canonical_url\": \"https://example.invalid/c\",\n      \"resolved_locator\": \"https://example.invalid/c\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 15,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 4,\n      \"title\": \"An inaccessible item\",\n      \"author_or_publication\": \"Fixture Review\",\n      \"canonical_url\": \"https://example.invalid/d\",\n      \"resolved_locator\": \"https://example.invalid/d\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 20,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"inaccessible\"\n    },\n    {\n      \"source_number\": 5,\n      \"title\": \"A short note\",\n      \"author_or_publication\": \"Fixture Notes\",\n      \"canonical_url\": \"https://example.invalid/e\",\n      \"resolved_locator\": \"https://example.invalid/e\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 3,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    }\n  ]\n}",
+        "record": {
+          "requested_policy": "provenance",
+          "effective_policy": "provenance",
+          "source_count": 5,
+          "source_numbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "declared_source_numbers": [],
+          "missing_source_numbers": [],
+          "recovery": null,
+          "warning": null,
+          "bytes": 2215
+        }
+      },
+      "without_frame": {
+        "text": "{\n  \"digest_id\": \"tech-bi-daily\",\n  \"style\": \"synthesis-max\",\n  \"language\": \"English\",\n  \"acquisition_time\": \"2026-09-20T06:30:00.000Z\",\n  \"html_lang\": \"en\",\n  \"delivery\": {\n    \"subject\": \"Tech Bi-Daily — 20 September 2026\",\n    \"invisible_html_run_marker\": \"<!-- run-key: tech-bi-daily-synthesis-max-fixture -->\"\n  },\n  \"sources\": [\n    {\n      \"source_number\": 1,\n      \"title\": \"A mechanism for incremental evaluation\",\n      \"author_or_publication\": \"Fixture Press\",\n      \"canonical_url\": \"https://example.invalid/a\",\n      \"resolved_locator\": \"https://example.invalid/a\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 12,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 2,\n      \"title\": \"Qualifying the evaluation claim\",\n      \"author_or_publication\": \"Fixture Press\",\n      \"canonical_url\": \"https://example.invalid/b\",\n      \"resolved_locator\": \"https://example.invalid/b\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 8,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 3,\n      \"title\": \"A contradictory result\",\n      \"author_or_publication\": \"Fixture Review\",\n      \"canonical_url\": \"https://example.invalid/c\",\n      \"resolved_locator\": \"https://example.invalid/c\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 15,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    },\n    {\n      \"source_number\": 4,\n      \"title\": \"An inaccessible item\",\n      \"author_or_publication\": \"Fixture Review\",\n      \"canonical_url\": \"https://example.invalid/d\",\n      \"resolved_locator\": \"https://example.invalid/d\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 20,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"inaccessible\"\n    },\n    {\n      \"source_number\": 5,\n      \"title\": \"A short note\",\n      \"author_or_publication\": \"Fixture Notes\",\n      \"canonical_url\": \"https://example.invalid/e\",\n      \"resolved_locator\": \"https://example.invalid/e\",\n      \"resolved_source_locator\": null,\n      \"reading_time_minutes\": 3,\n      \"reading_minutes\": null,\n      \"reading_outcome\": \"read\"\n    }\n  ]\n}",
+        "record": {
+          "requested_policy": "provenance",
+          "effective_policy": "provenance",
+          "source_count": 5,
+          "source_numbers": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "declared_source_numbers": [],
+          "missing_source_numbers": [],
+          "recovery": null,
+          "warning": null,
+          "bytes": 2215
+        }
+      }
+    }
   },
   "rendering": {
     "run_key": {
@@ -5698,8 +5696,8 @@
       "composition unit": "A reader-understandable concrete topic, question, mechanism, development, or tension explained through at least two substantively contributing sources.",
       "source relationship": "Cross-source synthesis is mandatory in every narrative thread. Prefer two or three sources. Four are permitted only when each one has a distinct, explainable role in the same concrete subject. No thread may declare more than four contributing sources. Single-source threads are not permitted.",
       "selection model": "Highly selective: include material that contributes enough information, explanatory power, practical significance, novelty, or relationship value to justify space.",
-      "depth model": "Variable-high depth across a dense three-to-five-minute body, normally 700–1,200 words excluding the catalog.",
-      "organization model": "Big Picture opening → one to four numbered synthesized threads determined by the evidence; use fewer when the corpus cannot support honest multi-source grouping, and when no thread qualifies at all publish the explicit catalog-only edition.",
+      "depth model": "Variable-high depth within the resolved body budget, excluding the catalog.",
+      "organization model": "Big Picture opening → evidence-supported numbered synthesized threads within the resolved unit and source bounds; use fewer when the corpus cannot support honest multi-source grouping, and when no thread qualifies at all publish the explicit catalog-only edition.",
       "progression model": "Each thread develops from concrete orientation → integrated explanation and source contributions → supported synthesis or implication, with material ordered by the explanation rather than by source.",
       "opening behavior": "Required `THE BIG PICTURE` opening whose first duty is clear orientation; add cross-source interpretation only when it makes the picture easier to understand.",
       "body behavior": "Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes.",

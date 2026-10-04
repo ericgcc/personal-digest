@@ -1,9 +1,9 @@
 """Compose one stage's system and user prompt from its templates.
 
 This is the single place that turns a stage, its assembled documents and its data blocks into
-the two messages a model receives. The executor calls it for every LLM and copy-verify stage;
-the offline inspection command calls it with a synthetic context and no model at all, so what
-an inspection prints is exactly what a run sends.
+the two messages a model receives. The executor calls it for every LLM stage; the offline
+inspection command calls it with a synthetic context and no model at all, so what an
+inspection prints is exactly what a run sends.
 
 Rules this module enforces:
 
@@ -279,8 +279,8 @@ def compose_stage_prompt(
         except PromptError as error:
             if "not found" in str(error):
                 raise PromptError(
-                    f"stage {stage.name} has no prompts/stages/{stage.name}/system.j2; every LLM and "
-                    "copy-verify stage must declare a system template"
+                    f"stage {stage.name} has no prompts/stages/{stage.name}/system.j2; every LLM "
+                    "stage must declare a system template"
                 ) from error
             raise
 

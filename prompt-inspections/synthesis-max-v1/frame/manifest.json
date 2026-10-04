@@ -14,8 +14,8 @@
     },
     {
       "path": "prompts/shared/task.j2",
-      "bytes": 992,
-      "sha256": "d12ba969b789e4e2e361fcce24b6e3dc29635420b9ec9b91d608863f5659e417"
+      "bytes": 863,
+      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
     }
   ],
   "documents": [
@@ -48,7 +48,7 @@
     {
       "path": "styles/synthesis-max/style.yaml",
       "bytes": 808,
-      "sha256": "5d6de26ddacf539eb5fda36caf4474c45a0c1556b94252089138083b80290454",
+      "sha256": "94164faee23e4cbc4958acc3078335b2290fc4c7149aba33f957373558a7817c",
       "owner": "declarative style constraints"
     }
   ],

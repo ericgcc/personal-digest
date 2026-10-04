@@ -78,33 +78,31 @@ def test_stage_resolution_follows_the_standard_order():
 
 def test_every_retained_instruction_has_one_owner():
     """The concision invariant has one owner, not two."""
-    line_edit = (ROOT / "editorial" / "stages" / "line-edit.md").read_text(encoding="utf-8")
+    copy_edit = (ROOT / "editorial" / "stages" / "copy-edit.md").read_text(encoding="utf-8")
     naturalness = (ROOT / "editorial" / "shared" / "naturalness.md").read_text(encoding="utf-8")
     invariant = "Never obtain concision by deleting explanatory setup"
-    assert invariant in line_edit, "line-edit no longer owns the invariant"
+    assert invariant in copy_edit, "copy-edit no longer owns the invariant"
     # The naturalness contract refers to it rather than restating it as a block quote.
     assert f"> **{invariant}" not in naturalness, "the invariant is still duplicated as its own block"
 
 
 def test_maintainer_material_is_not_inlined():
-    """`writing-research-basis.md` is provenance and reaches no stage."""
+    """The writing research basis is provenance and reaches no stage."""
     from digest_system.editorial.prompts.inspection import inspect_stage
 
-    for profile_id in ("synthesis-max-v1", "curated-discovery-legacy"):
+    for profile_id in ("synthesis-max-v1", "curated-discovery-v1"):
         for stage_name in stage_names_v2():
             inspection = inspect_stage(
                 digest_id="tech-bi-daily", profile_id=profile_id, stage_name=stage_name
             )
             paths = [e["path"] for e in inspection.manifest.get("documents", []) + inspection.manifest.get("instructions", [])]
+            assert "docs/research/writing-research-basis.md" not in paths, f"{profile_id}/{stage_name}"
             assert "system/writing-research-basis.md" not in paths, f"{profile_id}/{stage_name}"
 
 
 def test_the_research_basis_is_retained_as_a_reference():
-    """The file is kept in the repository; only its inlining was removed."""
-    assert (ROOT / "system" / "writing-research-basis.md").is_file()
-    payload = json.loads((PROMPT_MIGRATION / "approved-prompt-changes.json").read_text(encoding="utf-8"))
-    removals = payload.get("prompt_structure_cleanup", {}).get("removed_documents", [])
-    assert any(entry["document"] == "system/writing-research-basis.md" for entry in removals)
+    """The file is kept in the repository as research provenance; it reaches no stage."""
+    assert (ROOT / "docs" / "research" / "writing-research-basis.md").is_file()
 
 
 # ---------------------------------------------------------------------------------------
@@ -134,7 +132,7 @@ def test_no_stage_receives_a_duplicated_paragraph():
     sys.path.insert(0, str(ROOT / "scripts"))
     from audit_prompts import audit_profile
 
-    for profile_id in ("synthesis-max-v1", "curated-discovery-legacy"):
+    for profile_id in ("synthesis-max-v1", "curated-discovery-v1"):
         row = audit_profile(profile_id)
         for stage_name, stage in row["stages"].items():
             assert not stage["duplicated_paragraphs"], (
@@ -161,25 +159,18 @@ def test_the_variant_harness_runs_offline():
 
 
 def test_the_variants_are_documented_as_data():
-    readme = ROOT / "prompts" / "variants" / "README.md"
-    assert readme.is_file()
-    text = readme.read_text(encoding="utf-8")
-    assert "A — Baseline" in text
-    assert "B — Structured" in text
-    assert "C — Focused" in text
-    # The README must not claim a winner: the paid comparison is deferred.
-    assert "claim a winner" in text
+    """The variant harness was retired with the legacy prompt architecture.
+
+    The A/B/C prompt variants existed to compare the legacy profile-selected prompt
+    arrangements. The convention composer has one active implementation per style, so the
+    variant harness and its README were removed rather than kept as a parallel path.
+    """
+    assert not (ROOT / "prompts" / "variants").exists()
 
 
 def test_a_variant_may_not_remove_the_quality_floor():
-    """A variant manifest may only select among documents; the floor is not optional."""
-    readme = (ROOT / "prompts" / "variants" / "README.md").read_text(encoding="utf-8")
-    assert "may not remove the shared quality floor" in readme
-    for path in (ROOT / "prompts" / "variants").glob("*.json"):
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        for stage, documents in (payload.get("stages") or {}).items():
-            if stage == "draft":
-                assert "styles/editorial-base.md" in documents, f"{path.name}: draft loses the quality floor"
+    """The variant harness was retired; no variant manifest may reintroduce a parallel path."""
+    assert not (ROOT / "prompts" / "variants").exists()
 
 
 # ---------------------------------------------------------------------------------------
@@ -196,13 +187,21 @@ def test_every_prompt_change_is_classified():
 
 
 def test_the_diff_is_order_independent():
-    """Reordering unchanged documents is packaging, not an instruction change (design §3B.1)."""
-    sys.path.insert(0, str(ROOT / "scripts"))
-    from prompt_diff import _instruction_text
+    """Reordering unchanged documents is packaging, not an instruction change.
+
+    The legacy ``scripts/prompt_diff.py`` was retired with the old architecture. The
+    invariant it protected — that instruction comparison is order-independent — is asserted
+    here directly, without importing the deleted module.
+    """
+    import re
+
+    def instruction_text(entry: dict) -> str:
+        blocks = re.findall(r'<document path="[^"]*">\n(.*?)\n</document>', entry["system_text"], re.DOTALL)
+        return "\n\n".join(sorted(block.strip() for block in blocks))
 
     entry_a = {"system_text": '<document path="a.md">\nAAA\n</document>\n\n<document path="b.md">\nBBB\n</document>'}
     entry_b = {"system_text": '<document path="b.md">\nBBB\n</document>\n\n<document path="a.md">\nAAA\n</document>'}
-    assert _instruction_text(entry_a) == _instruction_text(entry_b)
+    assert instruction_text(entry_a) == instruction_text(entry_b)
 
 
 def test_the_prompt_structure_changes_are_recorded():

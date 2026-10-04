@@ -130,21 +130,19 @@ def main(argv: list[str] | None = None) -> int:
         add(WARN, "replay:provenance", "replay.json is missing; this may not be a replay run")
 
     # ---------------------------------------------------------------- stage completion
-    output_names = {
-        "analyze": "analysis.json",
-        "frame": "frame.json",
-        "draft": "draft.md",
-        "developmental-review": "review.json",
-        "writer-revision": "revision.md",
-        "line-edit": "line-edit.md",
-        "reader-review": "review.json",
-        "copy-verify": "final.md",
-        "render": "email.html",
-    }
+    # The output artifact per stage, derived from the stage registry so a renamed or added
+    # stage cannot leave this table stale. Historical runs recorded the retired stage names;
+    # their artifacts are read from the registry's current names where they exist.
+    output_names = {stage.name: stage.artifact for stage in STAGES_V2}
     for stage in executed_stages:
         record = stage_record_by_name.get(stage)
         completed = try_json(run_directory / stage / "attempts" / "attempt-1" / "completed.json")
-        output_path = run_directory / stage / "output" / output_names[stage]
+        artifact = output_names.get(stage)
+        if artifact is None:
+            # A stage the historical run executed that no longer exists (line-edit, copy-verify).
+            add(WARN, f"stage:{stage}", "the stage is no longer part of the active workflow")
+            continue
+        output_path = run_directory / stage / "output" / artifact
         if not record:
             add(ERROR, f"stage:{stage}", "the stage has no record in stage-records.json")
             continue

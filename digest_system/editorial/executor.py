@@ -472,8 +472,8 @@ def execute_stage(
                     scope=scope,
                 )
                 break
-            if stage.executor == "copy-verify":
-                _run_copy_verify_stage(
+            if stage.executor == "deterministic":
+                _run_publication_verify_stage(
                     stage=stage,
                     context=context,
                     record=record,
@@ -481,7 +481,6 @@ def execute_stage(
                     attempt_dir=attempt_dir,
                     documents=documents,
                     projection=projection,
-                    provider=provider,
                 )
                 break
             _run_llm_stage(
@@ -849,7 +848,7 @@ def _run_evaluation_stage(
         record["warnings"].extend(retrieval["warnings"])
     else:
         before = _require_artifact(context, "writer-revision")
-        after = _require_artifact(context, "line-edit")
+        after = _require_artifact(context, "copy-edit")
         response = evaluation.compare_reader_quality(
             before_path=before.path,
             after_path=after.path,
@@ -889,7 +888,7 @@ def _run_evaluation_stage(
     record["adapter_versions"] = response.get("versions")
 
 
-def _run_copy_verify_stage(
+def _run_publication_verify_stage(
     *,
     stage: Any,
     context: RunContext,
@@ -898,9 +897,15 @@ def _run_copy_verify_stage(
     attempt_dir: Path,
     documents: Mapping[str, Any],
     projection: Mapping[str, Any] | None,
-    provider: Any = None,
 ) -> None:
-    prose = context.artifacts.get("targeted-repair") or _require_artifact(context, "line-edit")
+    """Run the deterministic publication checks over the revised prose.
+
+    This stage runs code only. It never calls a model and never edits prose: it reads the
+    artifact the revision stages produced, runs every deterministic publication invariant over
+    it, and writes the prose forward unchanged as ``final.md`` beside an auditable
+    ``verification.json``. A failed hard invariant is recorded and stops Render.
+    """
+    prose = context.artifacts.get("targeted-repair") or _require_artifact(context, "copy-edit")
     frame = context.artifacts["frame"].json if context.artifacts.get("frame") else None
     catalogue_required = catalog_required(context.style_text)
     # A catalog-only edition is deliberately short: the style exempts it from the minimum body
@@ -920,160 +925,46 @@ def _run_copy_verify_stage(
     )
     record["deterministic_checks"] = checks["counts"]
 
-    # Copy/verify declares its own block order, which differs from the LLM stages: the source
-    # provenance comes first, then the prose, then this stage's deterministic findings. The
-    # blocks are handed to the template, which decides the order.
-    composed = compose_stage_prompt(
-        stage=stage,
-        context=context,
-        documents=documents,
-        projection=projection,
-        projection_tag="source_provenance",
-        blocks=(),
-        extra_blocks={
-            "previous_stage_artifact": prose.text,
-            "deterministic_check_findings": json.dumps(checks, ensure_ascii=False, indent=2),
-            "approved_frame_citations": json.dumps(
-                {
-                    "declared_source_numbers": sorted(narrative_evidence_numbers(frame)),
-                    "note": (
-                        "These are the sources the narrative may cite: the union of the retained units' selected_source_numbers. "
-                        "The catalogue lists every reviewed source; it is not narrative evidence."
-                    ),
-                },
-                ensure_ascii=False,
-                indent=2,
-            ),
-        },
-    )
-    system_text = composed.system_text
-    user_text = composed.user_text
-    _record_prompt_manifest(attempt_dir, composed)
-
-    write_artifact(attempt_dir / "prompt.txt", f"{system_text}\n\n=== USER ===\n\n{user_text}")
-    try:
-        copy_file(attempt_dir / "prompt.txt", work_dir / "prompt.txt")
-    except OSError:
-        pass
-
-    copy_pass = None
-    failure: Exception | None = None
-    response = None
-    try:
-        response = with_retry(
-            lambda: call_deepseek(
-                system_text=system_text,
-                user_text=user_text,
-                stage_name=stage.name,
-                timeout_ms=resolve_timeout_ms(context.timeout_seconds),
-                thinking=stage.thinking or {"type": "enabled"},
-                reasoning_effort=stage.effort,
-                provider=provider,
-            ),
-            stage_name=stage.name,
-        )
-    except Exception as error:  # noqa: BLE001 - a copy pass is optional by design
-        failure = error
-
-    if response is not None:
-        write_json(attempt_dir / "model-response.json", response.raw)
-        if response.finish_reason == "length":
-            failure = RunnerError("copy pass stopped at the output ceiling")
-            record["warnings"].append("Copy pass was truncated and discarded; the prose is unchanged.")
-        else:
-            copy_pass = split_copy_pass(response.text)
-    else:
-        record["warnings"].append(
-            f"Copy pass unavailable ({failure}); the deterministic checks stand and the prose is unchanged."
-        )
-
-    final_text = prose.text
-    guard = None
-    verification = copy_pass["verification"] if copy_pass else None
-    if copy_pass and copy_pass["markdown"]:
-        guard = guard_copy_pass(
-            before=prose.text,
-            after=copy_pass["markdown"],
-            budget=context.profile.budget,
-            catalogue_required=catalogue_required,
-        )
-        if guard["accepted"]:
-            final_text = copy_pass["markdown"]
-            record["status"] = "completed"
-            record["corrections_applied"] = True
-        else:
-            record["warnings"].append(
-                f"Copy pass rejected by the diff guard: {'; '.join(guard['reasons'])}. The prose is unchanged."
-            )
-            record["corrections_applied"] = False
-    elif failure is None:
-        record["warnings"].append("Copy pass produced no Markdown artifact; the prose is unchanged.")
-
-    # The deterministic checks are re-run on what will actually be published.
-    published = run_deterministic_checks(
-        prose=final_text,
-        corpus=context.corpus,
-        frame=frame,
-        style_text=context.style_text,
-        style=context.style,
-        language=context.language,
-        catalogue_required=catalogue_required,
-        budget=context.profile.budget,
-        exempt_length=catalog_only_edition,
-        highlights_text=context.instructions().get("Optional highlights"),
-    )
-    record["deterministic_checks"] = published["counts"]
-
     report = {
         "schema_version": 1,
-        "stage": "copy-verify",
+        "stage": "publication-verify",
         "pipeline": PIPELINE_ID,
         "generated_at": _now(),
         "executor_note": (
-            "Deterministic checks run first and are authoritative. The model may correct copy only, and its output is accepted only if it survives the diff guard."
+            "Deterministic publication checks only. This stage runs no model and edits no prose; "
+            "the revised artifact is published unchanged."
         ),
-        "checks": (verification or {}).get("checks", published["checks"]),
-        "deterministic_checks": published["checks"],
-        "deterministic_counts": published["counts"],
-        "corrections": (verification or {}).get("corrections", []),
-        "editorial_findings": (verification or {}).get("editorial_findings", []),
-        "summary": (verification or {}).get("summary"),
-        "copy_pass": {
-            "attempted": bool(response is not None),
-            "accepted": bool(guard and guard["accepted"]),
-            "guard_reasons": (guard or {}).get("reasons", []),
-            "deltas": (guard or {}).get("deltas"),
-            "unavailable_reason": str(failure) if failure else None,
-        },
-        "citations": published["citations"],
-        "catalogue_numbers": published["catalogue_numbers"],
-        "body_words": published["body_words"],
-        "total_words": published["total_words"],
-        "catalogue_detection": published["catalogue_detection"],
+        "checks": checks["checks"],
+        "deterministic_checks": checks["checks"],
+        "deterministic_counts": checks["counts"],
+        "citations": checks["citations"],
+        "catalogue_numbers": checks["catalogue_numbers"],
+        "body_words": checks["body_words"],
+        "total_words": checks["total_words"],
+        "catalogue_detection": checks["catalogue_detection"],
     }
 
     final_path = work_dir / "output" / stage.artifact
-    write_artifact(final_path, final_text)
+    write_artifact(final_path, prose.text)
     write_json(work_dir / "output" / "verification.json", report)
     _write_completed(
         attempt_dir=attempt_dir,
         stage=stage,
         output_path=final_path,
-        finish_reason=(response.finish_reason if response else "stop"),
-        usage=(response.usage if response else None),
+        finish_reason="stop",
+        usage=None,
         root=context.root,
     )
-    if report["deterministic_counts"]["fail"] > 0:
+    if checks["counts"]["fail"] > 0:
         record["warnings"].append(
-            f"{report['deterministic_counts']['fail']} deterministic publication check(s) failed: "
-            + "; ".join(f"{item['id']} ({item['note']})" for item in published["checks"] if item["status"] == "fail")
+            f"{checks['counts']['fail']} deterministic publication check(s) failed: "
+            + "; ".join(f"{item['id']} ({item['note']})" for item in checks["checks"] if item["status"] == "fail")
         )
     record["verification"] = {
-        "counts": report["deterministic_counts"],
-        "copy_pass_accepted": report["copy_pass"]["accepted"],
-        "editorial_findings": len(report["editorial_findings"]),
+        "counts": checks["counts"],
+        "editorial_findings": 0,
     }
-    _register_artifact(stage=stage, context=context, output_path=final_path, text=final_text, record=record)
+    _register_artifact(stage=stage, context=context, output_path=final_path, text=prose.text, record=record)
 
 
 # ---------------------------------------------------------------------------------------

@@ -156,9 +156,9 @@ def _responses() -> dict[str, str]:
         "frame": json.dumps(frame_valid()),
         "draft": PROSE,
         "writer-revision": PROSE,
-        "line-edit": PROSE,
+        "copy-edit": PROSE,
         "targeted-repair": PROSE,
-        "copy-verify": PROSE,
+        "publication-verify": PROSE,
         "render": "<html><body>digest</body></html>",
     }
 
@@ -238,7 +238,8 @@ def test_a_mocked_pipeline_executes_every_stage_and_produces_compatible_artifact
         assert (workspace / record["output"]).exists(), stage
 
     # The run-directory contract is preserved: attempt records, context manifests, prompts.
-    for stage in ("analyze", "frame", "draft", "copy-verify", "render"):
+    # `publication-verify` is deterministic and makes no model call, so it has no prompt.
+    for stage in ("analyze", "frame", "draft", "copy-edit", "render"):
         attempt = run_dir / stage / "attempts" / "attempt-1"
         assert (attempt / "attempt.json").exists(), stage
         assert (attempt / "context-manifest.json").exists(), stage
@@ -301,15 +302,15 @@ def test_a_fatal_stage_failure_stops_the_run(workspace):
 
 
 def test_a_recoverable_stage_failure_carries_the_last_valid_artifact_forward(workspace):
-    provider = MockProvider(_responses(), fail_stages={"line-edit"})
+    provider = MockProvider(_responses(), fail_stages={"copy-edit"})
     result = _run(workspace, run_id="mock-degraded", provider=provider)
 
-    assert "line-edit" in result["degraded"]
+    assert "copy-edit" in result["degraded"]
     run_dir = workspace / ".digest-runs" / "mock-degraded"
-    degraded = read_json(run_dir / "line-edit" / "degraded.json")
+    degraded = read_json(run_dir / "copy-edit" / "degraded.json")
     assert degraded["carried_forward_from"] == "writer-revision"
     stage_records = read_json(run_dir / "stage-records.json")
-    record = next(item for item in stage_records["stages"] if item["stage"] == "line-edit")
+    record = next(item for item in stage_records["stages"] if item["stage"] == "copy-edit")
     assert record["provenance"] == "carried-forward-from:writer-revision"
 
 
@@ -330,11 +331,11 @@ def test_the_synthesis_max_profile_stops_rather_than_deriving_a_recovery_frame(w
 
 
 def test_a_legacy_profile_derives_the_documented_recovery_frame(workspace):
-    """The legacy rollback must keep the pre-profile recovery behaviour.
+    """A profile that permits a recovery frame derives one when the frame call fails.
 
-    The legacy profile enforces no composition constraint, so an empty plan passes validation;
-    the recovery path is reached when the frame's model call itself fails. The Synthesis MAX refinement retired the
-    Synthesis MAX legacy profile, so this uses another style's legacy profile.
+    The Synthesis MAX refinement retired the Synthesis MAX legacy profile, and the
+    editorial-architecture simplification removed the Concise and Detailed styles. The
+    Curated Discovery profile permits a recovery frame, so it exercises this path.
     """
     provider = MockProvider(_responses(), fail_stages={"frame"})
     source_path = workspace / ".digest-runs" / "mock-recovery" / "source-acquisition" / "sources.json"
@@ -342,13 +343,13 @@ def test_a_legacy_profile_derives_the_documented_recovery_frame(workspace):
     source_path.write_text(json.dumps(corpus(), ensure_ascii=False, indent=2), encoding="utf-8")
     result = execute_pipeline_v2(
         run_id="mock-recovery",
-        digest_id="tech-bi-daily",
-        config_path=workspace / "digests" / "tech-bi-daily.md",
-        style="detailed",
+        digest_id="medium-bi-daily",
+        config_path=workspace / "digests" / "medium-bi-daily.md",
+        style="curated-discovery",
         language="English",
         source_path=source_path,
         timeout_seconds=60,
-        style_profile=STYLE_PROFILES["detailed-legacy"],
+        style_profile=STYLE_PROFILES["curated-discovery-v1"],
         style_profile_source="explicit",
         root=workspace,
         provider=provider,

@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Sequence
 
 from ..runtime.artifacts import RunnerError
+from .validation.copy_verify import catalog_required, guard_copy_pass
 from .validation.editorial import validate_analysis_selection, validate_frame
 
 PIPELINE_V2 = "editorial-pipeline-v2"
@@ -176,6 +177,17 @@ STAGES_V2: tuple[Stage, ...] = (
         effort="medium",
         budget=True,
         purpose="COPY EDIT: detailed copyediting — clarity, grammar, syntax, spelling, punctuation, terminology consistency, local redundancy, naturalness, rhythm, awkward phrasing, minor local rewording, citation preservation, and heading/terminology consistency. It may not significantly restructure the document.",
+        # Gate: a copy pass that materially restructures the prose is rejected, not corrected,
+        # and the writer-revision prose is carried forward unchanged.
+        validation=StageValidation(
+            severity="gate",
+            run=lambda *, artifact, context, attempt_dir=None: guard_copy_pass(
+                before=context.artifacts["writer-revision"].text,
+                after=artifact,
+                budget=context.profile.budget,
+                catalogue_required=catalog_required(context.style_text),
+            ),
+        ),
         blocks=lambda ctx: (
             ctx.artifact_block("writer-revision", "previous_stage_artifact"),
             ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),

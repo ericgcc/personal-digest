@@ -7,7 +7,7 @@ Before writing:
 2. Interrogate each promising source before synthesizing it: identify its actual thesis, strongest evidence/mechanism, meaningful caveats or anomalies, and what it uniquely contributes.
 3. Evaluate each source for information value, explanatory power, practical significance, novelty and relevance to the broader source set.
 4. Identify and classify meaningful relationships precisely: reinforcement, extension, qualification, contradiction, complementarity, shared cause/consequence, or independence.
-5. For every proposed thread, ask: **What concrete topic, question, mechanism, development, or tension do at least two sources help the reader understand better together—and what does each source add?** Then apply the relationship, contribution, evidence, counter-test, comprehension, and semantic-distance checks in `system/writing-reasoning-and-source-fidelity.md`.
+5. For every proposed thread, ask: **What concrete topic, question, mechanism, development, or tension do at least two sources help the reader understand better together—and what does each source add?** Then apply the relationship, contribution, evidence, counter-test, comprehension, and semantic-distance checks in `editorial/shared/reasoning-fidelity.md`.
 6. Select the material that provides enough value to justify space in a short briefing.
 7. Choose the editorial structure that best reflects the evidence. Treat the initial synthesis as a working explanation, not a conclusion that later evidence must be made to fit.
 
@@ -36,17 +36,17 @@ Recurring coverage is not automatically important. Repetition may represent dupl
 
 **Stage:** `analyze` · **Style:** `synthesis-max` · **Profile:** `synthesis-max-v1`
 
-This document is operational. It states what *this stage* is responsible for in this style. It does not restate the style's identity or its output requirements: `styles/synthesis-max.md` remains authoritative for both, and `system/contracts/analyze.md` remains authoritative for the stage's role.
+This document is operational. It states what *this stage* is responsible for in this style. It does not restate the style's identity or its output requirements: `styles/synthesis-max/interface.md` remains authoritative for both, and `editorial/stages/analyze.md` remains authoritative for the stage's role.
 
 ---
 
 ## What you are given
 
-`system/contracts/analyze.md` states the stage's role and what it receives. This style adds the
+`editorial/stages/analyze.md` states the stage's role and what it receives. This style adds the
 selection standard you judge against: its selection model, composition unit and source
 relationship (`## Style interface`), its thread-forming tests (`## Synthesis mode`), and the
 canonical relationship vocabulary and synthesis test in
-`system/writing-reasoning-and-source-fidelity.md`. The digest's reading instructions are the
+`editorial/shared/reasoning-fidelity.md`. The digest's reading instructions are the
 authority for what this reader values; the style is the authority for how material is combined.
 
 You do **not** receive the style's writing character, its required structure, its citation rules,
@@ -99,7 +99,7 @@ Every proposed cluster must carry these fields, with these meanings:
 
 Rules for these fields:
 
-* **`relationship_type`** must be one value from the canonical vocabulary in `system/writing-reasoning-and-source-fidelity.md` § *Compare sources by relationship, not topic*: `reinforcement`, `extension`, `qualification`, `contradiction`, `complementarity`, `shared_cause_or_consequence`, `independence`. Do not compose new labels. `extension_plus_qualification` is two relationships, and a thread labelled that way cannot be tested against either.
+* **`relationship_type`** must be one value from the canonical vocabulary in `editorial/shared/reasoning-fidelity.md` § *Compare sources by relationship, not topic*: `reinforcement`, `extension`, `qualification`, `contradiction`, `complementarity`, `shared_cause_or_consequence`, `independence`. Do not compose new labels. `extension_plus_qualification` is two relationships, and a thread labelled that way cannot be tested against either.
 * **`concrete_subject`** must name something a reader could recognise without having read the sources. If it only makes sense as an abstraction, the grouping is not yet justified.
 * **`new_understanding`** must say what becomes clearer *through the combination*. "Both sources discuss X" is not an answer. If nothing becomes clearer, the sources have independent value and belong apart.
 * **`relationship_counter_test`** must give the strongest reason the grouping might not be justified, including whether one member is merely decorative. A counter-test that nothing could disprove is not a counter-test.

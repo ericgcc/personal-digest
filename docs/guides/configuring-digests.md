@@ -7,7 +7,7 @@ A digest is assembled from separate layers with different responsibilities:
 | Layer | Location | Responsibility |
 | --- | --- | --- |
 | Workflow | `system/workflow.md` | Shared execution, state, safety, routing, precedence, and delivery. |
-| Editorial process | `system/editorial-process.md` | Shared autonomous production method: SELECT → ANALYZE → FRAME → DRAFT → DEVELOPMENTAL REVIEW → WRITER REVISION → LINE EDIT → READER REVIEW → [TARGETED REPAIR] → COPY & VERIFY. |
+| Editorial process | `system/editorial-process.md` | Shared autonomous production method: SELECT → ANALYZE → FRAME → DRAFT → DEVELOPMENTAL REVIEW → WRITER REVISION → COPY EDIT → READER REVIEW → [TARGETED REPAIR] → PUBLICATION VERIFY. |
 | Editorial pipeline v2 | `system/editorial-pipeline-v2.md` | The v2 stages, the per-stage context matrix, evidence projection, adapters, and failure semantics. |
 | Stage contracts | `editorial/stages/` | What each current stage receives, decides, and must not do. |
 | Runtime configuration | `system/runtime.json` | Active pipeline, the WOPS project root, and the Python interpreter per component. |

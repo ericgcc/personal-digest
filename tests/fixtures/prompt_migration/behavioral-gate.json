@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
-  "approved_candidate_sha256": "e47f4da413bc71bb7ab81ebf407f03b43a7eb53b5eae80265b0324de10e885bb",
+  "approved_candidate_sha256": "6d384e2d0b38e434bcb422d8ffedfd31842b5e03b7bc5ad267242da0cc8d3bb4",
   "categories": [
     "packaging-only",
     "deduplication-without-semantic-loss",
@@ -516,6 +516,110 @@
       "block": "system/contracts/writer-revision.md",
       "category": "behavioral-change",
       "justification": "Writer Revision is now explicitly a substantive revision with structural authority (reorder, expand, cut, split, merge, reframe, rewrite, change headings, redistribute emphasis) bounded by the approved evidence set."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "removed",
+      "block": "styles/editorial-base.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction: the shared editorial-base contract moved to editorial/shared/editorial-base.md in the new instruction tree. The instruction text is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "added",
+      "block": "editorial/shared/editorial-base.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction: the shared editorial-base contract moved to editorial/shared/editorial-base.md in the new instruction tree. The instruction text is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "removed",
+      "block": "system/contracts/render.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction: the render stage contract moved to editorial/stages/render.md. The instruction text is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "added",
+      "block": "editorial/stages/render.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction: the render stage contract moved to editorial/stages/render.md. The instruction text is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "removed",
+      "block": "system/rendering-synthesis-max.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction: the style rendering profile moved to styles/synthesis-max/rendering.md. The instruction text is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "added",
+      "block": "styles/synthesis-max/rendering.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction: the style rendering profile moved to styles/synthesis-max/rendering.md. The instruction text is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "novel-content",
+      "block": "editorial/stages/render.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction inside the render stage contract: file references updated to the new instruction tree (rendering/shared.md, styles/<style>/rendering.md). The rendering rules are unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "novel-content",
+      "block": "styles/synthesis-max/rendering.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction inside the style rendering profile: file references updated to the new instruction tree (styles/synthesis-max/interface.md). The rendering rules are unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "novel-content",
+      "block": "editorial/shared/editorial-base.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction inside the shared editorial-base contract: the naturalness diagnostic reference updated to editorial/shared/naturalness.md. The instruction text is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "lost-content",
+      "block": "styles/editorial-base.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction: the old aggregate editorial-base document is retired; its text now lives in editorial/shared/editorial-base.md with the pointer updated."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "lost-content",
+      "block": "system/contracts/render.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction: the old render contract location is retired; the same text now lives in editorial/stages/render.md with pointers updated."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "lost-content",
+      "block": "system/rendering-synthesis-max.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction: the old rendering profile location is retired; the same text now lives in styles/synthesis-max/rendering.md with pointers updated."
+    },
+    {
+      "profile": "*",
+      "stage": "render",
+      "kind": "lost-content",
+      "block": "system/rendering-synthesis-max.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "Pointer correction: the old rendering profile location is retired; the same text now lives in styles/synthesis-max/rendering.md with the file references updated to the new instruction tree. The rendering rules are unchanged."
     }
   ]
 }

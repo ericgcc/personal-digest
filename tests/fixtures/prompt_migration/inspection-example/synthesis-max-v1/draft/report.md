@@ -16,11 +16,11 @@
 
 - `editorial/stages/draft.md` — 5215 chars; owner: shared stage contract; sha256 `b58cfb914625`
 - `editorial/shared/reader.md` — 3357 chars; owner: shared cross-cutting contract; sha256 `c653190e8179`
-- `editorial/shared/editorial-base.md` — 14691 chars; owner: shared cross-cutting contract; sha256 `fa95ec112832`
+- `editorial/shared/editorial-base.md` — 14693 chars; owner: shared cross-cutting contract; sha256 `eba403a5cecb`
 
 ## Style-supplied instructions
 
-- `styles/synthesis-max/stages/draft.md` — 23547 chars; owner: style-specific stage specialization; sha256 `b6a71446ad15`
+- `styles/synthesis-max/stages/draft.md` — 23553 chars; owner: style-specific stage specialization; sha256 `218e361f8f70`
 - `styles/synthesis-max/interface.md` — 2758 chars; owner: style interface declaration; sha256 `be4b146191d8`
 - `styles/synthesis-max/style.yaml` — 808 chars; owner: declarative style constraints; sha256 `94164faee23e`
 
@@ -33,5 +33,5 @@
 
 ## Sizes
 
-- System: 51368 units
+- System: 51376 units
 - User: 6812 units

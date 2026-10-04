@@ -52,10 +52,13 @@ def _run(args: list[str]) -> subprocess.CompletedProcess:
 def test_every_profile_resolves_every_required_stage():
     from digest_system.config.profiles import preflight_style_profile, validate_style_profile
 
+    from ..fixtures import runnable_profiles
+
     # The editorial-architecture simplification removed the out-of-scope Concise and Detailed
-    # styles and retired the Curated Discovery legacy profile, so two profiles remain.
+    # styles and retired the Curated Discovery legacy profile, so two profiles remain declared;
+    # only the runnable ones preflight.
     assert len(style_profile_ids()) == 2
-    for profile_id in style_profile_ids():
+    for profile_id in runnable_profiles():
         profile = STYLE_PROFILES[profile_id]
         assert validate_style_profile(profile).ok, profile_id
         preflight = preflight_style_profile(profile)
@@ -175,7 +178,10 @@ def test_style_specific_review_contracts_are_resolved_by_convention():
     """Evaluation contracts come from the runtime instruction tree, not profile routing."""
     from digest_system.config.profiles import preflight_style_profile
 
-    for profile in STYLE_PROFILES.values():
+    from ..fixtures import runnable_profiles
+
+    for profile_id in runnable_profiles():
+        profile = STYLE_PROFILES[profile_id]
         preflight = preflight_style_profile(profile)
         for stage in ("developmental-review", "reader-review"):
             contracts = preflight.stages[stage]["contracts"]

@@ -147,7 +147,7 @@ A restrained sentence that is true and interesting is better than a profound-sou
 ## Naturalness is an outcome, not a disguise
 Do not optimize prose to evade AI detectors or to imitate accidental human messiness. Detector scores and isolated stylistic tells are unreliable; the deeper editorial failures matter more.
 
-Use `system/writing-naturalness.md` as a diagnostic pass. In particular:
+Use `editorial/shared/naturalness.md` as a diagnostic pass. In particular:
 
 * Restore source-grounded specificity when generic significance language has smoothed it away.
 * State concrete relationships instead of attaching superficial "highlighting/underscoring" analysis.

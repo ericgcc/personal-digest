@@ -21,8 +21,8 @@
   "documents": [
     {
       "path": "editorial/stages/render.md",
-      "bytes": 5739,
-      "sha256": "46ceae244f4e93bbca0d5698e831674c2da435a3ac11a7a61b65b14987577e8c",
+      "bytes": 5729,
+      "sha256": "c7469180eb42418f12d72f23ad043754bd0dcc8770ed955192812c19e0c29c8d",
       "owner": "shared stage contract"
     },
     {
@@ -41,8 +41,8 @@
   "instructions": [
     {
       "path": "styles/synthesis-max/rendering.md",
-      "bytes": 6885,
-      "sha256": "3c0546c2d9c4832e94861b10c0cf3811222111513a2bc7df501ec734bc3d16fc",
+      "bytes": 6900,
+      "sha256": "16593ddb652dc34d74e577c1299ab887ba0975b41174c218846b3dd88e6f6242",
       "owner": "style rendering profile"
     }
   ],
@@ -106,6 +106,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 41388,
+  "system_bytes": 41393,
   "user_bytes": 5147
 }

@@ -308,7 +308,7 @@ def main(argv: list[str] | None = None) -> int:
             add(ERROR, f"json:{stage}", "does not parse")
 
     if pipeline == "editorial-pipeline-v2":
-        for artifact, stage in (("verification.json", "copy-verify"), ("wops.json", "developmental-review")):
+        for artifact, stage in (("verification.json", "publication-verify"), ("wops.json", "developmental-review")):
             if try_json(stage_path(stage, "output", artifact)) is not None:
                 add(OK, f"json:{stage}/{artifact}", "parses")
             else:
@@ -369,7 +369,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # ------------------------------------------------------------------ final prose
     final_text = ""
-    for stage in ("copy-verify", "final-polish"):
+    for stage in ("publication-verify", "final-polish"):
         text = None
         path = stage_path(stage, "output", "final.md")
         if path.exists():

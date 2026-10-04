@@ -12,12 +12,13 @@ profile:
   id: curated-discovery-v1
   version: 1.0.0
   label: Curated Discovery
-  status: active
+  status: unavailable
   frame_failure_policy: recovery-frame
   notes:
     - A minimal new-architecture Curated Discovery definition.
     - Editorial instructions and constraints resolve from the curated-discovery style tree.
     - The legacy profile and legacy stage implementations were removed.
+    - The style awaits a fresh implementation against the new architecture; it is not runnable.
 
 constraints:
   version: 1

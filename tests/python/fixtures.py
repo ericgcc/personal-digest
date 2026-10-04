@@ -81,6 +81,28 @@ def retired_profile(profile_id: str) -> bool:
     return profile_id in RETIRED_PROFILES
 
 
+def runnable_profiles() -> list[str]:
+    """The declared profiles whose style can actually run.
+
+    The editorial-architecture simplification left Curated Discovery declared but not
+    runnable until its new-architecture implementation is rebuilt. A test that exercises
+    prompt composition or preflight iterates only the runnable profiles; a test that asserts
+    the *declaration* state iterates everything and asserts the unrunnable state explicitly.
+    """
+    from digest_system.config import STYLE_PROFILES, style_profile_ids
+    from digest_system.config.profiles import preflight_style_profile
+    from digest_system.runtime.artifacts import RunnerError
+
+    runnable: list[str] = []
+    for profile_id in style_profile_ids():
+        try:
+            preflight_style_profile(STYLE_PROFILES[profile_id])
+        except RunnerError:
+            continue
+        runnable.append(profile_id)
+    return runnable
+
+
 def approved_difference(path: str) -> tuple[Any, Any] | None:
     """The (javascript, python) values approved for a dotted path, or ``None``.
 

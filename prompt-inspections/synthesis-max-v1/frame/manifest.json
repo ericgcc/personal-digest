@@ -35,8 +35,8 @@
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/frame.md",
-      "bytes": 22670,
-      "sha256": "4c195267086e985907f2d69be269d2148c796b3909c0e6fd5942c2fdc4069a2b",
+      "bytes": 22677,
+      "sha256": "0a54395dbc0540bf560496e814da8eb48bd2cd8012b92bd3b4099245835a09c4",
       "owner": "style-specific stage specialization"
     },
     {
@@ -77,6 +77,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 41152,
+  "system_bytes": 41159,
   "user_bytes": 2638
 }

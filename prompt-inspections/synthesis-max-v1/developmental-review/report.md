@@ -19,13 +19,13 @@
 
 - `editorial/shared/reader.md` — 3357 chars; owner: reader; sha256 `c653190e8179`
 - `digests/tech-bi-daily.md` — 739 chars; owner: reader; sha256 `a8169178bea1`
-- `styles/synthesis-max/stages/developmental-review.md` — 7306 chars; owner: review; sha256 `b24cd9321618`
+- `styles/synthesis-max/stages/developmental-review.md` — 7316 chars; owner: review; sha256 `ad0096bed66e`
 - `editorial/stages/developmental-review.md` — 5287 chars; owner: role; sha256 `38200855a78b`
 - `styles/synthesis-max/interface.md` — 2758 chars; owner: style; sha256 `be4b146191d8`
 
 ## Data blocks
 
-- `evaluation_input` — 22983 chars; combined judge prompt; source `{"contracts": ["reader", "review", "role", "style"], "kind": "evaluation-adapter"}`
+- `evaluation_input` — 22993 chars; combined judge prompt; source `{"contracts": ["reader", "review", "role", "style"], "kind": "evaluation-adapter"}`
 
 ## Sizes
 

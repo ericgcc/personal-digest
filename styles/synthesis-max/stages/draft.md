@@ -7,7 +7,7 @@ Before writing:
 2. Interrogate each promising source before synthesizing it: identify its actual thesis, strongest evidence/mechanism, meaningful caveats or anomalies, and what it uniquely contributes.
 3. Evaluate each source for information value, explanatory power, practical significance, novelty and relevance to the broader source set.
 4. Identify and classify meaningful relationships precisely: reinforcement, extension, qualification, contradiction, complementarity, shared cause/consequence, or independence.
-5. For every proposed thread, ask: **What concrete topic, question, mechanism, development, or tension do at least two sources help the reader understand better together—and what does each source add?** Then apply the relationship, contribution, evidence, counter-test, comprehension, and semantic-distance checks in `system/writing-reasoning-and-source-fidelity.md`.
+5. For every proposed thread, ask: **What concrete topic, question, mechanism, development, or tension do at least two sources help the reader understand better together—and what does each source add?** Then apply the relationship, contribution, evidence, counter-test, comprehension, and semantic-distance checks in `editorial/shared/reasoning-fidelity.md`.
 6. Select the material that provides enough value to justify space in a short briefing.
 7. Choose the editorial structure that best reflects the evidence. Treat the initial synthesis as a working explanation, not a conclusion that later evidence must be made to fit.
 
@@ -201,14 +201,14 @@ Let each paragraph perform one primary explanatory job. If several unfamiliar co
 
 **Stage:** `draft` · **Style:** `synthesis-max` · **Profile:** `synthesis-max-v1`
 
-This document is operational. It states what *this stage* is responsible for in this style. `styles/synthesis-max.md` remains authoritative for the style's identity and output requirements, and `system/contracts/draft.md` remains authoritative for the stage's role.
+This document is operational. It states what *this stage* is responsible for in this style. `styles/synthesis-max/interface.md` remains authoritative for the style's identity and output requirements, and `editorial/stages/draft.md` remains authoritative for the stage's role.
 
 ---
 
 ## What you receive
 
-`system/contracts/draft.md` states the stage's role and how to write. `styles/editorial-base.md`
-and `system/contracts/reader-contract.md` are the shared quality floor and the domain-neutral
+`editorial/stages/draft.md` states the stage's role and how to write. `editorial/shared/editorial-base.md`
+and `editorial/shared/reader.md` are the shared quality floor and the domain-neutral
 reader definition; where a style habit makes a passage harder to follow, the reader contract wins.
 This style adds the composition unit, source relationship and progression model
 (`## Style interface`); what makes a thread a synthesis (`## Synthesis mode`); the edition's

@@ -35,8 +35,8 @@
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/targeted-repair.md",
-      "bytes": 5427,
-      "sha256": "00fa6ccf2a1d17fcdc333e807eaeb4d664baf5b4bccb7dbb2026ba47e67ec15b",
+      "bytes": 5437,
+      "sha256": "9e206e9ef5a9c99c9cb01ab01c49e4cf3d9142621fd102c13fbb73786404d356",
       "owner": "style-specific stage specialization"
     }
   ],
@@ -126,6 +126,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 12237,
+  "system_bytes": 12247,
   "user_bytes": 4043
 }

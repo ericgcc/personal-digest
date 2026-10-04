@@ -19,7 +19,7 @@
 
 ## Style-supplied instructions
 
-- `styles/synthesis-max/stages/targeted-repair.md` — 5427 chars; owner: style-specific stage specialization; sha256 `00fa6ccf2a1d`
+- `styles/synthesis-max/stages/targeted-repair.md` — 5437 chars; owner: style-specific stage specialization; sha256 `9e206e9ef5a9`
 
 ## Data blocks
 
@@ -30,5 +30,5 @@
 
 ## Sizes
 
-- System: 12237 units
+- System: 12247 units
 - User: 4043 units

@@ -162,7 +162,7 @@ Before writing:
 2. Interrogate each promising source before synthesizing it: identify its actual thesis, strongest evidence/mechanism, meaningful caveats or anomalies, and what it uniquely contributes.
 3. Evaluate each source for information value, explanatory power, practical significance, novelty and relevance to the broader source set.
 4. Identify and classify meaningful relationships precisely: reinforcement, extension, qualification, contradiction, complementarity, shared cause/consequence, or independence.
-5. For every proposed thread, ask: **What concrete topic, question, mechanism, development, or tension do at least two sources help the reader understand better together—and what does each source add?** Then apply the relationship, contribution, evidence, counter-test, comprehension, and semantic-distance checks in `system/writing-reasoning-and-source-fidelity.md`.
+5. For every proposed thread, ask: **What concrete topic, question, mechanism, development, or tension do at least two sources help the reader understand better together—and what does each source add?** Then apply the relationship, contribution, evidence, counter-test, comprehension, and semantic-distance checks in `editorial/shared/reasoning-fidelity.md`.
 6. Select the material that provides enough value to justify space in a short briefing.
 7. Choose the editorial structure that best reflects the evidence. Treat the initial synthesis as a working explanation, not a conclusion that later evidence must be made to fit.
 
@@ -310,7 +310,7 @@ The catalog exists for transparency and navigation; it is not another summary se
 
 **Stage:** `frame` · **Style:** `synthesis-max` · **Profile:** `synthesis-max-v1`
 
-This document is operational. It states what *this stage* is responsible for in this style. `styles/synthesis-max.md` remains authoritative for the style's identity and output requirements, and `system/contracts/frame.md` remains authoritative for the stage's role.
+This document is operational. It states what *this stage* is responsible for in this style. `styles/synthesis-max/interface.md` remains authoritative for the style's identity and output requirements, and `editorial/stages/frame.md` remains authoritative for the stage's role.
 
 ---
 
@@ -327,7 +327,7 @@ Both are checked deterministically before Draft sees anything, and a plan that v
 
 ## What you receive
 
-`system/contracts/frame.md` states the stage's role and the unit rule. This style adds the plan's
+`editorial/stages/frame.md` states the stage's role and the unit rule. This style adds the plan's
 shape and arithmetic: the composition unit, source relationship, depth model, organisation model,
 opening behaviour and catalogue requirement (`## Style interface`); the thread-forming tests
 (`## Synthesis mode`); the required structure and catalog-only edition (`## Required structure`);
@@ -369,7 +369,7 @@ Never solve an oversized thread by planning to discard its citations silently. N
 
 ### 3. Give every retained thread the fields its explanation needs
 
-Reuse the fields `system/contracts/frame.md` already defines rather than inventing parallel ones. In this style they carry:
+Reuse the fields `editorial/stages/frame.md` already defines rather than inventing parallel ones. In this style they carry:
 
 * **`central_focus`, `reader_promise`, `plain_language_setup`, `reader_needs_to_understand`, `orientation_needed`** — what the thread is about and what the reader must already have. A thread whose `plain_language_setup` cannot be written without a specialised term is a thread whose subject is not yet concrete.
 * **`narrative_spine`** — the ordered explanatory moves, not a dramatic arc. In this style a spine may develop a mechanism, a contradiction, a comparison, a causal chain, a consequence, or a tension. It must begin from orientation and end at the relationship or the implication, which needs at least two moves.

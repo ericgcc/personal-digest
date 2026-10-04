@@ -14,13 +14,13 @@
 
 ## Instruction documents
 
-- `editorial/stages/render.md` — 5739 chars; owner: shared stage contract; sha256 `46ceae244f4e`
+- `editorial/stages/render.md` — 5729 chars; owner: shared stage contract; sha256 `c7469180eb42`
 - `rendering/shared.md` — 18317 chars; owner: shared rendering contract; sha256 `fa3cc361874d`
 - `templates/synthesis-max-email-v1.html` — 9598 chars; owner: HTML email template; sha256 `dd378e0edbae`
 
 ## Style-supplied instructions
 
-- `styles/synthesis-max/rendering.md` — 6885 chars; owner: style rendering profile; sha256 `3c0546c2d9c4`
+- `styles/synthesis-max/rendering.md` — 6900 chars; owner: style rendering profile; sha256 `16593ddb652d`
 
 ## Data blocks
 
@@ -33,5 +33,5 @@
 
 ## Sizes
 
-- System: 41388 units
+- System: 41393 units
 - User: 5147 units

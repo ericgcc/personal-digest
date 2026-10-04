@@ -314,6 +314,36 @@ def test_a_recoverable_stage_failure_carries_the_last_valid_artifact_forward(wor
     assert record["provenance"] == "carried-forward-from:writer-revision"
 
 
+def test_a_copy_edit_that_restructures_is_rejected_and_the_revision_is_carried_forward(workspace):
+    """A copy-edit that drops a heading and removes citations is rejected by the structural
+    guard, and the writer-revision prose is carried forward as the copy-edit artifact."""
+    bad_copy_edit = "\n".join(
+        [
+            "## THE BIG PICTURE",
+            "",
+            "Incremental evaluation changes what a claim costs to check.",
+            "",
+            "The mechanism makes the claim checkable [2].",
+            "",
+            "## Sources",
+            "",
+            "2. [Qualifying the evaluation claim](https://example.invalid/b) · 8 min · Reviewed",
+        ]
+    )
+    provider = MockProvider({**_responses(), "copy-edit": bad_copy_edit})
+    result = _run(workspace, run_id="mock-copy-guard", provider=provider)
+
+    assert "copy-edit" in result["degraded"]
+    run_dir = workspace / ".digest-runs" / "mock-copy-guard"
+    degraded = read_json(run_dir / "copy-edit" / "degraded.json")
+    assert degraded["carried_forward_from"] == "writer-revision"
+    stage_records = read_json(run_dir / "stage-records.json")
+    record = next(item for item in stage_records["stages"] if item["stage"] == "copy-edit")
+    assert record["provenance"] == "carried-forward-from:writer-revision"
+    # The copy-edit artifact is the writer-revision prose, unchanged.
+    assert (workspace / record["output"]).read_text(encoding="utf-8") == PROSE
+
+
 def test_the_synthesis_max_profile_stops_rather_than_deriving_a_recovery_frame(workspace):
     """`synthesis-max-v1` must still stop on an invalid frame rather than silently using a
     derived recovery frame."""
@@ -330,13 +360,17 @@ def test_the_synthesis_max_profile_stops_rather_than_deriving_a_recovery_frame(w
     assert not (run_dir / "frame" / "recovery-frame-validation.json").exists()
 
 
-def test_a_legacy_profile_derives_the_documented_recovery_frame(workspace):
+def test_a_profile_that_permits_a_recovery_frame_derives_one(workspace):
     """A profile that permits a recovery frame derives one when the frame call fails.
 
-    The Synthesis MAX refinement retired the Synthesis MAX legacy profile, and the
-    editorial-architecture simplification removed the Concise and Detailed styles. The
-    Curated Discovery profile permits a recovery frame, so it exercises this path.
+    The Synthesis MAX profile stops instead (the test above). The recovery-frame path needs a
+    profile whose declared policy is `recovery-frame`; Curated Discovery declares one, but the
+    style is not runnable until its rebuild, so the policy is exercised by constructing the
+    profile object directly rather than by preflighting the declared style.
     """
+    from dataclasses import replace as _replace
+
+    profile = _replace(STYLE_PROFILES["curated-discovery-v1"], status="active")
     provider = MockProvider(_responses(), fail_stages={"frame"})
     source_path = workspace / ".digest-runs" / "mock-recovery" / "source-acquisition" / "sources.json"
     source_path.parent.mkdir(parents=True, exist_ok=True)
@@ -349,7 +383,7 @@ def test_a_legacy_profile_derives_the_documented_recovery_frame(workspace):
         language="English",
         source_path=source_path,
         timeout_seconds=60,
-        style_profile=STYLE_PROFILES["curated-discovery-v1"],
+        style_profile=profile,
         style_profile_source="explicit",
         root=workspace,
         provider=provider,

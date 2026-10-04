@@ -110,7 +110,7 @@
       "thinking": null,
       "extraArtifacts": [],
       "purpose": "COPY EDIT: detailed copyediting — clarity, grammar, syntax, spelling, punctuation, terminology consistency, local redundancy, naturalness, rhythm, awkward phrasing, minor local rewording, citation preservation, and heading/terminology consistency. It may not significantly restructure the document.",
-      "validation_severity": null
+      "validation_severity": "gate"
     },
     {
       "name": "reader-review",
@@ -5912,10 +5912,8 @@
       "catalogue_detection": "heading"
     },
     "guard_accepted": {
-      "accepted": false,
-      "reasons": [
-        "51 body words is outside any plausible range for the 700-1200 target"
-      ],
+      "accepted": true,
+      "reasons": [],
       "deltas": {
         "body_words_before": 50,
         "body_words_after": 51,
@@ -5945,7 +5943,6 @@
         "citations removed: 1, 2, 3, 5",
         "catalogue row count changed: 4 → 0",
         "paragraphs removed: 6 → 2",
-        "18 body words is outside any plausible range for the 700-1200 target",
         "the copy pass removed the source catalogue"
       ],
       "deltas": {

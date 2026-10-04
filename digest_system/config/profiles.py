@@ -46,6 +46,10 @@ STAGE_NAMES: tuple[str, ...] = (
 #: What happens when the frame stage cannot produce a plan that satisfies the profile.
 FRAME_FAILURE_POLICIES: tuple[str, ...] = ("fail", "recovery-frame")
 
+#: The only profile status that permits a run. A style whose implementation is pending a
+#: rebuild declares a different status and is rejected before any run directory is created.
+RUNNABLE_PROFILE_STATUS = "active"
+
 
 # ---------------------------------------------------------------------------------------
 # Composition metadata
@@ -349,6 +353,22 @@ class ResolvedProfile:
     source: str
 
 
+def require_runnable_style(profile: StyleProfile) -> None:
+    """Reject a style whose implementation is not runnable.
+
+    A style manifest may declare a status other than ``active`` when its implementation is
+    pending a rebuild against the current architecture. Such a style is still *declared* —
+    its digests remain valid user configuration — but it cannot execute. This fires before
+    any run directory or state is created, so a run never begins against a style that cannot
+    produce a document.
+    """
+    if profile.status != RUNNABLE_PROFILE_STATUS:
+        raise RunnerError(
+            f"style '{profile.style}' is not runnable: its implementation is pending a rebuild "
+            "against the current architecture"
+        )
+
+
 def resolve_style_profile(
     *,
     style: str,
@@ -390,10 +410,13 @@ def resolve_style_profile(
                 f"Style profile {profile_id} belongs to style {profile.style}, but this digest runs style {style}. "
                 "A profile never crosses styles: an unknown profile is an error rather than a silent fallback."
             )
+        require_runnable_style(profile)
         return ResolvedProfile(profile=profile, profile_id=profile_id, source=source)
 
     profile_id = default_style_profile_id(style)
-    return ResolvedProfile(profile=STYLE_PROFILES[profile_id], profile_id=profile_id, source="default")
+    profile = STYLE_PROFILES[profile_id]
+    require_runnable_style(profile)
+    return ResolvedProfile(profile=profile, profile_id=profile_id, source="default")
 
 
 # ---------------------------------------------------------------------------------------
@@ -476,6 +499,7 @@ def preflight_style_profile(profile: StyleProfile, *, root: Path | None = None) 
             f"Style profile {profile.id if profile else '(unnamed)'} is invalid:\n  - "
             + "\n  - ".join(structural.problems)
         )
+    require_runnable_style(profile)
 
     from ..editorial.prompts.convention import resolve_evaluation_contracts, resolve_stage_instructions
 

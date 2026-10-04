@@ -19,7 +19,7 @@
 
 ## Style-supplied instructions
 
-- `styles/synthesis-max/stages/frame.md` — 22670 chars; owner: style-specific stage specialization; sha256 `4c195267086e`
+- `styles/synthesis-max/stages/frame.md` — 22677 chars; owner: style-specific stage specialization; sha256 `0a54395dbc05`
 - `styles/synthesis-max/interface.md` — 2758 chars; owner: style interface declaration; sha256 `be4b146191d8`
 - `styles/synthesis-max/style.yaml` — 808 chars; owner: declarative style constraints; sha256 `94164faee23e`
 
@@ -30,5 +30,5 @@
 
 ## Sizes
 
-- System: 41152 units
+- System: 41159 units
 - User: 2638 units

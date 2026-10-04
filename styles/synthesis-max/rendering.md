@@ -1,5 +1,5 @@
 # Synthesis MAX rendering
-Use with `styles/synthesis-max.md` and `templates/synthesis-max-email-v1.html`.
+Use with `styles/synthesis-max/interface.md` and `templates/synthesis-max-email-v1.html`.
 
 **Visual personality: editorial dossier.** The composition should read as one analytical briefing: an opening thesis followed by a sequence of synthesized threads. It should feel cumulative and deliberate rather than like independent article cards.
 
@@ -16,7 +16,7 @@ All English component names in this profile are semantic maintainer labels. Reso
 `THREAD` and `SOURCE NOTES` are fixed component labels owned by this rendering profile. Do not replace them with synonyms, digest vocabulary such as `SIGNAL`, or labels inferred from the editorial prose.
 
 ## The catalog-only edition
-`styles/synthesis-max.md` permits one deliberate variation on this structure: when no cross-source thread qualifies, the edition is the orientation plus the complete source catalog, and the approved prose contains no threads.
+`styles/synthesis-max/interface.md` permits one deliberate variation on this structure: when no cross-source thread qualifies, the edition is the orientation plus the complete source catalog, and the approved prose contains no threads.
 
 When the approved prose has no threads:
 
@@ -65,7 +65,7 @@ The final `Sources` catalog uses the shared bibliographic row pattern and resolv
 ## Callouts
 A callout is optional. Render one only when the approved prose contains a callout directive; when it does not, render nothing — do not restore the template's example callout, and do not infer a callout from incidental formatting.
 
-When the prose contains a callout, render the shared neutral callout primitive from `system/html-rendering.md` at the position the directive occupies: after the synthesis prose and before `SOURCE NOTES`. Use the label the callout registry supplies for the directive's `type`; do not invent a label, and do not render a callout whose type the registry does not authorize. At most one callout appears inside a thread.
+When the prose contains a callout, render the shared neutral callout primitive from `rendering/shared.md` at the position the directive occupies: after the synthesis prose and before `SOURCE NOTES`. Use the label the callout registry supplies for the directive's `type`; do not invent a label, and do not render a callout whose type the registry does not authorize. At most one callout appears inside a thread.
 
 ## Template independence
 The HTML template is a structural specimen. Its placeholder Big Picture, thread, and source rows demonstrate markup only. Never infer thread count, paragraph count, or section length from the template; render exactly the editorial structure produced by the style.

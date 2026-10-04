@@ -15,12 +15,12 @@ Rendering **does not rewrite editorial prose**.
   * `delivery_subject`, when present, is the authoritative subject line, already localized, and it carries the digest date. Use it rather than formatting a date of your own. `date_iso`, when present, is the same fact in ISO form if you need to format it for the target language.
   * `reviewed_source_minutes`, `digest_minutes`, and `time_saved_minutes` are the measured and derived halves of the reading-time capsule. `reviewed_source_count` and `digest_body_words` record what each figure was computed from. If a figure is absent, use the contract's degraded capsule form — never render a missing source time as a measured value.
   * `html_lang`, when present, is the resolved BCP 47 tag. When it is absent, resolving one from the declared language is your job.
-* The HTML contract (`system/html-rendering.md`).
-* The selected style's rendering profile (`system/rendering-<style>.md`).
+* The HTML contract (`rendering/shared.md`).
+* The selected style's rendering profile (`styles/<style>/rendering.md`).
 * The matching template (`templates/<style>-email-v1.html`).
 * The style file, for the composition the profile implements.
 * The **canonical source-note manifest**: one identity per source, per retained unit. Consume it instead of reconstructing a source identity or a URL from the prose. Each source appears once, under one name; the author and the publication are attributes of that source, not two sources. Never render one source as two linked identities.
-* The **callout registry**: the callout signals the digest authorizes, resolved from its own `## Optional highlights` section. A callout in the prose is an approved component with a `type`, `text` and `source_numbers`; convert it into the shared callout primitive from `system/html-rendering.md`, using the registry's label for its `type`. Never invent a callout, never infer one from incidental formatting, and never render a callout the registry does not authorize.
+* The **callout registry**: the callout signals the digest authorizes, resolved from its own `## Optional highlights` section. A callout in the prose is an approved component with a `type`, `text` and `source_numbers`; convert it into the shared callout primitive from `rendering/shared.md`, using the registry's label for its `type`. Never invent a callout, never infer one from incidental formatting, and never render a callout the registry does not authorize.
 
 You do not receive the digest's reading instructions: rendering is a presentation layer and the reader's interests are not a rendering concern.
 

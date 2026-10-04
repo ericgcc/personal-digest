@@ -489,7 +489,16 @@ def test_deterministic_checks_match_the_reference():
 #: Checks canonical provenance adds to the deterministic pass. They are additions, not changes: every check
 #: the reference recorded is still produced with the same status and note.
 PROVENANCE_ADDED_CHECKS: frozenset[str] = frozenset(
-    {"provenance:identities", "provenance:notes-resolve", "callouts:authorized"}
+    {
+        "provenance:identities",
+        "provenance:notes-resolve",
+        "callouts:authorized",
+        "status:consistent",
+        "status:disjoint",
+        "reading-time:present",
+        "components:required",
+        "localization:metadata",
+    }
 )
 
 

@@ -514,13 +514,22 @@ def test_the_recorded_prompt_baseline_is_frozen():
 
 
 def test_the_recorded_prompt_inspections_are_current():
-    """The committed human-friendly inspection output matches a fresh regeneration."""
-    from digest_system.editorial.prompts.inspection import inspect_all
+    """The committed human-friendly inspection output matches a fresh regeneration.
 
-    for digest_id, profile_id in [
-        ("tech-bi-daily", "synthesis-max-v1"),
-        ("medium-bi-daily", "curated-discovery-v1"),
-    ]:
+    Curated Discovery is declared but not runnable until its new-architecture
+    implementation is rebuilt, so only the runnable profiles are inspected.
+    """
+    from digest_system.config.profiles import STYLE_PROFILES, preflight_style_profile, style_profile_ids
+    from digest_system.editorial.prompts.inspection import inspect_all
+    from digest_system.runtime.artifacts import RunnerError
+
+    for profile_id in style_profile_ids():
+        digest_id = "tech-bi-daily" if profile_id.startswith("synthesis") else "medium-bi-daily"
+        try:
+            preflight_style_profile(STYLE_PROFILES[profile_id])
+        except RunnerError:
+            # A profile that cannot run has no current prompt to record.
+            continue
         inspections = inspect_all(digest_id=digest_id, profile_id=profile_id)
         profile_root = ROOT / "prompt-inspections" / profile_id
         for inspection in inspections:

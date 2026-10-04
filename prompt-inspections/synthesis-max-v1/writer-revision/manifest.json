@@ -29,8 +29,8 @@
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/writer-revision.md",
-      "bytes": 5696,
-      "sha256": "065ab66785a6cf8a740de900151d30c80d569ff800737b0d2c5937d08ae05dfe",
+      "bytes": 5706,
+      "sha256": "353d80b49176b4f76d1ebd434ac1613b182f5e8102ea6fc18f12f28f57e31cf3",
       "owner": "style-specific stage specialization"
     }
   ],
@@ -130,6 +130,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 12110,
+  "system_bytes": 12120,
   "user_bytes": 6371
 }

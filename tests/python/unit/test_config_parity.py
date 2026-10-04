@@ -53,12 +53,38 @@ def test_profile_registry_matches_the_reference():
         actual = describe_style_profile(profile, source="registry")
         assert actual["id"] == profile_id
         assert actual["style"] == profile.style
-        assert actual["status"] == "active"
         assert actual["budget_source"] == f"styles/{profile.style}/style.yaml"
         assert actual["notes"]
         assert profile.stages == {}
         assert validate_style_profile(profile).ok, profile_id
         assert validate_style_profile(profile).problems == []
+    # Curated Discovery is declared but not runnable: its implementation is pending a rebuild
+    # against the current architecture. Synthesis MAX is the only runnable style.
+    assert STYLE_PROFILES["synthesis-max-v1"].status == "active"
+    assert STYLE_PROFILES["curated-discovery-v1"].status != "active"
+
+
+def test_curated_discovery_is_declared_but_not_runnable():
+    """A style awaiting a rebuild is still declared, but preflight rejects it clearly."""
+    from digest_system.config import require_runnable_style
+
+    profile = STYLE_PROFILES["curated-discovery-v1"]
+    assert profile.status != "active"
+    with pytest.raises(RunnerError) as error:
+        require_runnable_style(profile)
+    assert "curated-discovery" in str(error.value)
+    assert "not runnable" in str(error.value)
+    assert "pending a rebuild" in str(error.value)
+    # The runnable style passes the same gate.
+    require_runnable_style(STYLE_PROFILES["synthesis-max-v1"])
+
+
+def test_preflight_rejects_a_non_runnable_style():
+    """Preflight fails before any run directory is created for a non-runnable style."""
+    with pytest.raises(RunnerError) as error:
+        preflight_style_profile(STYLE_PROFILES["curated-discovery-v1"])
+    assert "not runnable" in str(error.value)
+    assert "pending a rebuild" in str(error.value)
 
 
 def test_retired_profiles_are_gone_and_recorded():
@@ -135,7 +161,10 @@ def test_preflight_style_headings_match_the_reference():
 
 
 def test_preflight_document_paths_come_from_the_runtime_tree():
-    for profile_id, profile in STYLE_PROFILES.items():
+    from ..fixtures import runnable_profiles
+
+    for profile_id in runnable_profiles():
+        profile = STYLE_PROFILES[profile_id]
         preflight = preflight_style_profile(profile)
         for stage, entry in preflight.stages.items():
             paths = [resolved.descriptor.path for resolved in entry["documents"]]
@@ -155,26 +184,37 @@ def test_profile_resolution_matches_the_reference():
             # The legacy profile was retired; the aliases resolve to the live implementation,
             # and `legacy` is an unknown profile rather than a fallback.
             live = f"{style}-v1"
+            if style == "curated-discovery":
+                # The style is declared but not runnable until its rebuild: every resolution
+                # path rejects it before any run starts.
+                for explicit_value in (None, "default", "current", "v1"):
+                    with pytest.raises(RunnerError, match="not runnable"):
+                        resolve_style_profile(style=style, explicit=explicit_value, config=None)
+                with pytest.raises(RunnerError, match="Unknown style profile"):
+                    resolve_style_profile(style=style, explicit="legacy", config=None)
+                with pytest.raises(RunnerError, match="not runnable"):
+                    preflight_style_profile(STYLE_PROFILES[live])
+                continue
             assert resolve_style_profile(style=style, explicit=None, config=None).profile_id == live
             assert resolve_style_profile(style=style, explicit="default", config=None).profile_id == live
             assert resolve_style_profile(style=style, explicit="current", config=None).profile_id == live
             assert resolve_style_profile(style=style, explicit="v1", config=None).profile_id == live
             with pytest.raises(RunnerError, match="Unknown style profile"):
                 resolve_style_profile(style=style, explicit="legacy", config=None)
-            continue
-        assert resolve_style_profile(style=style, explicit=None, config=None).profile_id == want["default"]
-        assert resolve_style_profile(style=style, explicit="legacy", config=None).profile_id == want["legacy"]
-        assert resolve_style_profile(style=style, explicit="current", config=None).profile_id == want["current"]
-        assert resolve_style_profile(style=style, explicit="default", config=None).profile_id == want["default_alias"]
-        assert (
-            resolve_style_profile(style=style, explicit=None, config={"style_profiles": {style: f"{style}-legacy"}}).profile_id
-            == want["from_config"]
-        )
-        if isinstance(want["v1"], dict):
-            with pytest.raises(RunnerError):
-                resolve_style_profile(style=style, explicit="v1", config=None)
         else:
-            assert resolve_style_profile(style=style, explicit="v1", config=None).profile_id == want["v1"]
+            assert resolve_style_profile(style=style, explicit=None, config=None).profile_id == want["default"]
+            assert resolve_style_profile(style=style, explicit="legacy", config=None).profile_id == want["legacy"]
+            assert resolve_style_profile(style=style, explicit="current", config=None).profile_id == want["current"]
+            assert resolve_style_profile(style=style, explicit="default", config=None).profile_id == want["default_alias"]
+            assert (
+                resolve_style_profile(style=style, explicit=None, config={"style_profiles": {style: f"{style}-legacy"}}).profile_id
+                == want["from_config"]
+            )
+            if isinstance(want["v1"], dict):
+                with pytest.raises(RunnerError):
+                    resolve_style_profile(style=style, explicit="v1", config=None)
+            else:
+                assert resolve_style_profile(style=style, explicit="v1", config=None).profile_id == want["v1"]
 
 
 def test_environment_wins_over_runtime_configuration():

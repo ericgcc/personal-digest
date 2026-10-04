@@ -18,7 +18,7 @@
 
 ## Style-supplied instructions
 
-- `styles/synthesis-max/stages/writer-revision.md` — 5696 chars; owner: style-specific stage specialization; sha256 `065ab66785a6`
+- `styles/synthesis-max/stages/writer-revision.md` — 5706 chars; owner: style-specific stage specialization; sha256 `353d80b49176`
 
 ## Data blocks
 
@@ -30,5 +30,5 @@
 
 ## Sizes
 
-- System: 12110 units
+- System: 12120 units
 - User: 6371 units

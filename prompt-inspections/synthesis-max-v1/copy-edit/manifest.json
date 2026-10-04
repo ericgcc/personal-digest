@@ -35,8 +35,8 @@
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/copy-edit.md",
-      "bytes": 7450,
-      "sha256": "485266ec3dde3911e30b7b71c28f9c5aac3b548f3a1d6136c5482a3f2c029037",
+      "bytes": 7460,
+      "sha256": "436904227b7727023a335fbd2d2fe3e3d1e91118d2f07fd4b4692c93a6d5bdd3",
       "owner": "style-specific stage specialization"
     }
   ],
@@ -73,6 +73,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 16520,
+  "system_bytes": 16530,
   "user_bytes": 2346
 }

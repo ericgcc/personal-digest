@@ -19,7 +19,7 @@
 
 ## Style-supplied instructions
 
-- `styles/synthesis-max/stages/copy-edit.md` — 7450 chars; owner: style-specific stage specialization; sha256 `485266ec3dde`
+- `styles/synthesis-max/stages/copy-edit.md` — 7460 chars; owner: style-specific stage specialization; sha256 `436904227b77`
 
 ## Data blocks
 
@@ -29,5 +29,5 @@
 
 ## Sizes
 
-- System: 16520 units
+- System: 16530 units
 - User: 2346 units

@@ -51,7 +51,7 @@ The frame defect row is the one that changes the pipeline's behaviour: when a th
 
 * Do not change the digest's language.
 * Do not introduce operational, cost or pipeline data into reader-facing prose.
-* Do not weaken the inherited quality floor in `styles/editorial-base.md` to satisfy a style habit, and do not weaken the reader contract to satisfy a style habit.
+* Do not weaken the inherited quality floor in `editorial/shared/editorial-base.md` to satisfy a style habit, and do not weaken the reader contract to satisfy a style habit.
 * Do not resolve a diagnosed problem by adding instructions to every other stage. Identify the originating stage and make the smallest change that addresses it.
 
 ## Domain accessibility in synthesis

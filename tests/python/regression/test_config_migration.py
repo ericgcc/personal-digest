@@ -43,6 +43,7 @@ PYTHON = sys.executable
 def test_all_five_profiles_resolve():
     expected = reference()["profile_resolution"]
     from digest_system.config import resolve_style_profile
+    from digest_system.runtime.artifacts import RunnerError
 
     # The editorial-architecture simplification removed the out-of-scope Concise and Detailed
     # styles and retired the Curated Discovery legacy profile, so two profiles remain.
@@ -53,8 +54,13 @@ def test_all_five_profiles_resolve():
             assert style not in {profile.style for profile in STYLE_PROFILES.values()}
             continue
         if style == "curated-discovery":
-            # The legacy profile was retired; the style now resolves to its v1 profile.
-            assert resolve_style_profile(style=style, explicit=None, config=None).profile_id == "curated-discovery-v1"
+            # The style is declared but not runnable: its implementation is pending a rebuild
+            # against the current architecture, so resolution rejects it before any run starts.
+            assert "curated-discovery-v1" in style_profile_ids()
+            with pytest.raises(RunnerError) as error:
+                resolve_style_profile(style=style, explicit=None, config=None)
+            assert "not runnable" in str(error.value)
+            assert "pending a rebuild" in str(error.value)
             continue
         if style == "synthesis-max":
             # The legacy profile was retired; the style now resolves to its v1 profile.
@@ -280,6 +286,8 @@ def test_frame_failure_policies_are_preserved():
     for profile_id in style_profile_ids():
         if profile_id == "synthesis-max-v1":
             continue
+        # Curated Discovery is declared but not runnable until its rebuild; its declared
+        # policy is still recovery-frame.
         assert STYLE_PROFILES[profile_id].frame_failure_policy == "recovery-frame", profile_id
 
 

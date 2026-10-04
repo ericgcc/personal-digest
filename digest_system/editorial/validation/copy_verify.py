@@ -16,7 +16,7 @@ from typing import Any, Mapping, Sequence
 from ...config.budgets import STYLE_BUDGET
 from ...config.callouts import registry_for
 from ..callouts import enforce_limits, parse_callouts, validate_callouts
-from ..provenance import duplicate_rendered_identities
+from ..provenance import build_source_note_manifest, duplicate_rendered_identities
 
 LEAK_MARKERS: tuple[str, ...] = (
     "prompt_cache_hit_tokens",
@@ -155,6 +155,30 @@ def extract_catalog_rows(catalog: str) -> dict[str, Any]:
     return {"rows": rows, "malformed": malformed}
 
 
+_READING_TIME = re.compile(r"^\d+(?:\.\d+)?\s*min(?:utes)?$", re.IGNORECASE)
+
+
+def catalog_reading_time(raw: str) -> str | None:
+    """The reading-time segment of a catalogue row (``12 min``), or ``None``."""
+    for part in raw.split("·"):
+        segment = part.strip()
+        if _READING_TIME.fullmatch(segment):
+            return segment
+    return None
+
+
+def catalog_status(raw: str) -> str:
+    """The trailing status label of a catalogue row (``... · 12 min · Reviewed``)."""
+    segments = [part.strip() for part in raw.split("·") if part.strip()]
+    for segment in reversed(segments):
+        if _READING_TIME.fullmatch(segment):
+            continue
+        if segment.startswith("[") and "](" in segment:
+            continue
+        return segment
+    return ""
+
+
 _CODE_BLOCK = re.compile(r"```[\s\S]*?```")
 _IMAGE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
 _LINK = re.compile(r"\[([^\]]+)\]\([^)]*\)")
@@ -266,6 +290,7 @@ def run_deterministic_checks(
     budget: Any = None,
     exempt_length: bool = False,
     highlights_text: str | None = None,
+    style_constraints: Any = None,
 ) -> dict[str, Any]:
     """Run every deterministic publication check over one artifact.
 
@@ -560,12 +585,127 @@ def run_deterministic_checks(
             else _check("language:output", "pass", f"artifact is {ratio * 100:.0f}% ASCII for a {declared_language} digest")
         )
 
+    # --- status: catalogue rows are consistent with the corpus's recorded statuses ---
+    corpus_statuses: set[str] = set()
+    for source in sources:
+        for field in ("status", "outcome", "reading_outcome"):
+            value = source.get(field)
+            if isinstance(value, str) and value.strip():
+                corpus_statuses.add(value.strip().lower())
+    if not corpus_statuses:
+        checks.append(_check("status:consistent", "warn", "no statuses declared"))
+    else:
+        inconsistent: list[dict[str, Any]] = []
+        for row in rows:
+            status = catalog_status(row["raw"]).strip()
+            if not status:
+                inconsistent.append({"number": row["number"], "status": None})
+            elif status.lower() not in corpus_statuses:
+                inconsistent.append({"number": row["number"], "status": status})
+        checks.append(
+            _check("status:consistent", "pass", "every catalogue status is one the corpus records")
+            if not inconsistent
+            else _check(
+                "status:consistent",
+                "fail",
+                f"{len(inconsistent)} catalogue row(s) carry an unknown or missing status",
+                {"inconsistent": inconsistent},
+            )
+        )
+
+    # --- status: a source is never both Selected and Worth reading -------------------
+    worth_reading = set()
+    selected = set()
+    for row in rows:
+        status = catalog_status(row["raw"]).strip().lower()
+        if status in ("worth reading", "worth_reading", "worth-reading"):
+            worth_reading.add(row["number"])
+        elif status == "selected":
+            selected.add(row["number"])
+    if not worth_reading and not selected:
+        checks.append(_check("status:disjoint", "warn", "neither Selected nor Worth reading is rendered"))
+    else:
+        overlap = sorted(worth_reading & selected)
+        checks.append(
+            _check("status:disjoint", "pass", "no source is both Selected and Worth reading")
+            if not overlap
+            else _check(
+                "status:disjoint",
+                "fail",
+                f"source number(s) rendered as both Selected and Worth reading: {', '.join(map(str, overlap))}",
+                {"overlap": overlap},
+            )
+        )
+
+    # --- reading time: every catalogue row carries one when the corpus declares times ---
+    corpus_has_reading_times = any(
+        source.get("reading_time_minutes") is not None for source in sources
+    )
+    if not corpus_has_reading_times:
+        checks.append(_check("reading-time:present", "warn", "the corpus declares no reading times"))
+    else:
+        missing_times = [row["number"] for row in rows if catalog_reading_time(row["raw"]) is None]
+        checks.append(
+            _check("reading-time:present", "pass", "every catalogue row carries a reading time")
+            if not missing_times
+            else _check(
+                "reading-time:present",
+                "fail",
+                f"catalogue row(s) without a reading time: {', '.join(map(str, missing_times))}",
+                {"missing": missing_times},
+            )
+        )
+
+    # --- components: style-required top-level components -----------------------------
+    if style_constraints is None:
+        checks.append(_check("components:required", "warn", "style constraints unavailable"))
+    else:
+        composition = style_constraints.get("composition") if isinstance(style_constraints, Mapping) else None
+        opening = composition.get("opening") if isinstance(composition, Mapping) else None
+        if isinstance(opening, str) and opening.strip():
+            body_headings = {heading["title"].strip().lower() for heading in heading_texts(body)}
+            checks.append(
+                _check("components:required", "pass", f"the required opening heading is present")
+                if opening.strip().lower() in body_headings
+                else _check(
+                    "components:required",
+                    "fail",
+                    f"the style requires the opening heading {opening!r}, which is missing",
+                )
+            )
+        else:
+            checks.append(_check("components:required", "pass", "the style declares no required opening heading"))
+
+    # --- localization: no operational metadata fragments in a localized artifact -----
+    if not declared_language or re.fullmatch(r"english", declared_language, re.IGNORECASE):
+        checks.append(
+            _check(
+                "localization:metadata",
+                "pass",
+                f"output language is {declared_language or 'English'}; no localization metadata to check",
+            )
+        )
+    else:
+        localization_leaks = [marker for marker in LEAK_MARKERS if marker in document]
+        checks.append(
+            _check("localization:metadata", "pass", "no operational metadata fragments in the localized artifact")
+            if not localization_leaks
+            else _check(
+                "localization:metadata",
+                "fail",
+                f"operational metadata present in a localized artifact: {', '.join(localization_leaks)}",
+            )
+        )
+
     counts = {
         "pass": len([item for item in checks if item["status"] == "pass"]),
         "warn": len([item for item in checks if item["status"] == "warn"]),
         "fail": len([item for item in checks if item["status"] == "fail"]),
         "exempt": len([item for item in checks if item["status"] == "exempt"]),
     }
+    provenance_manifest = None
+    if frame is not None:
+        provenance_manifest = build_source_note_manifest(frame=frame, corpus=corpus).to_dict()
     return {
         "checks": checks,
         "counts": counts,
@@ -574,6 +714,7 @@ def run_deterministic_checks(
         "body_words": word_count(body),
         "total_words": word_count(document),
         "catalogue_detection": detection,
+        "provenance_manifest": provenance_manifest,
     }
 
 
@@ -647,13 +788,21 @@ def guard_copy_pass(
     if after_paragraphs < before_paragraphs - 1:
         reasons.append(f"paragraphs removed: {before_paragraphs} → {after_paragraphs}")
 
-    if budget and _budget_field(budget, "unit") == "document" and after_words and (
-        after_words < _budget_field(budget, "min") * 0.5 or after_words > _budget_field(budget, "max") * 1.5
-    ):
-        reasons.append(
-            f"{after_words} body words is outside any plausible range for the "
-            f"{_budget_field(budget, 'min')}-{_budget_field(budget, 'max')} target"
-        )
+    if budget and _budget_field(budget, "unit") == "document" and after_words:
+        budget_min = _budget_field(budget, "min")
+        budget_max = _budget_field(budget, "max")
+        if budget_min is not None and budget_max is not None:
+            # The guard measures what the pass did, not the absolute document size: a pass
+            # that leaves an already-short artifact short is accepted, while one that
+            # collapses an in-range body below half its target (or bloats it past 1.5x) is
+            # rejected.
+            collapsed = before_words >= budget_min * 0.5 and after_words < budget_min * 0.5
+            bloated = before_words <= budget_max * 1.5 and after_words > budget_max * 1.5
+            if collapsed or bloated:
+                reasons.append(
+                    f"{after_words} body words is outside any plausible range for the "
+                    f"{budget_min}-{budget_max} target"
+                )
     if catalogue_required is True and before_split["catalog"] and not after_split["catalog"]:
         reasons.append("the copy pass removed the source catalogue")
     if any(marker in revised for marker in LEAK_MARKERS) and not any(marker in original for marker in LEAK_MARKERS):

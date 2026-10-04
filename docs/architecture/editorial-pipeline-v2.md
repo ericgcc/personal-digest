@@ -11,7 +11,7 @@ Two pipelines are declared. Only v2 is executable:
 | Pipeline | Stages | Status |
 | --- | --- | --- |
 | `editorial-pipeline-v1` | analyze → frame → draft → structural-edit → clarity-edit → voice-edit → compression-edit → final-polish → render | **Retired.** Its stage list survives only as the static metadata in `config/pipeline-v1-stages.json`, which the evaluation package reads to describe historical runs. |
-| `editorial-pipeline-v2` | analyze → frame → draft → developmental-review → writer-revision → line-edit → reader-review → [targeted-repair] → copy-verify → render | **The only runnable pipeline.** Entry point: `python -m digest_system.cli`. |
+| `editorial-pipeline-v2` | analyze → frame → draft → developmental-review → writer-revision → copy-edit → reader-review → [targeted-repair] → publication-verify → render | **The only runnable pipeline.** Entry point: `python -m digest_system.cli`. |
 
 Selection rules:
 

@@ -50,6 +50,8 @@ from digest_system.editorial.provenance import (
 )
 from digest_system.runtime.artifacts import ROOT
 
+from ..fixtures import PROSE, corpus, frame_valid
+
 PYTHON = sys.executable
 PROMPT_MIGRATION = ROOT / "tests" / "fixtures" / "prompt_migration"
 
@@ -510,3 +512,134 @@ def test_the_provenance_changes_are_recorded():
 def test_the_prompt_parity_check_passes():
     result = _run([str(ROOT / "scripts" / "prompt_migration_gate.py")])
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+# ---------------------------------------------------------------------------------------
+# 13. The publication-verify check set
+# ---------------------------------------------------------------------------------------
+
+
+def _check_by_id(result: dict, check_id: str) -> dict:
+    return next(c for c in result["checks"] if c["id"] == check_id)
+
+
+def test_catalog_statuses_must_match_the_corpus_status_vocabulary():
+    from digest_system.editorial.validation.copy_verify import run_deterministic_checks
+
+    # Passing: catalogue labels match the corpus's recorded outcomes.
+    matching = corpus()
+    for source in matching["sources"]:
+        source["reading_outcome"] = "reviewed"
+    ok = run_deterministic_checks(prose=PROSE, corpus=matching, frame=frame_valid())
+    assert _check_by_id(ok, "status:consistent")["status"] == "pass"
+
+    # Failing: the fixture's "Reviewed" label is not one of the corpus's recorded statuses.
+    bad = run_deterministic_checks(prose=PROSE, corpus=corpus(), frame=frame_valid())
+    check = _check_by_id(bad, "status:consistent")
+    assert check["status"] == "fail"
+
+
+def test_a_source_is_never_both_selected_and_worth_reading():
+    from digest_system.editorial.validation.copy_verify import run_deterministic_checks
+
+    # Passing: distinct numbers carry each status.
+    disjoint = "\n".join(
+        [
+            "## THE BIG PICTURE",
+            "",
+            "A claim [1].",
+            "",
+            "## Sources",
+            "",
+            "1. [A mechanism for incremental evaluation](https://example.invalid/a) · 12 min · Selected",
+            "2. [Qualifying the evaluation claim](https://example.invalid/b) · 8 min · Worth reading",
+        ]
+    )
+    ok = run_deterministic_checks(prose=disjoint, corpus=corpus(), frame=frame_valid())
+    assert _check_by_id(ok, "status:disjoint")["status"] == "pass"
+
+    # Failing: the same number is rendered as both.
+    overlap = "\n".join(
+        [
+            "## THE BIG PICTURE",
+            "",
+            "A claim [1].",
+            "",
+            "## Sources",
+            "",
+            "1. [A mechanism for incremental evaluation](https://example.invalid/a) · 12 min · Selected",
+            "1. [A mechanism for incremental evaluation](https://example.invalid/a) · 12 min · Worth reading",
+        ]
+    )
+    bad = run_deterministic_checks(prose=overlap, corpus=corpus(), frame=frame_valid())
+    assert _check_by_id(bad, "status:disjoint")["status"] == "fail"
+
+
+def test_catalog_rows_carry_reading_times_when_the_corpus_declares_them():
+    from digest_system.editorial.validation.copy_verify import run_deterministic_checks
+
+    ok = run_deterministic_checks(prose=PROSE, corpus=corpus(), frame=frame_valid())
+    assert _check_by_id(ok, "reading-time:present")["status"] == "pass"
+
+    missing = "\n".join(
+        [
+            "## THE BIG PICTURE",
+            "",
+            "A claim [1].",
+            "",
+            "## Sources",
+            "",
+            "1. [A mechanism for incremental evaluation](https://example.invalid/a) · Reviewed",
+        ]
+    )
+    bad = run_deterministic_checks(prose=missing, corpus=corpus(), frame=frame_valid())
+    assert _check_by_id(bad, "reading-time:present")["status"] == "fail"
+
+
+def test_style_required_components_are_present():
+    from digest_system.editorial.validation.copy_verify import run_deterministic_checks
+
+    constraints = {"composition": {"opening": "THE BIG PICTURE"}}
+    ok = run_deterministic_checks(
+        prose=PROSE, corpus=corpus(), frame=frame_valid(), style_constraints=constraints
+    )
+    assert _check_by_id(ok, "components:required")["status"] == "pass"
+
+    missing = "\n".join(
+        [
+            "## Incremental evaluation",
+            "",
+            "The mechanism makes the claim checkable [1].",
+        ]
+    )
+    bad = run_deterministic_checks(
+        prose=missing, corpus=corpus(), frame=frame_valid(), style_constraints=constraints
+    )
+    assert _check_by_id(bad, "components:required")["status"] == "fail"
+
+    # Without style constraints the check warns rather than guessing.
+    unknown = run_deterministic_checks(prose=PROSE, corpus=corpus(), frame=frame_valid())
+    assert _check_by_id(unknown, "components:required")["status"] == "warn"
+
+
+def test_localized_artifacts_carry_no_operational_metadata():
+    from digest_system.editorial.validation.copy_verify import run_deterministic_checks
+
+    ok = run_deterministic_checks(prose=PROSE, corpus=corpus(), frame=frame_valid(), language="English")
+    assert _check_by_id(ok, "localization:metadata")["status"] == "pass"
+
+    leaked = PROSE + "\n\nrun-summary: tokens=123"
+    bad = run_deterministic_checks(prose=leaked, corpus=corpus(), frame=frame_valid(), language="Spanish")
+    assert _check_by_id(bad, "localization:metadata")["status"] == "fail"
+
+
+def test_the_deterministic_checks_return_the_provenance_manifest():
+    from digest_system.editorial.validation.copy_verify import run_deterministic_checks
+
+    result = run_deterministic_checks(prose=PROSE, corpus=corpus(), frame=frame_valid())
+    manifest = result["provenance_manifest"]
+    assert manifest is not None
+    assert {source["source_number"] for source in manifest["sources"]} == {1, 2, 3, 5}
+
+    no_frame = run_deterministic_checks(prose=PROSE, corpus=corpus())
+    assert no_frame["provenance_manifest"] is None

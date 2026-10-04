@@ -29,8 +29,8 @@
     },
     {
       "path": "styles/synthesis-max/stages/developmental-review.md",
-      "bytes": 7306,
-      "sha256": "b24cd9321618652ba1e3d5a538318e64f006863d698cfb0cba2fa0c7c2b3dd6c",
+      "bytes": 7316,
+      "sha256": "ad0096bed66e13b85e8e73e04c29e71a7e491ee57e508688a482f625390b5e25",
       "owner": "review"
     },
     {
@@ -49,7 +49,7 @@
   "blocks": [
     {
       "tag": "evaluation_input",
-      "bytes": 22983,
+      "bytes": 22993,
       "purpose": "combined judge prompt",
       "source": {
         "kind": "evaluation-adapter",

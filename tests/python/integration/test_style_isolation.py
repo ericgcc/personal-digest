@@ -132,7 +132,10 @@ def _style_modules(profile) -> set[str]:
 
 
 def test_runtime_resolution_uses_no_legacy_style_modules():
-    for profile in STYLE_PROFILES.values():
+    from ..fixtures import runnable_profiles
+
+    for profile_id in runnable_profiles():
+        profile = STYLE_PROFILES[profile_id]
         for stage_name in stage_names_v2():
             paths = _declared_paths(profile, stage_name)
             assert all("/modules/" not in path for path in paths)
@@ -219,8 +222,12 @@ def test_every_declared_module_is_one_the_style_owns():
 
 def test_excluded_sections_are_reported_by_module():
     """The convention composer withholds no module, so no stage reports an excluded module."""
+    from ..fixtures import runnable_profiles
+
     for style in CANONICAL_STYLES:
         for profile in profiles_for_style(style):
+            if profile.id not in runnable_profiles():
+                continue
             preflight = preflight_style_profile(profile)
             for stage in profile.stages:
                 excluded = excluded_sections(
@@ -330,10 +337,13 @@ def test_the_synthesis_max_profile_is_the_only_one_that_diverges():
 
     The Synthesis MAX refinement retired the legacy profile and made v1 the style's default;
     the editorial-architecture simplification retired the Curated Discovery legacy profile too.
+    Curated Discovery is declared but not runnable until its rebuild, so its status is
+    `unavailable` rather than `active`.
     """
     for style in CANONICAL_STYLES:
         assert default_style_profile_id(style) == f"{style}-v1"
-        assert STYLE_PROFILES[f"{style}-v1"].status == "active"
+    assert STYLE_PROFILES["synthesis-max-v1"].status == "active"
+    assert STYLE_PROFILES["curated-discovery-v1"].status == "unavailable"
 
 
 def test_the_registry_contains_exactly_the_expected_profiles():

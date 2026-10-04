@@ -33,16 +33,16 @@
     },
     {
       "path": "editorial/shared/editorial-base.md",
-      "bytes": 14691,
-      "sha256": "fa95ec1128329ab23559b7637e90eb367b3c492a8bc3b2a0598228a97b5f8251",
+      "bytes": 14693,
+      "sha256": "eba403a5cecbc3c0e5b4cf09db4a94f859b8bbaef3b5fb277375681abfcf78e0",
       "owner": "shared cross-cutting contract"
     }
   ],
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/draft.md",
-      "bytes": 23547,
-      "sha256": "b6a71446ad15ed1f878fbaff6afc3a853a8a12e6c76ff80c0f2165d59ec9a187",
+      "bytes": 23553,
+      "sha256": "218e361f8f70d32a1953092dad1c943c3f91cc990cb213ef01179d02eba4aaa8",
       "owner": "style-specific stage specialization"
     },
     {
@@ -146,6 +146,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 51368,
+  "system_bytes": 51376,
   "user_bytes": 6812
 }

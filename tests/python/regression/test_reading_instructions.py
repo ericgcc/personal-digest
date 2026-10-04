@@ -63,7 +63,10 @@ def test_the_contract_is_not_inlined_into_any_prompt():
     """It is a specification, not an instruction the model receives."""
     from digest_system.config.profiles import preflight_style_profile
 
-    for profile in STYLE_PROFILES.values():
+    from ..fixtures import runnable_profiles
+
+    for profile_id in runnable_profiles():
+        profile = STYLE_PROFILES[profile_id]
         preflight = preflight_style_profile(profile)
         for entry in preflight.stages.values():
             paths = [resolved.descriptor.path for resolved in entry["documents"]]

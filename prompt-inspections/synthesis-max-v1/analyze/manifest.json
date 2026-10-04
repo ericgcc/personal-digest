@@ -35,8 +35,8 @@
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/analyze.md",
-      "bytes": 11753,
-      "sha256": "634c2b470f1a80798f09326f0bf259ccac645cb04db14aecb7a6d603dddd1460",
+      "bytes": 11736,
+      "sha256": "f941d502c82e70e5ca8ee6d06657d7cfe87c9829030b1a3a00ba0b82a4c68e8e",
       "owner": "style-specific stage specialization"
     },
     {
@@ -99,6 +99,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 31289,
+  "system_bytes": 31272,
   "user_bytes": 6997
 }

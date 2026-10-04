@@ -40,6 +40,7 @@ from ..runtime.artifacts import (
 from .context import Artifact, RunContext
 from .evidence.projection import derive_recovery_frame, project_evidence
 from .prompts.compose import compose_stage_prompt
+from .prompts.instructions import resolve_style_constraints
 from .prompts.convention_context import (
     assemble_convention_contracts,
     assemble_convention_documents,
@@ -503,6 +504,22 @@ def execute_stage(
             if produced is not None and isinstance(produced.text, str) and produced.text:
                 write_artifact(attempt_dir / stage.artifact, produced.text)
 
+            # COPY EDIT's validator is the structural copy-pass guard. Unlike the frame and
+            # analysis validators it is not a correction loop: a rejected copy pass is not
+            # rewritten by the model, the writer-revision prose is carried forward unchanged
+            # (degradation, not suppression).
+            if stage.name == "copy-edit":
+                _run_copy_edit_guard(
+                    stage=stage,
+                    context=context,
+                    record=record,
+                    work_dir=work_dir,
+                    attempt_dir=attempt_dir,
+                    attempt_count=attempt_count,
+                    profile_id=profile.id,
+                )
+                break
+
             if not stage.validation:
                 break
 
@@ -888,6 +905,85 @@ def _run_evaluation_stage(
     record["adapter_versions"] = response.get("versions")
 
 
+def _run_copy_edit_guard(
+    *,
+    stage: Any,
+    context: RunContext,
+    record: dict[str, Any],
+    work_dir: Path,
+    attempt_dir: Path,
+    attempt_count: int,
+    profile_id: str,
+) -> None:
+    """Enforce the structural copy-pass guard and, on rejection, carry the revision forward.
+
+    The guard is a gate, not a correction loop: when the copy pass materially restructured the
+    prose (dropped headings or citations, shrank the body, removed the catalogue), the model is
+    not asked to redo it. The writer-revision prose is carried forward unchanged and the run is
+    degraded, mirroring the ``carried_forward_from`` recovery a transport failure uses.
+    """
+    produced = context.artifacts.get("copy-edit")
+    guard = stage.validation.run(
+        artifact=produced.text if produced and produced.text else "",
+        context=context,
+        attempt_dir=attempt_dir,
+    )
+    write_artifact(
+        attempt_dir / "validation.json",
+        json.dumps(
+            {
+                "stage": stage.name,
+                "attempt": attempt_count,
+                "severity": stage.validation.severity,
+                "profile": profile_id,
+                **guard,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+    )
+    record["validation_attempts"] = attempt_count
+    record["validation"] = {
+        "accepted": guard["accepted"],
+        "severity": stage.validation.severity,
+        "reasons": guard["reasons"],
+        "deltas": guard["deltas"],
+    }
+    if guard["accepted"]:
+        return
+
+    carried = _last_valid_artifact(context, stage)
+    if carried is None:
+        record["status"] = "failed"
+        record["error"] = "copy pass rejected and no earlier artifact could be carried forward"
+        record["completed_at"] = _now()
+        raise RunnerError(
+            f"{stage.name} failed its structural guard and no earlier artifact could be carried forward: "
+            + "; ".join(guard["reasons"])
+        )
+    record["status"] = "degraded"
+    record["degraded"] = True
+    record["provenance"] = f"carried-forward-from:{carried['stage']}"
+    record["output"] = relative_to_root(carried["artifact"].path, context.root)
+    record["warnings"].append("copy pass rejected: " + "; ".join(guard["reasons"]))
+    write_json(
+        work_dir / "degraded.json",
+        {
+            "stage": stage.name,
+            "reason": "copy pass rejected: " + "; ".join(guard["reasons"]),
+            "carried_forward_from": carried["stage"],
+            "at": _now(),
+        },
+    )
+    context.artifacts[stage.name] = Artifact(
+        path=carried["artifact"].path,
+        text=carried["artifact"].text,
+        json=carried["artifact"].json,
+        provenance=f"carried-forward-from:{carried['stage']}",
+        degraded=True,
+    )
+
+
 def _run_publication_verify_stage(
     *,
     stage: Any,
@@ -922,6 +1018,7 @@ def _run_publication_verify_stage(
         budget=context.profile.budget,
         exempt_length=catalog_only_edition,
         highlights_text=context.instructions().get("Optional highlights"),
+        style_constraints=resolve_style_constraints(context.style),
     )
     record["deterministic_checks"] = checks["counts"]
 
@@ -942,6 +1039,7 @@ def _run_publication_verify_stage(
         "body_words": checks["body_words"],
         "total_words": checks["total_words"],
         "catalogue_detection": checks["catalogue_detection"],
+        "provenance_manifest": checks["provenance_manifest"],
     }
 
     final_path = work_dir / "output" / stage.artifact

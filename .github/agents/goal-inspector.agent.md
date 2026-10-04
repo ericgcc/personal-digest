@@ -6,7 +6,7 @@ description: >-
   runs quality gates, optionally verifies in a browser, and
   writes a PASS or FAIL verdict with detailed feedback.
 user-invocable: false
-model: LongCat 2.5 Preview Free (opencodego)
+model: Muse Spark 1.3 Contributor (opencodego)
 metadata:
   agent-id: c9e2f1d3-7a4b-4c56-9e8f-3d2b1a0e5c4f
 ---

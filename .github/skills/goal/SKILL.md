@@ -11,7 +11,7 @@ description: >-
   autonomous task completion with independent quality review.
 metadata:
   author: "Gaetan Semet <gaetan@xeberon.net>"
-  recommended-models: ["DeepSeek: DeepSeek V4.1 Flash (openrouter)", "LongCat 2.5 Preview Free (opencodego)"]
+  recommended-models: ["DeepSeek: DeepSeek V4.1 Flash (openrouter)", "Muse Spark 1.3 Contributor (opencodego)"]
 ---
 
 # Goal — Verified Autonomous Task Completion
@@ -25,7 +25,7 @@ Inspector — to achieve a user-defined goal with independent verification.
 | Role | Agent Name | Model | Purpose |
 |------|-----------|-------|---------|
 | Builder | `Goal: Builder` | DeepSeek: DeepSeek V4.1 Flash (openrouter) | Does the work |
-| Inspector | `Goal: Inspector` | LongCat 2.5 Preview Free (opencodego) | Judges the result |
+| Inspector | `Goal: Inspector` | Muse Spark 1.3 Contributor (opencodego) | Judges the result |
 
 Builder implements. Inspector verifies with **fresh context**.
 They never share state — only files and git history connect them.

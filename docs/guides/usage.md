@@ -39,7 +39,7 @@ Useful flags:
 ## Resuming and replaying
 
 ```powershell
-python -m digest_system.cli resume --digest <id> --run-id <id> --from-stage line-edit
+python -m digest_system.cli resume --digest <id> --run-id <id> --from-stage copy-edit
 python -m digest_system.cli replay --from-run <historical-run-id> --run-id <new-run-id>
 ```
 

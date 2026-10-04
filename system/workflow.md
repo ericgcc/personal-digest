@@ -397,13 +397,13 @@ The expected outputs are fixed.
 | `draft` | `frame.json` + **only the frame-selected evidence** | `draft.md` | `DRAFT`: write the editorial body from the approved frame and its selected evidence. |
 | `developmental-review` | `draft.md` + `frame.json` | `review.json` + `wops.json` | `DEVELOPMENTAL REVIEW`: diagnose the draft against the frame in canonical writing-operation problem types. **Does not rewrite.** Retrieval happens after it, not inside it. |
 | `writer-revision` | `draft.md` + `review.json` + `wops.json` + `frame.json` + frame-selected evidence | `revision.md` | `WRITER REVISION`: revise developmentally against explicit feedback and the retrieved operations. |
-| `line-edit` | `revision.md` + `wops.json` | `line-edit.md` | `LINE EDIT`: clarity, voice, naturalness, rhythm, transitions, redundancy, concision, and length in one pass. |
-| `reader-review` | `revision.md` (BEFORE) + `line-edit.md` (AFTER) | `review.json` | `READER REVIEW`: assess the later prose absolutely and detect any material regression, with targeted retry instructions. |
-| `targeted-repair` | `line-edit.md` + reader feedback + `wops.json` | `repair.md` | `TARGETED REPAIR`: **optional, at most once.** Repair one diagnosed reader problem, or skip. |
-| `copy-verify` | current prose + source provenance | `final.md` + `verification.json` | `COPY & VERIFY`: deterministic publication checks first, then copy correction only. Must not rewrite editorially. |
+| `copy-edit` | `revision.md` + `wops.json` | `copy-edit.md` | `COPY EDIT`: detailed copyediting — clarity, grammar, syntax, spelling, punctuation, terminology consistency, local redundancy, naturalness, rhythm, awkward phrasing, minor local rewording, citation preservation, and heading/terminology consistency. It may not significantly restructure the document. |
+| `reader-review` | `revision.md` (BEFORE) + `copy-edit.md` (AFTER) | `review.json` | `READER REVIEW`: assess the copy-edited prose as a reader, and detect anything the copy edit materially regressed. |
+| `targeted-repair` | `copy-edit.md` + reader feedback + `wops.json` | `repair.md` | `TARGETED REPAIR`: **optional, at most once.** Repair one diagnosed reader problem, or skip. |
+| `publication-verify` | current prose + source provenance | `final.md` + `verification.json` | `PUBLICATION VERIFY`: run the deterministic publication checks over the revised prose and produce an auditable report. It never edits prose. |
 | `render` | `final.md` + rendering profile/template + authoritative rendering values | `email.html` | Map approved prose into the selected rendering profile and template without editorial rewriting. |
 
-`structural-edit`, `clarity-edit`, `voice-edit`, `compression-edit`, and `final-polish` do not exist in the pipeline. Their useful principles live in the current `developmental-review`, `writer-revision`, `line-edit`, and `copy-verify` contracts and in the WOPS library.
+`structural-edit`, `clarity-edit`, `voice-edit`, `compression-edit`, and `final-polish` do not exist in the pipeline. Their useful principles live in the current `developmental-review`, `writer-revision`, `copy-edit`, and `publication-verify` contracts and in the WOPS library.
 
 The pipeline stages are intentionally separated even though they run inside one local process. `analysis.json` and `frame.json` must be valid JSON; every Markdown/HTML output must be non-empty. The runtime writes each artifact directly from the matching DeepSeek API response, so a response that is empty, invalid for its expected format, or stopped at the output-token ceiling (reported by the provider as `finish_reason: length`) is a failed stage rather than a truncated success.
 
@@ -421,8 +421,8 @@ The corpus block is **tiered per stage** rather than sent whole to every call. T
 | --- | --- | --- |
 | `full` | The complete catalog-eligible corpus, unchanged | `analyze` |
 | `frame` | **Only the sources FRAME declared for each editorial unit** | `draft`, `writer-revision` |
-| `provenance` | Per-source metadata only — number, title, author/publication, locators, reading time, outcome — with no article bodies | `copy-verify` |
-| `none` | No corpus block at all | `frame`, `developmental-review`, `line-edit`, `reader-review`, `targeted-repair`, `render` |
+| `provenance` | Per-source metadata only — number, title, author/publication, locators, reading time, outcome — with no article bodies | `publication-verify` |
+| `none` | No corpus block at all | `frame`, `developmental-review`, `copy-edit`, `reader-review`, `targeted-repair`, `render` |
 
 The `frame` policy is the point of the evidence model: FRAME is authoritative for what the draft may see. The projection is recorded in `<stage>/frame-projection.json` and in the attempt's `corpus-context.json`, including the declared numbers, the projected numbers, any missing numbers, the recovery path, and any warning. If FRAME declares nothing usable, the runtime widens to the source numbers referenced in `analysis.json` and marks the stage degraded; only if that also yields nothing does it send the whole corpus. Normal operation never widens silently, and any widening is recorded as a degradation.
 
@@ -445,7 +445,7 @@ Preserve stable source numbering/provenance throughout the process. Editorial re
 
 Before rendering any source catalog, derive three disjoint sets from catalog-eligible source IDs: `selected_source_ids`, `worth_reading_source_ids`, and `reviewed_source_ids`. Every source cited or named as support anywhere in the editorial body—including a Curated Discovery Discovery—belongs in `selected_source_ids`. `worth_reading_source_ids` must be a subset of the remaining unselected corpus. If the sets overlap or any body source is not `Selected`, repair the classifications and rerun final validation before delivery. A `Worth opening for:` depth cue inside selected content has no effect on catalog status.
 
-The `render` stage may begin only after the pipeline produced `final.md` from `copy-verify` and that artifact passed the current stage, shared, and style-specific quality gates. The `copy-verify` stage also writes `verification.json` beside it; read it as part of the same gate.
+The `render` stage may begin only after the pipeline produced `final.md` from `publication-verify` and that artifact passed the current stage, shared, and style-specific quality gates. The `publication-verify` stage also writes `verification.json` beside it; read it as part of the same gate.
 
 ## Render and deliver
 1. Perform the final instruction-conflict check; higher-level contracts win as defined above.

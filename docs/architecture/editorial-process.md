@@ -7,7 +7,7 @@ The process runs autonomously. Diagnostic questions in this file are instruction
 
 The production method below is `editorial-pipeline-v2`, which is the default:
 
-`SELECT → ANALYZE → FRAME → DRAFT → DEVELOPMENTAL REVIEW → WRITER REVISION → LINE EDIT → READER REVIEW → [TARGETED REPAIR] → COPY & VERIFY`
+`SELECT → ANALYZE → FRAME → DRAFT → DEVELOPMENTAL REVIEW → WRITER REVISION → COPY EDIT → READER REVIEW → [TARGETED REPAIR] → PUBLICATION VERIFY`
 
 `editorial-pipeline-v1` remains runnable for rollback; its stage method is recorded in the appendix at the end of this file.
 
@@ -16,7 +16,7 @@ Do not collapse the stages into one pass. Two separations matter most:
 * **Diagnosis is not repair.** A stage that diagnoses a draft must not rewrite it, and a stage that rewrites must act on explicit, structured feedback rather than on its own simultaneous judgement.
 * **Structure before sentences, and sentences before publication.** Do not polish wording while the thinking is still wrong, and do not perform editorial repair in the publication check.
 
-Each stage's responsibilities, inputs, and constraints are stated in its contract under `system/contracts/`. This file states the method those contracts implement; where the two appear to disagree, the contract is more specific and wins for that stage.
+Each stage's responsibilities, inputs, and constraints are stated in its contract under `editorial/stages/`. This file states the method those contracts implement; where the two appear to disagree, the contract is more specific and wins for that stage.
 
 ## 1. SELECT—decide what deserves attention
 Apply the selected style's selection model and compatible digest custom instructions to the complete normalized source set.
@@ -131,7 +131,7 @@ Work at unit level, starting from the review's priorities. **Split rather than c
 
 If an issue cannot be repaired without evidence you do not have, leave the passage as clear as the evidence allows. Do not invent, and do not paper over.
 
-## 7. LINE EDIT—make the prose work
+## 7. COPY EDIT—make the prose work
 The structure is settled and the arguments are in place. Make the prose itself clear, natural, well-paced, and no longer than it needs to be.
 
 This is one stage, not several passes. Clarity, voice, naturalness, rhythm, transitions, sentence variation, local emphasis, redundancy, concision, word choice, and length discipline are the same judgement applied to the same sentences, so they are made together.
@@ -153,7 +153,7 @@ Then run one pattern-density audit across the **whole** digest: identical paragr
 
 Compression is no longer an independent editorial objective. Length is disciplined by removing what does no work, not by thinning what does.
 
-Line edit may not change the selection, the unit order, the structure, a claim, an argument, or the direction of reasoning. It may not introduce a fact, number, example, or source that is not already in the prose. It may not remove citations, provenance markers, status semantics, or the source catalogue.
+Copy edit may not change the selection, the unit order, the structure, a claim, an argument, or the direction of reasoning. It may not introduce a fact, number, example, or source that is not already in the prose. It may not remove citations, provenance markers, status semantics, or the source catalogue.
 
 `system/writing-naturalness.md` remains the archival reference for the naturalness principles; the craft rules that apply to any prose now live in WOPS as reusable operations and anti-patterns and are retrieved per diagnosed problem, while the digest-specific invariants live in `system/naturalness-contract.md`. `system/naturalness-migration.md` records where each piece went.
 
@@ -161,7 +161,7 @@ Line edit may not change the selection, the unit order, the structure, a claim, 
 Hand the prose to a reader who has not read the sources, has not seen the frame, has not seen the developmental review, and does not know what the writer intended. Ask two questions in one assessment:
 
 1. **Is this understandable on its own?** Assessed absolutely, not relative to any earlier version.
-2. **Did the line edit materially regress anything the earlier prose gave the reader?**
+2. **Did the copy edit materially regress anything the earlier prose gave the reader?**
 
 The reader first reconstructs, section by section, what the text says and why it matters — and then judges whether the text itself supplied enough for that reconstruction. A reconstruction that could only be written using knowledge the reader already had is a finding, not a pass. Correct terminology does not count as explanation. "Understandable eventually" is not "understandable on first read".
 
@@ -172,9 +172,9 @@ When the reader review identifies a **material, repairable** reader-facing probl
 
 One pass. Not a second editorial round, and not a general revision. Fix the diagnosed problem and leave every other sentence alone, including sentences you would have written differently. Change as little as the repair allows: prefer restoring a lost bridge, definition, or orientation to rewriting the surrounding passage. Use the retrieved writing operations that fit this problem and ignore the rest. Restore a lost fact from the evidence; never invent one, and never compress elsewhere to offset your own additions.
 
-If the repair fails, cannot run, or was never requested, the line-edited prose is used. **Quality checking never suppresses the digest.**
+If the repair fails, cannot run, or was never requested, the copy-edited prose is used. **Quality checking never suppresses the digest.**
 
-## 10. COPY & VERIFY—publication check
+## 10. PUBLICATION VERIFY—publication check
 Verify, and correct copy. Do not edit editorially.
 
 Deterministic checks run first and are authoritative: citation integrity, source provenance, catalogue consistency, verbatim source titles, subject naming, output-language completeness, required structure, Markdown correctness, terminology consistency, grammar, length sanity, renderability, and the leak guard. Where a machine can decide one of those questions, a machine decides it, because a mechanical check cannot be talked out of a finding by fluent prose.

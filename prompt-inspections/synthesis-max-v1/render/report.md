@@ -15,7 +15,7 @@
 ## Instruction documents
 
 - `editorial/stages/render.md` — 5739 chars; owner: shared stage contract; sha256 `46ceae244f4e`
-- `rendering/shared.md` — 18524 chars; owner: shared rendering contract; sha256 `f46b9afa91a1`
+- `rendering/shared.md` — 18317 chars; owner: shared rendering contract; sha256 `fa3cc361874d`
 - `templates/synthesis-max-email-v1.html` — 9598 chars; owner: HTML email template; sha256 `dd378e0edbae`
 
 ## Style-supplied instructions
@@ -33,5 +33,5 @@
 
 ## Sizes
 
-- System: 41595 units
+- System: 41388 units
 - User: 5147 units

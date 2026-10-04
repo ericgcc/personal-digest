@@ -27,8 +27,8 @@
     },
     {
       "path": "rendering/shared.md",
-      "bytes": 18524,
-      "sha256": "f46b9afa91a161f6c4d38287377040d874be8c410a54c0bd1000ca9b69709ef8",
+      "bytes": 18317,
+      "sha256": "fa3cc361874d575e37cd8c5aedfd456f61a34df42c42ac767a2af302ed5727e0",
       "owner": "shared rendering contract"
     },
     {
@@ -106,6 +106,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 41595,
+  "system_bytes": 41388,
   "user_bytes": 5147
 }

@@ -15,7 +15,7 @@
 ## Instruction documents
 
 - `editorial/stages/render.md` — 5739 chars; owner: shared stage contract; sha256 `46ceae244f4e`
-- `rendering/shared.md` — 18524 chars; owner: shared rendering contract; sha256 `f46b9afa91a1`
+- `rendering/shared.md` — 18317 chars; owner: shared rendering contract; sha256 `fa3cc361874d`
 - `templates/curated-discovery-email-v1.html` — 13639 chars; owner: HTML email template; sha256 `2c16be64fd06`
 
 ## Style-supplied instructions
@@ -33,5 +33,5 @@
 
 ## Sizes
 
-- System: 45820 units
+- System: 45613 units
 - User: 5161 units

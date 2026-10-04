@@ -158,8 +158,6 @@ The active rendering profile defines where a callout may appear. If a style does
 Source presentation depends on the selected style:
 
 * `curated-discovery` and `synthesis-max` use stable numerical citations, section/item-level `SOURCE NOTES`, and a final bibliographic `Sources` catalog. The catalog grouping follows the style default or a valid digest-level `source_catalog_grouping` override. Citations and catalog titles are clickable only when a valid source locator exists.
-* `detailed` keeps each source independently identifiable inside its own entry and has no source catalog.
-* `concise` uses the source/publication label plus the article/item title and has no source catalog.
 
 Never add a source catalog merely because another style has one. Follow the selected style file and rendering profile.
 

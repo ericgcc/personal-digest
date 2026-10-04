@@ -1,19 +1,8 @@
-"""Style profiles: an explicit, versioned declaration of what each style's stages receive.
+"""Style-profile selection and compatibility metadata.
 
-A profile is the only thing that decides which style instructions a stage receives, so adding
-or editing one style's instructions cannot change another style's prompt. The prompt migration changes
-*how* a profile is declared, not what it decides:
-
-* Before, a profile named ``##`` heading text inside ``styles/<style>.md`` and the runtime
-  extracted those sections. A heading was doing two jobs — editorial formatting and a runtime
-  identifier — so reorganising a style's prose could silently redirect a stage's instructions.
-* Now, a profile names **files**. A style's rules live in ordered modules under
-  ``styles/<style>/modules/``, the readable ``styles/<style>.md`` is generated from them, and
-  ``prompts/profiles/<profile-id>.yaml`` lists the files each stage receives. No runtime code
-  parses a heading.
-
-The resolution order, aliases, structural validation, structural preflight, composition
-constraints, budgets and failure policies are unchanged.
+Profiles select a style and execution policy. Runtime instructions resolve by convention from
+the style's stage files; composition, budgets, evaluation settings and rendering paths resolve
+from ``styles/<style>/style.yaml``.
 """
 
 from __future__ import annotations
@@ -25,17 +14,20 @@ from typing import Any, Mapping, Sequence
 import yaml
 
 from ..runtime.artifacts import ROOT, RunnerError
-from .budgets import STYLE_BUDGET
-from .style_modules import load_style_manifest
+from .style_constraints import (
+    evaluation_values,
+    profile_composition,
+    rendering_values,
+    style_budget_values,
+)
 
 #: Every profile file, by id, is read from here.
 PROFILES_RELATIVE = "prompts/profiles"
 
 CANONICAL_STYLES: tuple[str, ...] = ("curated-discovery", "concise", "detailed", "synthesis-max")
 
-#: The sections a canonical style must still declare in its readable document. Retained as a
-#: documentation-level guarantee (``system/style-contract.md`` states it) and checked by
-#: ``scripts/build_style_docs.py``; the runtime no longer extracts anything by heading.
+# Compatibility vocabulary for historical reports. Runtime composition does not inspect
+# headings or require the archived readable style documents.
 MANDATED_STYLE_SECTIONS: tuple[str, ...] = ("## Style interface", "## Writing character")
 
 STAGE_NAMES: tuple[str, ...] = (
@@ -51,8 +43,6 @@ STAGE_NAMES: tuple[str, ...] = (
     "render",
 )
 
-STAGES_REQUIRING_A_DECLARATION: tuple[str, ...] = STAGE_NAMES
-
 #: What happens when the frame stage cannot produce a plan that satisfies the profile.
 FRAME_FAILURE_POLICIES: tuple[str, ...] = ("fail", "recovery-frame")
 
@@ -61,46 +51,10 @@ FRAME_FAILURE_POLICIES: tuple[str, ...] = ("fail", "recovery-frame")
 # Composition metadata
 # ---------------------------------------------------------------------------------------
 
-#: Composed from each style's ``## Style interface`` table. This is editorial constraint data,
-#: not prompt composition, so it stays in code; the interface table remains its human-readable
-#: source. Key order is preserved so the recorded profile is byte-comparable with the reference.
+# Compatibility view for callers that still import this public mapping. The manifests own
+# every value; this module contains no parallel composition definition.
 COMPOSITION_BY_STYLE: dict[str, dict[str, Any]] = {
-    "synthesis-max": {
-        "unit": "a concrete topic, question, mechanism, development, or tension explained through at least two substantively contributing sources",
-        "source_relationship": "mandatory",
-        "unit_count": {"min": 1, "max": 4},
-        "sources_per_unit": {"min": 2, "max": 4},
-        "opening": "THE BIG PICTURE",
-        "opening_words": {"min": 80, "max": 130},
-        "catalog": "required",
-        "min_words_per_source": 60,
-        "comfortable_words_per_source": 100,
-        "budget_headroom_ratio": 0.15,
-    },
-    "curated-discovery": {
-        "unit": "a coherent editorial mini-essay built around one idea worth understanding",
-        "source_relationship": "independent-by-default",
-        "unit_count": {"min": 1, "max": None},
-        "sources_per_unit": {"min": 1, "max": 1},
-        "opening": "TODAY'S EDIT",
-        "catalog": "required",
-    },
-    "concise": {
-        "unit": "one independent source or retained item",
-        "source_relationship": "independent",
-        "unit_count": {"min": 1, "max": None},
-        "sources_per_unit": {"min": 1, "max": 1},
-        "opening": None,
-        "catalog": "not-required",
-    },
-    "detailed": {
-        "unit": "one independent retained source or substantial subentry",
-        "source_relationship": "independent",
-        "unit_count": {"min": 1, "max": None},
-        "sources_per_unit": {"min": 1, "max": 1},
-        "opening": None,
-        "catalog": "not-required",
-    },
+    style: profile_composition(style) for style in CANONICAL_STYLES
 }
 
 #: Every composition constraint a profile may act on.
@@ -127,14 +81,7 @@ ENFORCEABLE_CONSTRAINTS: tuple[str, ...] = (
 #: meaning and the response schema changed materially, so the version moved with
 #: them. The developmental review is unchanged.
 EVALUATION_BY_STYLE: dict[str, dict[str, Any]] = {
-    style: {
-        "metric": "reader_quality_v4",
-        "rubric": "v4",
-        "steps_version": "v4.0-style-diagnostics",
-        "developmental": "developmental_review_v1",
-        "style_criteria": [],
-    }
-    for style in CANONICAL_STYLES
+    style: evaluation_values(style) for style in CANONICAL_STYLES
 }
 
 
@@ -266,27 +213,15 @@ def load_style_profile(profile_id: str, *, root: Path | None = None) -> StylePro
         raise RunnerError(f"{PROFILES_RELATIVE}/{profile_id}.yaml must be a mapping")
 
     style = str(loaded.get("style") or "")
-    budget = STYLE_BUDGET.get(style)
-    if budget is None:
-        raise RunnerError(
-            f"Style profile {profile_id} names style {style!r}, which has no entry in "
-            "digest_system/config/budgets.py"
-        )
+    budget = style_budget_values(style, root=base)
     frame_failure_policy = str(loaded.get("frame_failure_policy") or "recovery-frame")
     if frame_failure_policy not in FRAME_FAILURE_POLICIES:
         raise RunnerError(
             f"Style profile {profile_id} declares frame_failure_policy {frame_failure_policy!r}; "
             f"expected one of {', '.join(FRAME_FAILURE_POLICIES)}"
         )
-    composition = dict(COMPOSITION_BY_STYLE[style])
-    enforced = loaded.get("enforced")
-    composition["enforced"] = list(enforced) if isinstance(enforced, list) else []
-    rendering = loaded.get("rendering")
-    if not isinstance(rendering, Mapping):
-        rendering = {
-            "rules": f"system/rendering-{style}.md",
-            "template": f"templates/{style}-email-v1.html",
-        }
+    composition = profile_composition(style, root=base)
+    rendering = rendering_values(style, root=base)
     notes = loaded.get("notes")
     return StyleProfile(
         id=str(loaded.get("id") or profile_id),
@@ -295,13 +230,15 @@ def load_style_profile(profile_id: str, *, root: Path | None = None) -> StylePro
         label=str(loaded.get("label") or ""),
         status=str(loaded.get("status") or ""),
         notes=tuple(str(note) for note in notes) if isinstance(notes, list) else (),
-        budget={"unit": budget.unit, "min": budget.min, "max": budget.max, "prose": budget.prose},
-        budget_source="digest_system/config/budgets.py",
+        budget=dict(budget),
+        budget_source=f"styles/{style}/style.yaml",
         composition=composition,
-        evaluation=dict(EVALUATION_BY_STYLE[style]),
+        evaluation=evaluation_values(style, root=base),
         frame_failure_policy=frame_failure_policy,
-        stages=_stage_declarations(loaded.get("stages"), profile_id=profile_id),
-        rendering={str(key): str(value) for key, value in dict(rendering).items()},
+        # Historical profiles may still carry stage declarations, but current profiles select
+        # only execution policy. Runtime instructions always resolve by convention.
+        stages=_stage_declarations(loaded.get("stages") or {}, profile_id=profile_id),
+        rendering=rendering,
     )
 
 
@@ -474,25 +411,6 @@ def validate_style_profile(profile: StyleProfile | None) -> StructuralValidation
         or not isinstance(profile.rendering.get("template"), str)
     ):
         problems.append("missing rendering profile or template")
-    for stage in STAGES_REQUIRING_A_DECLARATION:
-        if stage not in profile.stages:
-            problems.append(f"stage {stage} is not declared")
-    for stage in STAGE_NAMES:
-        entry = profile.stages.get(stage)
-        if entry is None:
-            continue
-        if not isinstance(entry.documents, tuple):
-            problems.append(f"stage {stage}: documents must be an array")
-        for index, descriptor in enumerate(entry.documents):
-            if not isinstance(descriptor, Descriptor) or not descriptor.path.strip():
-                problems.append(f"stage {stage}: documents[{index}] has no path")
-        for name, descriptors in entry.contracts.items():
-            for index, descriptor in enumerate(descriptors):
-                if not isinstance(descriptor, Descriptor) or not descriptor.path.strip():
-                    problems.append(f"stage {stage}: contract {name}[{index}] has no path")
-    for stage in profile.stages:
-        if stage not in STAGE_NAMES:
-            problems.append(f"unknown stage declared: {stage}")
     return StructuralValidation(len(problems) == 0, problems)
 
 
@@ -510,11 +428,10 @@ class PreflightResult:
 
 
 def preflight_style_profile(profile: StyleProfile, *, root: Path | None = None) -> PreflightResult:
-    """Preflight every file a profile declares, before the first model call.
+    """Preflight the convention-resolved instruction tree before the first model call.
 
-    A profile that names a document which does not exist is a configuration defect. Every
-    problem is collected so one failure reports all of them. The style's own module manifest is
-    read here too, because a style whose modules are missing has no instructions to deliver.
+    Profile document declarations are retained only to read historical configuration. They do
+    not select runtime instructions and are not preflight dependencies.
     """
     base = root or ROOT
     structural = validate_style_profile(profile)
@@ -524,78 +441,42 @@ def preflight_style_profile(profile: StyleProfile, *, root: Path | None = None) 
             + "\n  - ".join(structural.problems)
         )
 
+    from ..editorial.prompts.convention import resolve_evaluation_contracts, resolve_stage_instructions
+
     problems: list[str] = []
-    manifest = None
-    try:
-        manifest = load_style_manifest(profile.style, root=base)
-    except RunnerError as error:
-        problems.append(str(error))
-    style_headings = [] if manifest is None else manifest.headings()
-    for mandated in MANDATED_STYLE_SECTIONS:
-        if manifest is not None and mandated not in style_headings:
-            problems.append(
-                f"styles/{profile.style}/style.yaml declares no module for the mandated section "
-                f"{mandated} (system/style-contract.md)"
-            )
-
-    for name, relative_path in (("rules", profile.rendering["rules"]), ("template", profile.rendering["template"])):
-        if not (base / relative_path).exists():
-            problems.append(f"rendering {name} is missing: {relative_path}")
-
     stages: dict[str, dict[str, Any]] = {}
     for stage in STAGE_NAMES:
-        entry = profile.stages.get(stage)
-        if entry is None:
-            continue
-        documents: list[ResolvedDescriptor] = []
-        contracts: dict[str, list[ResolvedDescriptor]] = {}
+        try:
+            resolved = resolve_stage_instructions(stage=stage, style=profile.style, root=base)
+            documents = [
+                ResolvedDescriptor(Descriptor(path=entry.path), True)
+                for entry in resolved.loaded_instructions()
+            ]
+            contracts: dict[str, list[ResolvedDescriptor]] = {}
+            if stage in ("developmental-review", "reader-review"):
+                resolve_evaluation_contracts(stage=stage, style=profile.style, root=base)
+                from ..editorial.prompts.convention import evaluation_contract_sources
 
-        def resolve(descriptor: Descriptor) -> ResolvedDescriptor:
-            relative_path = descriptor.path.replace("<style>", profile.style)
-            absolute = base / relative_path
-            if not absolute.exists():
-                if descriptor.required is False:
-                    return ResolvedDescriptor(
-                        Descriptor(path=relative_path, required=descriptor.required), False
-                    )
-                problems.append(f"{stage}: required document is missing: {relative_path}")
-                return ResolvedDescriptor(
-                    Descriptor(path=relative_path, required=descriptor.required), False
-                )
-            return ResolvedDescriptor(Descriptor(path=relative_path, required=descriptor.required), True)
-
-        for descriptor in entry.documents:
-            documents.append(resolve(descriptor))
-        for name, descriptors in entry.contracts.items():
-            contracts[name] = [resolve(descriptor) for descriptor in descriptors]
-        stages[stage] = {"documents": documents, "contracts": contracts}
+                contracts = {
+                    name: [ResolvedDescriptor(Descriptor(path=path), True) for path in paths]
+                    for name, paths in evaluation_contract_sources(
+                        stage=stage, style=profile.style, root=base
+                    ).items()
+                }
+            stages[stage] = {"documents": documents, "contracts": contracts}
+        except RunnerError as error:
+            problems.append(f"{stage}: {error}")
 
     if problems:
         raise RunnerError(
             f"Style profile {profile.id} failed preflight:\n  - " + "\n  - ".join(problems)
         )
-    return PreflightResult(profile=profile, stages=stages, style_headings=style_headings)
+    return PreflightResult(profile=profile, stages=stages, style_headings=[])
 
 
 def excluded_sections(*, profile: StyleProfile, stage: str, style_headings: Sequence[str]) -> list[str]:
-    """Style modules a stage will not receive, out of those its style declares.
-
-    Reported by module for the audit: the profile's selectivity is the thing this architecture
-    is trusted to get right, and a record of what was *not* sent is how that is audited.
-    """
-    if stage.startswith("render"):
-        return []
-    entry = profile.stages.get(stage)
-    if entry is None:
-        return []
-    requested: set[str] = set()
-    for descriptor in (*entry.documents, *(d for ds in entry.contracts.values() for d in ds)):
-        relative_path = descriptor.path.replace("<style>", profile.style)
-        if not relative_path.startswith(f"styles/{profile.style}/modules/"):
-            continue
-        requested.add(relative_path)
-    manifest = load_style_manifest(profile.style)
-    return [module.file for module in manifest.modules if module.file not in requested]
+    """Compatibility hook: convention composition has no withheld style fragments."""
+    return []
 
 
 def describe_style_profile(profile: StyleProfile, *, source: str | None = None) -> dict[str, Any]:

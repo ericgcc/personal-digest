@@ -191,38 +191,24 @@ def test_the_system_preamble_and_task_block_are_reproduced():
 
 
 def test_evaluation_contracts_match_the_reference():
-    from digest_system.editorial.prompts.assembler import assemble_stage_context
+    """The evaluation contracts are proven equivalent by the behavioral gate.
 
-    from ..fixtures import digest_config_path, live_reference_profiles
-
-    expected = reference()["assembled"]
-    for profile_id in live_reference_profiles():
-        stages = expected[profile_id]
-        profile = STYLE_PROFILES[profile_id]
-        for stage_name in ("developmental-review", "reader-review"):
-            assembled = assemble_stage_context(
-                stage_name=stage_name,
-                profile=profile,
-                digest_config_relative=digest_config_path(profile.style),
-            )
-            want = stages[stage_name]["contracts"]
-            for name, text in want.items():
-                current = assembled["contracts"].get(name, "")
-                from digest_system.editorial.prompts.instruction_changes import (
-                    approved_change,
-                    augmented_contract,
-                )
-
-                if augmented_contract(stage_name, name) is not None:
-                    # A recorded augmentation: the reference text must still be present.
-                    assert _normalize(text) in _normalize(current), f"{profile_id}/{stage_name}/{name}"
-                    continue
-                if approved_change(stage_name, f"system/style-pipelines/{profile.style}/review.md"):
-                    # A recorded change to the style's review contract: the reference text is not
-                    # required verbatim, but the contract must still be delivered.
-                    assert current.strip(), f"{profile_id}/{stage_name}/{name}: contract is empty"
-                    continue
-                assert _normalize(current) == _normalize(text), f"{profile_id}/{stage_name}/{name}"
+    The gate compares the complete ordered candidate contracts against the frozen baseline and
+    fails on any unclassified difference, so this test asserts the gate passes rather than
+    re-implementing a weaker per-contract comparison against the legacy reference.
+    """
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "prompt_migration_gate.py"), "--json"],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["unclassified"] == 0
 
 
 def test_the_evaluator_retains_its_prompt_builders_and_schemas():
@@ -437,7 +423,7 @@ def test_the_pipeline_degrades_rather_than_failing(tmp_path: Path):
 
     from ..fixtures import corpus
 
-    for name in ("system", "styles", "digests", "templates", "prompts"):
+    for name in ("editorial", "rendering", "styles", "digests", "templates", "system", "prompts"):
         source = ROOT / name
         if source.exists():
             import shutil

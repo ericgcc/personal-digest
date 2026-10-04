@@ -1,19 +1,5 @@
 # HTML email rendering
-This file is the shared rendering contract for every Digest System email. It defines the visual language, email-safety rules, responsive behavior, and the boundary between editorial style, digest instructions, and HTML presentation.
-
-Do not use one summary style's template as a universal fallback. Resolve the active summary style first, then load its rendering profile and matching reference template.
-
-## Rendering profiles
-| Summary style       | Rendering profile                       | Reference template                          | Visual personality                     |
-| ------------------- | --------------------------------------- | ------------------------------------------- | -------------------------------------- |
-| `curated-discovery` | `system/rendering-curated-discovery.md` | `templates/curated-discovery-email-v1.html` | **Magazine edit**                      |
-| `synthesis-max`     | `system/rendering-synthesis-max.md`     | `templates/synthesis-max-email-v1.html`     | **Editorial dossier**                  |
-| `detailed`          | `system/rendering-detailed.md`          | `templates/detailed-email-v1.html`          | **Annotated reader**                   |
-| `concise`           | `system/rendering-concise.md`           | `templates/concise-email-v1.html`           | **Briefing ledger / newspaper briefs** |
-
-The shared `styles/editorial-base.md` establishes the prose quality floor, `system/editorial-process.md` defines the staged production/editing method, and the selected style defines the editorial structure and Writing character. `FINAL POLISH` in the editorial process must be complete before this rendering contract is applied. The rendering profile explains how the approved final structure maps into HTML. The reference template is a **structural visual specimen**: its placeholder components demonstrate hierarchy and email-safe markup, not content volume, item count, paragraph count, or editorial cadence.
-
-If a style has no rendering profile/template mapping, stop safely rather than silently substituting another style's layout.
+Apply this shared contract together with the resolved style rendering profile and its matching reference template. If either style asset is unavailable, stop safely.
 
 ## Complete-output localization
 The configured digest `language` applies to every generated reader-facing HTML string. This includes `<title>`, subject-derived display text, preheader, dates, masthead labels, recurring purpose, section and component headings, generated editorial titles, body copy, statuses, reading-time wording and units, counts, calls to action, callout labels, footer, `alt`, `title`, and `aria-label` attributes. Original source/article titles are the explicit invariant exception below.
@@ -184,36 +170,10 @@ Never add a source catalog merely because another style has one. Follow the sele
 * The run key must remain invisible.
 * Nothing in the footer may violate the selected style's ending rules.
 
-## Relationship between style, digest, rendering profile, template, and theme
-Keep these responsibilities separate:
-
-1. **`system/editorial-process.md`—shared editorial production method**
-   Defines the autonomous `SELECT → ANALYZE → FRAME → DRAFT → structural/clarity/voice/compression edits → FINAL POLISH` sequence. It governs how prose becomes publication-ready before HTML exists.
-
-2. **`styles/editorial-base.md`—shared editorial quality floor**
-   Defines how excellent digest prose behaves across every style: clarity, coherence, orientation, specificity, rhythm, naturalness, intellectual honesty, economy, and reader interest. It does not impose one voice or layout.
-
-3. **`styles/<style>.md`—editorial implementation**
-   Implements `system/style-contract.md`: selection model, composition unit, source relationship, structure, depth, provenance, ending behavior, and a distinct Writing character layered on top of the editorial base.
-
-4. **`digests/<digest>.md`—digest configuration plus optional custom instructions**
-   YAML frontmatter defines the digest configuration. Any Markdown body is optional and may refine topic priorities, selection preferences, tone, recurring purpose, and compatible callout vocabulary without replacing the selected style.
-
-5. **`system/rendering-<style>.md`—style-to-HTML mapping**
-   Defines how the selected style's editorial structure maps to visual components and responsive behavior.
-
-6. **`templates/<style>-email-v1.html`—canonical structural reference implementation**
-   Shows the expected **visual composition and component markup using explicit placeholders**. Every reader-facing label must be a localization placeholder; hard-coded English display text is invalid. Placeholder instances are not a quota: never infer how many selections, threads, topics, discoveries, source rows, paragraphs, or words to produce from the template. Repeat or omit components only according to the selected style's editorial output. Do not redesign the template on every run.
-
-7. **`templates/email-theme.html`—shared visual language**
-   Supplies reusable visual primitives and the family resemblance shared by every template.
-
-Never let rendering rules create editorial content that the style does not request, and never let digest-specific vocabulary leak into another digest or global template.
-
 ## Final rendering checks
 Before sending:
 
-1. Confirm the editorial body has completed every stage through `FINAL POLISH` in `system/editorial-process.md` and satisfies `styles/editorial-base.md` plus the selected style's Writing character.
+1. Confirm the editorial body has completed every stage through the render stage and satisfies `editorial/shared/editorial-base.md` plus the selected style's Writing character.
 2. Confirm the template and rendering profile match the selected summary style.
 3. Confirm no example text, dates, article links, source numbers, reading-time values, or placeholder labels remain from the reference template.
 4. Confirm the email preserves the shared visual language while retaining the selected style's distinct composition.

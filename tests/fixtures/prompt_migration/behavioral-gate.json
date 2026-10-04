@@ -1,0 +1,321 @@
+{
+  "schema_version": 1,
+  "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
+  "approved_candidate_sha256": "f65f052bea50413b989fa6c9ab31fa20fad9eae7f76ab536cb4258bf95c31c50",
+  "categories": [
+    "packaging-only",
+    "deduplication-without-semantic-loss",
+    "moved-same-stage-reach-and-authority",
+    "approved-architectural-boundary-removal",
+    "behavioral-change"
+  ],
+  "classifications": [
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "moved",
+      "block": "styles/*/modules/*.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "A style module was consolidated into the stage's own style file (styles/<style>/stages/<stage>.md). The module's text is copied verbatim into the stage file, so the same instruction reaches the same stage with the same authority; only its owner changed."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "moved",
+      "block": "system/style-pipelines/*/*.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The style's pipeline stage document was consolidated into the stage's own style file. Its text is copied verbatim, so the stage's style-specific procedure is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "moved",
+      "block": "styles/*/stages/*.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The destination of a consolidation move: the stage file now carries the style modules and pipeline document the profile used to route separately. The instruction content is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "added",
+      "block": "styles/*/interface.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The style's `## Style interface` module is now delivered as one shared style file rather than as a per-stage module. It reaches the same stages that received it before, with the same text."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "added",
+      "block": "<style_constraints>",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The declarative constraints block states the numeric facts (source and unit limits, word bands, catalog and callout rules) that the legacy style modules carried in prose. The facts are unchanged; they now have one structured owner, styles/<style>/style.yaml."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "removed",
+      "block": "system/style-contract.md",
+      "category": "approved-architectural-boundary-removal",
+      "justification": "Maintainer-facing architecture documentation: it defines the validation contract every style must satisfy and describes the profile mechanism. It is not an editorial requirement, and the style's actual interface facts now reach stages through styles/<style>/interface.md and the constraints block."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "removed",
+      "block": "system/html-rendering.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The shared rendering contract moved to rendering/shared.md. The text is unchanged; only its location in the runtime tree changed."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "added",
+      "block": "rendering/shared.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The destination of the shared rendering contract's move from system/html-rendering.md. The text is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "removed",
+      "block": "system/style-pipelines/synthesis-max/review.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The shared five-stage review document was split into genuine per-stage files. Each stage now receives only its own may/may-not row plus the shared invariant, preservation rules and boundaries; the other stages' rows were instructions for stages that did not receive them. No instruction a stage acted on was lost."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "added",
+      "block": "styles/synthesis-max/stages/*.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The destination of the review-document split: each review/revision stage now has its own style file carrying its row of the shared document and the style modules the profile routed to it."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "reordered",
+      "block": "system",
+      "category": "packaging-only",
+      "justification": "The instruction blocks are delivered in the new composition order (stage contract, style specialization, style interface, shared contracts, constraints). The set of instructions is unchanged; only their order in the system message changed."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "reordered",
+      "block": "contract",
+      "category": "packaging-only",
+      "justification": "The evaluation contracts are delivered in a fixed order (role, reader, review, style). The contract content is unchanged; only the order changed."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "content-change",
+      "block": "review",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The review contract now carries only this stage's may/may-not row plus the shared invariant, preservation rules and boundaries. The other stages' rows were removed because they were instructions for stages that did not receive this contract. The stage's own obligations are unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "removed",
+      "block": "review",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The review contract's text changed as the shared five-stage document was split; the old whole-document text is no longer delivered as one block. The stage's own obligations are preserved in the new contract."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "added",
+      "block": "review",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The review contract's new text is the stage's own row plus the shared sections. It is the destination of the split, not a new instruction."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "content-change",
+      "block": "style",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The style contract is now the style's interface declaration alone. The required-structure module that reader-review's style contract also carried moved into that stage's review contract, so the judge still receives it."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "removed",
+      "block": "style",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The style contract's text changed as the required-structure module moved to the review contract. The instruction still reaches the same stage."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "added",
+      "block": "style",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The style contract's new text is the style's interface declaration. It is the destination of the interface module's move, not a new instruction."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "moved",
+      "block": "style",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The style contract's text moved between the style contract and the review contract as the interface and required-structure modules were re-owned. The instruction still reaches the same stage."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "lost-content",
+      "block": "system/style-contract.md",
+      "category": "approved-architectural-boundary-removal",
+      "justification": "Maintainer-facing architecture documentation. Its lines describe the validation contract and the profile mechanism, not an editorial requirement, so no editorial instruction is lost."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "lost-content",
+      "block": "system/style-pipelines/synthesis-max/review.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The shared five-stage review document was split. The lines no longer delivered to a given stage are the other stages' may/may-not rows and the shared heading, which were instructions for stages that did not receive this contract."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "lost-content",
+      "block": "style",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The style contract's lines changed as the required-structure module moved into the review contract. The instruction still reaches the same stage."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "lost-content",
+      "block": "system/html-rendering.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The shared rendering contract moved to rendering/shared.md; the lines that changed are the runtime paths it names, updated to the new tree."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "lost-content",
+      "block": "review",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The review contract's lines changed as the shared five-stage document was split. The lines no longer delivered are the other stages' rows; this stage's own obligations are preserved."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "novel-content",
+      "block": "review",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The review contract's new lines are this stage's own row plus the shared sections, with the shared heading renamed to name this stage. It is the destination of the split, not a new instruction."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "novel-content",
+      "block": "styles/synthesis-max/stages/*.md",
+      "detail_contains": [
+        "## The invariant that governs this stage",
+        "## What this stage may and may not do"
+      ],
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The consolidated stage file's shared headings were renamed to name the stage (for example 'The invariant that governs this stage'). The instruction text under each heading is unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "novel-content",
+      "block": "<style_constraints>",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The declarative constraints block states the numeric and structural facts the legacy style modules carried in prose. The facts are unchanged; they now have one structured owner, styles/<style>/style.yaml."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "removed",
+      "block": "styles/*/modules/*.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The module was consolidated into a purpose-specific stage file. Declarative values were replaced there by references to the same values in style.yaml, while editorial procedure remains in the stage file."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "lost-content",
+      "block": "styles/*/modules/*.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The missing prose is a duplicated declarative value now delivered from style.yaml; the exact reviewed candidate is bound by approved_candidate_sha256."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "removed",
+      "block": "system/style-pipelines/*/*.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The stage procedure moved into its style stage file; duplicated declarative values were replaced by references to style.yaml."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "lost-content",
+      "block": "system/style-pipelines/*/*.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The line was either moved into the purpose-specific style stage file or replaced by a reference to the same declarative value in style.yaml; the exact candidate is fingerprinted."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "novel-content",
+      "block": "styles/*/stages/*.md",
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The purpose-specific stage file consolidates the legacy style procedure and refers to declarative values by their structured owner; the exact reviewed text is bound by approved_candidate_sha256."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "novel-content",
+      "block": "styles/*/interface.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The shared style interface preserves the legacy identity and replaces duplicated numeric prose with references to style.yaml; the exact reviewed text is bound by approved_candidate_sha256."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "novel-content",
+      "block": "style",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The evaluation adapter receives the same style interface with duplicated numeric prose replaced by references to style.yaml; the exact reviewed text is bound by approved_candidate_sha256."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "novel-content",
+      "block": "rendering/shared.md",
+      "detail_contains": [
+        "editorial/stages/render.md",
+        "editorial/shared/editorial-base.md",
+        "styles/<style>/interface.md",
+        "styles/<style>/rendering.md",
+        "| `concise` |",
+        "| `curated-discovery` |",
+        "| `detailed` |",
+        "| `synthesis-max` |",
+        "| ------------------- |",
+        "Defines the render stage's role",
+        "Declares the style's selection model",
+        "Confirm the editorial body has completed every stage through the render stage"
+      ],
+      "category": "moved-same-stage-reach-and-authority",
+      "justification": "The shared rendering contract's lines that name runtime paths were updated to the new instruction tree. The rendering rules themselves are unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "render",
+      "kind": "novel-content",
+      "block": "rendering/shared.md",
+      "detail_contains": "Apply this shared contract together with the resolved style rendering profile",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The sentence retains the existing requirement to use the resolved style profile/template and stop when they are unavailable, while removing the maintainer-facing architecture table."
+    }
+  ]
+}

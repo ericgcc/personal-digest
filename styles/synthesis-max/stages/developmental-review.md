@@ -1,14 +1,4 @@
-# Synthesis MAX — Review and revision
-
-**Stages:** `developmental-review`, `writer-revision`, `line-edit`, `reader-review`, `targeted-repair` · **Style:** `synthesis-max` · **Profile:** `synthesis-max-v1`
-
-This document is operational. It states what the *review and revision* stages are responsible for in this style, and what they must protect. `styles/synthesis-max.md` remains authoritative for the style's identity and output requirements. Each stage's own contract remains authoritative for its role.
-
-It reaches five stages. `writer-revision`, `line-edit` and `targeted-repair` receive it as an instruction document. `developmental-review` and `reader-review` receive it as the `review` contract their prompt is built from, so a style-specific diagnosis reaches the judge.
-
----
-
-## The invariant that governs all of these stages
+## The invariant that governs this stage
 
 > **The explanation is the product. Do not trade it for apparent concision, and do not trade it for apparent completeness.**
 
@@ -40,17 +30,11 @@ The frame defect row is the one that changes the pipeline's behaviour: when a th
 
 ---
 
-## What each stage may and may not do
+## What this stage may and may not do
 
 | Stage | May | May not |
 | --- | --- | --- |
 | `developmental-review` | Diagnose the draft against the frame in canonical problem types; identify a thread whose relationship is asserted rather than explained; record a frame defect where the allocation cannot carry the plan. | Rewrite. The reviewer diagnoses; it does not supply prose. |
-| `writer-revision` | Act on the **highest-impact** diagnosed problems, in the review's priority order; restore orientation, mechanism, and causal bridges from the frame-selected evidence. | Invent a different synthesis, introduce an undeclared source, add a claim the projected evidence does not support, or grow the document to cover every finding. A retrieved writing operation is applied only when it addresses an actual finding; the operations are candidates, not a checklist. |
-| `line-edit` | Improve clarity, voice, naturalness, rhythm, transitions, redundancy and length discipline. | Remove a definition, a causal bridge, a qualification or a piece of orientation in order to shorten the piece. A shorter passage is not automatically a better one: precision, not brevity, is the goal. |
-| `reader-review` | Assess the prose as a reader against the same effective Reader Brief the writing stages used, and detect anything the line edit materially regressed — lost context, weakened explanations, new ambiguity, unexplained terminology, or a damaged source relationship. | Retrofit a different interpretation onto prose it did not produce, or ask for a claim the frame never authorised. |
-| `targeted-repair` | Repair one diagnosed reader-facing problem, at one location, in one pass, without reopening source selection. | Re-open the document's composition, re-plan a thread, or change the selection. |
-
----
 
 ## What these stages must preserve
 
@@ -69,3 +53,20 @@ The frame defect row is the one that changes the pipeline's behaviour: when a th
 * Do not introduce operational, cost or pipeline data into reader-facing prose.
 * Do not weaken the inherited quality floor in `styles/editorial-base.md` to satisfy a style habit, and do not weaken the reader contract to satisfy a style habit.
 * Do not resolve a diagnosed problem by adding instructions to every other stage. Identify the originating stage and make the smallest change that addresses it.
+
+## Domain accessibility in synthesis
+Synthesis MAX combines material that may carry different specialist vocabularies and assumed contexts. Write for an intelligent reader who is not necessarily familiar with any of those domains. The reader should gain access to the sources through the synthesis, not need prior access to understand it.
+
+Begin each thread by establishing its concrete subject, relevant actors, situation, or mechanism in broadly understandable language. Introduce specialized terminology only after the reader has enough context to understand what it refers to and why it matters.
+
+Preserve domain terms that carry necessary precision, but explain them at the point of use through their function, effect, referent, consequence, or a concise example. Do not require the reader to infer their meaning from adjacent jargon.
+
+Move through one level of abstraction at a time:
+
+`concrete subject → source evidence or mechanisms → relationship → implication`
+
+Do not combine unfamiliar terminology, compressed source context, metaphor, and editorial inference in the same sentence. Unpack them in the order required for understanding.
+
+Every additional domain creates an orientation cost. Include a cross-domain source only when its concrete explanatory contribution is strong enough to repay that cost within the thread's limited reading budget. Conceptual similarity alone does not repay it.
+
+Let each paragraph perform one primary explanatory job. If several unfamiliar concepts are essential, establish their roles and relationships before asking them to support a broader conclusion. A reader should never need to understand the synthesis in order to reconstruct what the underlying material was about.

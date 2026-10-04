@@ -47,6 +47,12 @@ def _run(args: list[str]) -> subprocess.CompletedProcess:
     )
 
 
+def _normalize(text: str) -> str:
+    import re
+
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def _draft() -> str:
     return (STYLE_PIPELINES / "draft.md").read_text(encoding="utf-8")
 
@@ -142,19 +148,21 @@ def test_draft_explains_terminology_at_the_point_of_need():
 
 
 def test_the_domain_module_reaches_draft_and_the_reviews():
-    """The module existed but reached no stage; it is now routed to the stages that need it."""
+    """The module existed but reached no stage; it is now part of the stages that need it.
+
+    Under the convention resolver the module's text is consolidated into the stage's own style
+    file, so the check is that the module's instruction text reaches the stage — not that a
+    separate module path appears in the manifest.
+    """
     from digest_system.editorial.prompts.inspection import inspect_stage
 
+    module_text = _normalize((ROOT / DOMAIN_MODULE).read_text(encoding="utf-8"))
     for stage_name in ("draft", "line-edit", "developmental-review", "reader-review"):
         inspection = inspect_stage(
             digest_id="tech-bi-daily", profile_id="synthesis-max-v1", stage_name=stage_name
         )
-        paths = [
-            entry["path"]
-            for entry in inspection.manifest.get("documents", [])
-            + inspection.manifest.get("instructions", [])
-        ]
-        assert DOMAIN_MODULE in paths, f"{stage_name} does not receive the domain module"
+        delivered = _normalize(inspection.prompt_text)
+        assert module_text in delivered, f"{stage_name} does not receive the domain module"
 
 
 def test_the_domain_module_is_recorded_as_an_addition():
@@ -246,14 +254,11 @@ def test_the_legacy_profile_file_is_deleted():
 
 
 def test_every_prompt_change_is_classified():
-    result = _run([str(ROOT / "scripts" / "prompt_diff.py"), "--json"])
+    result = _run([str(ROOT / "scripts" / "prompt_migration_gate.py"), "--json"])
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
-    unapproved = [row for row in payload["rows"] if row["status"] == "instruction-change"]
-    assert not unapproved, "unapproved instruction changes:\n" + "\n".join(
-        f"{row['profile']}/{row['stage']} ({row.get('document')})" for row in unapproved
-    )
-    assert len(payload["rows"]) == 40
+    assert payload["ok"] is True, "unclassified prompt differences"
+    assert payload["unclassified"] == 0
 
 
 def test_the_synthesis_max_changes_are_recorded():
@@ -265,7 +270,7 @@ def test_the_synthesis_max_changes_are_recorded():
 
 
 def test_the_prompt_parity_check_passes():
-    result = _run([str(ROOT / "scripts" / "check_prompt_parity.py")])
+    result = _run([str(ROOT / "scripts" / "prompt_migration_gate.py")])
     assert result.returncode == 0, result.stdout + result.stderr
 
 

@@ -51,29 +51,24 @@ def test_the_standard_composition_is_documented():
     assert ownership.is_file()
     text = ownership.read_text(encoding="utf-8")
     assert "SYSTEM" in text
-    assert "shared editorial stage" in text
+    assert "stage contract" in text
+    assert "style specialization" in text
+    assert "shared contracts" in text
+    assert "constraints" in text
 
 
-def test_stage_templates_follow_the_standard_order():
-    """Each stage's system template names its role contract first, then its style, then obligations."""
-    from digest_system.editorial.prompts.compose import build_prompt_environment
-    from digest_system.editorial.prompts.environment import render
-    from digest_system.editorial.stages import stage_v2
+def test_stage_resolution_follows_the_standard_order():
+    """Convention composition puts the stage contract before style and shared obligations."""
+    from digest_system.editorial.prompts.convention import resolve_stage_instructions
 
-    environment = build_prompt_environment()
     for stage_name in stage_names_v2():
-        stage = stage_v2(stage_name)
-        if stage.executor == "evaluation":
-            continue
-        template = f"stages/{stage_name}/system.j2"
-        source = environment.loader.get_source(environment, template)[0]
-        # The preamble is the shared framing and always comes first.
-        assert "shared/preamble.j2" in source, stage_name
-        # The role contract (system/contracts/<stage>.md) is named before any style document.
-        role_index = source.find(f"system/contracts/{stage_name}.md")
-        style_index = source.find("style_documents")
-        if role_index != -1 and style_index != -1:
-            assert role_index < style_index, f"{stage_name}: role contract must precede the style"
+        resolved = resolve_stage_instructions(stage=stage_name, style="synthesis-max")
+        paths = [entry.path for entry in resolved.loaded_instructions()]
+        assert paths[0] == f"editorial/stages/{stage_name}.md"
+        style_paths = [index for index, path in enumerate(paths) if path.startswith("styles/")]
+        shared_paths = [index for index, path in enumerate(paths) if path.startswith("editorial/shared/")]
+        if style_paths and shared_paths:
+            assert max(style_paths) < min(shared_paths)
 
 
 # ---------------------------------------------------------------------------------------
@@ -83,8 +78,8 @@ def test_stage_templates_follow_the_standard_order():
 
 def test_every_retained_instruction_has_one_owner():
     """The concision invariant has one owner, not two."""
-    line_edit = (ROOT / "system" / "contracts" / "line-edit.md").read_text(encoding="utf-8")
-    naturalness = (ROOT / "system" / "naturalness-contract.md").read_text(encoding="utf-8")
+    line_edit = (ROOT / "editorial" / "stages" / "line-edit.md").read_text(encoding="utf-8")
+    naturalness = (ROOT / "editorial" / "shared" / "naturalness.md").read_text(encoding="utf-8")
     invariant = "Never obtain concision by deleting explanatory setup"
     assert invariant in line_edit, "line-edit no longer owns the invariant"
     # The naturalness contract refers to it rather than restating it as a block quote.
@@ -193,14 +188,11 @@ def test_a_variant_may_not_remove_the_quality_floor():
 
 
 def test_every_prompt_change_is_classified():
-    result = _run([str(ROOT / "scripts" / "prompt_diff.py"), "--json"])
+    result = _run([str(ROOT / "scripts" / "prompt_migration_gate.py"), "--json"])
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
-    unapproved = [row for row in payload["rows"] if row["status"] == "instruction-change"]
-    assert not unapproved, "unapproved instruction changes:\n" + "\n".join(
-        f"{row['profile']}/{row['stage']} ({row.get('document')})" for row in unapproved
-    )
-    assert len(payload["rows"]) == 40
+    assert payload["ok"] is True, "unclassified prompt differences"
+    assert payload["unclassified"] == 0
 
 
 def test_the_diff_is_order_independent():

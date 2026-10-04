@@ -1,15 +1,10 @@
 {
-  "system_template": "stages/frame/system.j2",
+  "system_template": null,
   "user_template": "stages/frame/user.j2",
   "templates": [
     {
-      "path": "prompts/stages/frame/system.j2",
-      "bytes": 197,
-      "sha256": "347d7eebd76490f381ccebe85e17ab7d7e102b2c6a867503e6ae304fed86af20"
-    },
-    {
       "path": "prompts/shared/preamble.j2",
-      "bytes": 463,
+      "bytes": 465,
       "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
     },
     {
@@ -25,75 +20,63 @@
   ],
   "documents": [
     {
-      "path": "system/contracts/frame.md",
-      "bytes": 10877,
-      "sha256": "8d198f02f8356ed661c5e3032154ac630a400a5d3aff3252920729cf8278605b"
+      "path": "editorial/stages/frame.md",
+      "bytes": 10680,
+      "sha256": "801fa06351d5ce9999117576278479a2709239141e0097871aaf448641f9664f",
+      "owner": "shared stage contract"
     },
     {
-      "path": "system/style-contract.md",
-      "bytes": 8617,
-      "sha256": "da020ae07e7df4cac743cfb965f2bcd65cfbf04529b5b6d3f3d2d3eb480dc8e7"
-    },
-    {
-      "path": "system/contracts/reader-contract.md",
-      "bytes": 3465,
-      "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
+      "path": "editorial/shared/reader.md",
+      "bytes": 3357,
+      "sha256": "c653190e817921ec7f45a2477cb58d110342debc3d1d0eaa366339209a073a06",
+      "owner": "shared cross-cutting contract"
     }
   ],
   "instructions": [
     {
-      "path": "styles/synthesis-max/modules/01-style-interface.md",
-      "bytes": 2850,
-      "sha256": "35e389151e7acbd2964f043602b1e5b809050910337625fd5eb200e52daafd00"
+      "path": "styles/synthesis-max/stages/frame.md",
+      "bytes": 22670,
+      "sha256": "4c195267086e985907f2d69be269d2148c796b3909c0e6fd5942c2fdc4069a2b",
+      "owner": "style-specific stage specialization"
     },
     {
-      "path": "styles/synthesis-max/modules/03-synthesis-mode.md",
-      "bytes": 3282,
-      "sha256": "a6b32685788b52e4439d6d5d23d02943be15df63a02c1ab0e35580dabbff1de1"
+      "path": "styles/synthesis-max/interface.md",
+      "bytes": 2758,
+      "sha256": "be4b146191d85c5da9680e408b001361a107a577303b572d82d9978cdfce1812",
+      "owner": "style interface declaration"
     },
     {
-      "path": "styles/synthesis-max/modules/07-required-structure.md",
-      "bytes": 4022,
-      "sha256": "8bc77aca136c612d442cdacbf1eaafdd3038981544fd6e6f3e891e030a4006e7"
-    },
-    {
-      "path": "styles/synthesis-max/modules/06-length-and-density.md",
-      "bytes": 1518,
-      "sha256": "72af0519f874c0899b1ada2816b71f185110424ae988d5c24f979701e44c3f32"
-    },
-    {
-      "path": "styles/synthesis-max/modules/08-citations.md",
-      "bytes": 1576,
-      "sha256": "cdeee64d04c3e021628a13e8b865230c56f01b6745b765dce78cf7dec8eb7b91"
-    },
-    {
-      "path": "styles/synthesis-max/modules/09-final-source-catalog.md",
-      "bytes": 3170,
-      "sha256": "b738bba9885958ffd3d1928348ec7996e7afbaa9744e2364a352bf930ff3adce"
-    },
-    {
-      "path": "system/style-pipelines/synthesis-max/frame.md",
-      "bytes": 9709,
-      "sha256": "16585fbc971d0504a756cc1386a22d3d492c7c6dd9d30580801c88f78013a2f5"
+      "path": "styles/synthesis-max/style.yaml",
+      "bytes": 808,
+      "sha256": "5d6de26ddacf539eb5fda36caf4474c45a0c1556b94252089138083b80290454",
+      "owner": "declarative style constraints"
     }
   ],
   "blocks": [
     {
       "tag": "reading_instructions",
-      "bytes": 1882
+      "bytes": 1882,
+      "source": {
+        "path": "digests/tech-bi-daily.md",
+        "sections": [
+          "Reader",
+          "Content preferences",
+          "Optional highlights"
+        ],
+        "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"
+      },
+      "purpose": "prior artifact or digest reading instructions"
     },
     {
       "tag": "stage_task",
-      "bytes": 706
+      "bytes": 706,
+      "source": {
+        "path": "prompts/shared/task.j2"
+      },
+      "purpose": "immediate task and output contract"
     }
   ],
-  "omitted": [
-    "styles/synthesis-max/modules/02-writing-reference-profile.md",
-    "styles/synthesis-max/modules/04-writing-character.md",
-    "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
-    "styles/synthesis-max/modules/10-ending-rules.md",
-    "styles/synthesis-max/modules/11-quality-control.md"
-  ],
-  "system_bytes": 49551,
+  "omitted": [],
+  "system_bytes": 41152,
   "user_bytes": 2638
 }

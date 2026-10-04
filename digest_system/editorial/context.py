@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
-from ..config.profiles import StyleProfile, excluded_sections
+from ..config.profiles import StyleProfile
 from ..config.reading_instructions import ReadingInstructions, empty_instructions
 from ..runtime.artifacts import ROOT, relative_to_root
 from .rendering.values import resolve_rendering_values
@@ -64,41 +64,9 @@ class RunContext:
     #: matters when an artifact was carried forward from an earlier stage.
     pending_blocks: list[dict[str, Any]] = field(default_factory=list)
 
-    # --- style-derived instructions -----------------------------------------------------
-
-    def style_documents(self, stage_name: str) -> list[dict[str, Any]]:
-        """The style-derived instruction documents a stage receives.
-
-        This and :meth:`style_contracts` are the only way a stage obtains a style-derived
-        instruction, so no stage can name one directly.
-        """
-        return [entry.descriptor.to_dict() for entry in self._preflight_stage(stage_name)["documents"]]
-
-    def style_contracts(self, stage_name: str) -> dict[str, list[dict[str, Any]]]:
-        """The contracts a stage hands to the evaluation adapter.
-
-        A contract may concatenate several documents, so each name maps to a list of descriptors.
-        """
-        resolved = self._preflight_stage(stage_name)["contracts"]
-        return {
-            name: [entry.descriptor.to_dict() for entry in entries if entry.present]
-            for name, entries in resolved.items()
-        }
-
-    def _preflight_stage(self, stage_name: str) -> dict[str, Any]:
-        from ..config.profiles import preflight_style_profile
-
-        if not hasattr(self, "_preflight_cache"):
-            self._preflight_cache = preflight_style_profile(self.profile, root=self.root)
-        return self._preflight_cache.stages.get(stage_name, {"documents": [], "contracts": {}})
-
-    def rendering_documents(self) -> list[dict[str, Any]]:
-        """The rendering profile is style-scoped, not profile-scoped: an editorial profile
-        version never changes how the digest looks."""
-        return [{"path": self.profile.rendering["rules"]}, {"path": self.profile.rendering["template"]}]
-
     def stage_excluded_sections(self, stage_name: str) -> list[str]:
-        return excluded_sections(profile=self.profile, stage=stage_name, style_headings=self.style_headings)
+        """Convention composition has no withheld style fragments."""
+        return []
 
     # --- reading instructions -----------------------------------------------------------
 
@@ -132,7 +100,7 @@ class RunContext:
     def reader_brief(self) -> str:
         """The digest half of the effective Reader Brief: the `## Reader` section, or ``''``.
 
-        The other half is `system/contracts/reader-contract.md`, which always applies. The
+        The other half is `editorial/shared/reader.md`, which always applies. The
         effective brief is the reader contract narrowed by this text; it is what the writing and
         review stages are given so they all reason from the same reader.
         """

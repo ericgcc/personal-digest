@@ -1,35 +1,15 @@
-version: 8
+version: 9
 
 defaults:
   workflow: system/workflow.md
-  style_contract: system/style-contract.md
-  editorial_process: system/editorial-process.md
-  editorial_pipeline: system/editorial-pipeline-v2.md
-  stage_contracts: system/contracts
-  reader_contract: system/contracts/reader-contract.md
-  naturalness_contract: system/naturalness-contract.md
   runtime_config: system/runtime.json
-  editorial_base: styles/editorial-base.md
-  html_rendering: system/html-rendering.md
-  visual_theme: templates/email-theme.html
+  stage_contracts: editorial/stages
+  shared_contracts: editorial/shared
+  rendering_contract: rendering/shared.md
   state_database: state/digest-state.db
   state_contract: system/state-database.md
   catch_up_days: 14
   delivery: gmail-self
-
-rendering_profiles:
-  concise:
-    rules: system/rendering-concise.md
-    template: templates/concise-email-v1.html
-  detailed:
-    rules: system/rendering-detailed.md
-    template: templates/detailed-email-v1.html
-  synthesis-max:
-    rules: system/rendering-synthesis-max.md
-    template: templates/synthesis-max-email-v1.html
-  curated-discovery:
-    rules: system/rendering-curated-discovery.md
-    template: templates/curated-discovery-email-v1.html
 
 digests:
   medium-bi-daily:
@@ -41,4 +21,3 @@ digests:
   photography-weekly:
     config: digests/photography-weekly.md
     catch_up_days: 7
-

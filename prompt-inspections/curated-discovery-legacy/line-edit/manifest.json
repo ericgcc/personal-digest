@@ -1,15 +1,10 @@
 {
-  "system_template": "stages/line-edit/system.j2",
+  "system_template": null,
   "user_template": "stages/line-edit/user.j2",
   "templates": [
     {
-      "path": "prompts/stages/line-edit/system.j2",
-      "bytes": 154,
-      "sha256": "29c0ffe06efaca5dead05ad3e271f0f517faed4f3010c410721e523882594873"
-    },
-    {
       "path": "prompts/shared/preamble.j2",
-      "bytes": 463,
+      "bytes": 465,
       "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
     },
     {
@@ -25,55 +20,59 @@
   ],
   "documents": [
     {
-      "path": "system/contracts/line-edit.md",
-      "bytes": 4066,
-      "sha256": "553b953201598502f739d09a4e70a0e50949a46a12f8e8972a4b57f64e140f78"
+      "path": "editorial/stages/line-edit.md",
+      "bytes": 3955,
+      "sha256": "e8ca371e95b60bb60367099924608a02593fe5eb3c8e70a7a3ef5eccc3743b21",
+      "owner": "shared stage contract"
     },
     {
-      "path": "system/naturalness-contract.md",
-      "bytes": 3796,
-      "sha256": "c19b2da688a5bfe2c8b3c22a30abffc7a32d2664216f497315b628249b92f69a"
+      "path": "editorial/shared/naturalness.md",
+      "bytes": 3692,
+      "sha256": "df0829651a71692bb1ff59f3334a07955d0ecdb48d510b433ef97338f0551ad8",
+      "owner": "shared cross-cutting contract"
     }
   ],
   "instructions": [
     {
-      "path": "styles/curated-discovery/modules/08-writing-character.md",
-      "bytes": 1693,
-      "sha256": "ca0e00cb0d72d05b744ee87a9ca4dd897690f916be089f055f88a3ae4e09b80d"
+      "path": "styles/curated-discovery/stages/line-edit.md",
+      "bytes": 1606,
+      "sha256": "ca0e00cb0d72d05b744ee87a9ca4dd897690f916be089f055f88a3ae4e09b80d",
+      "owner": "style-specific stage specialization"
     }
   ],
   "blocks": [
     {
       "tag": "previous_stage_artifact",
-      "bytes": 332
+      "bytes": 332,
+      "source": {
+        "stage": "writer-revision",
+        "path": ".digest-runs/synthetic/writer-revision/output/writer-revision.md",
+        "provenance": "runner"
+      },
+      "purpose": "prior artifact or digest reading instructions"
     },
     {
       "tag": "reading_instructions",
-      "bytes": 920
+      "bytes": 920,
+      "source": {
+        "path": "digests/medium-bi-daily.md",
+        "sections": [
+          "Reader"
+        ],
+        "version": "7afce8bdab3412768aaebf25669b29fb890b013c868dfc4a1850b3617380cd00"
+      },
+      "purpose": "prior artifact or digest reading instructions"
     },
     {
       "tag": "stage_task",
-      "bytes": 721
+      "bytes": 721,
+      "source": {
+        "path": "prompts/shared/task.j2"
+      },
+      "purpose": "immediate task and output contract"
     }
   ],
-  "omitted": [
-    "styles/curated-discovery/modules/01-style-interface.md",
-    "styles/curated-discovery/modules/02-writing-reference-profile.md",
-    "styles/curated-discovery/modules/03-core-principle-digest-first-reading.md",
-    "styles/curated-discovery/modules/04-curation-process.md",
-    "styles/curated-discovery/modules/05-relationship-between-sources.md",
-    "styles/curated-discovery/modules/06-editorial-depth.md",
-    "styles/curated-discovery/modules/07-understanding-over-extraction.md",
-    "styles/curated-discovery/modules/09-length-and-density.md",
-    "styles/curated-discovery/modules/10-required-structure.md",
-    "styles/curated-discovery/modules/11-optional-depth-cue.md",
-    "styles/curated-discovery/modules/12-organization.md",
-    "styles/curated-discovery/modules/13-citations.md",
-    "styles/curated-discovery/modules/14-section-level-source-lines.md",
-    "styles/curated-discovery/modules/15-final-source-catalog.md",
-    "styles/curated-discovery/modules/16-ending-rules.md",
-    "styles/curated-discovery/modules/17-quality-control.md"
-  ],
-  "system_bytes": 10010,
+  "omitted": [],
+  "system_bytes": 10041,
   "user_bytes": 2078
 }

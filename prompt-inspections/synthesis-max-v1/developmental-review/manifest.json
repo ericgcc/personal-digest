@@ -16,43 +16,53 @@
   "documents": [],
   "instructions": [
     {
-      "path": "system/contracts/developmental-review.md",
-      "bytes": 5384,
-      "sha256": "212991d3aa430573a2d7f32630eff1fd1a2f866cadbffbf4330e3e06463d7ffc"
+      "path": "editorial/shared/reader.md",
+      "bytes": 3357,
+      "sha256": "c653190e817921ec7f45a2477cb58d110342debc3d1d0eaa366339209a073a06",
+      "owner": "reader"
     },
     {
-      "path": "system/contracts/reader-contract.md",
-      "bytes": 3399,
-      "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
+      "path": "digests/tech-bi-daily.md",
+      "bytes": 739,
+      "sha256": "a8169178bea1cc9f8bf8b93a37aeff249b2c1be24fb2a2daee93250a086756c1",
+      "owner": "reader"
     },
     {
-      "path": "styles/synthesis-max/modules/01-style-interface.md",
-      "bytes": 2769,
-      "sha256": "35e389151e7acbd2964f043602b1e5b809050910337625fd5eb200e52daafd00"
+      "path": "styles/synthesis-max/stages/developmental-review.md",
+      "bytes": 7306,
+      "sha256": "b24cd9321618652ba1e3d5a538318e64f006863d698cfb0cba2fa0c7c2b3dd6c",
+      "owner": "review"
     },
     {
-      "path": "system/style-pipelines/synthesis-max/review.md",
-      "bytes": 7868,
-      "sha256": "65a6445d9e400efa0f4f2f293c0447322a9ff7aceecde4a42267e872e9783fe3"
+      "path": "editorial/stages/developmental-review.md",
+      "bytes": 5287,
+      "sha256": "38200855a78b0f9fb9c1255f3d3d15404ef9e41b4bcdb1fb00f8b156998411d5",
+      "owner": "role"
     },
     {
-      "path": "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
-      "bytes": 1720,
-      "sha256": "d52388c4ae228078148c1c3cb72d0c603c514018e2371ec84531d85a39f507db"
+      "path": "styles/synthesis-max/interface.md",
+      "bytes": 2758,
+      "sha256": "be4b146191d85c5da9680e408b001361a107a577303b572d82d9978cdfce1812",
+      "owner": "style"
     }
   ],
-  "blocks": [],
-  "omitted": [
-    "styles/synthesis-max/modules/02-writing-reference-profile.md",
-    "styles/synthesis-max/modules/03-synthesis-mode.md",
-    "styles/synthesis-max/modules/04-writing-character.md",
-    "styles/synthesis-max/modules/06-length-and-density.md",
-    "styles/synthesis-max/modules/07-required-structure.md",
-    "styles/synthesis-max/modules/08-citations.md",
-    "styles/synthesis-max/modules/09-final-source-catalog.md",
-    "styles/synthesis-max/modules/10-ending-rules.md",
-    "styles/synthesis-max/modules/11-quality-control.md"
+  "blocks": [
+    {
+      "tag": "evaluation_input",
+      "bytes": 22983,
+      "purpose": "combined judge prompt",
+      "source": {
+        "kind": "evaluation-adapter",
+        "contracts": [
+          "reader",
+          "review",
+          "role",
+          "style"
+        ]
+      }
+    }
   ],
+  "omitted": [],
   "system_bytes": 0,
   "user_bytes": 0
 }

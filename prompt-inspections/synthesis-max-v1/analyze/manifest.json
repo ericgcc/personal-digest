@@ -1,15 +1,10 @@
 {
-  "system_template": "stages/analyze/system.j2",
+  "system_template": null,
   "user_template": "stages/analyze/user.j2",
   "templates": [
     {
-      "path": "prompts/stages/analyze/system.j2",
-      "bytes": 169,
-      "sha256": "37f13128b259e56dac9ef17284b0e3e737dde47eedebae29d12e08abc305202f"
-    },
-    {
       "path": "prompts/shared/preamble.j2",
-      "bytes": 463,
+      "bytes": 465,
       "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
     },
     {
@@ -25,58 +20,85 @@
   ],
   "documents": [
     {
-      "path": "system/contracts/analyze.md",
-      "bytes": 6890,
-      "sha256": "ebef2200801575c473111cd88b60d170a3e28d545caa3164197590adbe795625"
+      "path": "editorial/stages/analyze.md",
+      "bytes": 6748,
+      "sha256": "2226b3936574f15aa07b1469aa762a049213a3b9f043f9ec170e2e2a75465801",
+      "owner": "shared stage contract"
     },
     {
-      "path": "system/writing-reasoning-and-source-fidelity.md",
-      "bytes": 8403,
-      "sha256": "5a41b81c27003c0496f9bcebc09d0397c5c27ff77c1d4f778cc0caf3a32d5710"
+      "path": "editorial/shared/reasoning-fidelity.md",
+      "bytes": 8325,
+      "sha256": "5a41b81c27003c0496f9bcebc09d0397c5c27ff77c1d4f778cc0caf3a32d5710",
+      "owner": "shared cross-cutting contract"
     }
   ],
   "instructions": [
     {
-      "path": "styles/synthesis-max/modules/01-style-interface.md",
-      "bytes": 2850,
-      "sha256": "35e389151e7acbd2964f043602b1e5b809050910337625fd5eb200e52daafd00"
+      "path": "styles/synthesis-max/stages/analyze.md",
+      "bytes": 11753,
+      "sha256": "634c2b470f1a80798f09326f0bf259ccac645cb04db14aecb7a6d603dddd1460",
+      "owner": "style-specific stage specialization"
     },
     {
-      "path": "styles/synthesis-max/modules/03-synthesis-mode.md",
-      "bytes": 3282,
-      "sha256": "a6b32685788b52e4439d6d5d23d02943be15df63a02c1ab0e35580dabbff1de1"
+      "path": "styles/synthesis-max/interface.md",
+      "bytes": 2758,
+      "sha256": "be4b146191d85c5da9680e408b001361a107a577303b572d82d9978cdfce1812",
+      "owner": "style interface declaration"
     },
     {
-      "path": "system/style-pipelines/synthesis-max/analyze.md",
-      "bytes": 8692,
-      "sha256": "8ebf1f095245c966b678a844df8e6cc5cbe1b6f81de54a8483f3a8a35196c9e9"
+      "path": "styles/synthesis-max/style.yaml",
+      "bytes": 808,
+      "sha256": "5d6de26ddacf539eb5fda36caf4474c45a0c1556b94252089138083b80290454",
+      "owner": "declarative style constraints"
     }
   ],
   "blocks": [
     {
       "tag": "source_corpus",
-      "bytes": 2355
+      "bytes": 2355,
+      "source": {
+        "kind": "evidence-projection",
+        "requested_policy": "full",
+        "effective_policy": "full",
+        "source_count": 5,
+        "source_numbers": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "declared_source_numbers": [],
+        "missing_source_numbers": [],
+        "recovery": null,
+        "warning": null,
+        "bytes": 2355
+      },
+      "purpose": "stage-permitted source evidence"
     },
     {
       "tag": "reading_instructions",
-      "bytes": 4005
+      "bytes": 4005,
+      "source": {
+        "path": "digests/tech-bi-daily.md",
+        "sections": [
+          "Selection",
+          "Reader"
+        ],
+        "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"
+      },
+      "purpose": "prior artifact or digest reading instructions"
     },
     {
       "tag": "stage_task",
-      "bytes": 552
+      "bytes": 552,
+      "source": {
+        "path": "prompts/shared/task.j2"
+      },
+      "purpose": "immediate task and output contract"
     }
   ],
-  "omitted": [
-    "styles/synthesis-max/modules/02-writing-reference-profile.md",
-    "styles/synthesis-max/modules/04-writing-character.md",
-    "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
-    "styles/synthesis-max/modules/06-length-and-density.md",
-    "styles/synthesis-max/modules/07-required-structure.md",
-    "styles/synthesis-max/modules/08-citations.md",
-    "styles/synthesis-max/modules/09-final-source-catalog.md",
-    "styles/synthesis-max/modules/10-ending-rules.md",
-    "styles/synthesis-max/modules/11-quality-control.md"
-  ],
-  "system_bytes": 30574,
+  "omitted": [],
+  "system_bytes": 31289,
   "user_bytes": 6997
 }

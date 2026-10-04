@@ -6,6 +6,8 @@ This file defines repository-wide architectural and implementation rules for cod
 
 Treat these rules as durable project invariants. They take precedence over roadmap shorthand, historical phase terminology, or assumptions inferred from existing digest configurations.
 
+For execution-level guidance during day-to-day agent work, see [.github/copilot-instructions.md](.github/copilot-instructions.md). That file defines the workflow guardrails for edits, verification, and avoiding repetitive failed loops; this file defines the repo architecture and policy boundaries.
+
 ---
 
 ## 1. Separate system behavior from user preferences
@@ -68,7 +70,7 @@ A runtime-resolved representation is allowed for execution and auditing, but the
 
 The system always has a general reader contract.
 
-`system/contracts/reader-contract.md` defines the default reader and the minimum comprehension obligations that every editorial style must respect.
+`editorial/shared/reader.md` defines the default reader and the minimum comprehension obligations that every editorial style must respect.
 
 A digest may optionally define `## Reader` to specialize that default for the intended audience.
 
@@ -166,7 +168,7 @@ Shared infrastructure includes:
 - provenance;
 - rendering primitives;
 - reading-instruction parsing;
-- reader-contract resolution.
+- reader-contract resolution from `editorial/shared/reader.md`.
 
 Styles may differ in:
 
@@ -192,12 +194,15 @@ Every instruction should have one authoritative owner.
 
 Prefer this separation:
 
-- shared stage responsibility -> `system/contracts/<stage>.md`
-- general reader obligations -> `system/contracts/reader-contract.md`
-- reading-instruction contract -> `system/contracts/reading-instructions.md`
-- style identity and structure -> `styles/<style>/modules/`
-- style-specific stage procedure -> `system/style-pipelines/<style>/`
-- prompt composition -> `prompts/stages/<stage>/`
+- shared stage responsibility -> `editorial/stages/<stage>.md`
+- general reader obligations -> `editorial/shared/reader.md`
+- reading-instruction contract -> `docs/architecture/reading-instructions.md`
+- style identity and structure -> `styles/<style>/interface.md`
+- style-specific stage procedure -> `styles/<style>/stages/<stage>.md`
+- declarative style constraints -> `styles/<style>/style.yaml`
+- style rendering profile -> `styles/<style>/rendering.md`
+- shared rendering contract -> `rendering/shared.md`
+- prompt composition -> `digest_system/editorial/prompts/`
 - actual user preferences -> `digests/<digest-id>.md`
 
 A stage should receive only instructions that can still affect its decision.

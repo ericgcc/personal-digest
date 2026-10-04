@@ -58,7 +58,6 @@ def test_every_profile_resolves_every_required_stage():
         assert validate_style_profile(profile).ok, profile_id
         preflight = preflight_style_profile(profile)
         for stage in stage_names_v2():
-            assert stage in profile.stages, f"{profile_id}: stage {stage} is not declared"
             assert stage in preflight.stages, f"{profile_id}: stage {stage} did not preflight"
 
 
@@ -113,7 +112,11 @@ def test_the_manifest_records_paths_hashes_and_sizes():
         assert entry["sha256"], f"{entry['path']} has no hash"
     assert manifest["system_bytes"] > 0
     assert manifest["user_bytes"] > 0
-    assert manifest["omitted"], "the withheld style modules were not recorded"
+    # The convention resolver composes from the new instruction tree, so the manifest records
+    # the resolved instructions rather than a profile's withheld modules.
+    recorded = {entry["path"] for entry in manifest["documents"] + manifest["instructions"]}
+    assert "editorial/stages/draft.md" in recorded
+    assert "styles/synthesis-max/stages/draft.md" in recorded
 
 
 # ---------------------------------------------------------------------------------------
@@ -166,22 +169,19 @@ def test_corpus_policies_are_unchanged():
     }
 
 
-def test_style_specific_review_contracts_are_preserved():
-    """The Synthesis MAX profile still supplies its review obligations to both review stages."""
+def test_style_specific_review_contracts_are_resolved_by_convention():
+    """Evaluation contracts come from the runtime instruction tree, not profile routing."""
     from digest_system.config.profiles import preflight_style_profile
 
-    profile = STYLE_PROFILES["synthesis-max-v1"]
-    preflight = preflight_style_profile(profile)
-    for stage in ("developmental-review", "reader-review"):
-        contracts = preflight.stages[stage]["contracts"]
-        assert "review" in contracts, f"{stage} lost its review contract"
-        assert "style" in contracts, f"{stage} lost its style contract"
-    # And a legacy profile supplies the style contract but no review contract, as before.
-    legacy = preflight_style_profile(STYLE_PROFILES["concise-legacy"])
-    for stage in ("developmental-review", "reader-review"):
-        contracts = legacy.stages[stage]["contracts"]
-        assert "style" in contracts
-        assert "review" not in contracts
+    for profile in STYLE_PROFILES.values():
+        preflight = preflight_style_profile(profile)
+        for stage in ("developmental-review", "reader-review"):
+            contracts = preflight.stages[stage]["contracts"]
+            assert "role" in contracts
+            assert "reader" in contracts
+            assert "style" in contracts
+            review_path = ROOT / "styles" / profile.style / "stages" / f"{stage}.md"
+            assert bool(contracts.get("review")) == review_path.is_file()
 
 
 # ---------------------------------------------------------------------------------------
@@ -333,20 +333,16 @@ def test_the_historical_prompt_capture_exists():
 def test_every_prompt_change_is_classified():
     """The migration's central claim, asserted: no stage's instruction text changed silently.
 
-    Every difference is either packaging-only, or an instruction change recorded in the approved
-    list with its reason. The diff tool exits non-zero on an unapproved change, so this test also
-    proves the tool would catch one.
+    Every difference between the frozen baseline and the candidate prompts is classified in
+    ``behavioral-gate.json``. The gate exits non-zero on an unclassified difference, so this
+    test also proves the tool would catch one.
     """
-    result = _run([str(ROOT / "scripts" / "prompt_diff.py"), "--json"])
+    result = _run([str(ROOT / "scripts" / "prompt_migration_gate.py"), "--json"])
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
-    unapproved = [row for row in payload["rows"] if row["status"] == "instruction-change"]
-    assert not unapproved, "unapproved instruction changes:\n" + "\n".join(
-        f"{row['profile']}/{row['stage']} ({row.get('document')}): "
-        f"{row.get('old_context')} -> {row.get('new_context')}"
-        for row in unapproved
-    )
-    assert len(payload["rows"]) == 40, "the diff did not cover every profile/stage pair"
+    assert payload["ok"] is True, "unclassified prompt differences"
+    assert payload["unclassified"] == 0
+    assert payload["behavioral"] == 0, "an unapproved behavioral change is present"
 
 
 def test_the_approved_change_is_recorded_and_real():
@@ -435,7 +431,7 @@ def test_the_synthesis_max_draft_inspection_is_recorded():
     """
     from digest_system.editorial.prompts.inspection import inspect_stage
 
-    example = PROMPT_MIGRATION / "inspection-example" / "draft"
+    example = PROMPT_MIGRATION / "inspection-example" / "synthesis-max-v1" / "draft"
     assert example.is_dir(), "the recorded inspection example is missing"
     inspection = inspect_stage(
         digest_id="tech-bi-daily", profile_id="synthesis-max-v1", stage_name="draft"

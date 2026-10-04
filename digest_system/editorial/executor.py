@@ -39,11 +39,11 @@ from ..runtime.artifacts import (
 )
 from .context import Artifact, RunContext
 from .evidence.projection import derive_recovery_frame, project_evidence
-from .prompts.assembler import (
-    assemble_documents,
-    assemble_evaluation_contracts,
-)
 from .prompts.compose import compose_stage_prompt
+from .prompts.convention_context import (
+    assemble_convention_contracts,
+    assemble_convention_documents,
+)
 from .stages import PIPELINE_ID, VALIDATION_ATTEMPTS, stage_names_v2
 from .validation.copy_verify import (
     catalog_required,
@@ -310,9 +310,9 @@ def _now() -> str:
 def _record_prompt_manifest(attempt_dir: Path, composed: Any) -> None:
     """Write the prompt's dependency manifest beside the prompt.
 
-    The manifest names the templates, instruction files and data blocks the prompt contained,
-    with sizes and hashes, and the style modules the profile withheld. It is what makes a prompt
-    auditable after the fact without re-deriving it from the live configuration.
+    The manifest names the templates, owned instruction files, resolved constraints, and runtime
+    data blocks the prompt contained, with sizes and hashes. It makes a prompt auditable after the
+    fact without re-deriving it from the live configuration.
     """
     write_json(attempt_dir / "prompt-manifest.json", composed.manifest.to_dict())
 
@@ -372,9 +372,9 @@ def execute_stage(
         copy_file(source_path, input_dir / source_path.name)
 
     documents = (
-        assemble_evaluation_contracts(stage, context, root=context.root)
+        assemble_convention_contracts(stage, context, root=context.root)
         if stage.executor == "evaluation"
-        else assemble_documents(stage, context, root=context.root)
+        else assemble_convention_documents(stage, context, root=context.root)
     )
     record["warnings"].extend(documents["warnings"])
     record["context_manifest"] = documents["manifest"]

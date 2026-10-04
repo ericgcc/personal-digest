@@ -11,8 +11,8 @@ from typing import Any, Mapping
 
 from ..validation.copy_verify import split_catalog, word_count
 
-#: Minutes-per-word basis for estimating the digest's own reading time, stated by
-#: ``system/workflow.md`` and ``system/html-rendering.md``.
+#: Minutes-per-word basis for estimating the digest's own reading time, stated by the workflow
+#: and the current rendering contract.
 WORDS_PER_MINUTE = 225
 
 #: Outcome wording that means the item was *not* substantively read.

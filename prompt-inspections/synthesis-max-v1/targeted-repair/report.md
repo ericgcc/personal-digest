@@ -2,63 +2,33 @@
 
 - Digest: `tech-bi-daily`
 - Style: `synthesis-max`
-- Profile: `synthesis-max-v1` v2.0.0 (active)
+- Profile: `synthesis-max-v1` v2.1.0 (active)
 - Stage: `targeted-repair` (executor `llm`)
 - Message: system + user
 
 ## Templates
 
-- `prompts/stages/targeted-repair/system.j2` — 165 units, sha256 `72052db5f949`
-- `prompts/shared/preamble.j2` — 463 units, sha256 `8f60794abad6`
+- `prompts/shared/preamble.j2` — 465 units, sha256 `8f60794abad6`
 - `prompts/stages/targeted-repair/user.j2` — 147 units, sha256 `19e31dc361fa`
 - `prompts/shared/task.j2` — 992 units, sha256 `d12ba969b789`
 
 ## Instruction documents
 
-- `system/contracts/targeted-repair.md` — 2660 chars, sha256 `2c2b49b0cb25`
-- `system/contracts/reader-contract.md` — 3465 chars, sha256 `1e10114ede33`
+- `editorial/stages/targeted-repair.md` — 2554 chars; owner: shared stage contract; sha256 `10c45823da76`
+- `editorial/shared/reader.md` — 3357 chars; owner: shared cross-cutting contract; sha256 `c653190e8179`
 
 ## Style-supplied instructions
 
-- `styles/synthesis-max/modules/04-writing-character.md` — 2687 chars, sha256 `5688f4f3d85b`
-- `system/style-pipelines/synthesis-max/review.md` — 7945 chars, sha256 `65a6445d9e40`
-
-## Deliberately omitted style modules
-
-- `styles/synthesis-max/modules/01-style-interface.md`
-- `styles/synthesis-max/modules/02-writing-reference-profile.md`
-- `styles/synthesis-max/modules/03-synthesis-mode.md`
-- `styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md`
-- `styles/synthesis-max/modules/06-length-and-density.md`
-- `styles/synthesis-max/modules/07-required-structure.md`
-- `styles/synthesis-max/modules/08-citations.md`
-- `styles/synthesis-max/modules/09-final-source-catalog.md`
-- `styles/synthesis-max/modules/10-ending-rules.md`
-- `styles/synthesis-max/modules/11-quality-control.md`
+- `styles/synthesis-max/stages/targeted-repair.md` — 5427 chars; owner: style-specific stage specialization; sha256 `00fa6ccf2a1d`
 
 ## Data blocks
 
-- `source_corpus` — 1949 chars
-- `previous_stage_artifact` — 332 chars
-- `reading_instructions` — 1030 chars
-- `stage_task` — 592 chars
+- `source_corpus` — 1949 chars; stage-permitted source evidence; source `{"bytes": 1949, "catalog_provenance_numbers": [1, 2, 3, 5], "declared_source_numbers": [1, 2, 3, 5], "effective_policy": "frame-selection", "kind": "evidence-projection", "missing_source_numbers": [], "recovery": null, "requested_policy": "frame", "source_count": 4, "source_numbers": [1, 2, 3, 5], "units": [{"disposition": "keep", "retained": true, "selected_source_numbers": [1, 2], "unit_id": "T1"}, {"disposition": "keep", "retained": true, "selected_source_numbers": [3, 5], "unit_id": "T2"}], "warning": null}`
+- `previous_stage_artifact` — 332 chars; prior artifact or digest reading instructions; source `{"path": ".digest-runs/synthetic/line-edit/output/line-edit.md", "provenance": "runner", "stage": "line-edit"}`
+- `reading_instructions` — 1030 chars; prior artifact or digest reading instructions; source `{"path": "digests/tech-bi-daily.md", "sections": ["Reader"], "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"}`
+- `stage_task` — 592 chars; immediate task and output contract; source `{"path": "prompts/shared/task.j2"}`
 
 ## Sizes
 
-- System: 17220 units
+- System: 12135 units
 - User: 4043 units
-
-## Style modules
-
-- Document: `styles/synthesis-max.md` (generated from `styles/synthesis-max/modules`)
-  - `styles/synthesis-max/modules/01-style-interface.md` — ## Style interface
-  - `styles/synthesis-max/modules/02-writing-reference-profile.md` — ## Writing reference profile
-  - `styles/synthesis-max/modules/03-synthesis-mode.md` — ## Synthesis mode
-  - `styles/synthesis-max/modules/04-writing-character.md` — ## Writing character
-  - `styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md` — ## Domain accessibility in synthesis
-  - `styles/synthesis-max/modules/06-length-and-density.md` — ## Length and density
-  - `styles/synthesis-max/modules/07-required-structure.md` — ## Required structure
-  - `styles/synthesis-max/modules/08-citations.md` — ## Citations
-  - `styles/synthesis-max/modules/09-final-source-catalog.md` — ## Final source catalog
-  - `styles/synthesis-max/modules/10-ending-rules.md` — ## Ending rules
-  - `styles/synthesis-max/modules/11-quality-control.md` — ## Quality control

@@ -55,10 +55,10 @@ digest_system/
   policies, and per-stage validation. The orchestrator, the verification scripts, and the
   cost reporting all derive stage metadata from it. The retired v1 pipeline exists only as
   the static descriptor `config/pipeline-v1-stages.json`.
-* **`config/profiles.py` is the only place a style instruction is selected.** A stage obtains its
-  style-derived instructions through the active profile; no stage names a style module or
-  section directly. This is the property `tests/python/integration/test_style_isolation.py`
-  proves.
+* **`prompts/convention.py` is the only place runtime instructions are selected.** It resolves
+  the shared stage contract, optional style specialization, style interface, shared contracts
+  and declarative constraints. Profiles select a style and execution policy, not instruction
+  fragments. `tests/python/integration/test_style_isolation.py` proves style isolation.
 
 ## Prompt composition
 
@@ -67,17 +67,16 @@ digest_system/
   `prompts/evaluation/{absolute,comparison,developmental}.j2` for the two the Python evaluator
   executes. `digest_system/editorial/prompts/environment.py` builds the environment with
   strict undefined variables, no autoescaping and a loader restricted to `prompts/`.
-* **A profile selects files, not headings.** `prompts/profiles/<profile-id>.yaml` names the
-  module files each stage receives. A style's rules live in `styles/<style>/modules/*.md`, listed
-  by `styles/<style>/style.yaml`; the readable `styles/<style>.md` is generated from them by
-  `scripts/build_style_docs.py`. No runtime code parses a Markdown heading, so reorganising a
-  style's prose cannot redirect a stage's instructions.
-* **Markdown owns editorial knowledge.** The instruction text is the Markdown in `system/` and
-  `styles/`; the templates frame it and place it, they do not restate it.
+* **Convention selects whole purpose-specific files.** Runtime editorial Markdown lives under
+  `editorial/stages/`, `editorial/shared/`, `styles/<style>/stages/`, and the style's
+  `interface.md` and `rendering.md`. No runtime code parses headings or routes a list of style
+  fragments.
+* **Markdown owns editorial procedure; `style.yaml` owns declarative values.** Validators and
+  prompt composition consume the same style constraints.
 * **Data is inert.** Source corpora, artifacts, review JSON and HTML templates are passed as
   variables and printed verbatim — never rendered as templates, because the email templates
   contain `{{RUN_KEY}}` placeholders of their own.
-* **`prompts/assembler.py` resolves documents; `prompts/compose.py` renders them.** Both are
+* **`prompts/convention.py` resolves instructions; `prompts/compose.py` renders them.** Both are
   callable without running a stage, so the exact prompt a stage will send can be inspected
   offline with `python -m digest_system.cli inspect`.
 * **`executor.py` owns execution and retries**; `orchestrator.py` owns sequencing and the run
@@ -107,7 +106,8 @@ digest_system/
 | Suite | Command |
 | --- | --- |
 | Python tests (backend + evaluation) | `python -m pytest` (see `pytest.ini`) |
-| Prompt-equivalence measurement | `python scripts/measure_context.py` |
+| Prompt size measurement | `python scripts/measure_context.py` |
+| Semantic prompt-equivalence gate | `python scripts/prompt_migration_gate.py` |
 | Phase-2 correction report | `python scripts/verify_corrections.py` |
 
 Tests are grouped by behavior: `tests/python/unit/` (validators, profiles, stage wiring),
@@ -126,7 +126,7 @@ the maintenance scripts). The Python evaluation package keeps its own tests in
 Resolution order for external components: CLI flag → environment variable → installed
 `system/runtime.json` → committed example → degrade.
 
-## What Phase 2b changed
+## Retired heading-based routing
 
 The heading-based prompt router — the `sections` mechanism in `digest_system/config/profiles.py`
 and the `extract_context_sections` path in `digest_system/runtime/artifacts.py` — has been
@@ -145,8 +145,7 @@ the previous provider.
 ## Known follow-ups
 
 * **The outstanding paid historical replays.** Before promoting the Python pipeline to live
-  delivery, the historical replays that need a real model must be completed. They are performed
-  after Phase 2b's offline tests pass, and they are independent of the OpenRouter provider
-  change, which must remain separately verifiable.
+  delivery, complete the historical replays that need a real model. They are independent of the
+  OpenRouter provider change, which must remain separately verifiable.
 * **`node_modules/`** may remain on disk from the JavaScript implementation. It is ignored by
   Git and is no longer referenced by anything.

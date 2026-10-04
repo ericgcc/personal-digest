@@ -41,44 +41,47 @@
   "documents": [],
   "instructions": [
     {
-      "path": "system/contracts/reader-review.md",
-      "bytes": 3944,
-      "sha256": "171e6dfe66f1966c4da0cef871326e8ff179af95f6504d19a7ef8a4924b21f3a"
+      "path": "editorial/shared/reader.md",
+      "bytes": 3357,
+      "sha256": "c653190e817921ec7f45a2477cb58d110342debc3d1d0eaa366339209a073a06",
+      "owner": "reader"
     },
     {
-      "path": "system/contracts/reader-contract.md",
-      "bytes": 3399,
-      "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
+      "path": "digests/medium-bi-daily.md",
+      "bytes": 627,
+      "sha256": "c8381ec2fd362e740c0c499f7a8ec513532bb5151422740318f5e8b11ec9370a",
+      "owner": "reader"
     },
     {
-      "path": "styles/curated-discovery/modules/01-style-interface.md",
+      "path": "editorial/stages/reader-review.md",
+      "bytes": 3879,
+      "sha256": "111389fd886d719459be30910cf5329327505e8b02273a69097901ac3d0ab4da",
+      "owner": "role"
+    },
+    {
+      "path": "styles/curated-discovery/interface.md",
       "bytes": 2566,
-      "sha256": "ad54235cddc9ead0cf1112b39c7e5d346b25a36e0fc32f151f4e8b06a4a6a339"
-    },
-    {
-      "path": "styles/curated-discovery/modules/10-required-structure.md",
-      "bytes": 3471,
-      "sha256": "dbb7a800db05a2bda9f7bdf4190f2a98fe35338b4a1c70d7c6159da2e92e7d3f"
+      "sha256": "ad54235cddc9ead0cf1112b39c7e5d346b25a36e0fc32f151f4e8b06a4a6a339",
+      "owner": "style"
     }
   ],
-  "blocks": [],
-  "omitted": [
-    "styles/curated-discovery/modules/02-writing-reference-profile.md",
-    "styles/curated-discovery/modules/03-core-principle-digest-first-reading.md",
-    "styles/curated-discovery/modules/04-curation-process.md",
-    "styles/curated-discovery/modules/05-relationship-between-sources.md",
-    "styles/curated-discovery/modules/06-editorial-depth.md",
-    "styles/curated-discovery/modules/07-understanding-over-extraction.md",
-    "styles/curated-discovery/modules/08-writing-character.md",
-    "styles/curated-discovery/modules/09-length-and-density.md",
-    "styles/curated-discovery/modules/11-optional-depth-cue.md",
-    "styles/curated-discovery/modules/12-organization.md",
-    "styles/curated-discovery/modules/13-citations.md",
-    "styles/curated-discovery/modules/14-section-level-source-lines.md",
-    "styles/curated-discovery/modules/15-final-source-catalog.md",
-    "styles/curated-discovery/modules/16-ending-rules.md",
-    "styles/curated-discovery/modules/17-quality-control.md"
+  "blocks": [
+    {
+      "tag": "evaluation_input",
+      "bytes": 20179,
+      "purpose": "combined judge prompt",
+      "source": {
+        "kind": "evaluation-adapter",
+        "contracts": [
+          "reader",
+          "review",
+          "role",
+          "style"
+        ]
+      }
+    }
   ],
+  "omitted": [],
   "system_bytes": 0,
   "user_bytes": 0
 }

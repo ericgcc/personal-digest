@@ -1,6 +1,6 @@
 """Ownership-aware inspection for the convention-based composer.
 
-The Phase 1 acceptance question is:
+The architecture question is:
 
 > Why did this stage receive this instruction?
 
@@ -14,12 +14,13 @@ can never appear in a manifest.
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from ...runtime.artifacts import ROOT
-from .convention import resolve_evaluation_contracts, resolve_stage_instructions
+from .convention import EVALUATION_STAGES, resolve_evaluation_contracts, resolve_stage_instructions
 from .instructions import assert_runtime_instruction, instruction_purpose
 
 
@@ -70,17 +71,18 @@ def inspect_convention_stage(
             }
         )
     if resolved.style_constraints:
+        constraints_path = base / "styles" / style / "style.yaml"
         manifest.append(
             {
                 "path": f"styles/{style}/style.yaml",
                 "owner": "declarative style constraints",
                 "bytes": len(resolved.style_constraints),
-                "sha256": "",
+                "sha256": hashlib.sha256(constraints_path.read_bytes()).hexdigest(),
             }
         )
 
     evaluation: dict[str, str] = {}
-    if stage in ("developmental-review", "reader-review"):
+    if stage in EVALUATION_STAGES:
         evaluation = resolve_evaluation_contracts(
             stage=stage, style=style, root=base, reader_brief=reader_brief
         )

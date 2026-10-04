@@ -61,12 +61,14 @@ def test_the_canonical_contract_exists():
 
 def test_the_contract_is_not_inlined_into_any_prompt():
     """It is a specification, not an instruction the model receives."""
-    for profile_id in style_profile_ids():
-        profile = STYLE_PROFILES[profile_id]
-        for stage in stage_names_v2():
-            declaration = profile.stages[stage]
-            for descriptor in declaration.documents:
-                assert descriptor.path != "system/contracts/reading-instructions.md"
+    from digest_system.config.profiles import preflight_style_profile
+
+    for profile in STYLE_PROFILES.values():
+        preflight = preflight_style_profile(profile)
+        for entry in preflight.stages.values():
+            paths = [resolved.descriptor.path for resolved in entry["documents"]]
+            assert "docs/architecture/reading-instructions.md" not in paths
+            assert "system/contracts/reading-instructions.md" not in paths
 
 
 # ---------------------------------------------------------------------------------------
@@ -145,14 +147,10 @@ def test_routing_is_declared_for_every_stage():
 
 
 def test_no_stage_declares_the_digest_configuration_document():
-    """The stage table no longer names the digest config; the reading instructions are a block."""
+    """The stage table declares data blocks; instruction files resolve by convention."""
     for stage in STAGES_V2:
-        for declaration in stage.documents(_FakeContext()):
-            for descriptor in ([declaration] if isinstance(declaration, dict) else declaration):
-                if not isinstance(descriptor, dict):
-                    continue
-                assert descriptor.get("path") != "digests/tech-bi-daily.md", stage.name
-                assert "digest_config_relative" not in str(descriptor.get("path", "")), stage.name
+        assert not hasattr(stage, "documents")
+        assert not hasattr(stage, "contracts")
 
 
 class _FakeContext:
@@ -237,7 +235,7 @@ def test_the_audit_script_runs_offline():
             assert stage["prompt_chars"] > 0
             assert stage["estimated_tokens"] > 0
             for entry in stage["documents"]:
-                assert entry["role"] in {"shared", "style", "supporting", "rendering", "other"}
+                assert entry["role"] in {"stage", "shared", "style", "rendering", "other"}
 
 
 def test_the_audit_records_reading_instruction_routing():
@@ -256,14 +254,11 @@ def test_the_audit_records_reading_instruction_routing():
 
 
 def test_every_prompt_change_is_classified():
-    result = _run([str(ROOT / "scripts" / "prompt_diff.py"), "--json"])
+    result = _run([str(ROOT / "scripts" / "prompt_migration_gate.py"), "--json"])
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
-    unapproved = [row for row in payload["rows"] if row["status"] == "instruction-change"]
-    assert not unapproved, "unapproved instruction changes:\n" + "\n".join(
-        f"{row['profile']}/{row['stage']} ({row.get('document')})" for row in unapproved
-    )
-    assert len(payload["rows"]) == 40
+    assert payload["ok"] is True, "unclassified prompt differences"
+    assert payload["unclassified"] == 0
 
 
 def test_the_reading_instruction_changes_are_recorded():

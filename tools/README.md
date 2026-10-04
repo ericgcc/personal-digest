@@ -33,51 +33,33 @@ Three layers, each with one job:
 | --- | --- | --- |
 | **Python** | Execution: stage order, corpus policy, validation, retries, artifacts, cost | `digest_system/` |
 | **Jinja2** | Composition: how a stage's instruction is framed | `prompts/` |
-| **Markdown** | Editorial knowledge: what each rule actually says | `system/`, `styles/` |
+| **Markdown** | Runtime editorial knowledge: what each rule actually says | `editorial/`, `styles/<style>/stages/`, `rendering/` |
 
-And one declarative layer that says which instruction reaches which stage:
+And one declarative layer for machine-checkable style constraints:
 
 | Configuration | Owns | Lives in |
 | --- | --- | --- |
-| **Profiles** | Which files each stage receives | `prompts/profiles/<profile-id>.yaml` |
-| **Style manifests** | Which modules compose a style | `styles/<style>/style.yaml` |
+| **Profiles** | Execution policy, such as frame failure behavior | `prompts/profiles/<profile-id>.yaml` |
+| **Style configuration** | Composition, evaluation, and rendering constraints | `styles/<style>/style.yaml` |
 
 ## Style profiles
 
-Which style instructions a stage receives is declared by an explicit, versioned **style
-profile**, not by the stage table. The profiles are YAML declarations under
-`prompts/profiles/`; a style's stage-specific operational instructions live in
-`system/style-pipelines/<style>/`.
+Runtime instruction routing is resolved by convention. Every stage receives its contract from
+`editorial/stages/`, the shared contracts declared for that stage, and an optional specialization
+from `styles/<style>/stages/`. Profiles under `prompts/profiles/` select execution policy only.
 
 | Profile | Style | Status | Notes |
 | --- | --- | --- | --- |
-| `<style>-legacy` | all four | active | The default for every style. Reproduces the pre-profile *routing* for that style, and is the rollback option. |
-| `synthesis-max-v1` | `synthesis-max` | **experimental** | Delivers the style's selection and relationship model to `analyze`, routes every stage through the style's own modules instead of the cross-style union, adds the four `system/style-pipelines/synthesis-max/` stage documents, and enforces the style's framing constraints. |
+| `<style>-legacy` | all four | active | Compatibility profile name for the style's established execution policy. |
+| `synthesis-max-v1` | `synthesis-max` | active | Uses strict frame failure behavior with the Synthesis MAX convention-resolved instructions and constraints. |
 
-A profile controls **routing** — which of the style's modules each stage receives, which stage
-documents are added, and which constraints are validated. It does not control the style's own
-contract: the style's modules are the single source of truth and every profile of that style
-names them. `system/editorial-pipeline-v2.md` §3.1 states this in full.
+The profile declares **`frame_failure_policy`** — `fail` (stop the run) or `recovery-frame`
+(derive the documented recovery frame and continue degraded). `synthesis-max-v1` fails; every
+legacy profile recovers.
 
-A profile also declares:
-
-* **`frame_failure_policy`** — `fail` (stop the run) or `recovery-frame` (derive the documented
-  recovery frame and continue degraded). `synthesis-max-v1` fails; every legacy profile recovers.
-* **Composition constraints** and **evaluation rubric** — the enforceable checks the validators
-  act on, and the metric the review stages report against.
-* **The `review` contract** for the two evaluation stages. The Python adapter reads a fixed
-  request vocabulary — `role`, `reader`, `style`, `review` — and `review` is what carries a
-  style's review obligations to the judge.
-
-### Editing a profile
-
-Profiles are generated from a self-contained specification so the migration's exact routing is
-reproducible and reviewable:
-
-```powershell
-python scripts/export_profiles.py            # regenerate prompts/profiles/*.yaml
-python scripts/export_profiles.py --check    # verify they are current
-```
+Composition constraints, evaluation settings, and rendering settings are owned by
+`styles/<style>/style.yaml`. The same values are rendered into model prompts when the model needs
+them and consumed directly by deterministic validators.
 
 The registry, resolution order, aliases, structural validation and preflight live in
 `digest_system/config/profiles.py`. Selection order: `--style-profile`, then
@@ -85,7 +67,7 @@ The registry, resolution order, aliases, structural validation and preflight liv
 own default. The aliases `legacy`, `current`, `default` and `v1` resolve within the digest's own
 style. There is no cross-style fallback: an unknown profile, or one belonging to a different
 style, stops the run with an error that names the valid profiles — before any run directory is
-created. Every document a profile declares is preflighted before the first model call. Each run
+created. The convention-resolved instruction tree is preflighted before the first model call. Each run
 records `style_profile_id`, `style_profile_version` and the full profile body in `pipeline.json`.
 
 ## Prompt composition
@@ -114,28 +96,22 @@ duplicate-delivery guard.
 
 ### Which documents a stage receives
 
-Each profile names the module files a stage receives. No runtime code parses a Markdown heading,
-so a style's prose can be reorganised without silently redirecting a stage's instructions. This
-property is proven by `tests/python/integration/test_style_isolation.py`, which includes a
-sensitivity control showing the comparison can detect a real difference.
+Runtime instructions resolve by convention from `editorial/stages/`, `editorial/shared/`, and
+`styles/<style>/stages/`. Profiles select execution policy only. No runtime code parses a
+Markdown heading or routes archived style modules. Cross-style isolation is proven by
+`tests/python/integration/test_style_isolation.py`.
 
-Two documented additions to the strictest reading of the context matrix: `draft` also receives
-`styles/editorial-base.md`, the quality floor every style inherits; and `frame` also receives
-`system/style-contract.md`, which defines the vocabulary the style's interface module uses.
+### Maintaining archived style references
 
-### Maintaining the style documents
-
-A style's rules live in `styles/<style>/modules/*.md`, listed by `styles/<style>/style.yaml`. The
-readable `styles/<style>.md` is **generated** from those modules, so there are never two
-independently editable copies of the same rule:
+The readable legacy style documents and their modules are non-runtime migration references:
 
 ```powershell
 python scripts/build_style_docs.py            # split the document into modules + manifest
 python scripts/build_style_docs.py --check    # verify they have not drifted apart
 ```
 
-The generator refuses to write if the round-trip fails, so a broken split can never overwrite the
-style documents.
+Executable procedure lives in purpose-specific stage files. Declarative constraints live in
+`styles/<style>/style.yaml`.
 
 ## Context and evidence
 
@@ -168,30 +144,26 @@ For the named stage (or every stage when `--stage` is omitted) the command write
 
 * `system.txt` and `user.txt` — the exact messages. An evaluation stage writes a single
   `prompt.txt`, because the Python adapter sends one combined judge prompt.
-* `manifest.json` — every template and instruction file with its size and SHA-256, the profile id
-  and version, the data blocks, the template dependency list, and the style modules the profile
-  deliberately withheld.
+* `manifest.json` — every template and instruction file with its owner, purpose, size, and
+  SHA-256; the resolved constraints; and every runtime data block with its source and purpose.
 * `report.md` — the same information, human-readable.
 
-A developer can open `prompts/stages/draft/system.j2`, read its declared dependencies, inspect
-`prompts/profiles/synthesis-max-v1.yaml`, and generate exactly what the model receives — without
-reading the executor.
+A developer can inspect the convention resolver, the stage template, and the selected style's
+files, then generate exactly what the model receives without reading the executor.
 
 ## Measuring and comparing prompts
 
 ```powershell
 python scripts/measure_context.py                    # assembled context bytes per profile/stage
-python scripts/capture_prompt_baseline.py            # re-freeze the offline prompt baseline
-python scripts/capture_prompt_baseline.py --check    # verify it is current
-python scripts/prompt_diff.py                        # instruction-level diff vs the pre-Jinja2 prompts
-python scripts/prompt_diff.py --json
+python scripts/prompt_migration_gate.py               # semantic diff vs the frozen baseline
+python scripts/prompt_migration_gate.py --json
 ```
 
-`measure_context.py` reports byte counts with no model call. `prompt_diff.py` compares the current
-prompts against the capture taken before the Jinja2 migration and classifies every difference as
-**packaging-only** (wrappers, paths, whitespace) or an **instruction change**. An instruction
-change must be recorded in `tests/fixtures/prompt_migration/approved-prompt-changes.json` with its
-reason; the tool exits non-zero on any unapproved one, and the Phase 2b checklist asserts that.
+`measure_context.py` reports byte counts with no model call. `prompt_migration_gate.py` compares
+the ordered, fully materialized system/user or evaluation prompt against the frozen baseline,
+including resolved constraints. Every addition, removal, move, or ordering change needs an
+explicit classification, and the approved candidate fingerprint prevents a broad classification
+from concealing a later mutation.
 
 ## Validation
 

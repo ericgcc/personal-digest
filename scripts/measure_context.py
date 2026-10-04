@@ -3,10 +3,9 @@
 
 Python port of ``scripts/measure-context.mjs``.
 
-Correction 6 of the pre-migration review requires the runtime stage documents to be trimmed of
-maintainer-facing rationale, and requires the trimming to be *measured* rather than assumed:
-the difference has to be visible, and no substantive requirement may have disappeared in the
-process. This script is how that is shown, and it is runnable again after any later edit.
+This reports the exact convention-resolved instruction bytes for every stage and separates the
+selected style's contribution from stage and shared contracts. It is runnable after any edit and
+makes no model call.
 
     python scripts/measure_context.py
     python scripts/measure_context.py --json
@@ -39,10 +38,6 @@ DIGEST_CONFIG_BY_STYLE = {
 }
 
 
-def _basename(relative: str) -> str:
-    return "/".join(relative.split("/")[-2:])
-
-
 def measure_profile(profile) -> dict:
     stages = {}
     for stage_name in stage_names_v2():
@@ -55,16 +50,13 @@ def measure_profile(profile) -> dict:
             {
                 "path": entry["path"],
                 "bytes": entry["bytes"],
-                # Only the documents a profile supplies — the operational contracts every style
-                # shares are the same for every profile and are not what this measurement is about.
-                "profile_document": entry["path"].startswith("system/style-pipelines/")
-                or entry["path"].startswith("styles/"),
+                "style_owned": bool(entry.get("style_selected")),
             }
             for entry in assembled["manifest"]
         ]
         stages[stage_name] = {
             "bytes": sum(entry["bytes"] for entry in documents),
-            "profile_bytes": sum(entry["bytes"] for entry in documents if entry["profile_document"]),
+            "style_bytes": sum(entry["bytes"] for entry in documents if entry["style_owned"]),
             "documents": documents,
         }
     return {
@@ -72,7 +64,7 @@ def measure_profile(profile) -> dict:
         "style": profile.style,
         "version": profile.version,
         "total_bytes": sum(stage["bytes"] for stage in stages.values()),
-        "profile_bytes": sum(stage["profile_bytes"] for stage in stages.values()),
+        "style_bytes": sum(stage["style_bytes"] for stage in stages.values()),
         "stages": stages,
     }
 
@@ -89,23 +81,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     print("Assembled instruction context per profile (bytes; no model call)\n")
-    print(f"{'profile':<28} {'total':>9} {'profile-supplied':>17}")
+    print(f"{'profile':<28} {'total':>9} {'style-owned':>17}")
     for row in rows:
-        print(f"{row['id']:<28} {row['total_bytes']:>9} {row['profile_bytes']:>17}")
-
-    # The stage documents belonging to one style, which is what the trimming of correction 6
-    # actually changes. Other profiles are unaffected by it by construction.
-    v1 = next(row for row in rows if row["id"] == "synthesis-max-v1")
-    legacy = next(row for row in rows if row["id"] == "synthesis-max-legacy")
-    print("\nSynthesis MAX stage documents, v1 profile (the profile-supplied documents):\n")
-    for stage, value in v1["stages"].items():
-        supplied = [entry for entry in value["documents"] if entry["path"].startswith("system/style-pipelines/")]
-        for entry in supplied:
-            print(f"  {stage:<22} {_basename(entry['path']):<34} {entry['bytes']:>6} bytes")
-    print(
-        f"\nlegacy total {legacy['total_bytes']} bytes vs v1 total {v1['total_bytes']} bytes "
-        f"(+{v1['total_bytes'] - legacy['total_bytes']}, the stage documents and the profile's added sections)"
-    )
+        print(f"{row['id']:<28} {row['total_bytes']:>9} {row['style_bytes']:>17}")
     return 0
 
 

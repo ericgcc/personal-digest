@@ -60,16 +60,20 @@ class Asset:
     path: str
     bytes: int = 0
     sha256: str = ""
+    owner: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return {"path": self.path, "bytes": self.bytes, "sha256": self.sha256}
+        value = {"path": self.path, "bytes": self.bytes, "sha256": self.sha256}
+        if self.owner:
+            value["owner"] = self.owner
+        return value
 
 
 @dataclass
 class PromptManifest:
     """Every input a composed prompt used, and every input it deliberately omitted."""
 
-    system_template: str
+    system_template: str | None
     user_template: str
     templates: list[Asset] = field(default_factory=list)
     documents: list[Asset] = field(default_factory=list)
@@ -115,27 +119,35 @@ def _join_blocks(values: Sequence[Any]) -> str:
 class DocumentResolver:
     """Resolves a canonical document path to its delimited block, recording each access.
 
-    A template calls ``docs("system/contracts/draft.md")``. The resolver returns the same
+    A template calls ``docs("editorial/stages/draft.md")``. The resolver returns the same
     ``<document path="...">`` wrapper the assembler has always produced, and records the path,
     its size and its hash once. A path the assembler already prepared is used as-is; a path a
     template names directly (a rendering rules file, say) is read here.
+
+    Every path — prepared or read directly — passes the runtime-instruction boundary before
+    it reaches a prompt, so a template cannot reach a documentation file, traverse out of
+    the instruction tree, or load another style's instructions.
     """
 
-    def __init__(self, root: Path, prepared: Mapping[str, str] | None = None) -> None:
+    def __init__(self, root: Path, prepared: Mapping[str, str] | None = None, style: str | None = None) -> None:
         self.root = root
         self.prepared = dict(prepared or {})
+        self.style = style
         self.assets: list[Asset] = []
         self._recorded: set[str] = set()
 
     def __call__(self, path: str) -> str:
-        text = self.prepared.get(path)
+        from .instructions import assert_runtime_instruction
+
+        normalized = assert_runtime_instruction(path, style=self.style)
+        text = self.prepared.get(normalized)
         if text is None:
-            absolute = self.root / path
+            absolute = self.root / normalized
             if not absolute.is_file():
-                raise PromptError(f"prompt template references a missing document: {path}")
+                raise PromptError(f"prompt template references a missing document: {normalized}")
             raw = read_text_raw(absolute)
-            text = f'<document path="{path}">\n{raw}\n</document>'
-        self._record(path, text)
+            text = f'<document path="{normalized}">\n{raw}\n</document>'
+        self._record(normalized, text)
         return text
 
     def joined(self, paths: Sequence[str]) -> str:
@@ -156,7 +168,7 @@ def build_prompt_environment(root: Path | None = None) -> Environment:
     return environment
 
 
-def _template_assets(environment: Environment, names: Sequence[str]) -> list[Asset]:
+def _template_assets(environment: Environment, names: Sequence[str], *, root: Path) -> list[Asset]:
     from .environment import template_dependencies
 
     seen: set[str] = set()
@@ -166,15 +178,16 @@ def _template_assets(environment: Environment, names: Sequence[str]) -> list[Ass
             if dependency in seen:
                 continue
             seen.add(dependency)
+            path = root / "prompts" / dependency
             try:
-                source = environment.loader.get_source(environment, dependency)[0]  # type: ignore[union-attr]
-            except Exception:  # noqa: BLE001 - a missing template is reported by the render
+                raw = path.read_bytes()
+            except OSError:  # a missing template is reported by the render
                 continue
             assets.append(
                 Asset(
                     path=f"prompts/{dependency}",
-                    bytes=js_length(source),
-                    sha256=hashlib.sha256(source.encode("utf-8")).hexdigest(),
+                    bytes=len(raw),
+                    sha256=hashlib.sha256(raw).hexdigest(),
                 )
             )
     return assets
@@ -214,7 +227,7 @@ def compose_stage_prompt(
     """
     base = template_root or getattr(context, "root", None) or ROOT
     env = environment or build_prompt_environment(base)
-    resolver = DocumentResolver(root=base, prepared=documents.get("by_path") or {})
+    resolver = DocumentResolver(root=base, prepared=documents.get("by_path") or {}, style=getattr(context, "style", None))
 
     digest = {
         "id": getattr(context, "digest_id", ""),
@@ -231,9 +244,17 @@ def compose_stage_prompt(
     rendering_documents = resolver.joined(documents.get("rendering") or ())
 
     # A stage's own style-derived documents, in declaration order, resolved as one block so a
-    # template can print them without enumerating paths that vary by style.
-    style_paths = [entry["path"] for entry in documents.get("manifest", []) if entry.get("style_selected")]
-    style_documents = resolver.joined(style_paths)
+    # template can print them without enumerating paths that vary by style. The convention
+    # resolver composes the system message itself, so this legacy block is only built when a
+    # template still needs it.
+    resolved = documents.get("resolved")
+    if resolved is not None:
+        style_documents = ""
+    else:
+        style_paths = [
+            entry["path"] for entry in documents.get("manifest", []) if entry.get("style_selected")
+        ]
+        style_documents = resolver.joined(style_paths)
 
     system_name = stage_template(stage.name, "system")
     user_name = stage_template(stage.name, "user")
@@ -246,34 +267,69 @@ def compose_stage_prompt(
         "digest": digest,
         "budget_prose": budget_prose,
     }
-    try:
-        system_rendered = render(system_name, system_context, environment=env)
-    except PromptError as error:
-        if "not found" in str(error):
-            raise PromptError(
-                f"stage {stage.name} has no prompts/stages/{stage.name}/system.j2; every LLM and "
-                "copy-verify stage must declare a system template"
-            ) from error
-        raise
+    resolved = documents.get("resolved")
+    if resolved is not None:
+        # The new instruction tree is the production path: the system message is the
+        # resolved instruction set, in composition order, behind the shared preamble.
+        preamble = render("shared/preamble.j2", system_context, environment=env).text
+        system_text = "\n\n".join([preamble, *resolved.system_parts()])
+    else:
+        try:
+            system_text = render(system_name, system_context, environment=env).text
+        except PromptError as error:
+            if "not found" in str(error):
+                raise PromptError(
+                    f"stage {stage.name} has no prompts/stages/{stage.name}/system.j2; every LLM and "
+                    "copy-verify stage must declare a system template"
+                ) from error
+            raise
 
     block_values = {tag: "" for tag in BLOCK_TAGS}
     block_records: list[dict[str, Any]] = []
     if projection and projection.get("text"):
         block_values[projection_tag] = wrap_block(projection_tag, projection["text"])
-        block_records.append({"tag": projection_tag, "bytes": js_length(projection["text"])})
+        block_records.append(
+            {
+                "tag": projection_tag,
+                "bytes": js_length(projection["text"]),
+                "source": {"kind": "evidence-projection", **dict(projection.get("record") or {})},
+                "purpose": "stage-permitted source evidence",
+            }
+        )
     for entry in blocks:
         if not entry or entry.get("payload") is None:
             continue
         block_values[entry["tag"]] = wrap_block(entry["tag"], entry["payload"])
-        block_records.append({"tag": entry["tag"], "bytes": js_length(entry["payload"])})
+        block_records.append(
+            {
+                "tag": entry["tag"],
+                "bytes": js_length(entry["payload"]),
+                "source": entry.get("source") or {"kind": "runtime-stage-input"},
+                "purpose": "prior artifact or digest reading instructions",
+            }
+        )
     for tag, payload in (extra_blocks or {}).items():
         if payload is None:
             continue
         block_values[tag] = wrap_block(tag, payload)
-        block_records.append({"tag": tag, "bytes": js_length(payload)})
+        block_records.append(
+            {
+                "tag": tag,
+                "bytes": js_length(payload),
+                "source": {"kind": "executor-derived"},
+                "purpose": "stage-specific runtime input",
+            }
+        )
     if validation_feedback:
         block_values["validation_feedback"] = wrap_block("validation_feedback", validation_feedback)
-        block_records.append({"tag": "validation_feedback", "bytes": js_length(validation_feedback)})
+        block_records.append(
+            {
+                "tag": "validation_feedback",
+                "bytes": js_length(validation_feedback),
+                "source": {"kind": "validator-feedback"},
+                "purpose": "correction feedback for the current attempt",
+            }
+        )
 
     # The task block is itself a template, so a stage's user template prints `stage_task` and
     # the text is never duplicated in two formats.
@@ -283,30 +339,65 @@ def compose_stage_prompt(
         environment=env,
     )
     block_values["stage_task"] = task_rendered.text
-    block_records.append({"tag": "stage_task", "bytes": js_length(task_rendered.text)})
+    block_records.append(
+        {
+            "tag": "stage_task",
+            "bytes": js_length(task_rendered.text),
+            "source": {"path": "prompts/shared/task.j2"},
+            "purpose": "immediate task and output contract",
+        }
+    )
 
     user_context = {**block_values, "stage": stage_info, "digest": digest}
     user_rendered = render(user_name, user_context, environment=env)
 
     manifest = PromptManifest(
-        system_template=system_name,
+        system_template=None if resolved is not None else system_name,
         user_template=user_name,
-        templates=_template_assets(env, [system_name, user_name, "shared/task.j2"]),
-        # A document is style-supplied when the *profile* selected it: a module of this style,
-        # or the style's own pipeline stage document. ``styles/editorial-base.md`` is declared by
-        # the draft stage itself and is a shared editorial standard, not profile-supplied.
+        templates=_template_assets(
+            env,
+            (["shared/preamble.j2", user_name, "shared/task.j2"] if resolved is not None else [system_name, user_name, "shared/task.j2"]),
+            root=base,
+        ),
+        # Keep style-owned instructions distinct from shared stage and editorial contracts in
+        # the manifest. The convention resolver, rather than the profile, selects both sets.
         documents=[entry for entry in resolver.assets if not _is_style_supplied(entry.path, digest["style"])],
         instructions=[entry for entry in resolver.assets if _is_style_supplied(entry.path, digest["style"])],
         blocks=block_records,
         omitted=[entry["path"] for entry in documents.get("manifest", []) if not entry.get("style_selected")],
-        system_bytes=js_length(system_rendered.text),
+        system_bytes=js_length(system_text),
         user_bytes=js_length(user_rendered.text),
     )
-    return ComposedPrompt(system_text=system_rendered.text, user_text=user_rendered.text, manifest=manifest)
+    if resolved is not None:
+        # The convention resolver owns the instruction set, so the manifest is built from the
+        # resolved instructions rather than from template document accesses.
+        manifest.documents = [
+            Asset(path=entry.path, bytes=entry.bytes, sha256=entry.sha256, owner=entry.purpose)
+            for entry in resolved.loaded_instructions()
+            if not _is_style_supplied(entry.path, digest["style"])
+        ]
+        manifest.instructions = [
+            Asset(path=entry.path, bytes=entry.bytes, sha256=entry.sha256, owner=entry.purpose)
+            for entry in resolved.loaded_instructions()
+            if _is_style_supplied(entry.path, digest["style"])
+        ]
+        if resolved.style_constraints:
+            constraints_path = base / "styles" / digest["style"] / "style.yaml"
+            manifest.instructions.append(
+                Asset(
+                    path=f"styles/{digest['style']}/style.yaml",
+                    bytes=js_length(resolved.style_constraints),
+                    sha256=hashlib.sha256(constraints_path.read_bytes()).hexdigest()
+                    if constraints_path.is_file()
+                    else "",
+                    owner="declarative style constraints",
+                )
+            )
+    return ComposedPrompt(system_text=system_text, user_text=user_rendered.text, manifest=manifest)
 
 
 def _is_style_supplied(path: str, style: str) -> bool:
-    return path.startswith(f"styles/{style}/modules/") or path.startswith(f"system/style-pipelines/{style}/")
+    return path.startswith(f"styles/{style}/")
 
 
 __all__ = [

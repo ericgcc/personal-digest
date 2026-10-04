@@ -492,14 +492,11 @@ def test_the_callout_is_optional_in_the_template():
 
 
 def test_every_prompt_change_is_classified():
-    result = _run([str(ROOT / "scripts" / "prompt_diff.py"), "--json"])
+    result = _run([str(ROOT / "scripts" / "prompt_migration_gate.py"), "--json"])
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
-    unapproved = [row for row in payload["rows"] if row["status"] == "instruction-change"]
-    assert not unapproved, "unapproved instruction changes:\n" + "\n".join(
-        f"{row['profile']}/{row['stage']} ({row.get('document')})" for row in unapproved
-    )
-    assert len(payload["rows"]) == 40
+    assert payload["ok"] is True, "unclassified prompt differences"
+    assert payload["unclassified"] == 0
 
 
 def test_the_provenance_changes_are_recorded():
@@ -511,5 +508,5 @@ def test_the_provenance_changes_are_recorded():
 
 
 def test_the_prompt_parity_check_passes():
-    result = _run([str(ROOT / "scripts" / "check_prompt_parity.py")])
+    result = _run([str(ROOT / "scripts" / "prompt_migration_gate.py")])
     assert result.returncode == 0, result.stdout + result.stderr

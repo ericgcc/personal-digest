@@ -1,153 +1,108 @@
 # Prompt ownership and instruction routing
 
-This document states, for every instruction the pipeline supplies to a model, **which file owns
-it**, **which stage receives it**, and **why**. It is the answer to "who is allowed to say this?"
-and it is the record Phase 3A established before any editorial wording changed.
+Every executable editorial rule has one owner, and a stage receives only the instructions
+that can still affect its decision. Runtime instructions and maintainer documentation are
+separate trees.
 
-The rule the whole design follows:
+## Authoritative locations
 
-> Every instruction has exactly one owner, and every stage receives only the instructions that can
-> still change its decision.
-
-## The layers
-
-| Concern | Authoritative location |
+| Concern | Owner |
 | --- | --- |
-| Stage sequence, inputs, outputs and evidence policies | `digest_system/editorial/stages.py` |
-| Shared stage responsibilities | `system/contracts/<stage>.md` |
-| Fundamental prose-quality requirements | `styles/editorial-base.md` |
-| General reader and comprehension obligations | `system/contracts/reader-contract.md` |
-| Permitted custom-instruction sections and their routing | `system/contracts/reading-instructions.md` |
-| Actual reader preferences | Markdown body of `digests/<digest-id>.md` |
-| Style identity and structure | `styles/<style>/modules/` |
-| Style-specific stage procedures | `system/style-pipelines/<style>/` |
-| Stage-specific prompt composition | `prompts/stages/<stage>/{system,user}.j2` |
-| Stage-specific instruction selection | `prompts/profiles/<profile-id>.yaml` |
-| Judge prompts | `prompts/evaluation/` |
-| Rendering rules and template | `system/rendering-<style>.md`, `templates/<style>-email-v1.html` |
+| Stage order, artifacts, corpus policy and validation | `digest_system/editorial/stages.py` |
+| What a stage does | `editorial/stages/<stage>.md` |
+| Cross-stage reader, fidelity and prose contracts | `editorial/shared/*.md` |
+| How a style performs one stage | `styles/<style>/stages/<stage>.md` |
+| Shared style identity and composition model | `styles/<style>/interface.md` |
+| Declarative composition, budget, evaluation and rendering values | `styles/<style>/style.yaml` |
+| Digest-specific reader preferences | Markdown body of `digests/<digest-id>.md` |
+| Prompt framing and user-message block order | `prompts/shared/*.j2`, `prompts/stages/<stage>/user.j2` |
+| Judge prompt framing | `prompts/evaluation/` |
+| Rendering instructions and template | `rendering/shared.md`, `styles/<style>/rendering.md`, `templates/<style>-email-v1.html` |
 
-Jinja2 owns composition. Markdown owns editorial knowledge. Python owns execution. The active
-style profile decides which instruction files each stage receives.
+Files under `docs/`, `system/`, legacy style module directories and profile routing files are
+not runtime instruction sources. The loader in
+`digest_system/editorial/prompts/instructions.py` enforces that boundary, including resolved
+path containment and style scoping.
 
-## How a stage receives its instructions
-
-A stage's prompt is composed from three independent sources, in this order:
-
-1. **The shared editorial stage** — the stage's role, permitted evidence, artifact contract and
-   execution policy. Owned by `system/contracts/<stage>.md` and declared in `stages.py`.
-2. **The selected style** — the stage-specific editorial method, composition rules and quality
-   criteria. Owned by `styles/<style>/modules/` and `system/style-pipelines/<style>/`, and selected
-   by the active profile.
-3. **The applicable reading instructions** — the digest's own preferences, parsed from its
-   Markdown body and routed per section.
-
-They are combined by the stage's Jinja2 template and, for evidence-carrying stages, the approved
-evidence projection.
-
-## Standard prompt composition
-
-Every editorial stage's prompt has the same logical components, in the same order. The exact
-ordering may be tested and adjusted for the selected model (design §3B.1), but the *components*
-are fixed, and each has exactly one owner.
+## System-message composition
 
 ```text
-SYSTEM
-  1. Stage role and principal objective        system/contracts/<stage>.md
-  2. Shared operational contract               system/contracts/<stage>.md, system/style-contract.md
-  3. Applicable style-specific procedure       styles/<style>/modules/, system/style-pipelines/<style>/
-  4. Essential quality and reader obligations  styles/editorial-base.md, system/contracts/reader-contract.md
-  5. Evidence and output restrictions          system/contracts/<stage>.md
-
-USER
-  1. Permitted source evidence and prior artifacts
-  2. Applicable reading-instruction sections   digests/<digest-id>.md (routed per section)
-  3. Validation feedback, if this is a correction
-  4. Immediate task and expected output        prompts/shared/task.j2
+SYSTEM: stage contract → style specialization → style interface → shared contracts → constraints
+USER: evidence and artifacts → reading instructions → feedback → immediate task
 ```
 
-Two rules follow from the table and are enforced by the templates:
+`digest_system/editorial/prompts/convention.py` resolves an ordinary stage in this order:
 
-* **The role contract precedes the style.** A stage reads what it is responsible for before it
-  reads how its style performs that responsibility.
-* **Shared obligations come after the style procedure.** The editorial base and the reader
-  contract are the floor a style refines inside, so they follow the style rather than framing it.
+1. `editorial/stages/<stage>.md` — the shared stage contract.
+2. `styles/<style>/stages/<stage>.md` — an optional style specialization, present only when
+   the style has a genuine stage-specific procedure.
+3. `styles/<style>/interface.md` — for stages that need the composition model.
+4. Zero to two contracts from `editorial/shared/`.
+5. A compact `<style_constraints>` projection from `styles/<style>/style.yaml` for stages that
+   make or verify structural decisions.
 
-The templates are the only place this order is expressed. `prompts/stages/<stage>/system.j2` names
-the documents in this order, and a stage that names them differently is a defect the Phase 3B
-checklist catches.
+Every Markdown file is loaded whole. Runtime code does not extract headings or route a list of
+small style fragments. The profile selects the style and execution policy; it does not select
+editorial instruction documents.
+
+Evaluation stages use the same owners. The adapter receives the stage contract, reader
+contract, optional style-stage review procedure and style interface as named contracts.
+
+## User-message composition
+
+The user message contains runtime data, not instruction files:
+
+1. Permitted source evidence or provenance.
+2. Prior stage artifacts.
+3. The reading-instruction sections routed to this stage.
+4. Validator feedback and deterministic findings, when applicable.
+5. The immediate task from `prompts/shared/task.j2`.
+
+Each block is delimited and recorded with its source, purpose and size in the prompt manifest.
+Article text, artifacts and HTML templates are printed as inert values and are never evaluated
+as Jinja source.
 
 ## Reading-instruction routing
 
-The digest's Markdown body is parsed **once**, at configuration resolution, into four canonical
-sections. The operational frontmatter is kept separate. Each stage receives only the sections that
-can still change its decision:
+The digest body is parsed once into four optional sections. Each stage receives only the
+sections it can still act on.
 
-| Stage | Sections supplied | Why |
-| --- | --- | --- |
-| Analyze | `Selection`, `Reader` | Selection is decided here; the reader affects value. |
-| Frame | `Reader`, `Content preferences`, `Optional highlights` | The plan needs the reader, preservation obligations and callout intent. |
-| Draft | `Reader`, `Content preferences`, `Optional highlights` | Writing needs the same three. |
-| Developmental Review | `Reader` | Judges against the same reader. |
-| Writer Revision | `Reader` | Revisions preserve the reader's understanding. |
-| Line Edit | `Reader` | Edits must not remove needed context. |
-| Reader Review | `Reader` | The before/after comparison uses one reader. |
-| Targeted Repair | `Reader` | A localized repair still serves the same reader. |
-| Copy / Verify | `Optional highlights` | Verifies authorized callouts. |
-| Render | *(none)* | Rendering is presentation; the reader's interests are not a rendering concern. |
+| Stage | Sections supplied |
+| --- | --- |
+| Analyze | `Selection`, `Reader` |
+| Frame | `Reader`, `Content preferences`, `Optional highlights` |
+| Draft | `Reader`, `Content preferences`, `Optional highlights` |
+| Developmental Review | `Reader` |
+| Writer Revision | `Reader` |
+| Line Edit | `Reader` |
+| Reader Review | `Reader` |
+| Targeted Repair | `Reader` |
+| Copy / Verify | `Optional highlights` |
+| Render | none |
 
-Two consequences are intentional:
+The effective Reader Brief is `editorial/shared/reader.md` plus the digest's optional
+`## Reader` section. The two evaluation stages receive that same brief.
 
-* **Selection is not repeated.** Once Analyze has recorded its decisions and Frame has fixed the
-  plan, the writing and editing stages work from the recorded decisions, not the raw preference.
-  Repeating it invites a later stage to re-litigate selection.
-* **Render receives no reading instructions.** It receives the approved prose, the callout data and
-  the rendering profile only.
+## Declarative constraints
 
-The effective **Reader Brief** is the shared reader contract plus the digest's `## Reader`
-section. It is handed to the two evaluation stages as their `reader` contract, so the judge reasons
-from exactly the reader the writing stages wrote for. When a digest states no reader, the brief is
-the shared contract alone and nothing else is added.
+`styles/<style>/style.yaml` is the single source for values Python and prompts share:
+composition limits, body budgets, validator selection, evaluation configuration and rendering
+paths. Validators and profile compatibility views derive their values from this file. Only the
+model-facing composition, body, citation, catalog and callout values enter
+`<style_constraints>`; routing, evaluator identifiers and filesystem paths do not.
 
-## What is delimited from what
+Editorial procedure belongs in the stage Markdown files. Those files refer to resolved
+constraints instead of copying numeric values into prose.
 
-Source material, prior artifacts, review JSON, operation records and the digest's own instructions
-are **contextual data and preferences**, not a mechanism for overriding system requirements. They
-are wrapped in explicit block tags (`<source_corpus>`, `<approved_frame>`,
-`<reading_instructions>`, …) and printed inertly: a `{{ … }}` inside article content or an HTML
-email template survives untouched. Only the templates themselves are Jinja2 source.
+## Inspection and migration evidence
 
-## Auditability
+`python -m digest_system.cli inspect --digest <id> --style-profile <profile> [--stage <stage>]`
+uses the production composition path. Its manifest and report show the complete system and user
+messages, every instruction owner, every template actually rendered, and the source and purpose
+of each runtime data block.
 
-Every run records:
-
-* the resolved reading-instruction **version** (a content hash of the digest body) and the sections
-  each stage received (`pipeline.json` → `reading_instructions.routing`);
-* a **prompt manifest** beside each attempt, naming every template, instruction file and data block
-  with its size and hash, plus the style modules the profile withheld.
-
-Two offline tools read the same code path the executor uses:
-
-* `python -m digest_system.cli inspect --digest <id> --style-profile <profile> [--stage <stage>]`
-  prints exactly what a stage will send.
-* `python scripts/audit_prompts.py` audits every stage's resolved prompt, classifies each supplied
-  instruction document by role, and flags a paragraph duplicated across two documents.
-
-Neither calls a model. Both are the mechanism by which "every included instruction has a clear
-reason for being supplied" is a verifiable claim rather than an assertion.
-
-## Deliberate instruction changes
-
-The frozen migration reference (`tests/fixtures/reference/reference.json`) is the audit record of
-what the pipeline sent before the Phase 2b/3A migrations. It is never edited. When a later phase
-must change an inlined instruction, the change is declared in
-`tests/fixtures/prompt_migration/approved-prompt-changes.json`, which names the stage, the document,
-and the reason. `scripts/prompt_diff.py` and the parity tests fail on any change that is not
-declared, so an instruction can never change silently.
-
-The record distinguishes three kinds of change:
-
-* **wording change** (`approved`) — a document's text was corrected or updated.
-* **removal** (`phase3a.removed_documents`) — a document is no longer inlined whole; the digest
-  configuration is delivered as parsed sections instead, and the record names where it moved to.
-* **augmentation** (`phase3a.augmented_contracts`) — a contract's text is extended (the reader
-  contract plus the digest reader brief); the original text must still be present verbatim.
+`python scripts/prompt_migration_gate.py` compares the complete ordered candidate prompt set to
+the frozen pre-migration baseline. Each reported difference has a category and justification.
+The approval record also contains a SHA-256 fingerprint of the complete candidate prompt set,
+so additions, removals, replacements, reordering, short lines and constraint changes fail until
+the reviewed candidate is deliberately recorded.

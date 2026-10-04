@@ -1,16 +1,10 @@
-"""Machine-readable style length budgets.
-
-``tools/README.md`` and this module both mirror the ``Depth model`` and ``Length and
-density`` sections of ``styles/<style>.md``, which remain the source of truth. The prose
-form is what a stage is told; the numeric range is what the deterministic length check
-measures. Update all three together when a style budget changes.
-
-Python port of ``src/editorial/budgets.mjs``.
-"""
+"""Machine-readable style budgets derived from each style manifest."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+from .style_constraints import style_budget_values
 
 
 @dataclass(frozen=True)
@@ -21,32 +15,17 @@ class StyleBudget:
     prose: str
 
 
-STYLE_BUDGET: dict[str, StyleBudget] = {
-    "curated-discovery": StyleBudget(
-        unit="document",
-        min=700,
-        max=1200,
-        prose="about 700-1,200 words for the briefing body, excluding the source catalog",
-    ),
-    "synthesis-max": StyleBudget(
-        unit="document",
-        min=700,
-        max=1200,
-        prose="about 700-1,200 words for the briefing body, excluding the source catalog",
-    ),
-    "detailed": StyleBudget(
-        unit="per_source",
-        min=120,
-        max=220,
-        prose="about 120-220 words per substantive source entry",
-    ),
-    "concise": StyleBudget(
-        unit="per_source",
-        min=40,
-        max=80,
-        prose="about 40-80 words per retained source entry",
-    ),
-}
+_STYLES = ("curated-discovery", "concise", "detailed", "synthesis-max")
+
+
+def _budget(style: str) -> StyleBudget:
+    values = style_budget_values(style)
+    return StyleBudget(**values)
+
+
+# Compatibility mapping for callers that index the historical public constant. Its values
+# are derived at import time from the manifests; there is no second budget definition here.
+STYLE_BUDGET: dict[str, StyleBudget] = {style: _budget(style) for style in _STYLES}
 
 
 def budget_for(style: str) -> StyleBudget | None:

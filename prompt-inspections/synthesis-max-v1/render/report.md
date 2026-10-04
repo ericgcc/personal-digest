@@ -2,57 +2,36 @@
 
 - Digest: `tech-bi-daily`
 - Style: `synthesis-max`
-- Profile: `synthesis-max-v1` v2.0.0 (active)
+- Profile: `synthesis-max-v1` v2.1.0 (active)
 - Stage: `render` (executor `llm`)
 - Message: system + user
 
 ## Templates
 
-- `prompts/stages/render/system.j2` — 149 units, sha256 `f78d05d2dcec`
-- `prompts/shared/preamble.j2` — 463 units, sha256 `8f60794abad6`
+- `prompts/shared/preamble.j2` — 465 units, sha256 `8f60794abad6`
 - `prompts/stages/render/user.j2` — 133 units, sha256 `e1ff6d0effce`
 - `prompts/shared/task.j2` — 992 units, sha256 `d12ba969b789`
 
 ## Instruction documents
 
-- `system/rendering-synthesis-max.md` — 6949 chars, sha256 `3c0546c2d9c4`
-- `templates/synthesis-max-email-v1.html` — 9666 chars, sha256 `dd378e0edbae`
-- `system/contracts/render.md` — 5851 chars, sha256 `b09d93fe5e06`
-- `system/html-rendering.md` — 22858 chars, sha256 `835bae73aeec`
+- `editorial/stages/render.md` — 5740 chars; owner: shared stage contract; sha256 `efa7b4b4ff9b`
+- `rendering/shared.md` — 18524 chars; owner: shared rendering contract; sha256 `f46b9afa91a1`
+- `templates/synthesis-max-email-v1.html` — 9598 chars; owner: HTML email template; sha256 `dd378e0edbae`
 
 ## Style-supplied instructions
 
-- (none: this stage receives no style-specific document under this profile)
-
-## Deliberately omitted style modules
-
-- (none: this profile supplies every module the stage receives)
+- `styles/synthesis-max/rendering.md` — 6885 chars; owner: style rendering profile; sha256 `3c0546c2d9c4`
 
 ## Data blocks
 
-- `previous_stage_artifact` — 332 chars
-- `rendering_values` — 139 chars
-- `source_note_manifest` — 2678 chars
-- `callout_registry` — 1236 chars
-- `rendering_values` — 139 chars
-- `stage_task` — 533 chars
+- `previous_stage_artifact` — 332 chars; prior artifact or digest reading instructions; source `{"path": ".digest-runs/synthetic/copy-verify/output/copy-verify.md", "provenance": "runner", "stage": "copy-verify"}`
+- `rendering_values` — 139 chars; prior artifact or digest reading instructions; source `{"path": "source-acquisition/sources.json", "provenance": "delivery", "stage": "source-acquisition"}`
+- `source_note_manifest` — 2678 chars; prior artifact or digest reading instructions; source `{"path": "frame/output/frame.json", "provenance": "canonical", "stage": "frame"}`
+- `callout_registry` — 1236 chars; prior artifact or digest reading instructions; source `{"path": "digests/tech-bi-daily.md", "sections": ["Optional highlights"]}`
+- `rendering_values` — 139 chars; stage-specific runtime input; source `{"kind": "executor-derived"}`
+- `stage_task` — 533 chars; immediate task and output contract; source `{"path": "prompts/shared/task.j2"}`
 
 ## Sizes
 
-- System: 45778 units
+- System: 41596 units
 - User: 5105 units
-
-## Style modules
-
-- Document: `styles/synthesis-max.md` (generated from `styles/synthesis-max/modules`)
-  - `styles/synthesis-max/modules/01-style-interface.md` — ## Style interface
-  - `styles/synthesis-max/modules/02-writing-reference-profile.md` — ## Writing reference profile
-  - `styles/synthesis-max/modules/03-synthesis-mode.md` — ## Synthesis mode
-  - `styles/synthesis-max/modules/04-writing-character.md` — ## Writing character
-  - `styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md` — ## Domain accessibility in synthesis
-  - `styles/synthesis-max/modules/06-length-and-density.md` — ## Length and density
-  - `styles/synthesis-max/modules/07-required-structure.md` — ## Required structure
-  - `styles/synthesis-max/modules/08-citations.md` — ## Citations
-  - `styles/synthesis-max/modules/09-final-source-catalog.md` — ## Final source catalog
-  - `styles/synthesis-max/modules/10-ending-rules.md` — ## Ending rules
-  - `styles/synthesis-max/modules/11-quality-control.md` — ## Quality control

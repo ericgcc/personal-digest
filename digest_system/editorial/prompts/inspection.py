@@ -1,14 +1,14 @@
 """Offline prompt inspection: what a stage will actually send, and where every part came from.
 
-The core result of the prompt migration is that a developer can open a stage template, read its declared
-dependencies, inspect the profile that selects them, and generate exactly what the model will
-receive — without reading the executor and without spending anything.
+The core result of the prompt migration is that a developer can resolve the convention-owned
+stage, shared, style, constraint, template, and runtime-data inputs and generate exactly what the
+model will receive — without reading the executor and without spending anything.
 
 This module is that interface. For one (digest, profile, stage) it produces:
 
 * the resolved **system** and **user** prompt, byte for byte;
-* a machine-readable **manifest** naming every template, instruction file and data block, with
-  sizes and content hashes, plus the style modules the profile withheld and why;
+* a machine-readable **manifest** naming every template, instruction file, resolved constraint
+  block, and runtime data block with its owner, purpose, size, and content hash;
 * a human-readable **report** an operator can read in a terminal.
 
 For an evaluation stage there is no system/user split: the Python adapter sends one combined
@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
-from ...config.profiles import preflight_style_profile, style_profile_for
+from ...config.profiles import style_profile_for
 from ...runtime.artifacts import ROOT, RunnerError
 from ..evaluation_prompts import compose_evaluation_prompts
 from ..stages import stage_names_v2, stage_v2
@@ -92,20 +92,6 @@ class Inspection:
         return written
 
 
-def _style_manifest(style: str, *, root: Path) -> dict[str, Any]:
-    from ...config.style_modules import load_style_manifest
-
-    manifest = load_style_manifest(style, root=root)
-    return {
-        "document": manifest.document,
-        "directory": manifest.directory,
-        "modules": [
-            {"file": module.file, "heading": module.heading, "sha256": _digest(root / module.file)}
-            for module in manifest.modules
-        ],
-    }
-
-
 def _digest(path: Path) -> str:
     import hashlib
 
@@ -114,7 +100,7 @@ def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _report(inspection: Inspection, *, style_manifest: dict[str, Any], profile: Any) -> str:
+def _report(inspection: Inspection, *, profile: Any) -> str:
     manifest = inspection.manifest
     lines = [
         f"# Prompt inspection — {inspection.profile_id} / {inspection.stage}",
@@ -135,38 +121,30 @@ def _report(inspection: Inspection, *, style_manifest: dict[str, Any], profile: 
     if not documents:
         lines.append("- (none)")
     for entry in documents:
-        lines.append(f"- `{entry['path']}` — {entry['bytes']} chars, sha256 `{entry['sha256'][:12]}`")
+        owner = f"; owner: {entry['owner']}" if entry.get("owner") else ""
+        lines.append(f"- `{entry['path']}` — {entry['bytes']} chars{owner}; sha256 `{entry['sha256'][:12]}`")
     instructions = manifest.get("instructions", [])
     lines += ["", "## Style-supplied instructions", ""]
     if not instructions:
         lines.append("- (none: this stage receives no style-specific document under this profile)")
     for entry in instructions:
-        lines.append(f"- `{entry['path']}` — {entry['bytes']} chars, sha256 `{entry['sha256'][:12]}`")
-    omitted = manifest.get("omitted", [])
-    lines += ["", "## Deliberately omitted style modules", ""]
-    if not omitted:
-        lines.append("- (none: this profile supplies every module the stage receives)")
-    for path in omitted:
-        lines.append(f"- `{path}`")
+        owner = f"; owner: {entry['owner']}" if entry.get("owner") else ""
+        lines.append(f"- `{entry['path']}` — {entry['bytes']} chars{owner}; sha256 `{entry['sha256'][:12]}`")
     lines += ["", "## Data blocks", ""]
     blocks = manifest.get("blocks", [])
     if not blocks:
         lines.append("- (none)")
     for entry in blocks:
-        lines.append(f"- `{entry['tag']}` — {entry['bytes']} chars")
+        source = json.dumps(entry.get("source") or {}, ensure_ascii=False, sort_keys=True)
+        purpose = entry.get("purpose") or "runtime data"
+        lines.append(f"- `{entry['tag']}` — {entry['bytes']} chars; {purpose}; source `{source}`")
     lines += [
         "",
         "## Sizes",
         "",
         f"- System: {manifest.get('system_bytes', 0)} units",
         f"- User: {manifest.get('user_bytes', 0)} units",
-        "",
-        "## Style modules",
-        "",
-        f"- Document: `{style_manifest['document']}` (generated from `{style_manifest['directory']}`)",
     ]
-    for module in style_manifest["modules"]:
-        lines.append(f"  - `{module['file']}` — {module['heading']}")
     lines.append("")
     return "\n".join(lines)
 
@@ -197,9 +175,6 @@ def inspect_stage(
     offline.digest_id = digest_id
     seed_artifacts(offline)
 
-    style_manifest = _style_manifest(profile.style, root=base)
-    preflight_style_profile(profile, root=base)
-
     if stage.executor == "evaluation":
         inputs = stage_inputs(stage_name, offline)
         contracts = inputs["documents"]["contracts"]
@@ -225,10 +200,18 @@ def inspect_stage(
                     "path": entry["path"],
                     "bytes": entry["bytes"],
                     "sha256": _digest(base / entry["path"]),
+                    "owner": entry.get("contract") or "evaluation contract",
                 }
                 for entry in inputs["documents"]["manifest"]
             ],
-            "blocks": [],
+            "blocks": [
+                {
+                    "tag": "evaluation_input",
+                    "bytes": len(prompts.prompt),
+                    "purpose": "combined judge prompt",
+                    "source": {"kind": "evaluation-adapter", "contracts": sorted(contracts)},
+                }
+            ],
             "omitted": inputs["documents"]["excluded_sections"],
             "system_bytes": 0,
             "user_bytes": 0,
@@ -243,7 +226,7 @@ def inspect_stage(
             combined_text=prompts.prompt,
             manifest=manifest,
         )
-        inspection.report = _report(inspection, style_manifest=style_manifest, profile=profile)
+        inspection.report = _report(inspection, profile=profile)
         return inspection
 
     inputs = stage_inputs(stage_name, offline)
@@ -269,7 +252,7 @@ def inspect_stage(
         user_text=composed.user_text,
         manifest=manifest,
     )
-    inspection.report = _report(inspection, style_manifest=style_manifest, profile=profile)
+    inspection.report = _report(inspection, profile=profile)
     return inspection
 
 

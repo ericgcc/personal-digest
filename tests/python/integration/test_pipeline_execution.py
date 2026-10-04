@@ -173,7 +173,7 @@ def workspace(tmp_path: Path):
     """
     from digest_system.runtime.artifacts import ROOT
 
-    for name in ("system", "styles", "digests", "templates", "prompts"):
+    for name in ("editorial", "rendering", "styles", "digests", "templates", "system", "prompts"):
         source = ROOT / name
         if source.exists():
             import shutil

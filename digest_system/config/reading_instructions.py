@@ -13,7 +13,7 @@ unknown headings, duplicate canonical headings, and body prose that sits outside
 Rejecting is the point: a preference the runtime cannot route must be reported before a paid
 run, not silently dropped.
 
-This module contains no editorial judgement. `system/contracts/reading-instructions.md` states
+This module contains no editorial judgement. `docs/architecture/reading-instructions.md` states
 what each section may influence and which stage receives it; this module only reads and routes.
 """
 
@@ -56,7 +56,7 @@ STAGE_SECTIONS: dict[str, tuple[str, ...]] = {
 }
 
 #: The section whose text forms the digest half of the effective Reader Brief. The other half
-#: is the shared `system/contracts/reader-contract.md`, which always applies.
+#: is the shared `editorial/shared/reader.md`, which always applies.
 READER_SECTION = "Reader"
 
 _H1 = re.compile(r"^#\s+(?P<heading>\S.*?)\s*$")

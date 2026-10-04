@@ -1,7 +1,8 @@
 """The frozen pre-migration profile vocabulary, retained as historical reference.
 
-The prompt migration replaced heading-based section selection with named module files. The old section sets
-are no longer read by the runtime — a profile names files — but they are still meaningful:
+The prompt migration replaced heading-based section selection with convention-resolved,
+purpose-specific instruction files. The old section sets are no longer read by the runtime, but
+they are still meaningful:
 
 * They are the recorded vocabulary the frozen migration reference asserts against, so they are
   the independent check that this phase did not quietly drop or reorder a style rule.
@@ -9,8 +10,7 @@ are no longer read by the runtime — a profile names files — but they are sti
   instruction-level diff of this phase reviewable.
 
 Nothing in this module may be imported by a prompt-composition path. Its only consumers are the
-parity tests and :mod:`scripts.export_profiles`, which translates these sets into the module
-files the runtime now reads.
+parity tests that protect the frozen pre-migration baseline.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ LEGACY_EXPECTATION_SECTIONS: tuple[str, ...] = ("## Style interface", "## Requir
 
 #: The sections each style actually declared, in ``LEGACY_COMPOSITION_SECTIONS`` order. Order is
 #: preserved deliberately: extraction inlined sections in the order they were requested, so this
-#: list is what the model read, and it is the order the modules are now listed in.
+#: list is what the model read, in its original order.
 COMPOSITION_SECTIONS_BY_STYLE: dict[str, tuple[str, ...]] = {
     "synthesis-max": (
         "## Style interface",

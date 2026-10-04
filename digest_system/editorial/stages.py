@@ -10,7 +10,7 @@ run-reporting readers all derive stage metadata from here.
 
 Design rules this module implements, in the order they constrain the code:
 
-1. **Stage-specific context.** Every stage declares the canonical documents it receives.
+1. **Stage-specific context.** The convention resolver supplies each stage's instruction set.
 2. **One stage, one responsibility.**
 3. **FRAME owns evidence.**
 4. **Python orchestrates; the evaluator decides.**
@@ -52,9 +52,7 @@ class Stage:
     corpus: str
     on_failure: str
     purpose: str
-    documents: Callable[[Any], Sequence[Mapping[str, Any]]] = field(default=lambda ctx: ())
     blocks: Callable[[Any], Sequence[Any]] = field(default=lambda ctx: ())
-    contracts: Callable[[Any], Mapping[str, Mapping[str, Any]]] | None = None
     validation: StageValidation | None = None
     effort: str | None = None
     budget: bool = False
@@ -99,11 +97,6 @@ STAGES_V2: tuple[Stage, ...] = (
                 analysis=artifact, profile=context.profile
             ),
         ),
-        documents=lambda ctx: (
-            {"path": "system/contracts/analyze.md"},
-            *ctx.style_documents("analyze"),
-            {"path": "system/writing-reasoning-and-source-fidelity.md"},
-        ),
         blocks=lambda ctx: (ctx.reading_instructions_block("analyze"),),
     ),
     Stage(
@@ -124,12 +117,6 @@ STAGES_V2: tuple[Stage, ...] = (
                 frame=artifact, corpus=context.corpus, profile=context.profile
             ),
         ),
-        documents=lambda ctx: (
-            {"path": "system/contracts/frame.md"},
-            {"path": "system/style-contract.md"},
-            {"path": "system/contracts/reader-contract.md"},
-            *ctx.style_documents("frame"),
-        ),
         blocks=lambda ctx: (
             ctx.artifact_block("analyze", "analysis", "analysis.json"),
             ctx.reading_instructions_block("frame"),
@@ -145,12 +132,6 @@ STAGES_V2: tuple[Stage, ...] = (
         effort="high",
         budget=True,
         purpose="DRAFT: write the editorial body from the approved frame and the evidence the frame selected.",
-        documents=lambda ctx: (
-            {"path": "system/contracts/draft.md"},
-            {"path": "styles/editorial-base.md"},
-            {"path": "system/contracts/reader-contract.md"},
-            *ctx.style_documents("draft"),
-        ),
         blocks=lambda ctx: (
             ctx.artifact_block("frame", "approved_frame"),
             ctx.reading_instructions_block("draft"),
@@ -165,15 +146,6 @@ STAGES_V2: tuple[Stage, ...] = (
         on_failure="recoverable",
         extra_artifacts=("wops.json",),
         purpose="DEVELOPMENTAL REVIEW: diagnose the draft against the frame. Structured issues in canonical problem types, no rewriting.",
-        documents=lambda ctx: (),
-        # Evaluation stages are executed by the Python adapter, which owns the prompt. The reader
-        # contract is the shared reader contract plus this digest's `## Reader` section: the same
-        # effective Reader Brief the writing stages used, so the judge reasons from one reader.
-        contracts=lambda ctx: {
-            "role": {"path": "system/contracts/developmental-review.md"},
-            "reader": _reader_contract(ctx),
-            **ctx.style_contracts("developmental-review"),
-        },
         blocks=lambda ctx: (),
     ),
     Stage(
@@ -186,10 +158,6 @@ STAGES_V2: tuple[Stage, ...] = (
         effort="high",
         budget=True,
         purpose="WRITER REVISION: revise the draft against the developmental review using the retrieved writing operations.",
-        documents=lambda ctx: (
-            {"path": "system/contracts/writer-revision.md"},
-            *ctx.style_documents("writer-revision"),
-        ),
         blocks=lambda ctx: (
             ctx.artifact_block("draft", "previous_stage_artifact"),
             ctx.artifact_block("frame", "approved_frame"),
@@ -208,11 +176,6 @@ STAGES_V2: tuple[Stage, ...] = (
         effort="medium",
         budget=True,
         purpose="LINE EDIT: clarity, voice, naturalness, rhythm, transitions, local emphasis, redundancy, concision, and length discipline in one pass.",
-        documents=lambda ctx: (
-            {"path": "system/contracts/line-edit.md"},
-            {"path": "system/naturalness-contract.md"},
-            *ctx.style_documents("line-edit"),
-        ),
         blocks=lambda ctx: (
             ctx.artifact_block("writer-revision", "previous_stage_artifact"),
             ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),
@@ -227,12 +190,6 @@ STAGES_V2: tuple[Stage, ...] = (
         corpus="none",
         on_failure="recoverable",
         purpose="READER REVIEW: assess the line-edited prose as a reader, and detect anything the line edit materially regressed.",
-        documents=lambda ctx: (),
-        contracts=lambda ctx: {
-            "role": {"path": "system/contracts/reader-review.md"},
-            "reader": _reader_contract(ctx),
-            **ctx.style_contracts("reader-review"),
-        },
         blocks=lambda ctx: (),
     ),
     Stage(
@@ -247,11 +204,6 @@ STAGES_V2: tuple[Stage, ...] = (
         optional=True,
         effort="medium",
         purpose="TARGETED REPAIR: repair one diagnosed reader-facing problem. Runs at most once, and only when the reader review found a material, repairable problem.",
-        documents=lambda ctx: (
-            {"path": "system/contracts/targeted-repair.md"},
-            {"path": "system/contracts/reader-contract.md"},
-            *ctx.style_documents("targeted-repair"),
-        ),
         blocks=lambda ctx: (
             ctx.artifact_block("line-edit", "previous_stage_artifact"),
             ctx.artifact_block("reader-review", "reader_review", "review.json"),
@@ -269,10 +221,6 @@ STAGES_V2: tuple[Stage, ...] = (
         effort="low",
         extra_artifacts=("verification.json",),
         purpose="COPY / VERIFY: verify citations, provenance, structure, language, Markdown, and length; correct copy only. Never rewrite editorially.",
-        documents=lambda ctx: (
-            {"path": "system/contracts/copy-verify.md"},
-            *ctx.style_documents("copy-verify"),
-        ),
         blocks=lambda ctx: (ctx.reading_instructions_block("copy-verify"),),
     ),
     Stage(
@@ -284,11 +232,6 @@ STAGES_V2: tuple[Stage, ...] = (
         on_failure="fatal",
         thinking={"type": "disabled"},
         purpose="Render the approved prose into the selected rendering profile and template without editorial rewriting.",
-        documents=lambda ctx: (
-            {"path": "system/contracts/render.md"},
-            {"path": "system/html-rendering.md"},
-            *ctx.rendering_documents(),
-        ),
         # The run key is a `{{RUN_KEY}}` placeholder in the template, not a value the rendering
         # stage may invent: the duplicate-delivery guard checks Gmail Sent for exactly this
         # string. The same is true of the date and the reading-time capsule.
@@ -341,31 +284,6 @@ def _json(value: Any) -> str:
     import json
 
     return json.dumps(value, ensure_ascii=False, indent=2)
-
-
-def _reader_contract(ctx: Any) -> dict[str, Any]:
-    """The effective Reader Brief for an evaluation stage.
-
-    The shared reader contract plus, when the digest states one, its `## Reader` section. The
-    brief is handed to the judge as the `reader` contract, so the review reasons from exactly the
-    reader the writing stages wrote for. When the digest states no reader, the contract is the
-    shared document alone — the default general reader — and nothing else is added.
-    """
-    entries: list[dict[str, Any]] = [{"path": "system/contracts/reader-contract.md"}]
-    reader = ctx.reader_brief()
-    if reader:
-        entries.append(
-            {
-                "label": "digest-reader-brief",
-                "text": (
-                    f"# Digest reader brief\n\n"
-                    f"This digest explicitly describes its reader. That description narrows the "
-                    f"reader contract above for this digest; it never removes its requirements, "
-                    f"and it is used only as written.\n\n{reader}"
-                ),
-            }
-        )
-    return entries
 
 
 def stage_names_v2() -> list[str]:

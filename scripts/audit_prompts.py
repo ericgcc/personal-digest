@@ -7,14 +7,15 @@ every (profile, stage) it records:
 
 * the complete resolved system and user messages (or, for an evaluation stage, the contracts and
   the combined judge prompt the Python adapter sends);
-* the instruction modules the stage received, and the style modules its profile withheld;
+* every whole instruction file the stage received and the owner category of each;
 * the digest reading-instruction sections the stage received, and the data blocks it was given;
 * an estimated instruction size in characters and in tokens.
 
 It then classifies each supplied instruction document against the stage's role:
 
-* **shared** — a shared operational contract the stage's own declaration names;
-* **style** — a style module or style-pipeline document the profile selected;
+* **stage** — the contract for this stage;
+* **shared** — a purpose-specific shared editorial contract;
+* **style** — the selected style's interface, stage specialization, constraints, or rendering rules;
 * **reading-instructions** — a section parsed from the digest's Markdown body;
 * **supporting** — a shared writing reference the stage needs but does not own;
 * **duplicated** — a document whose text also appears in another document supplied to the same
@@ -56,15 +57,6 @@ from _maintenance import configure_stdio  # noqa: E402
 #: labelled as one: the run record's `usage` is the authoritative figure.
 CHARS_PER_TOKEN = 4
 
-_WRITING_REFERENCES = (
-    "system/writing-reasoning-and-source-fidelity.md",
-    "system/naturalness-contract.md",
-    "system/html-rendering.md",
-    "system/style-contract.md",
-    "styles/editorial-base.md",
-)
-
-
 def estimate_tokens(text: str) -> int:
     """A rough token estimate for an instruction. Labelled an estimate wherever it is reported."""
     return max(0, round(js_length(text) / CHARS_PER_TOKEN))
@@ -72,13 +64,13 @@ def estimate_tokens(text: str) -> int:
 
 def _classify(path: str, *, style: str) -> str:
     """What kind of instruction a supplied document is, relative to the stage's role."""
-    if path.startswith(f"styles/{style}/modules/") or path.startswith(f"system/style-pipelines/{style}/"):
+    if path.startswith(f"styles/{style}/"):
         return "style"
-    if path in _WRITING_REFERENCES:
-        return "supporting"
-    if path.startswith("system/contracts/") or path.startswith("system/"):
+    if path.startswith("editorial/stages/"):
+        return "stage"
+    if path.startswith("editorial/shared/"):
         return "shared"
-    if path.startswith("templates/") or path.startswith("system/rendering"):
+    if path.startswith("templates/") or path.startswith("rendering/"):
         return "rendering"
     return "other"
 
@@ -139,7 +131,6 @@ def audit_profile(profile_id: str) -> dict:
             "estimated_tokens": estimate_tokens(prompt_text),
             "templates": [entry["path"] for entry in manifest.get("templates", [])],
             "documents": documents,
-            "withheld": manifest.get("omitted", []),
             "blocks": manifest.get("blocks", []),
             "reading_instructions": _reading_instruction_report(stage_name, inspection),
             "duplicated_paragraphs": _duplicates(

@@ -1,15 +1,10 @@
 {
-  "system_template": "stages/targeted-repair/system.j2",
+  "system_template": null,
   "user_template": "stages/targeted-repair/user.j2",
   "templates": [
     {
-      "path": "prompts/stages/targeted-repair/system.j2",
-      "bytes": 165,
-      "sha256": "72052db5f949bc8eaae21af95c0f28b652dd3f9d0b5bc0e7033da6f4f0ab51fa"
-    },
-    {
       "path": "prompts/shared/preamble.j2",
-      "bytes": 463,
+      "bytes": 465,
       "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
     },
     {
@@ -25,58 +20,112 @@
   ],
   "documents": [
     {
-      "path": "system/contracts/targeted-repair.md",
-      "bytes": 2660,
-      "sha256": "2c2b49b0cb2511305a8e1a68c72fa8f1f4cf26325d76db56efbebe02b646c14e"
+      "path": "editorial/stages/targeted-repair.md",
+      "bytes": 2554,
+      "sha256": "10c45823da76537f2b0d802f92bcd928296875d37895c37212310370551fcdc1",
+      "owner": "shared stage contract"
     },
     {
-      "path": "system/contracts/reader-contract.md",
-      "bytes": 3465,
-      "sha256": "1e10114ede3352fe80efea4c669fc91e3f3da2815d49efa114b1663a626bf117"
+      "path": "editorial/shared/reader.md",
+      "bytes": 3357,
+      "sha256": "c653190e817921ec7f45a2477cb58d110342debc3d1d0eaa366339209a073a06",
+      "owner": "shared cross-cutting contract"
     }
   ],
   "instructions": [
     {
-      "path": "styles/synthesis-max/modules/04-writing-character.md",
-      "bytes": 2687,
-      "sha256": "5688f4f3d85b9c8273a87ffeda05dddfd7545bb2c7640c462aa8444b40081073"
-    },
-    {
-      "path": "system/style-pipelines/synthesis-max/review.md",
-      "bytes": 7945,
-      "sha256": "65a6445d9e400efa0f4f2f293c0447322a9ff7aceecde4a42267e872e9783fe3"
+      "path": "styles/synthesis-max/stages/targeted-repair.md",
+      "bytes": 5427,
+      "sha256": "00fa6ccf2a1d17fcdc333e807eaeb4d664baf5b4bccb7dbb2026ba47e67ec15b",
+      "owner": "style-specific stage specialization"
     }
   ],
   "blocks": [
     {
       "tag": "source_corpus",
-      "bytes": 1949
+      "bytes": 1949,
+      "source": {
+        "kind": "evidence-projection",
+        "requested_policy": "frame",
+        "effective_policy": "frame-selection",
+        "source_count": 4,
+        "source_numbers": [
+          1,
+          2,
+          3,
+          5
+        ],
+        "declared_source_numbers": [
+          1,
+          2,
+          3,
+          5
+        ],
+        "missing_source_numbers": [],
+        "recovery": null,
+        "warning": null,
+        "bytes": 1949,
+        "catalog_provenance_numbers": [
+          1,
+          2,
+          3,
+          5
+        ],
+        "units": [
+          {
+            "unit_id": "T1",
+            "disposition": "keep",
+            "retained": true,
+            "selected_source_numbers": [
+              1,
+              2
+            ]
+          },
+          {
+            "unit_id": "T2",
+            "disposition": "keep",
+            "retained": true,
+            "selected_source_numbers": [
+              3,
+              5
+            ]
+          }
+        ]
+      },
+      "purpose": "stage-permitted source evidence"
     },
     {
       "tag": "previous_stage_artifact",
-      "bytes": 332
+      "bytes": 332,
+      "source": {
+        "stage": "line-edit",
+        "path": ".digest-runs/synthetic/line-edit/output/line-edit.md",
+        "provenance": "runner"
+      },
+      "purpose": "prior artifact or digest reading instructions"
     },
     {
       "tag": "reading_instructions",
-      "bytes": 1030
+      "bytes": 1030,
+      "source": {
+        "path": "digests/tech-bi-daily.md",
+        "sections": [
+          "Reader"
+        ],
+        "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"
+      },
+      "purpose": "prior artifact or digest reading instructions"
     },
     {
       "tag": "stage_task",
-      "bytes": 592
+      "bytes": 592,
+      "source": {
+        "path": "prompts/shared/task.j2"
+      },
+      "purpose": "immediate task and output contract"
     }
   ],
-  "omitted": [
-    "styles/synthesis-max/modules/01-style-interface.md",
-    "styles/synthesis-max/modules/02-writing-reference-profile.md",
-    "styles/synthesis-max/modules/03-synthesis-mode.md",
-    "styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md",
-    "styles/synthesis-max/modules/06-length-and-density.md",
-    "styles/synthesis-max/modules/07-required-structure.md",
-    "styles/synthesis-max/modules/08-citations.md",
-    "styles/synthesis-max/modules/09-final-source-catalog.md",
-    "styles/synthesis-max/modules/10-ending-rules.md",
-    "styles/synthesis-max/modules/11-quality-control.md"
-  ],
-  "system_bytes": 17220,
+  "omitted": [],
+  "system_bytes": 12135,
   "user_bytes": 4043
 }

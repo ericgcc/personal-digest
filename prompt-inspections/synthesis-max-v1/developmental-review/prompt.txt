@@ -166,8 +166,8 @@ The digest is written in **English**. Judge it in its own language. Write your J
 | **Composition unit** | A reader-understandable concrete topic, question, mechanism, development, or tension explained through at least two substantively contributing sources. |
 | **Source relationship** | Cross-source synthesis is mandatory in every narrative thread. Prefer two or three sources. Four are permitted only when each one has a distinct, explainable role in the same concrete subject. No thread may declare more than four contributing sources. Single-source threads are not permitted. |
 | **Selection model** | Highly selective: include material that contributes enough information, explanatory power, practical significance, novelty, or relationship value to justify space. |
-| **Depth model** | Variable-high depth across a dense three-to-five-minute body, normally 700–1,200 words excluding the catalog. |
-| **Organization model** | Big Picture opening → one to four numbered synthesized threads determined by the evidence; use fewer when the corpus cannot support honest multi-source grouping, and when no thread qualifies at all publish the explicit catalog-only edition. |
+| **Depth model** | Variable-high depth within the resolved body budget, excluding the catalog. |
+| **Organization model** | Big Picture opening → evidence-supported numbered synthesized threads within the resolved unit and source bounds; use fewer when the corpus cannot support honest multi-source grouping, and when no thread qualifies at all publish the explicit catalog-only edition. |
 | **Progression model** | Each thread develops from concrete orientation → integrated explanation and source contributions → supported synthesis or implication, with material ordered by the explanation rather than by source. |
 | **Opening behavior** | Required `THE BIG PICTURE` opening whose first duty is clear orientation; add cross-source interpretation only when it makes the picture easier to understand. |
 | **Body behavior** | Numbered thematic threads with a deck, synthesis prose, claim-level citations, and source notes. |
@@ -179,17 +179,7 @@ The digest is written in **English**. Judge it in its own language. Write your J
 
 ## What this style's review must check
 
-# Synthesis MAX — Review and revision
-
-**Stages:** `developmental-review`, `writer-revision`, `line-edit`, `reader-review`, `targeted-repair` · **Style:** `synthesis-max` · **Profile:** `synthesis-max-v1`
-
-This document is operational. It states what the *review and revision* stages are responsible for in this style, and what they must protect. `styles/synthesis-max.md` remains authoritative for the style's identity and output requirements. Each stage's own contract remains authoritative for its role.
-
-It reaches five stages. `writer-revision`, `line-edit` and `targeted-repair` receive it as an instruction document. `developmental-review` and `reader-review` receive it as the `review` contract their prompt is built from, so a style-specific diagnosis reaches the judge.
-
----
-
-## The invariant that governs all of these stages
+## The invariant that governs this stage
 
 > **The explanation is the product. Do not trade it for apparent concision, and do not trade it for apparent completeness.**
 
@@ -221,17 +211,11 @@ The frame defect row is the one that changes the pipeline's behaviour: when a th
 
 ---
 
-## What each stage may and may not do
+## What this stage may and may not do
 
 | Stage | May | May not |
 | --- | --- | --- |
 | `developmental-review` | Diagnose the draft against the frame in canonical problem types; identify a thread whose relationship is asserted rather than explained; record a frame defect where the allocation cannot carry the plan. | Rewrite. The reviewer diagnoses; it does not supply prose. |
-| `writer-revision` | Act on the **highest-impact** diagnosed problems, in the review's priority order; restore orientation, mechanism, and causal bridges from the frame-selected evidence. | Invent a different synthesis, introduce an undeclared source, add a claim the projected evidence does not support, or grow the document to cover every finding. A retrieved writing operation is applied only when it addresses an actual finding; the operations are candidates, not a checklist. |
-| `line-edit` | Improve clarity, voice, naturalness, rhythm, transitions, redundancy and length discipline. | Remove a definition, a causal bridge, a qualification or a piece of orientation in order to shorten the piece. A shorter passage is not automatically a better one: precision, not brevity, is the goal. |
-| `reader-review` | Assess the prose as a reader against the same effective Reader Brief the writing stages used, and detect anything the line edit materially regressed — lost context, weakened explanations, new ambiguity, unexplained terminology, or a damaged source relationship. | Retrofit a different interpretation onto prose it did not produce, or ask for a claim the frame never authorised. |
-| `targeted-repair` | Repair one diagnosed reader-facing problem, at one location, in one pass, without reopening source selection. | Re-open the document's composition, re-plan a thread, or change the selection. |
-
----
 
 ## What these stages must preserve
 
@@ -250,7 +234,6 @@ The frame defect row is the one that changes the pipeline's behaviour: when a th
 * Do not introduce operational, cost or pipeline data into reader-facing prose.
 * Do not weaken the inherited quality floor in `styles/editorial-base.md` to satisfy a style habit, and do not weaken the reader contract to satisfy a style habit.
 * Do not resolve a diagnosed problem by adding instructions to every other stage. Identify the originating stage and make the smallest change that addresses it.
-
 
 ## Domain accessibility in synthesis
 Synthesis MAX combines material that may carry different specialist vocabularies and assumed contexts. Write for an intelligent reader who is not necessarily familiar with any of those domains. The reader should gain access to the sources through the synthesis, not need prior access to understand it.

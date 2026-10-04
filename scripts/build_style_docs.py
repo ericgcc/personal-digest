@@ -1,9 +1,8 @@
-"""Generate ``styles/<style>.md`` from the authoritative style modules.
+"""Maintain the non-runtime readable style reference and its archived modules.
 
-The prompt migration makes the style's rules individually addressable: a stage references the module
-that carries the rule it needs instead of asking a Markdown heading to act as an identifier.
-The readable ``styles/<style>.md`` document is retained as the style's specification, and it
-is *generated* from those modules so the two can never drift apart.
+These files preserve the pre-convention style documents for maintainers and migration evidence.
+They are outside the runtime instruction roots. Executable style procedure lives in
+``styles/<style>/stages/`` and declarative values live in ``styles/<style>/style.yaml``.
 
 Layout::
 
@@ -24,8 +23,8 @@ Usage::
     python scripts/build_style_docs.py --check     # verify, change nothing (CI / preflight)
     python scripts/build_style_docs.py             # write style.yaml + <style>.md
 
-The generator is deliberately a normal script rather than a package module: it runs at
-maintenance time, never during a run, and the runtime reads only the manifest and modules.
+The generator runs only at maintenance time. Runtime prompt composition never reads these
+modules or the generated readable document.
 """
 
 from __future__ import annotations

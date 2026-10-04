@@ -9,18 +9,18 @@ A digest is assembled from separate layers with different responsibilities:
 | Workflow | `system/workflow.md` | Shared execution, state, safety, routing, precedence, and delivery. |
 | Editorial process | `system/editorial-process.md` | Shared autonomous production method: SELECT → ANALYZE → FRAME → DRAFT → DEVELOPMENTAL REVIEW → WRITER REVISION → LINE EDIT → READER REVIEW → [TARGETED REPAIR] → COPY & VERIFY. |
 | Editorial pipeline v2 | `system/editorial-pipeline-v2.md` | The v2 stages, the per-stage context matrix, evidence projection, adapters, and failure semantics. |
-| Stage contracts | `system/contracts/` | What each v2 stage receives, decides, and must not do. |
+| Stage contracts | `editorial/stages/` | What each current stage receives, decides, and must not do. |
 | Runtime configuration | `system/runtime.json` | Active pipeline, the WOPS project root, and the Python interpreter per component. |
-| Style contract | `system/style-contract.md` | Interface every canonical style must implement; validates architectural completeness without imposing one output shape. |
-| Editorial base | `styles/editorial-base.md` | Shared prose quality floor: clarity, specificity, rhythm, naturalness, honesty, economy, reader interest, and editing standard. |
-| Writing references | `system/writing-*.md` | Shared reasoning, source-fidelity, editorial-prose, naturalness, and style-application guidance used by the editorial process; these refine craft without redefining the selected style. |
-| Style | `styles/<style>/modules/*.md` + `styles/<style>.md` | The editorial implementation: composition, source relationship, depth, structure, provenance, and distinct Writing character. The modules are authoritative; the readable document is generated from them. |
-| Style profile | `prompts/profiles/<profile-id>.yaml` | Which style modules and stage documents each stage receives. A profile selects files, never Markdown headings. |
+| Style interface | `styles/<style>/interface.md` | The selected style's purpose, composition model, structure, voice, and editorial boundaries. |
+| Shared editorial contracts | `editorial/shared/` | Purpose-specific reader, evidence, revision, verification, and prose contracts shared by declared stages. |
+| Style stage instructions | `styles/<style>/stages/` | Optional style-specific behavior for a particular stage. |
+| Style constraints | `styles/<style>/style.yaml` | Declarative composition, evaluation, and rendering values used by prompts and validators. |
+| Style profile | `prompts/profiles/<profile-id>.yaml` | Execution policy such as frame failure behavior; instruction routing is resolved by convention. |
 | Stage prompt templates | `prompts/stages/<stage>/{system,user}.j2` | How a stage's instruction is framed. Rendered by Jinja2 with strict undefined variables. |
 | Digest config | `digests/<digest-id>.md` | Which digest this is, what sources it uses, and its four optional reading-instruction sections. |
-| Reading instructions | `system/contracts/reading-instructions.md` | What each reading-instruction section may influence, precedence, and the stage routing. |
+| Reading instructions | `docs/architecture/reading-instructions.md` | What each reading-instruction section may influence, precedence, and stage routing. This is parser and architecture documentation, not a runtime prompt. |
 | Adapter | `adapters/<adapter>.md` | How a particular source type must be read. |
-| Rendering profile | `system/rendering-<style>.md` | How a style maps into HTML. |
+| Rendering profile | `styles/<style>/rendering.md` | How a style maps into HTML. |
 | Template | `templates/<style>-email-v1.html` | Canonical HTML composition for that style. |
 | Theme | `templates/email-theme.html` | Shared visual primitives and family resemblance. |
 | Registry | `system/registry.yaml` | Connects digest IDs and styles to their files. |
@@ -160,7 +160,7 @@ warranted.
 
 All four sections are optional. An empty body is valid and runs with the style's normal editorial behavior and the default general reader. An unrecognized `##` heading, a duplicate canonical heading, or prose outside a section is a **preflight error**, so a preference that cannot be routed is reported before a paid run rather than silently dropped.
 
-The full contract — what each section may influence, what it cannot override, precedence, and the stage routing — is `system/contracts/reading-instructions.md`.
+The full contract — what each section may influence, what it cannot override, precedence, and the stage routing — is `docs/architecture/reading-instructions.md`.
 
 ### What each section may influence
 
@@ -207,7 +207,7 @@ in every framework. Explain framework-specific terms where they first matter.
 Reading instructions refine the digest **inside the selected style**. They must not:
 
 * weaken the shared editorial-base quality floor or skip/reorder mandatory stages in `system/editorial-process.md`;
-* weaken `system/contracts/reader-contract.md`, which defines what the reader must be able to understand;
+* weaken `editorial/shared/reader.md`, which defines what the reader must be able to understand;
 * turn `concise` or `detailed` into cross-source synthesis;
 * force `curated-discovery` to search for connections or themes merely because they exist;
 * remove a required `Sources` catalog from a style that requires one;
@@ -232,16 +232,15 @@ digests:
 The Digest System defines what happens when a digest is invoked. Daily/weekly/bi-daily execution cadence must be configured in the caller or automation that invokes the system.
 
 ## 5. Confirm the selected style is fully wired
-Every deliverable style must have all four pieces:
+Every deliverable style must have these runtime pieces:
 
 ```text
-styles/<style>.md              (generated from styles/<style>/modules/ by scripts/build_style_docs.py)
-styles/<style>/style.yaml      (the module manifest)
-styles/<style>/modules/*.md    (the authoritative rules)
-prompts/profiles/<style>-legacy.yaml
-system/rendering-<style>.md
+styles/<style>/interface.md
+styles/<style>/stages/*.md     (purpose-specific procedure; optional per stage)
+styles/<style>/style.yaml      (declarative constraints and runtime paths)
+styles/<style>/rendering.md
 templates/<style>-email-v1.html
-system/registry.yaml -> rendering_profiles.<style>
+prompts/profiles/<profile>.yaml (execution policy only)
 ```
 
 The canonical style ID must be identical in all of these locations. If any piece is missing, the workflow stops rather than borrow another style's template.
@@ -314,21 +313,19 @@ The field is a preflight error when the selected style has no source catalog or 
 ## 10. Add a new canonical style
 A new style is a new editorial implementation, not just a prompt variant.
 
-Before registering it, read `system/style-contract.md` and create `styles/<style>.md` with a complete `## Style interface`. Every style must explicitly declare its purpose, composition unit, source relationship, selection/depth/organization models, **progression model**, opening/body behavior, provenance, source catalog, ending behavior, Writing character, and optional extension points.
+Before registering it, create `styles/<style>/interface.md` with the style's purpose, composition unit, source relationship, selection/depth/organization models, progression model, opening/body behavior, provenance, source catalog, ending behavior, Writing character, and optional extension points.
 
-Then add a dedicated `## Writing character` section and style-specific `## Quality control`. The style automatically inherits `styles/editorial-base.md` and uses `system/editorial-process.md`; do not copy the base/process wholesale or create a separate competing production method. Add only what makes this style's voice and editorial behavior distinct.
-
-Run `python scripts/build_style_docs.py` to split the readable document into one module per `##` section under `styles/<style>/modules/` and write `styles/<style>/style.yaml`. The modules become the authoritative rules; the readable document is regenerated from them. A profile then names the modules a stage receives — drafting receives the composition modules, the prose stages receive the writing-character module, and the evaluation stages receive the interface module. `python scripts/build_style_docs.py --check` fails if the document and its modules have drifted apart.
+Add a purpose-specific file under `styles/<style>/stages/` only where the style has a genuine stage-specific procedure. Put numeric limits, budgets, validation selection, evaluation configuration and rendering paths in `style.yaml`; do not duplicate those values in prose. The style inherits the applicable contracts under `editorial/shared/`.
 
 A style may legitimately declare `Opening behavior: None`, `Source catalog: None`, or `Optional extension points: None`. The interface standardizes the questions, not the answers.
 
 Finally, wire the visual implementation:
 
-1. Create `system/rendering-<style>.md`.
+1. Create `styles/<style>/rendering.md`.
 2. Create `templates/<style>-email-v1.html` using `templates/email-theme.html` as the visual language. Every reader-facing literal must be an explicit localization placeholder; do not hard-code English labels into the template.
-3. Add `rendering_profiles.<style>` to `system/registry.yaml`.
+3. Add an execution profile under `prompts/profiles/` if the style needs a selectable policy.
 4. Verify that the rendering profile/template implement the style's actual structure rather than copying another style's composition.
-5. Run the style-contract validation before using it in a digest.
+5. Run preflight and prompt inspection before using the style in a digest.
 
 A style that lacks any of these pieces is not runnable and should fail preflight before Gmail is touched.
 
@@ -339,9 +336,9 @@ Before enabling a new digest, verify:
 - [ ] `language` is present, recognizable, and can be mapped to a valid HTML language tag;
 - [ ] the rendered subject contains one natural localized digest/summary descriptor;
 - [ ] `style` is one of the canonical style IDs;
-- [ ] `system/registry.yaml` resolves `defaults.style_contract`, `defaults.editorial_process`, and `defaults.editorial_base`;
-- [ ] the selected style implements every required `## Style interface` dimension, including `Progression model`, plus dedicated `## Writing character` and `## Quality control` sections;
-- [ ] the style has a matching style file, rendering profile, registry mapping, and non-empty template;
+- [ ] every current stage contract and every shared contract named by the convention resolver exists;
+- [ ] the selected style has a complete `interface.md`, valid declarative constraints in `style.yaml`, and purpose-specific stage files where needed;
+- [ ] the style has matching rendering instructions and a non-empty template declared in `style.yaml`;
 - [ ] Gmail labels are correct;
 - [ ] every adapter exists and matches the source structure;
 - [ ] every configured `acquisition_filters` key is explicitly supported by the selected adapter and has intentional values;

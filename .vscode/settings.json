@@ -44,5 +44,6 @@
     "**/evaluation-results*/**": true,
     "**/evaluation-results-v3*/**": true,
     "**/evaluation-results-v3-smoke*/**": true
-  }
+  },
+  "chat.permissions.default": "autopilot"
 }

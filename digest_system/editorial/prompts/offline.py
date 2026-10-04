@@ -90,42 +90,8 @@ class OfflineContext:
     def reader_brief(self) -> str:
         return self.instructions().reader_section
 
-    # --- style instructions ------------------------------------------------------------
-
-    def style_documents(self, stage_name: str) -> list[dict[str, Any]]:
-        from ...config.profiles import preflight_style_profile
-
-        preflight = self._preflight()
-        return [
-            entry.descriptor.to_dict()
-            for entry in preflight.stages.get(stage_name, {}).get("documents", [])
-            if entry.present
-        ]
-
-    def style_contracts(self, stage_name: str) -> dict[str, list[dict[str, Any]]]:
-        preflight = self._preflight()
-        resolved = preflight.stages.get(stage_name, {}).get("contracts", {})
-        return {
-            name: [entry.descriptor.to_dict() for entry in entries if entry.present]
-            for name, entries in resolved.items()
-        }
-
-    def rendering_documents(self) -> list[dict[str, Any]]:
-        return [{"path": self.profile.rendering["rules"]}, {"path": self.profile.rendering["template"]}]
-
     def stage_excluded_sections(self, stage_name: str) -> list[str]:
-        from ...config.profiles import excluded_sections
-
-        return excluded_sections(
-            profile=self.profile, stage=stage_name, style_headings=self._preflight().style_headings
-        )
-
-    def _preflight(self):
-        if not hasattr(self, "_preflight_result"):
-            from ...config.profiles import preflight_style_profile
-
-            self._preflight_result = preflight_style_profile(self.profile, root=self.root)
-        return self._preflight_result
+        return []
 
     # --- data blocks -------------------------------------------------------------------
 
@@ -433,13 +399,13 @@ def seed_artifacts(context: OfflineContext, *, stages: list[str] | None = None) 
 
 def stage_inputs(stage_name: str, context: OfflineContext) -> dict[str, Any]:
     """Everything one stage's prompt needs: its documents, projection and blocks."""
-    from .assembler import assemble_documents, assemble_evaluation_contracts
+    from .convention_context import assemble_convention_contracts, assemble_convention_documents
 
     stage = stage_v2(stage_name)
     documents = (
-        assemble_evaluation_contracts(stage, context, root=context.root)
+        assemble_convention_contracts(stage, context, root=context.root)
         if stage.executor == "evaluation"
-        else assemble_documents(stage, context, root=context.root)
+        else assemble_convention_documents(stage, context, root=context.root)
     )
     frame = context.artifacts.get("frame").json if context.artifacts.get("frame") else None
     analysis = context.artifacts.get("analyze").json if context.artifacts.get("analyze") else None

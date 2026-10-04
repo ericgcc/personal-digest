@@ -474,18 +474,15 @@ def test_a_replay_run_records_its_mode():
 
 
 def test_every_prompt_change_is_classified():
-    result = _run([str(SCRIPTS / "prompt_diff.py"), "--json"])
+    result = _run([str(SCRIPTS / "prompt_migration_gate.py"), "--json"])
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
-    unapproved = [row for row in payload["rows"] if row["status"] == "instruction-change"]
-    assert not unapproved, "unapproved instruction changes:\n" + "\n".join(
-        f"{row['profile']}/{row['stage']} ({row.get('document')})" for row in unapproved
-    )
-    assert len(payload["rows"]) == 40
+    assert payload["ok"] is True, "unclassified prompt differences"
+    assert payload["unclassified"] == 0
 
 
 def test_the_prompt_parity_check_passes():
-    result = _run([str(SCRIPTS / "check_prompt_parity.py")])
+    result = _run([str(SCRIPTS / "prompt_migration_gate.py")])
     assert result.returncode == 0, result.stdout + result.stderr
 
 
@@ -494,10 +491,24 @@ def test_the_prompt_parity_check_passes():
 # ---------------------------------------------------------------------------------------
 
 
-def test_the_recorded_prompt_baseline_is_current():
-    """The committed offline baseline matches a fresh composition, via the script's --check."""
-    result = _run([str(SCRIPTS / "capture_prompt_baseline.py"), "--check"])
-    assert result.returncode == 0, result.stdout + result.stderr
+def test_the_recorded_prompt_baseline_is_frozen():
+    """The pre-migration baseline is historical evidence and must not be regenerated.
+
+    It is the reference the behavioral gate compares against. Regenerating it from the current
+    implementation would make the gate compare the implementation with itself, so this test
+    asserts it still records the pre-migration composition rather than a fresh one.
+    """
+    payload = json.loads(
+        (ROOT / "tests" / "fixtures" / "prompt_migration" / "prompt-baseline.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert payload["generated_by"] == "scripts/capture_prompt_baseline.py"
+    assert payload["schema_version"] == 1
+    # The baseline records the legacy document paths; the candidate uses the new tree.
+    draft = payload["profiles"]["synthesis-max-v1"]["draft"]["system_text"]
+    assert "system/contracts/draft.md" in draft
+    assert "editorial/stages/draft.md" not in draft
 
 
 def test_the_recorded_prompt_inspections_are_current():

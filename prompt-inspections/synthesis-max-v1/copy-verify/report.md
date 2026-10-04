@@ -2,62 +2,35 @@
 
 - Digest: `tech-bi-daily`
 - Style: `synthesis-max`
-- Profile: `synthesis-max-v1` v2.0.0 (active)
+- Profile: `synthesis-max-v1` v2.1.0 (active)
 - Stage: `copy-verify` (executor `copy-verify`)
 - Message: system + user
 
 ## Templates
 
-- `prompts/stages/copy-verify/system.j2` — 108 units, sha256 `0a510af0dbf6`
-- `prompts/shared/preamble.j2` — 463 units, sha256 `8f60794abad6`
+- `prompts/shared/preamble.j2` — 465 units, sha256 `8f60794abad6`
 - `prompts/stages/copy-verify/user.j2` — 151 units, sha256 `efa5901b9eed`
 - `prompts/shared/task.j2` — 992 units, sha256 `d12ba969b789`
 
 ## Instruction documents
 
-- `system/contracts/copy-verify.md` — 5488 chars, sha256 `52715e882c92`
+- `editorial/stages/copy-verify.md` — 5362 chars; owner: shared stage contract; sha256 `c4694b00d39b`
 
 ## Style-supplied instructions
 
-- `styles/synthesis-max/modules/01-style-interface.md` — 2850 chars, sha256 `35e389151e7a`
-- `styles/synthesis-max/modules/07-required-structure.md` — 4022 chars, sha256 `8bc77aca136c`
-- `styles/synthesis-max/modules/06-length-and-density.md` — 1518 chars, sha256 `72af0519f874`
-- `styles/synthesis-max/modules/08-citations.md` — 1576 chars, sha256 `cdeee64d04c3`
-- `styles/synthesis-max/modules/09-final-source-catalog.md` — 3170 chars, sha256 `b738bba98859`
-- `styles/synthesis-max/modules/10-ending-rules.md` — 313 chars, sha256 `8a33057172b6`
-
-## Deliberately omitted style modules
-
-- `styles/synthesis-max/modules/02-writing-reference-profile.md`
-- `styles/synthesis-max/modules/03-synthesis-mode.md`
-- `styles/synthesis-max/modules/04-writing-character.md`
-- `styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md`
-- `styles/synthesis-max/modules/11-quality-control.md`
+- `styles/synthesis-max/stages/copy-verify.md` — 10108 chars; owner: style-specific stage specialization; sha256 `418c857f531f`
+- `styles/synthesis-max/interface.md` — 2758 chars; owner: style interface declaration; sha256 `be4b146191d8`
+- `styles/synthesis-max/style.yaml` — 808 chars; owner: declarative style constraints; sha256 `5d6de26ddacf`
 
 ## Data blocks
 
-- `source_corpus` — 2215 chars
-- `reading_instructions` — 760 chars
-- `deterministic_check_findings` — 34 chars
-- `approved_frame_citations` — 65 chars
-- `stage_task` — 567 chars
+- `source_corpus` — 2215 chars; stage-permitted source evidence; source `{"bytes": 2215, "declared_source_numbers": [], "effective_policy": "provenance", "kind": "evidence-projection", "missing_source_numbers": [], "recovery": null, "requested_policy": "provenance", "source_count": 5, "source_numbers": [1, 2, 3, 4, 5], "warning": null}`
+- `reading_instructions` — 760 chars; prior artifact or digest reading instructions; source `{"path": "digests/tech-bi-daily.md", "sections": ["Optional highlights"], "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"}`
+- `deterministic_check_findings` — 34 chars; stage-specific runtime input; source `{"kind": "executor-derived"}`
+- `approved_frame_citations` — 65 chars; stage-specific runtime input; source `{"kind": "executor-derived"}`
+- `stage_task` — 567 chars; immediate task and output contract; source `{"path": "prompts/shared/task.j2"}`
 
 ## Sizes
 
-- System: 19402 units
+- System: 19828 units
 - User: 1598 units
-
-## Style modules
-
-- Document: `styles/synthesis-max.md` (generated from `styles/synthesis-max/modules`)
-  - `styles/synthesis-max/modules/01-style-interface.md` — ## Style interface
-  - `styles/synthesis-max/modules/02-writing-reference-profile.md` — ## Writing reference profile
-  - `styles/synthesis-max/modules/03-synthesis-mode.md` — ## Synthesis mode
-  - `styles/synthesis-max/modules/04-writing-character.md` — ## Writing character
-  - `styles/synthesis-max/modules/05-domain-accessibility-in-synthesis.md` — ## Domain accessibility in synthesis
-  - `styles/synthesis-max/modules/06-length-and-density.md` — ## Length and density
-  - `styles/synthesis-max/modules/07-required-structure.md` — ## Required structure
-  - `styles/synthesis-max/modules/08-citations.md` — ## Citations
-  - `styles/synthesis-max/modules/09-final-source-catalog.md` — ## Final source catalog
-  - `styles/synthesis-max/modules/10-ending-rules.md` — ## Ending rules
-  - `styles/synthesis-max/modules/11-quality-control.md` — ## Quality control

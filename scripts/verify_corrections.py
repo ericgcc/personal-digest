@@ -40,8 +40,6 @@ from _maintenance import configure_stdio  # noqa: E402
 configure_stdio()
 
 V1 = STYLE_PROFILES["synthesis-max-v1"]
-# The Synthesis MAX refinement retired the legacy profile. Any surviving legacy profile still shows the
-# contrast between the legacy frame-failure policy and v1's.
 LEGACY = STYLE_PROFILES["detailed-legacy"]
 
 
@@ -198,8 +196,8 @@ def main() -> int:
         assembled = assemble_stage_context(stage_name=stage, profile=V1, digest_config_relative="digests/tech-bi-daily.md")
         documents[stage] = sum(entry["bytes"] for entry in assembled["manifest"])
     stage_doc_bytes = sum(
-        len((ROOT / "system" / "style-pipelines" / "synthesis-max" / name).read_text(encoding="utf-8"))
-        for name in ("analyze.md", "frame.md", "draft.md", "review.md")
+        len((ROOT / "styles" / "synthesis-max" / "stages" / name).read_text(encoding="utf-8"))
+        for name in ("analyze.md", "frame.md", "draft.md", "developmental-review.md", "reader-review.md")
     )
     analyze_text = assemble_stage_context(
         stage_name="analyze", profile=V1, digest_config_relative="digests/tech-bi-daily.md"
@@ -220,8 +218,8 @@ def main() -> int:
     row(
         "7",
         "the review obligations reach both evaluation stages",
-        f"developmental-review={evaluation['developmental-review']} bytes, reader-review={evaluation['reader-review']} bytes "
-        f"(legacy declares none: {'review' not in LEGACY.stages['reader-review'].contracts})",
+        f"developmental-review={evaluation['developmental-review']} bytes, "
+        f"reader-review={evaluation['reader-review']} bytes",
     )
 
     # --- report -------------------------------------------------------------------------

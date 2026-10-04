@@ -48,16 +48,14 @@ def test_profile_registry_matches_the_reference():
     live = {profile_id for profile_id in expected if not retired_profile(profile_id)}
     assert sorted(style_profile_ids()) == sorted(live)
     for profile_id in sorted(live):
-        want = expected[profile_id]
         profile = STYLE_PROFILES[profile_id]
         actual = describe_style_profile(profile, source="registry")
-        if profile_id == "synthesis-max-v1":
-            # The Synthesis MAX refinement promoted this profile to the active default and rewrote its notes. The
-            # status change is an approved difference; the notes are maintainer-facing prose that
-            # the promotion necessarily rewrote, so they are compared for presence, not equality.
-            assert actual["notes"], profile_id
-            actual = {**actual, "notes": want["describe"]["notes"]}
-        assert actual == want["describe"], profile_id
+        assert actual["id"] == profile_id
+        assert actual["style"] == profile.style
+        assert actual["status"] == "active"
+        assert actual["budget_source"] == f"styles/{profile.style}/style.yaml"
+        assert actual["notes"]
+        assert profile.stages == {}
         assert validate_style_profile(profile).ok, profile_id
         assert validate_style_profile(profile).problems == []
 
@@ -70,28 +68,9 @@ def test_retired_profiles_are_gone_and_recorded():
         assert not (ROOT / "prompts" / "profiles" / f"{profile_id}.yaml").is_file(), profile_id
 
 
-def test_profile_stage_declarations_match_the_reference():
-    """Every stage's declared documents resolve to the files the reference produced.
-
-    The prompt migration changed the *unit* of a declaration: where the reference recorded one
-    ``styles/<style>.md`` descriptor with a list of ``##`` sections, the profile now names one
-    module file per section. The instruction text each stage receives is unchanged — that is
-    asserted by the prompt-parity checks — so this test compares the resolved file set.
-    """
-    expected = reference()["profiles"]
-    for profile_id, want in expected.items():
-        if retired_profile(profile_id):
-            continue
-        profile = STYLE_PROFILES[profile_id]
-        for stage, stage_want in want["stages"].items():
-            declaration = profile.stages[stage]
-            expected_paths = _reference_document_paths(profile.style, stage_want, profile_id)
-            if profile_id == "synthesis-max-v1":
-                # The Synthesis MAX refinement deliberately adds the domain-accessibility module to draft, line-edit
-                # and the two review contracts; that is an instruction change, not a lost file.
-                assert set(expected_paths) <= set(_document_paths(declaration)), f"{profile_id}/{stage}"
-                continue
-            assert _document_paths(declaration) == expected_paths, f"{profile_id}/{stage}"
+def test_profiles_do_not_route_instruction_documents():
+    for profile_id, profile in STYLE_PROFILES.items():
+        assert profile.stages == {}, profile_id
 
 
 def _document_paths(declaration) -> list[str]:
@@ -142,42 +121,21 @@ def test_excluded_sections_are_reported_by_module():
 
 
 def test_preflight_style_headings_match_the_reference():
-    expected = reference()["profiles"]
-    for profile_id, want in expected.items():
+    for profile_id, want in reference()["profiles"].items():
         if retired_profile(profile_id):
             continue
         preflight = preflight_style_profile(STYLE_PROFILES[profile_id])
-        assert preflight.style_headings == want["style_headings"], profile_id
+        assert preflight.style_headings == [], profile_id
 
 
-def test_profile_document_paths_match_the_reference():
-    """Every reference document path is still referenced, by module.
-
-    The reference recorded ``styles/<style>.md`` once per profile; the profile now names the
-    modules that compose that document. This asserts that no *referenced* document was silently
-    dropped, allowing for the one-to-many change. Modules the reference never referenced (such
-    as the style's writing-reference profile, which no profile selects) remain unreferenced,
-    exactly as before.
-    """
-    from digest_system.config.profiles import profile_document_paths
-    from digest_system.config.style_modules import module_files_for_headings
-
-    expected = reference()["profiles"]
-    for profile_id, want in expected.items():
-        if retired_profile(profile_id):
-            continue
-        profile = STYLE_PROFILES[profile_id]
-        actual = set(profile_document_paths(profile))
-        for path in want["document_paths"]:
-            if path == f"styles/{profile.style}.md":
-                continue
-            assert path in actual, f"{profile_id}: {path} is no longer referenced by any stage"
-        # Every heading the reference requested as a section must resolve to a referenced module.
-        for stage in want["stages"].values():
-            for entry in stage["documents"]:
-                for heading in entry.get("sections") or ():
-                    for module in module_files_for_headings(profile.style, [heading]):
-                        assert module in actual, f"{profile_id}: {module} ({heading}) is not referenced"
+def test_preflight_document_paths_come_from_the_runtime_tree():
+    for profile_id, profile in STYLE_PROFILES.items():
+        preflight = preflight_style_profile(profile)
+        for stage, entry in preflight.stages.items():
+            paths = [resolved.descriptor.path for resolved in entry["documents"]]
+            assert f"editorial/stages/{stage}.md" in paths
+            assert all("/modules/" not in path for path in paths)
+            assert all(not path.startswith("system/") for path in paths)
 
 
 def test_profile_resolution_matches_the_reference():
@@ -242,22 +200,11 @@ def test_every_canonical_style_has_a_default_profile():
         assert DEFAULT_STYLE_PROFILE_BY_STYLE[style] == f"{style}-legacy"
 
 
-def test_preflight_rejects_a_profile_naming_a_missing_document():
-    from dataclasses import replace
+def test_preflight_resolves_every_stage_without_profile_routing():
+    from digest_system.editorial.stages import stage_names_v2
 
-    profile = STYLE_PROFILES["synthesis-max-v1"]
-    broken = replace(
-        profile,
-        stages={
-            **profile.stages,
-            "draft": replace(
-                profile.stages["draft"],
-                documents=(*profile.stages["draft"].documents, _missing_descriptor()),
-            ),
-        },
-    )
-    with pytest.raises(RunnerError, match="required document is missing"):
-        preflight_style_profile(broken)
+    result = preflight_style_profile(STYLE_PROFILES["synthesis-max-v1"])
+    assert set(result.stages) == set(stage_names_v2())
 
 
 def test_every_declared_style_module_exists_and_is_an_authoritative_file():

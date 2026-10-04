@@ -59,19 +59,37 @@ def _baseline_profile(style):
     return STYLE_PROFILES["synthesis-max-v1"] if style == "synthesis-max" else _default_profile(style)
 
 
-def _assemble(style, stage_name, profile=None):
+def _assemble(style, stage_name, profile=None, root=None):
     return assemble_stage_context(
         stage_name=stage_name,
         profile=profile or _default_profile(style),
         digest_config_relative=digest_config_path(style),
+        root=root,
     )
 
 
-def _assemble_all(profile_for=_default_profile):
+def _assemble_all(profile_for=_default_profile, root=None):
     return {
-        style: {stage: _assemble(style, stage, profile_for(style)) for stage in stage_names_v2()}
+        style: {stage: _assemble(style, stage, profile_for(style), root) for stage in stage_names_v2()}
         for style in CANONICAL_STYLES
     }
+
+
+def _isolated_root(tmp_path: Path) -> Path:
+    """A throwaway copy of the instruction tree, so a mutation test never edits the repository.
+
+    The isolation tests deliberately perturb a style file. Editing the real file would race with
+    any other test reading it — and with parallel test execution — so the perturbation happens
+    in a copy and the repository is never touched.
+    """
+    import shutil
+
+    root = tmp_path / "root"
+    for name in ("editorial", "rendering", "styles", "digests", "templates"):
+        source = ROOT / name
+        if source.exists():
+            shutil.copytree(source, root / name)
+    return root
 
 
 def _signature(assembled):
@@ -96,12 +114,11 @@ def _normalize(text: str) -> str:
 
 
 def _declared_paths(profile, stage_name) -> set[str]:
-    declaration = profile.stages[stage_name]
-    paths = {
-        descriptor.path.replace("<style>", profile.style) for descriptor in declaration.documents
-    }
-    for descriptors in declaration.contracts.values():
-        paths.update(descriptor.path.replace("<style>", profile.style) for descriptor in descriptors)
+    preflight = preflight_style_profile(profile)
+    entry = preflight.stages[stage_name]
+    paths = {resolved.descriptor.path for resolved in entry["documents"]}
+    for descriptors in entry["contracts"].values():
+        paths.update(resolved.descriptor.path for resolved in descriptors)
     return paths
 
 
@@ -114,55 +131,41 @@ def _style_modules(profile) -> set[str]:
 # ---------------------------------------------------------------------------------------
 
 
-def test_every_reference_section_still_reaches_its_stage_as_a_module():
-    """Each section the reference requested resolves to a module the stage now receives.
-
-    This is the load-bearing equivalence: a section the reference inlined is instruction text the
-    stage must still receive. Only the unit changed, from a heading inside one document to a file
-    the profile names.
-    """
-    expected = reference()["assembled"]
-    for profile_id in live_reference_profiles():
-        stages = expected[profile_id]
-        profile = STYLE_PROFILES[profile_id]
-        for stage_name, want in stages.items():
-            declared = _declared_paths(profile, stage_name)
-            for entry in want["manifest"]:
-                if entry.get("mode") not in {"sections", "contract-sections"}:
-                    continue
-                for heading in entry.get("sections", []):
-                    for module in module_files_for_headings(profile.style, [heading]):
-                        assert module in declared, (
-                            f"{profile_id}/{stage_name}: {heading} ({module}) no longer reaches the stage"
-                        )
+def test_runtime_resolution_uses_no_legacy_style_modules():
+    for profile in STYLE_PROFILES.values():
+        for stage_name in stage_names_v2():
+            paths = _declared_paths(profile, stage_name)
+            assert all("/modules/" not in path for path in paths)
+            assert all(not path.startswith("system/") for path in paths)
 
 
-def test_every_style_module_text_appears_verbatim_in_the_assembled_prompt():
+def test_every_style_stage_file_text_appears_verbatim_in_the_assembled_prompt():
     """The instruction text is unchanged; only its packaging moved.
 
-    The check is against the *current* assembled prompt, because a later phase may deliberately
-    route an additional module to a stage (The Synthesis MAX refinement routes the domain-accessibility module to
-    draft, line-edit and the review contracts). What must never happen is a module being
-    delivered with altered text.
+    Under the convention resolver a style's stage-specific procedure lives in
+    ``styles/<style>/stages/<stage>.md`` and is delivered whole. The check is against the
+    *current* assembled prompt, because a later phase may deliberately route an additional
+    shared contract to a stage. What must never happen is a style file being delivered with
+    altered text.
     """
-    for profile_id in live_reference_profiles():
-        profile = STYLE_PROFILES[profile_id]
+    for style in CANONICAL_STYLES:
         for stage_name in stage_names_v2():
-            assembled = assemble_stage_context(
-                stage_name=stage_name,
-                profile=profile,
-                digest_config_relative=digest_config_path(profile.style),
-            )
+            assembled = _assemble(style, stage_name)
+            resolved = assembled.get("resolved")
+            system_parts = resolved.system_parts() if resolved is not None else [assembled.get("text", "")]
             prompt = _normalize(
-                assembled.get("text", "")
+                "\n\n".join(system_parts)
                 + "\n\n"
                 + "\n\n".join(assembled.get("contracts", {}).values())
             )
-            for path in _declared_paths(profile, stage_name):
-                if path not in _style_modules(profile):
+            for entry in assembled["manifest"]:
+                path = entry["path"]
+                if not path.startswith(f"styles/{style}/"):
+                    continue
+                if not path.endswith(".md"):
                     continue
                 text = _normalize((ROOT / path).read_text(encoding="utf-8"))
-                assert text in prompt, f"{profile_id}/{stage_name}: {path} is not present verbatim"
+                assert text in prompt, f"{style}/{stage_name}: {path} is not present verbatim"
 
 
 def test_the_style_module_documents_are_byte_identical_to_the_notes_they_compose():
@@ -224,37 +227,21 @@ def test_excluded_sections_are_reported_by_module():
                     assert path in known, f"{profile.id}/{stage}: {path} is not a module"
 
 
-def test_analyze_still_receives_no_style_document_under_the_default_profile():
-    """The legacy profiles deliver no style document to analyze.
-
-    The Synthesis MAX refinement made the v1 profile the style's default, and v1 deliberately delivers
-    the style's selection and relationship model to analyze. Every other style's default is still
-    its legacy profile, which delivers nothing to analyze.
-    """
+def test_analyze_style_delivery_is_declared_by_each_style():
     for style in CANONICAL_STYLES:
-        profile = _default_profile(style)
-        if profile.id == "synthesis-max-v1":
-            assert profile.stages["analyze"].documents, style
-            continue
-        assert profile.stages["analyze"].documents == (), style
+        assembled = _assemble(style, "analyze")
+        paths = {entry["path"] for entry in assembled["manifest"]}
+        expected = (ROOT / "styles" / style / "stages" / "analyze.md").is_file()
+        assert (f"styles/{style}/stages/analyze.md" in paths) == expected
 
 
 def test_no_stage_silently_receives_nothing():
-    """A stage with no documents says so explicitly; a stage that declares documents delivers some.
-
-    Stages that legitimately declare nothing under the legacy profiles — analyze and render —
-    still receive their shared operational contracts, which are declared by the stage table rather
-    than the profile.
-    """
+    """Every stage resolves an instruction set or evaluation contracts."""
     for style in CANONICAL_STYLES:
-        profile = _default_profile(style)
         for stage in stage_names_v2():
-            declared = profile.stages[stage].documents
             assembled = _assemble(style, stage)
             if stage in {"developmental-review", "reader-review"}:
                 assert assembled["contracts"], f"{style}/{stage}: no contracts"
-                continue
-            if not declared:
                 continue
             assert assembled["manifest"], f"{style}/{stage}: declared documents but delivered none"
 
@@ -264,38 +251,23 @@ def test_no_stage_silently_receives_nothing():
 # ---------------------------------------------------------------------------------------
 
 
-def _perturbed_synthesis_max_profile():
-    """A copy of the Synthesis MAX profile with one stage document changed.
+def test_changing_one_styles_instructions_changes_only_that_style(tmp_path):
+    """Editing one style's stage file changes that style's context and no other.
 
-    The change is to a document only Synthesis MAX's profile supplies, so a correct
-    implementation perturbs Synthesis MAX and nothing else.
+    The perturbation is a real edit to ``styles/synthesis-max/stages/draft.md`` — the file the
+    convention resolver reads — so the sensitivity control proves the comparison can detect a
+    genuine difference rather than passing by comparing nothing to nothing. It happens in a
+    throwaway copy of the tree, so the repository is never modified.
     """
-    profile = STYLE_PROFILES["synthesis-max-v1"]
-    draft = profile.stages["draft"]
-    return replace(
-        profile,
-        stages={
-            **profile.stages,
-            "draft": replace(
-                draft,
-                documents=(
-                    *draft.documents,
-                    Descriptor(path="system/style-pipelines/synthesis-max/analyze.md"),
-                ),
-            ),
-        },
+    root = _isolated_root(tmp_path)
+    baseline = _assemble_all(_baseline_profile, root)
+    target = root / "styles" / "synthesis-max" / "stages" / "draft.md"
+    target.write_text(
+        target.read_text(encoding="utf-8") + "\n\nA perturbation only Synthesis MAX should see.\n",
+        encoding="utf-8",
     )
+    perturbed = _assemble_all(_baseline_profile, root)
 
-
-def test_changing_one_styles_instructions_changes_only_that_style():
-    baseline = _assemble_all(_baseline_profile)
-    perturbed_profile = _perturbed_synthesis_max_profile()
-    perturbed = _assemble_all(
-        lambda style: perturbed_profile if style == "synthesis-max" else _baseline_profile(style)
-    )
-
-    # The sensitivity control: the comparison must be able to detect a real difference, or the
-    # assertion below would pass by comparing nothing to nothing.
     assert _signature(perturbed["synthesis-max"]["draft"]) != _signature(baseline["synthesis-max"]["draft"]), (
         "the perturbation must change Synthesis MAX's draft context, or this test proves nothing"
     )
@@ -309,29 +281,19 @@ def test_changing_one_styles_instructions_changes_only_that_style():
             )
 
 
-def test_a_module_edit_cannot_reach_another_style():
-    """The class of leak the profile mechanism exists to remove.
+def test_a_style_stage_edit_cannot_reach_another_style(tmp_path):
+    """The class of leak the convention resolver exists to remove.
 
-    Adding a module to one style's stage declaration must not change any other style's assembled
-    context, because no stage names a module itself.
+    Editing one style's stage file must not change any other style's assembled context, because
+    no stage names another style's file.
     """
-    baseline = _assemble_all(_baseline_profile)
-    profile = STYLE_PROFILES["synthesis-max-v1"]
-    frame = profile.stages["frame"]
-    widened = replace(
-        profile,
-        stages={
-            **profile.stages,
-            "frame": replace(
-                frame,
-                documents=(
-                    *frame.documents,
-                    Descriptor(path="styles/synthesis-max/modules/08-citations.md"),
-                ),
-            ),
-        },
+    root = _isolated_root(tmp_path)
+    baseline = _assemble_all(_baseline_profile, root)
+    target = root / "styles" / "synthesis-max" / "stages" / "frame.md"
+    target.write_text(
+        target.read_text(encoding="utf-8") + "\n\nA frame perturbation.\n", encoding="utf-8"
     )
-    perturbed = _assemble_all(lambda style: widened if style == "synthesis-max" else _baseline_profile(style))
+    perturbed = _assemble_all(_baseline_profile, root)
     for style in CANONICAL_STYLES:
         if style == "synthesis-max":
             continue

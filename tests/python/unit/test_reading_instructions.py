@@ -259,6 +259,12 @@ def test_routed_sections_reach_their_stage(profile_id):
 
 
 def test_no_stage_receives_the_digest_configuration_as_a_document():
+    """The digest file is never inlined whole; only its routed sections reach a stage.
+
+    An evaluation stage's reader contract legitimately includes the digest's `## Reader`
+    section, so the manifest records the digest path for that contract — but as a contract
+    source, never as an inlined document.
+    """
     for digest_id, style in DIGESTS.items():
         profile_id = f"{style}-v1" if style == "synthesis-max" else f"{style}-legacy"
         from digest_system.config import resolve_digest
@@ -272,8 +278,15 @@ def test_no_stage_receives_the_digest_configuration_as_a_document():
                 profile=__import__("digest_system.config", fromlist=["STYLE_PROFILES"]).STYLE_PROFILES[profile_id],
                 digest_config_relative=relative,
             )
-            paths = [entry["path"] for entry in assembled["manifest"]]
-            assert relative not in paths, f"{profile_id}/{stage_name}: digest config still inlined"
+            for entry in assembled["manifest"]:
+                if entry["path"] != relative:
+                    continue
+                assert entry.get("mode") == "contract", (
+                    f"{profile_id}/{stage_name}: digest config inlined as a document"
+                )
+                assert entry.get("sections") == ["## Reader"], (
+                    f"{profile_id}/{stage_name}: the digest is delivered beyond its Reader section"
+                )
 
 
 def test_the_evaluation_reader_contract_is_the_effective_reader_brief():

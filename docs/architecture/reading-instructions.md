@@ -62,12 +62,12 @@ editorial base, the editorial process, or the reader contract.
 When two instructions disagree, the following order decides. A lower item may refine a higher
 one; it may never weaken it.
 
-1. **Shared operational contracts** — `system/workflow.md`, `system/editorial-process.md`,
-   `system/editorial-pipeline-v2.md`, `system/contracts/*.md`, and the state, provenance and
-   delivery rules.
-2. **The editorial base** — `styles/editorial-base.md`, the prose quality floor.
-3. **The selected style** — `styles/<style>/modules/` and `system/style-pipelines/<style>/`.
-4. **The reader contract** — `system/contracts/reader-contract.md`, which defines the default
+1. **The stage contract** — `editorial/stages/<stage>.md` and the state, provenance and
+   delivery rules enforced by the runtime.
+2. **Shared contracts** — the applicable files under `editorial/shared/`.
+3. **The selected style** — `styles/<style>/interface.md`, the optional purpose-specific file
+   under `styles/<style>/stages/`, and the declarative values in `styles/<style>/style.yaml`.
+4. **The reader contract** — `editorial/shared/reader.md`, which defines the default
    reader and the comprehension obligations owed to it.
 5. **The digest's reading instructions** — the four sections above, in the order
    `Reader`, `Selection`, `Content preferences`, `Optional highlights`.

@@ -25,7 +25,6 @@ from typing import Any
 from ...runtime.artifacts import ROOT
 from ..evaluation_prompts import compose_evaluation_prompts
 from ..stages import stage_names_v2, stage_v2
-from .assembler import assemble_evaluation_contracts
 from .compose import compose_stage_prompt
 from .offline import build_context, seed_artifacts, stage_extra_blocks, stage_inputs, synthetic_corpus
 

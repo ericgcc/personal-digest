@@ -6,6 +6,10 @@ findings, evidence projections and style isolation.
 
 from __future__ import annotations
 
+import json
+import subprocess
+import sys
+
 import pytest
 
 from digest_system.config import STYLE_PROFILES, style_profile_ids
@@ -133,28 +137,45 @@ def test_vocabularies_match_the_reference():
 # Assembled contexts
 # ---------------------------------------------------------------------------------------
 #
-# The prompt migration replaced one assembled string per stage with explicit Jinja2 templates. That changes
-# the *packaging* of a prompt — the file paths, the document wrappers and the whitespace — and
-# deliberately so, because a style rule is now a named module rather than a heading inside one
-# document. What must not change is the *instruction text*.
+# The prompt migration replaced one assembled string per stage with the convention resolver:
+# one shared stage contract, an optional focused style-stage file, the style interface where
+# the stage needs it, and the declared shared contracts. That changes the *packaging* of a
+# prompt — the file paths, the document wrappers and the whitespace — and deliberately so.
+# What must not change is the *instruction text* and its stage reach.
 #
-# These tests therefore assert content, not bytes: every instruction document's text reaches the
-# stage verbatim, the contracts an evaluation stage receives are unchanged, and the text of a
-# style rule is present exactly as the style declares it. The instruction-level comparison is
-# implemented once, in `scripts/check_prompt_parity.py`, and re-run here over every profile and
-# stage so a lost sentence is a test failure rather than a review finding.
+# The authoritative equivalence proof is `scripts/prompt_migration_gate.py`, which compares the
+# complete ordered candidate messages against the frozen pre-migration baseline and fails on any
+# unclassified addition, removal, reordering, role change or content change. These tests assert
+# that the gate passes, and that every instruction a stage resolves is a real, approved file.
+
+
+def test_the_behavioral_gate_proves_instruction_equivalence():
+    """The migration's central claim: no stage's instruction text changed silently.
+
+    The gate compares the complete ordered candidate messages (system, user and evaluation
+    contracts) against the frozen baseline. It exits non-zero on any unclassified difference, so
+    a lost or injected instruction is a test failure rather than a review finding.
+    """
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "prompt_migration_gate.py"), "--json"],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["unclassified"] == 0
+    assert payload["behavioral"] == 0
 
 
 @pytest.mark.parametrize("profile_id", live_reference_profiles())
-def test_every_instruction_document_reaches_its_stage(profile_id):
-    """Each document the reference inlined is delivered, with its text unchanged.
+def test_every_resolved_instruction_is_a_real_approved_file(profile_id):
+    """Every instruction a stage resolves exists, is delivered once, and is inside the boundary."""
+    from digest_system.editorial.prompts.instructions import is_runtime_instruction
 
-    A document whose text legitimately had to change — the stale JavaScript path in
-    ``system/style-contract.md``, which is inlined into the frame prompt — is listed in
-    ``tests/fixtures/prompt_migration/approved-prompt-changes.json``. Its change is asserted there
-    and here, so it can never be silent.
-    """
-    expected = reference()["assembled"][profile_id]
     profile = STYLE_PROFILES[profile_id]
     for stage_name in stage_names_v2():
         assembled = assemble_stage_context(
@@ -162,59 +183,21 @@ def test_every_instruction_document_reaches_its_stage(profile_id):
             profile=profile,
             digest_config_relative=digest_config_path(profile.style),
         )
-        want = expected[stage_name]
-        # The style-independent contracts are byte-identical: they are shared operational
-        # documents that no profile selects, so nothing about them may change — unless the change
-        # is recorded, in which case the reference text must still be present verbatim.
-        reference_contracts = _whole_documents(want["text"])
-        current_contracts = _whole_documents(assembled["text"])
-        for path, text in reference_contracts.items():
-            if _is_profile_supplied(path, profile):
+        paths = [entry["path"] for entry in assembled["manifest"]]
+        assert len(paths) == len(set(paths)), f"{profile_id}/{stage_name}: a document is delivered twice"
+        for entry in assembled["manifest"]:
+            path = entry["path"]
+            if path.startswith("digests/"):
                 continue
-            if _removed_document(stage_name, path):
-                # A deliberate delivery change: the document is no longer inlined, and the
-                # approval record names where its instruction moved to.
+            if entry.get("mode") == "constraints":
+                # The declarative constraints block is sourced from style.yaml, which is
+                # structured configuration rather than a Markdown instruction file.
+                assert path == f"styles/{profile.style}/style.yaml", path
                 continue
-            if _approved_instruction_change(stage_name, path):
-                assert path in current_contracts, f"{profile_id}/{stage_name}: {path} is no longer delivered"
-                continue
-            assert current_contracts.get(path) == text, f"{profile_id}/{stage_name}: {path} changed"
-
-
-@pytest.mark.parametrize("profile_id", live_reference_profiles())
-def test_evaluation_contracts_are_unchanged(profile_id):
-    """The evaluation stages hand the adapter the same contract text as before.
-
-    Whitespace is normalized: a contract is now the text of one or more module files, which end
-    with a newline, whereas the reference recorded a stripped section. That trailing newline is
-    packaging, not instruction.
-
-    The reader contract is deliberately augmented: the shared reader contract plus the digest's
-    `## Reader` section. The shared text must still be present verbatim; the digest text is the
-    addition. That augmentation is recorded, so it cannot happen silently.
-    """
-    expected = reference()["assembled"][profile_id]
-    profile = STYLE_PROFILES[profile_id]
-    for stage_name in ("developmental-review", "reader-review"):
-        assembled = assemble_stage_context(
-            stage_name=stage_name,
-            profile=profile,
-            digest_config_relative=digest_config_path(profile.style),
-        )
-        want = expected[stage_name]
-        for name, text in want["contracts"].items():
-            current = assembled["contracts"].get(name, "")
-            if _augmented_contract(stage_name, name):
-                assert _normalize(text) in _normalize(current), (
-                    f"{profile_id}/{stage_name}/{name}: the reference contract text is no longer present"
-                )
-                continue
-            if _approved_instruction_change(stage_name, f"system/style-pipelines/{profile.style}/review.md"):
-                # A recorded change to the style's review contract: the reference text is not
-                # required verbatim, but the contract must still be delivered and non-empty.
-                assert current.strip(), f"{profile_id}/{stage_name}/{name}: contract is empty"
-                continue
-            assert _normalize(current) == _normalize(text), f"{profile_id}/{stage_name}/{name}"
+            assert (ROOT / path).is_file(), f"{profile_id}/{stage_name}: {path} does not exist"
+            assert is_runtime_instruction(path, style=profile.style), (
+                f"{profile_id}/{stage_name}: {path} is outside the runtime boundary"
+            )
 
 
 @pytest.mark.parametrize("profile_id", live_reference_profiles())

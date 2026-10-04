@@ -143,21 +143,35 @@ def test_measure_context_runs_offline_and_reports_every_profile():
 
 
 def test_measure_context_matches_the_frozen_reference():
-    """Every profile and stage resolves the same instruction bytes, by document text.
+    """Every profile and stage resolves the same instruction content as the frozen reference.
 
-    The reference records one wrapper per section; the assembler now records one wrapper per
-    module. The *instruction content* is what must agree, so this compares the total size of the
-    style-independent documents exactly and confirms each profile-supplied rule is present.
+    The reference records the legacy document paths; the candidate resolves the new instruction
+    tree. The authoritative equivalence proof is the behavioral gate, which compares the complete
+    ordered candidate messages against the frozen baseline and fails on any unclassified
+    difference. This test asserts the gate passes and that every stage still resolves a
+    non-empty instruction set.
     """
+    import subprocess
+    import sys
+
     from digest_system.config import STYLE_PROFILES
     from digest_system.editorial.prompts.assembler import assemble_stage_context
     from digest_system.editorial.stages import stage_names_v2
 
-    from ..fixtures import digest_config_path, live_reference_profiles, reference
+    from ..fixtures import digest_config_path, live_reference_profiles
 
-    expected = reference()["assembled"]
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "prompt_migration_gate.py"), "--json"],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert json.loads(result.stdout)["ok"] is True
+
     for profile_id in live_reference_profiles():
-        stages = expected[profile_id]
         profile = STYLE_PROFILES[profile_id]
         for stage_name in stage_names_v2():
             assembled = assemble_stage_context(
@@ -165,21 +179,7 @@ def test_measure_context_matches_the_frozen_reference():
                 profile=profile,
                 digest_config_relative=digest_config_path(profile.style),
             )
-            current = {entry["path"]: entry["bytes"] for entry in assembled["manifest"]}
-            for entry in stages[stage_name]["manifest"]:
-                if entry["path"].startswith("styles/") or entry["path"].startswith(
-                    "system/style-pipelines/"
-                ):
-                    continue
-                # A document whose text was corrected on purpose changes size; the approved
-                # instruction-change record names it.
-                if _approved_instruction_change(stage_name, entry["path"]):
-                    continue
-                # A document deliberately no longer inlined (the digest configuration) is
-                # recorded as a removal, not a lost instruction.
-                if _removed_document(stage_name, entry["path"]):
-                    continue
-                assert current.get(entry["path"]) == entry["bytes"], f"{profile_id}/{stage_name}: {entry['path']}"
+            assert assembled["manifest"], f"{profile_id}/{stage_name}: no instruction resolved"
 
 
 def _approved_instruction_changes() -> set[tuple[str, str]]:

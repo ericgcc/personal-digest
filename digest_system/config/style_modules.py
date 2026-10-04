@@ -1,18 +1,9 @@
-"""The authoritative style module manifest.
+"""Read the archived style-module index for documentation and migration checks.
 
-The prompt migration replaces heading extraction with named files. Each style's rules live in an ordered
-set of modules under ``styles/<style>/modules/``, described by ``styles/<style>/style.yaml``,
-and the readable ``styles/<style>.md`` is generated from them by
-``scripts/build_style_docs.py``.
-
-Nothing here extracts sections from Markdown. A module *is* the rule: a profile names the
-module file a stage receives, and the module's own ``## Heading`` is ordinary editorial
-formatting that no runtime code parses. That is the whole point of the change — a style's
-prose can be reorganised without silently redirecting which instructions a stage gets.
-
-The document path and the heading are both recorded so the orchestration layer can report a
-style's declared headings (for the audit that a stage withheld something deliberately)
-without reading the document.
+The readable ``styles/<style>.md`` documents and ``styles/<style>/modules/`` preserve the
+pre-convention style specifications. They are outside the runtime instruction boundary.
+Production resolves whole purpose-specific files through ``editorial.prompts.convention``;
+this module never participates in prompt composition or preflight.
 """
 
 from __future__ import annotations

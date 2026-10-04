@@ -1,10 +1,10 @@
 """The convention-based composer: assemble a stage prompt from the new instruction tree.
 
-Architecture Phase 1 of the editorial-architecture simplification. This module resolves a
-stage's instructions **by convention**, with no profile indirection:
+This module resolves a stage's instructions **by convention**, with no profile indirection:
 
     WHAT THIS STAGE DOES          editorial/stages/<stage>.md
-    HOW THE STYLE DOES IT         styles/<style>/stages/<stage>.md
+    HOW THE STYLE DOES IT         styles/<style>/stages/<stage>.md (optional)
+    THE STYLE'S IDENTITY          styles/<style>/interface.md (shared, when the stage needs it)
     THE FEW SHARED INVARIANTS     editorial/shared/<contract>.md
     DECLARATIVE CONSTRAINTS       styles/<style>/style.yaml -> <style_constraints>
     THIS READER'S PREFERENCES     digests/<digest-id>.md (reading-instruction sections)
@@ -14,9 +14,8 @@ Every Markdown file is included **whole**. The shared contracts a stage receives
 declared here, in one table, so the complete instruction source of any model call is
 answerable by reading this module and the stage's entry in it.
 
-Phase 1 runs this composer **alongside** the legacy one: the legacy pipeline is untouched,
-and the semantic diff between the two composers is the acceptance evidence for the
-migration. Phase 2 removes the legacy path.
+A stage's style specialization is optional: a stage with no genuine style-specific
+procedure resolves the shared stage contract alone rather than a duplicate copy of it.
 """
 
 from __future__ import annotations
@@ -26,6 +25,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ...runtime.artifacts import ROOT, RunnerError
+from ..stages import STAGES_V2
 from .instructions import (
     LoadedInstruction,
     assert_runtime_instruction,
@@ -38,14 +38,15 @@ from .instructions import (
 
 #: The shared contracts each stage receives, by stage name. One owner: this table.
 #: ``reader`` is the general reader obligation; ``fidelity`` is source/factual fidelity
-#: as the reasoning reference; ``prose-quality`` is the minimal shared prose floor.
+#: as the reasoning reference; ``editorial-base`` is the cross-style quality floor;
+#: ``naturalness`` is the line-edit naturalness contract.
 SHARED_CONTRACTS_BY_STAGE: dict[str, tuple[str, ...]] = {
-    "analyze": ("reader", "fidelity"),
+    "analyze": ("fidelity",),
     "frame": ("reader",),
     "draft": ("reader", "editorial-base"),
     "developmental-review": ("reader",),
     "writer-revision": (),
-    "line-edit": ("prose-quality",),
+    "line-edit": ("naturalness",),
     "reader-review": ("reader",),
     "targeted-repair": ("reader",),
     "copy-verify": (),
@@ -57,72 +58,26 @@ SHARED_CONTRACT_FILES: dict[str, str] = {
     "reader": "editorial/shared/reader.md",
     "fidelity": "editorial/shared/reasoning-fidelity.md",
     "editorial-base": "editorial/shared/editorial-base.md",
-    "prose-quality": "editorial/shared/prose-quality.md",
+    "naturalness": "editorial/shared/naturalness.md",
 }
+
+#: The stages that receive the style's interface declaration — the composition model,
+#: source relationship, progression model and structure that the stage must respect.
+#: It is one shared style file, not a per-stage copy, because it applies unchanged.
+#: The delivery set is declared by the style itself (``constraints.interface_stages`` in
+#: ``styles/<style>/style.yaml``), so a style owns which stages see its interface.
+DEFAULT_INTERFACE_STAGES: frozenset[str] = frozenset(
+    {"analyze", "frame", "draft", "copy-verify", "developmental-review", "reader-review"}
+)
 
 #: Stages that receive the resolved declarative constraints block.
 CONSTRAINT_STAGES: frozenset[str] = frozenset({"analyze", "frame", "draft", "copy-verify"})
 
-#: The style stage file for the review/revision stages: one document covers all five.
-REVIEW_STAGES: frozenset[str] = frozenset(
-    {"developmental-review", "writer-revision", "line-edit", "reader-review", "targeted-repair"}
+#: The stages the Python evaluation adapter executes. Derived from the stage registry so
+#: the API follows execution responsibility rather than a loosely related grouping.
+EVALUATION_STAGES: frozenset[str] = frozenset(
+    stage.name for stage in STAGES_V2 if stage.executor == "evaluation"
 )
-
-#: The style rule modules each stage receives, by stage name.
-#:
-#: Phase 1 keeps the style's rules as modules under ``styles/<style>/modules/`` and routes
-#: them here, exactly as the legacy profile did, so the migration loses no instruction.
-#: Phase 2 consolidates these modules into the per-stage style files, and this table
-#: becomes empty. The module list is the legacy routing, restated as data.
-STYLE_MODULES_BY_STAGE: dict[str, tuple[str, ...]] = {
-    "analyze": ("01-style-interface.md", "03-synthesis-mode.md"),
-    "frame": (
-        "01-style-interface.md",
-        "03-synthesis-mode.md",
-        "07-required-structure.md",
-        "06-length-and-density.md",
-        "08-citations.md",
-        "09-final-source-catalog.md",
-    ),
-    "draft": (
-        "01-style-interface.md",
-        "03-synthesis-mode.md",
-        "07-required-structure.md",
-        "06-length-and-density.md",
-        "08-citations.md",
-        "09-final-source-catalog.md",
-        "10-ending-rules.md",
-        "04-writing-character.md",
-        "05-domain-accessibility-in-synthesis.md",
-    ),
-    "developmental-review": (),
-    "writer-revision": ("04-writing-character.md",),
-    "line-edit": ("04-writing-character.md", "05-domain-accessibility-in-synthesis.md"),
-    "reader-review": (),
-    "targeted-repair": ("04-writing-character.md",),
-    "copy-verify": (
-        "01-style-interface.md",
-        "07-required-structure.md",
-        "06-length-and-density.md",
-        "08-citations.md",
-        "09-final-source-catalog.md",
-        "10-ending-rules.md",
-    ),
-    "render": (),
-}
-
-#: The style rule modules the evaluation stages receive as their ``style`` and ``review``
-#: contracts, mirroring the legacy profile's contract routing.
-STYLE_CONTRACT_MODULES: dict[str, dict[str, tuple[str, ...]]] = {
-    "developmental-review": {
-        "style": ("01-style-interface.md",),
-        "review": ("05-domain-accessibility-in-synthesis.md",),
-    },
-    "reader-review": {
-        "style": ("01-style-interface.md", "07-required-structure.md"),
-        "review": ("05-domain-accessibility-in-synthesis.md",),
-    },
-}
 
 
 @dataclass
@@ -132,9 +87,11 @@ class StageInstructions:
     stage: str
     style: str
     stage_contract: LoadedInstruction
+    #: The style's stage-specific procedure, when the style has one for this stage.
     style_specialization: LoadedInstruction | None
+    #: The style's shared interface declaration, when this stage needs the composition model.
+    style_interface: LoadedInstruction | None = None
     shared_contracts: list[LoadedInstruction] = field(default_factory=list)
-    style_modules: list[LoadedInstruction] = field(default_factory=list)
     #: Rendering documents (shared contract, style profile, template) for the render stage.
     rendering_documents: list[LoadedInstruction] = field(default_factory=list)
     style_constraints: str | None = None
@@ -146,8 +103,8 @@ class StageInstructions:
         parts = [wrap_instruction(self.stage_contract)]
         if self.style_specialization is not None:
             parts.append(wrap_instruction(self.style_specialization))
-        for module in self.style_modules:
-            parts.append(wrap_instruction(module))
+        if self.style_interface is not None:
+            parts.append(wrap_instruction(self.style_interface))
         for contract in self.shared_contracts:
             parts.append(wrap_instruction(contract))
         for document in self.rendering_documents:
@@ -158,19 +115,35 @@ class StageInstructions:
 
     def manifest(self) -> list[dict[str, Any]]:
         """Every instruction file with its owner and purpose."""
-        entries = [self.stage_contract.to_dict()]
+        return [entry.to_dict() for entry in self.loaded_instructions()]
+
+    def loaded_instructions(self) -> list[LoadedInstruction]:
+        """Every instruction file, in composition order, as loaded objects."""
+        entries = [self.stage_contract]
         if self.style_specialization is not None:
-            entries.append(self.style_specialization.to_dict())
-        entries.extend(module.to_dict() for module in self.style_modules)
-        entries.extend(contract.to_dict() for contract in self.shared_contracts)
-        entries.extend(document.to_dict() for document in self.rendering_documents)
+            entries.append(self.style_specialization)
+        if self.style_interface is not None:
+            entries.append(self.style_interface)
+        entries.extend(self.shared_contracts)
+        entries.extend(self.rendering_documents)
         return entries
 
 
 def _style_stage_path(style: str, stage: str) -> str:
-    if stage in REVIEW_STAGES:
-        return f"styles/{style}/stages/review.md"
     return f"styles/{style}/stages/{stage}.md"
+
+
+def interface_stages(style: str, *, root: Path | None = None) -> frozenset[str]:
+    """The stages that receive this style's interface declaration.
+
+    The style declares the set in ``styles/<style>/style.yaml`` under
+    ``constraints.interface_stages``. A style that declares none falls back to the default
+    set, so a style that has not yet been migrated still resolves.
+    """
+    constraints = resolve_style_constraints(style, root=root)
+    if constraints and isinstance(constraints.get("interface_stages"), (list, tuple)):
+        return frozenset(str(name) for name in constraints["interface_stages"])
+    return DEFAULT_INTERFACE_STAGES
 
 
 def resolve_stage_instructions(
@@ -181,20 +154,22 @@ def resolve_stage_instructions(
 ) -> StageInstructions:
     """Resolve one stage's instructions by convention, for one style.
 
-    A missing style specialization is an error for the stages the style must specialize
-    (all of them, for synthesis-max): a stage that receives no style instruction would
-    silently run on general grounds, which is the defect the style-isolation work exists
-    to prevent.
+    A stage's style specialization is optional. When the style has a genuine
+    stage-specific procedure it is delivered; when it does not, the stage resolves the
+    shared stage contract alone rather than a duplicate copy of it. The style's interface
+    declaration is delivered to the stages that must respect the composition model.
     """
     base = root or ROOT
     stage_contract = load_instruction(f"editorial/stages/{stage}.md", style=style, root=base)
 
     style_path = _style_stage_path(style, stage)
-    style_specialization = load_instruction(style_path, style=style, root=base)
+    style_specialization: LoadedInstruction | None = None
+    if (base / style_path).is_file():
+        style_specialization = load_instruction(style_path, style=style, root=base)
 
-    modules: list[LoadedInstruction] = []
-    for module_file in STYLE_MODULES_BY_STAGE.get(stage, ()):
-        modules.append(load_instruction(f"styles/{style}/modules/{module_file}", style=style, root=base))
+    style_interface: LoadedInstruction | None = None
+    if stage in interface_stages(style, root=base):
+        style_interface = load_instruction(f"styles/{style}/interface.md", style=style, root=base)
 
     shared: list[LoadedInstruction] = []
     for name in SHARED_CONTRACTS_BY_STAGE.get(stage, ()):
@@ -202,7 +177,9 @@ def resolve_stage_instructions(
 
     constraints: str | None = None
     if stage in CONSTRAINT_STAGES:
-        constraints = render_style_constraints(resolve_style_constraints(style, root=base))
+        resolved_constraints = resolve_style_constraints(style, root=base)
+        if resolved_constraints is not None:
+            constraints = render_style_constraints(resolved_constraints)
 
     rendering: list[LoadedInstruction] = []
     if stage == "render":
@@ -215,7 +192,7 @@ def resolve_stage_instructions(
         style=style,
         stage_contract=stage_contract,
         style_specialization=style_specialization,
-        style_modules=modules,
+        style_interface=style_interface,
         shared_contracts=shared,
         rendering_documents=rendering,
         style_constraints=constraints,
@@ -233,16 +210,15 @@ def resolve_evaluation_contracts(
 
     The adapter receives plain text, not document wrappers: it is an instruction to the
     judge. The role contract is the stage contract; the style contract is the style's
-    interface declaration; the review contract is the style's review obligations plus the
-    style modules the profile routes to it; the reader contract is the shared reader
-    contract plus, when the digest states one, its `## Reader` section — the same
-    effective Reader Brief the writing stages used.
+    interface declaration; the review contract is the style's own review obligations for
+    this stage; the reader contract is the shared reader contract plus, when the digest
+    states one, its `## Reader` section — the same effective Reader Brief the writing
+    stages used.
     """
     base = root or ROOT
-    if stage not in REVIEW_STAGES:
+    if stage not in EVALUATION_STAGES:
         raise RunnerError(f"{stage} is not an evaluation stage")
     role = load_instruction(f"editorial/stages/{stage}.md", style=style, root=base)
-    review = load_instruction(f"styles/{style}/stages/review.md", style=style, root=base)
     reader = load_instruction("editorial/shared/reader.md", style=style, root=base)
 
     reader_text = reader.text
@@ -255,30 +231,51 @@ def resolve_evaluation_contracts(
             f"and it is used only as written.\n\n{reader_brief.strip()}"
         )
 
-    style_parts: list[str] = []
-    review_parts: list[str] = [review.text]
-    for name, module_files in STYLE_CONTRACT_MODULES.get(stage, {}).items():
-        for module_file in module_files:
-            module = load_instruction(f"styles/{style}/modules/{module_file}", style=style, root=base)
-            if name == "style":
-                style_parts.append(module.text)
-            else:
-                review_parts.append(module.text)
+    # The style's review obligations are optional: a style with no genuine review-specific
+    # procedure supplies none rather than a duplicate of its interface.
+    review_path = f"styles/{style}/stages/{stage}.md"
+    review_text = ""
+    if (base / review_path).is_file():
+        review_text = load_instruction(review_path, style=style, root=base).text
 
-    contracts = {"role": role.text, "reader": reader_text, "review": "\n\n".join(review_parts)}
-    if style_parts:
-        contracts["style"] = "\n\n".join(style_parts)
+    contracts = {"role": role.text, "reader": reader_text, "review": review_text}
+    if stage in interface_stages(style, root=base):
+        interface = load_instruction(f"styles/{style}/interface.md", style=style, root=base)
+        contracts["style"] = interface.text
     return contracts
+
+
+def evaluation_contract_sources(*, stage: str, style: str, root: Path | None = None) -> dict[str, list[str]]:
+    """The runtime files each evaluation contract is built from, by contract name.
+
+    The manifest records real files, not a synthetic ``contract:<name>`` label, so an
+    inspection can point at the exact instruction that produced a judge's diagnosis.
+    """
+    base = root or ROOT
+    if stage not in EVALUATION_STAGES:
+        raise RunnerError(f"{stage} is not an evaluation stage")
+    sources: dict[str, list[str]] = {
+        "role": [f"editorial/stages/{stage}.md"],
+        "reader": ["editorial/shared/reader.md"],
+        "review": [],
+    }
+    review_path = f"styles/{style}/stages/{stage}.md"
+    if (base / review_path).is_file():
+        sources["review"] = [review_path]
+    if stage in interface_stages(style, root=base):
+        sources["style"] = [f"styles/{style}/interface.md"]
+    return sources
 
 
 __all__ = [
     "CONSTRAINT_STAGES",
-    "REVIEW_STAGES",
+    "DEFAULT_INTERFACE_STAGES",
+    "EVALUATION_STAGES",
     "SHARED_CONTRACTS_BY_STAGE",
     "SHARED_CONTRACT_FILES",
-    "STYLE_CONTRACT_MODULES",
-    "STYLE_MODULES_BY_STAGE",
     "StageInstructions",
+    "evaluation_contract_sources",
+    "interface_stages",
     "resolve_evaluation_contracts",
     "resolve_stage_instructions",
 ]

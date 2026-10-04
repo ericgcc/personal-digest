@@ -1,15 +1,10 @@
 {
-  "system_template": "stages/render/system.j2",
+  "system_template": null,
   "user_template": "stages/render/user.j2",
   "templates": [
     {
-      "path": "prompts/stages/render/system.j2",
-      "bytes": 149,
-      "sha256": "f78d05d2dcec4642ae0ed6b2d5201489d114d7efa6ac33ae9a0e2a5afeb2456b"
-    },
-    {
       "path": "prompts/shared/preamble.j2",
-      "bytes": 463,
+      "bytes": 465,
       "sha256": "8f60794abad6958daae7f2f62df0f35b1c477b3519bf2f62edab4bdcc855a12b"
     },
     {
@@ -25,54 +20,92 @@
   ],
   "documents": [
     {
-      "path": "system/rendering-curated-discovery.md",
-      "bytes": 7129,
-      "sha256": "84adc9234def4f58c856fa698c22693fcf381dbb9a2f2ddc3449391c67b8c772"
+      "path": "editorial/stages/render.md",
+      "bytes": 5740,
+      "sha256": "efa7b4b4ff9b6f578949d76590afe812e60f13b23148e5017f0a8ea367e0f8db",
+      "owner": "shared stage contract"
+    },
+    {
+      "path": "rendering/shared.md",
+      "bytes": 18524,
+      "sha256": "f46b9afa91a161f6c4d38287377040d874be8c410a54c0bd1000ca9b69709ef8",
+      "owner": "shared rendering contract"
     },
     {
       "path": "templates/curated-discovery-email-v1.html",
-      "bytes": 13711,
-      "sha256": "2c16be64fd06ae32d859c14d0f5b32721c9136852b5cf27fcf9f5a853cd4764a"
-    },
-    {
-      "path": "system/contracts/render.md",
-      "bytes": 5851,
-      "sha256": "b09d93fe5e06dcbdbeb3c7f03c8188db58b0783d52ab1be19c800201f170aa84"
-    },
-    {
-      "path": "system/html-rendering.md",
-      "bytes": 22858,
-      "sha256": "835bae73aeecfb17851a32f5dbe58761de431cc2ce204435aee0f485e017e256"
+      "bytes": 13639,
+      "sha256": "2c16be64fd06ae32d859c14d0f5b32721c9136852b5cf27fcf9f5a853cd4764a",
+      "owner": "HTML email template"
     }
   ],
-  "instructions": [],
+  "instructions": [
+    {
+      "path": "styles/curated-discovery/rendering.md",
+      "bytes": 7061,
+      "sha256": "84adc9234def4f58c856fa698c22693fcf381dbb9a2f2ddc3449391c67b8c772",
+      "owner": "style rendering profile"
+    }
+  ],
   "blocks": [
     {
       "tag": "previous_stage_artifact",
-      "bytes": 332
+      "bytes": 332,
+      "source": {
+        "stage": "copy-verify",
+        "path": ".digest-runs/synthetic/copy-verify/output/copy-verify.md",
+        "provenance": "runner"
+      },
+      "purpose": "prior artifact or digest reading instructions"
     },
     {
       "tag": "rendering_values",
-      "bytes": 139
+      "bytes": 139,
+      "source": {
+        "stage": "source-acquisition",
+        "path": "source-acquisition/sources.json",
+        "provenance": "delivery"
+      },
+      "purpose": "prior artifact or digest reading instructions"
     },
     {
       "tag": "source_note_manifest",
-      "bytes": 2684
+      "bytes": 2684,
+      "source": {
+        "stage": "frame",
+        "path": "frame/output/frame.json",
+        "provenance": "canonical"
+      },
+      "purpose": "prior artifact or digest reading instructions"
     },
     {
       "tag": "callout_registry",
-      "bytes": 1238
+      "bytes": 1238,
+      "source": {
+        "path": "digests/medium-bi-daily.md",
+        "sections": [
+          "Optional highlights"
+        ]
+      },
+      "purpose": "prior artifact or digest reading instructions"
     },
     {
       "tag": "rendering_values",
-      "bytes": 139
+      "bytes": 139,
+      "source": {
+        "kind": "executor-derived"
+      },
+      "purpose": "stage-specific runtime input"
     },
     {
       "tag": "stage_task",
-      "bytes": 539
+      "bytes": 539,
+      "source": {
+        "path": "prompts/shared/task.j2"
+      },
+      "purpose": "immediate task and output contract"
     }
   ],
   "omitted": [],
-  "system_bytes": 50003,
+  "system_bytes": 45821,
   "user_bytes": 5119
 }

@@ -821,9 +821,9 @@ Use code, not an editorial prompt.
 
 The verifier should generate an auditable structured report.
 
-Any failed hard publication invariant stops Render.
-
-Advisory issues such as body-length variance may remain warnings where that is current policy.
+Failed publication checks are recorded as warnings in the auditable report. The current
+publication policy still registers `final.md` and lets Render continue, including for
+deterministic invariant failures. Body-length variance remains advisory telemetry.
 
 ---
 

@@ -50,7 +50,7 @@ def _run(args: list[str]) -> subprocess.CompletedProcess:
 
 
 def test_the_canonical_contract_exists():
-    contract = ROOT / "system" / "contracts" / "reading-instructions.md"
+    contract = ROOT / "docs" / "architecture" / "reading-instructions.md"
     assert contract.is_file()
     text = contract.read_text(encoding="utf-8")
     for section in CANONICAL_SECTIONS:

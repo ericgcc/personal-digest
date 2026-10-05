@@ -16,7 +16,7 @@ from typing import Any, Mapping, Sequence
 from ...config.budgets import STYLE_BUDGET
 from ...config.callouts import registry_for
 from ..callouts import enforce_limits, parse_callouts, validate_callouts
-from ..provenance import build_source_note_manifest, duplicate_rendered_identities
+from ..provenance import build_source_note_manifest_from_prose, duplicate_rendered_identities
 
 LEAK_MARKERS: tuple[str, ...] = (
     "prompt_cache_hit_tokens",
@@ -177,6 +177,49 @@ def catalog_status(raw: str) -> str:
             continue
         return segment
     return ""
+
+
+_EDITORIAL_STATUS_ALIASES: dict[str, str] = {
+    "selected": "selected",
+    "worth reading": "worth_reading",
+    "worth_reading": "worth_reading",
+    "worth-reading": "worth_reading",
+    "reviewed": "reviewed",
+}
+
+
+def _normalize_editorial_status(value: str | None) -> str | None:
+    """Map a reader-facing catalogue label to its stable editorial outcome."""
+    if not isinstance(value, str):
+        return None
+    return _EDITORIAL_STATUS_ALIASES.get(value.strip().lower())
+
+
+def _frame_statuses_by_source(frame: Any) -> dict[int, str]:
+    """Return the Frame's canonical catalogue outcome for each source number.
+
+    Acquisition outcomes such as ``read`` and ``inaccessible`` describe retrieval, not the
+    editorial decision a reader sees. The Frame's ``catalog_only`` partition is the canonical
+    source-number-to-editorial-status mapping for publication verification.
+    """
+    if not isinstance(frame, Mapping):
+        return {}
+    partition = frame.get("catalog_only")
+    if not isinstance(partition, Mapping):
+        return {}
+    result: dict[int, str] = {}
+    for status in ("selected", "worth_reading", "reviewed"):
+        values = partition.get(status)
+        if not isinstance(values, list):
+            continue
+        for value in values:
+            try:
+                number = int(value)
+            except (TypeError, ValueError):
+                continue
+            if number > 0:
+                result[number] = status
+    return result
 
 
 _CODE_BLOCK = re.compile(r"```[\s\S]*?```")
@@ -585,30 +628,26 @@ def run_deterministic_checks(
             else _check("language:output", "pass", f"artifact is {ratio * 100:.0f}% ASCII for a {declared_language} digest")
         )
 
-    # --- status: catalogue rows are consistent with the corpus's recorded statuses ---
-    corpus_statuses: set[str] = set()
-    for source in sources:
-        for field in ("status", "outcome", "reading_outcome"):
-            value = source.get(field)
-            if isinstance(value, str) and value.strip():
-                corpus_statuses.add(value.strip().lower())
-    if not corpus_statuses:
-        checks.append(_check("status:consistent", "warn", "no statuses declared"))
+    # --- status: every rendered row carries its own Frame-declared outcome ------------
+    expected_statuses = _frame_statuses_by_source(frame)
+    if not expected_statuses:
+        checks.append(_check("status:consistent", "warn", "the Frame declares no catalogue status partition"))
     else:
         inconsistent: list[dict[str, Any]] = []
         for row in rows:
-            status = catalog_status(row["raw"]).strip()
-            if not status:
-                inconsistent.append({"number": row["number"], "status": None})
-            elif status.lower() not in corpus_statuses:
-                inconsistent.append({"number": row["number"], "status": status})
+            actual = _normalize_editorial_status(catalog_status(row["raw"]))
+            expected = expected_statuses.get(row["number"])
+            if actual != expected:
+                inconsistent.append(
+                    {"number": row["number"], "expected": expected, "actual": actual}
+                )
         checks.append(
-            _check("status:consistent", "pass", "every catalogue status is one the corpus records")
+            _check("status:consistent", "pass", "every catalogue status matches the Frame's source-specific outcome")
             if not inconsistent
             else _check(
                 "status:consistent",
                 "fail",
-                f"{len(inconsistent)} catalogue row(s) carry an unknown or missing status",
+                f"{len(inconsistent)} catalogue row(s) disagree with the Frame's source-specific outcome",
                 {"inconsistent": inconsistent},
             )
         )
@@ -662,19 +701,32 @@ def run_deterministic_checks(
     else:
         composition = style_constraints.get("composition") if isinstance(style_constraints, Mapping) else None
         opening = composition.get("opening") if isinstance(composition, Mapping) else None
-        if isinstance(opening, str) and opening.strip():
-            body_headings = {heading["title"].strip().lower() for heading in heading_texts(body)}
-            checks.append(
-                _check("components:required", "pass", f"the required opening heading is present")
-                if opening.strip().lower() in body_headings
-                else _check(
-                    "components:required",
-                    "fail",
-                    f"the style requires the opening heading {opening!r}, which is missing",
+        body_heading_titles = [heading["title"].strip() for heading in heading_texts(body)]
+        body_headings = {title.lower() for title in body_heading_titles}
+        component_problems: list[str] = []
+        if isinstance(opening, str) and opening.strip() and opening.strip().lower() not in body_headings:
+            component_problems.append(f"the style requires the opening heading {opening!r}")
+
+        is_catalog_only = isinstance(frame, Mapping) and frame.get("mode") == "catalog_only"
+        min_units = composition.get("min_units") if isinstance(composition, Mapping) else None
+        max_units = composition.get("max_units") if isinstance(composition, Mapping) else None
+        if not is_catalog_only and isinstance(min_units, int):
+            narrative_headings = [
+                title for title in body_heading_titles if not isinstance(opening, str) or title.lower() != opening.strip().lower()
+            ]
+            if len(narrative_headings) < min_units:
+                component_problems.append(
+                    f"the style requires at least {min_units} narrative section heading(s), found {len(narrative_headings)}"
                 )
-            )
-        else:
-            checks.append(_check("components:required", "pass", "the style declares no required opening heading"))
+            if isinstance(max_units, int) and len(narrative_headings) > max_units:
+                component_problems.append(
+                    f"the style permits at most {max_units} narrative section heading(s), found {len(narrative_headings)}"
+                )
+        checks.append(
+            _check("components:required", "pass", "the style's required opening and narrative components are present")
+            if not component_problems
+            else _check("components:required", "fail", "; ".join(component_problems))
+        )
 
     # --- localization: no operational metadata fragments in a localized artifact -----
     if not declared_language or re.fullmatch(r"english", declared_language, re.IGNORECASE):
@@ -697,15 +749,29 @@ def run_deterministic_checks(
             )
         )
 
+    # --- provenance: canonical manifest of the actual revised prose -------------------
+    source_note_manifest = build_source_note_manifest_from_prose(
+        prose=prose,
+        corpus=corpus,
+        style=style,
+    ).to_dict()
+    checks.append(
+        _check("provenance:manifest", "pass", "canonical source-note manifest resolved from the revised prose")
+        if not source_note_manifest["findings"]
+        else _check(
+            "provenance:manifest",
+            "fail",
+            "; ".join(source_note_manifest["findings"]),
+            {"findings": source_note_manifest["findings"]},
+        )
+    )
+
     counts = {
         "pass": len([item for item in checks if item["status"] == "pass"]),
         "warn": len([item for item in checks if item["status"] == "warn"]),
         "fail": len([item for item in checks if item["status"] == "fail"]),
         "exempt": len([item for item in checks if item["status"] == "exempt"]),
     }
-    provenance_manifest = None
-    if frame is not None:
-        provenance_manifest = build_source_note_manifest(frame=frame, corpus=corpus).to_dict()
     return {
         "checks": checks,
         "counts": counts,
@@ -714,7 +780,7 @@ def run_deterministic_checks(
         "body_words": word_count(body),
         "total_words": word_count(document),
         "catalogue_detection": detection,
-        "provenance_manifest": provenance_manifest,
+        "source_note_manifest": source_note_manifest,
     }
 
 

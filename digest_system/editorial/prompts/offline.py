@@ -121,6 +121,10 @@ class OfflineContext:
 
     # --- callouts and canonical provenance ---------------------------------------------
 
+    def published_source_note_manifest(self) -> Mapping[str, Any] | None:
+        """Offline inspection has no Publication Verify report to reuse."""
+        return None
+
     def callout_registry(self):
         """The callouts the digest authorizes, resolved from its own `## Optional highlights`."""
         from ...config.callouts import registry_for

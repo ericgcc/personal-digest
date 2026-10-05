@@ -21,8 +21,8 @@
   "documents": [
     {
       "path": "editorial/stages/publication-verify.md",
-      "bytes": 3008,
-      "sha256": "2b6b2b5c5c07195dfa027e36a01872de60aab0ad7028b7f198317711b459f6b9",
+      "bytes": 3081,
+      "sha256": "f3aa1e2d997bbbccbccd9b8fb8521853d9a57ad3c54ceb99d08dc8fdc43b57c8",
       "owner": "shared stage contract"
     }
   ],
@@ -86,6 +86,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 7253,
+  "system_bytes": 7326,
   "user_bytes": 1258
 }

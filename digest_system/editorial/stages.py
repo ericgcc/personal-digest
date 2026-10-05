@@ -257,13 +257,12 @@ STAGES_V2: tuple[Stage, ...] = (
                     "provenance": "delivery",
                 },
             },
-            # The canonical source-note manifest: the renderer consumes this instead of
-            # reconstructing source identities and URLs from the prose (baseline defect D6).
-            # It is derived from the revised artifact, so the published structure follows the
-            # prose that will actually be published rather than the original Frame.
+            # The canonical source-note manifest: the renderer consumes the exact final-prose
+            # manifest Publication Verify audited. Before that artifact exists (for offline
+            # inspection), the same manifest is deterministically derived from the fixture prose.
             {
                 "tag": "source_note_manifest",
-                "payload": _json(ctx.source_note_manifest().to_dict()),
+                "payload": _json(ctx.published_source_note_manifest() or ctx.source_note_manifest().to_dict()),
                 "source": {
                     "stage": "publication-verify",
                     "path": "publication-verify/output/final.md",

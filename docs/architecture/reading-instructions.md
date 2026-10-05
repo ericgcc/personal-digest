@@ -113,10 +113,10 @@ has already been recorded by an earlier stage does not receive the preference ag
 | Draft | `Reader`, `Content preferences`, `Optional highlights` |
 | Developmental Review | `Reader` |
 | Writer Revision | `Reader` |
-| Line Edit | `Reader` |
+| Copy Edit | `Reader` |
 | Reader Review | `Reader` |
 | Targeted Repair | `Reader` |
-| Copy / Verify | `Optional highlights` |
+| Publication Verify | `Optional highlights` |
 | Render | *(none)* |
 
 Two consequences of this table are intentional:

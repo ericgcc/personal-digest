@@ -35,9 +35,11 @@ class MockProvider:
         self.responses = responses
         self.fail_stages = fail_stages or set()
         self.calls: list[str] = []
+        self.requests = []
 
     def complete(self, request):
         self.calls.append(request.stage_name)
+        self.requests.append(request)
         if request.stage_name in self.fail_stages:
             raise RunnerError(f"mock transport failure for {request.stage_name}")
         text = self.responses.get(request.stage_name, "")
@@ -245,6 +247,28 @@ def test_a_mocked_pipeline_executes_every_stage_and_produces_compatible_artifact
         assert (attempt / "context-manifest.json").exists(), stage
         assert (attempt / "prompt.txt").exists(), stage
         assert (attempt / "completed.json").exists(), stage
+
+
+def test_publication_findings_are_advisory_and_render_uses_the_audited_manifest(workspace):
+    """Failed deterministic checks warn, preserve final.md, and do not suppress delivery."""
+    invalid = PROSE.replace("checkable [1]", "checkable [999]", 1)
+    responses = _responses()
+    responses["writer-revision"] = invalid
+    responses["copy-edit"] = invalid
+    provider = MockProvider(responses)
+
+    result = _run(workspace, run_id="mock-advisory-publication", provider=provider)
+    run_dir = workspace / ".digest-runs" / "mock-advisory-publication"
+    report = read_json(run_dir / "publication-verify" / "output" / "verification.json")
+
+    assert result["emailPath"] is not None
+    assert "render" in provider.calls
+    assert report["deterministic_counts"]["fail"] > 0
+    assert (run_dir / "publication-verify" / "output" / "final.md").read_text(encoding="utf-8") == invalid
+
+    render_request = next(request for request in provider.requests if request.stage_name == "render")
+    rendered_manifest = json.dumps(report["source_note_manifest"], ensure_ascii=False, indent=2)
+    assert rendered_manifest in render_request.user_text
 
 
 def test_the_optional_stage_is_skipped_when_the_reader_review_finds_nothing(workspace):

@@ -368,10 +368,34 @@ def test_the_approved_change_is_recorded_and_real():
             if migrated.is_file():
                 document = migrated
             else:
-                # A document that was split into per-stage files no longer exists as one file;
-                # its content is delivered by the stage files it was split into.
-                assert entry["document"].startswith("system/style-pipelines/"), entry["document"]
-                continue
+                # Superseded runtime trees were split into purpose-specific stage files.
+                legacy = Path(entry["document"])
+                if entry["document"].startswith("system/contracts/"):
+                    current_name = {
+                        "copy-verify.md": "publication-verify.md",
+                        "line-edit.md": "copy-edit.md",
+                    }.get(legacy.name, legacy.name)
+                    current = ROOT / "editorial" / "stages" / current_name
+                elif entry["document"].startswith("system/style-pipelines/"):
+                    if legacy.name == "review.md":
+                        split_owners = [
+                            ROOT / "styles" / "synthesis-max" / "stages" / f"{stage}.md"
+                            for stage in (
+                                "developmental-review",
+                                "writer-revision",
+                                "copy-edit",
+                                "reader-review",
+                                "targeted-repair",
+                            )
+                        ]
+                        assert all(path.is_file() for path in split_owners)
+                        current = split_owners[0]
+                    else:
+                        current = ROOT / "styles" / "synthesis-max" / "stages" / legacy.name
+                else:
+                    raise AssertionError(entry["document"])
+                assert current.is_file(), f"no current owner for {entry['document']}"
+                document = current
         assert entry["reason"].strip()
         # The corrected document must not still name the retired JavaScript module.
         assert "style-profiles.mjs" not in document.read_text(encoding="utf-8")

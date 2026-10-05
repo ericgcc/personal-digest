@@ -146,7 +146,7 @@ A review that cannot be satisfied within the frame's allocation is describing a 
 
 | Stage | May | May not |
 | --- | --- | --- |
-| `reader-review` | Assess the prose as a reader against the same effective Reader Brief the writing stages used, and detect anything the line edit materially regressed — lost context, weakened explanations, new ambiguity, unexplained terminology, or a damaged source relationship. | Retrofit a different interpretation onto prose it did not produce, or ask for a claim the frame never authorised. |
+| `reader-review` | Assess the prose as a reader against the same effective Reader Brief the writing stages used, and detect anything Copy Edit materially regressed — lost context, weakened explanations, new ambiguity, unexplained terminology, or a damaged source relationship. | Retrofit a different interpretation onto prose it did not produce, or ask for a claim the frame never authorised. |
 
 ## What these stages must preserve
 

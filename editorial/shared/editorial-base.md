@@ -1,7 +1,7 @@
 # Editorial Base
 This is the shared editorial quality floor inherited by every canonical digest style. It governs **how well the writing must work**, not the composition, source relationship, structure, or voice of any particular style.
 
-A selected style may add a distinct writing character, and digest custom instructions may refine that character further, but neither may weaken this base quality standard. The production method that turns source material into finished prose lives in `system/editorial-process.md`. Shared craft references live in `system/writing-reasoning-and-source-fidelity.md`, `system/writing-editorial-prose.md`, `system/writing-naturalness.md`, and `system/writing-style-application.md`; they supply techniques, while the selected style determines how those techniques may be used.
+A selected style may add a distinct writing character, and digest custom instructions may refine that character further, but neither may weaken this base quality standard. Apply the stage contract, the relevant shared editorial contracts, and the selected style's purpose-specific procedure together; the style determines how the shared craft obligations apply.
 
 ## Supreme principles
 **If the reader gives you their time, make every word earn it.**
@@ -165,7 +165,7 @@ The selected style must declare its own **Writing character**. Digest custom ins
 Do not make every style sound alike in the name of consistency.
 
 ## Final quality standard
-The staged editing sequence is defined in `system/editorial-process.md`. Before rendering, the finished prose must at minimum satisfy these outcomes:
+Before rendering, the finished prose must at minimum satisfy these outcomes:
 
 * The reader can identify what each substantive section is actually about.
 * The reason each paragraph follows the previous one is intelligible.

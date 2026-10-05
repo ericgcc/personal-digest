@@ -14,7 +14,7 @@
 
 ## Instruction documents
 
-- `editorial/stages/publication-verify.md` — 3008 chars; owner: shared stage contract; sha256 `2b6b2b5c5c07`
+- `editorial/stages/publication-verify.md` — 3081 chars; owner: shared stage contract; sha256 `f3aa1e2d997b`
 
 ## Style-supplied instructions
 
@@ -29,5 +29,5 @@
 
 ## Sizes
 
-- System: 7253 units
+- System: 7326 units
 - User: 1258 units

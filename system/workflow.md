@@ -346,7 +346,7 @@ python -m digest_system.cli inspect --digest <digest-id> --style-profile <profil
 
 `replay` runs a **new** pipeline execution from a historical corpus and is an offline command, not part of a delivery run: it reuses only `<from-run>/source-acquisition/sources.json`, performs no acquisition, no delivery, and no state mutation, and takes the digest identity from the corpus and digest configuration rather than from a directory name. Because the runtime contains no delivery, Gmail, or state code at all, a replay has no path by which it could label a message or write to the state database.
 
-`inspect` renders a stage's exact prompt and dependency manifest offline, with no model call. See `system/editorial-pipeline-v2.md` §6.
+`inspect` renders a stage's exact prompt and dependency manifest offline, with no model call. See `docs/architecture/editorial-pipeline-v2.md`.
 
 ```powershell
 $run = "<unique-run-id>"
@@ -366,13 +366,13 @@ An editorial component failure means **use the last valid artifact and continue*
 
 | Failure | Behaviour |
 | --- | --- |
-| WOPS unavailable or a retrieval error | Revise and line edit using the reviewer's feedback alone; `wops.json` records `available: false` or the failed query |
+| WOPS unavailable or a retrieval error | Revise and copy edit using the reviewer's feedback alone; `wops.json` records `available: false` or the failed query |
 | Developmental review unavailable | Record degraded mode, carry the draft forward, and skip writer revision |
-| Writer revision unavailable or invalid | Carry the draft forward into line edit |
-| Line edit unavailable or invalid | Carry the writer revision forward into reader review |
-| Reader review unavailable | Skip targeted repair and continue with the line edit |
-| Targeted repair unavailable, invalid, or not requested | Use the line edit |
-| Copy/verify model pass unavailable, truncated, or rejected by the diff guard | Publish the unmodified input prose; the deterministic checks still run and are recorded |
+| Writer revision unavailable or invalid | Carry the draft forward into Copy Edit |
+| Copy Edit unavailable or invalid | Carry the writer revision forward into Reader Review |
+| Reader Review unavailable | Skip Targeted Repair and continue with Copy Edit |
+| Targeted Repair unavailable, invalid, or not requested | Use Copy Edit |
+| Publication Verify finds failed checks | Preserve the unmodified input prose, record warnings in `verification.json`, and continue to Render |
 | Frame unavailable | Derive a deterministic recovery frame from `analysis.json`, record the degradation, and continue. A profile whose `frame_failure_policy` is `fail` stops instead |
 | Python adapter unavailable | Record degraded mode in the stage's adapter envelope and continue. A call that exceeds its declared timeout budget is recorded as over-budget |
 
@@ -411,7 +411,7 @@ For every stage, the runtime copies the canonical Markdown context into that sta
 
 No editorial stage receives the entire instruction stack. The convention resolver composes a stage contract, an optional style specialization, the style interface only where declared, zero or more purpose-specific shared contracts, resolved constraints where needed, and the stage's runtime evidence. Jinja2 templates under `prompts/` frame those already-resolved blocks; profiles do not route instruction files. The runtime never inlines `system/workflow.md`, architecture documents, or archived style modules into an editorial stage.
 
-The exact prompt a stage will send is inspectable offline, without a model call, with `python -m digest_system.cli inspect --digest <id> --style-profile <profile> [--stage <stage>]`. It writes the resolved system and user text, a dependency manifest naming every template and instruction file with its hash, and a human-readable report. See `system/editorial-pipeline-v2.md` §6.
+The exact prompt a stage will send is inspectable offline, without a model call, with `python -m digest_system.cli inspect --digest <id> --style-profile <profile> [--stage <stage>]`. It writes the resolved system and user text, a dependency manifest naming every template and instruction file with its hash, and a human-readable report. See `docs/architecture/editorial-pipeline-v2.md`.
 
 The corpus block is **tiered per stage** rather than sent whole to every call. The runtime decides the exact bytes each stage receives.
 
@@ -433,7 +433,7 @@ The Python pipeline executes the editorial process through one direct model call
 
 There is one pipeline, recorded in `pipeline.json`:
 
-`SELECT → ANALYZE → FRAME → DRAFT → DEVELOPMENTAL REVIEW → WRITER REVISION → LINE EDIT → READER REVIEW → [TARGETED REPAIR] → COPY & VERIFY → RENDER`
+`SELECT → ANALYZE → FRAME → DRAFT → DEVELOPMENTAL REVIEW → WRITER REVISION → COPY EDIT → READER REVIEW → [TARGETED REPAIR] → PUBLICATION VERIFY → RENDER`
 
 `editorial-pipeline-v1` is retired. Its stage list survives only as static metadata in `config/pipeline-v1-stages.json`, which the evaluation package reads to describe historical runs. There is no selection order to apply, and the CLI exposes no pipeline selector.
 
@@ -445,7 +445,7 @@ Preserve stable source numbering/provenance throughout the process. Editorial re
 
 Before rendering any source catalog, derive three disjoint sets from catalog-eligible source IDs: `selected_source_ids`, `worth_reading_source_ids`, and `reviewed_source_ids`. Every source cited or named as support anywhere in the editorial body—including a Curated Discovery Discovery—belongs in `selected_source_ids`. `worth_reading_source_ids` must be a subset of the remaining unselected corpus. If the sets overlap or any body source is not `Selected`, repair the classifications and rerun final validation before delivery. A `Worth opening for:` depth cue inside selected content has no effect on catalog status.
 
-The `render` stage may begin only after the pipeline produced `final.md` from `publication-verify` and that artifact passed the current stage, shared, and style-specific quality gates. The `publication-verify` stage also writes `verification.json` beside it; read it as part of the same gate.
+The `render` stage begins after the pipeline produced `final.md` from `publication-verify`. The stage also writes `verification.json` beside it; failed deterministic checks are recorded as warnings under the current advisory publication policy and must remain visible for audit.
 
 ## Render and deliver
 1. Perform the final instruction-conflict check; higher-level contracts win as defined above.

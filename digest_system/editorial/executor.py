@@ -999,7 +999,8 @@ def _run_publication_verify_stage(
     This stage runs code only. It never calls a model and never edits prose: it reads the
     artifact the revision stages produced, runs every deterministic publication invariant over
     it, and writes the prose forward unchanged as ``final.md`` beside an auditable
-    ``verification.json``. A failed hard invariant is recorded and stops Render.
+    ``verification.json``. Failed checks are recorded as warnings; the current publication
+    policy keeps delivery advisory and allows Render to continue.
     """
     prose = context.artifacts.get("targeted-repair") or _require_artifact(context, "copy-edit")
     frame = context.artifacts["frame"].json if context.artifacts.get("frame") else None
@@ -1039,7 +1040,7 @@ def _run_publication_verify_stage(
         "body_words": checks["body_words"],
         "total_words": checks["total_words"],
         "catalogue_detection": checks["catalogue_detection"],
-        "provenance_manifest": checks["provenance_manifest"],
+        "source_note_manifest": checks["source_note_manifest"],
     }
 
     final_path = work_dir / "output" / stage.artifact

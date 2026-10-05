@@ -4,10 +4,10 @@
 only active workflow is Analyze → Frame → Draft → Developmental Review → Writer Revision →
 Copy Edit → Reader Review → [Targeted Repair] → Publication Verify → Render.
 
-**Result:** PASS (Inspector verdict, iteration 2)
-**Iterations:** 2 (1 FAIL, 1 PASS)
+**Result:** PASS (correction pass, iteration 3)
+**Iterations:** 3 (1 FAIL, 2 PASS)
 **Initial SHA:** `f7b0ee2`
-**Final SHA:** `739c07b`
+**Validated state:** current working tree
 
 ## What was achieved
 
@@ -22,7 +22,8 @@ forbids significant restructuring.
 
 ### AC3 — Publication Verify is deterministic ✅
 `publication-verify` has executor `deterministic`; `_run_publication_verify_stage` runs code
-only, writes `final.md` unchanged beside `verification.json`, and never edits prose.
+only, writes `final.md` unchanged beside `verification.json`, and never edits prose. Failed
+checks remain auditable warnings, and Render continues under the current publication policy.
 
 ### AC4 — Writer Revision retains substantive authority ✅
 The contract permits reorder/expand/cut/split/merge/reframe/rewrite/change-headings/
@@ -31,8 +32,9 @@ or relationships, style change, silent corpus expansion, and unsupported new con
 Frame is documented as the best pre-draft plan, not an immutable layout.
 
 ### AC5 — Downstream structure follows the revised artifact ✅
-`source_note_manifest()` derives from the revised artifact (publication-verify →
-targeted-repair → copy-edit → writer-revision) plus corpus, not the original Frame.
+Publication Verify derives `source_note_manifest` from the final prose plus the canonical
+corpus and persists it in `verification.json`. Render consumes that audited manifest rather
+than rebuilding publication structure from the original Frame.
 
 ### AC6 — Reader Review compares Writer Revision to Copy Edit ✅
 BEFORE = writer-revision prose; AFTER = copy-edited prose.
@@ -61,12 +63,13 @@ tests assert the ten-stage topology, composition, isolation, docs-rejection, sin
 constraint ownership, and the preference firewall.
 
 ### AC12 — Prompt artifacts regenerated and guarded ✅
-`prompt-inspections/` regenerated for both active profiles; `inspect --check` passes; the
-migration gate reports `unclassified: 0`.
+`prompt-inspections/` regenerated for the active Synthesis MAX profile; `inspect --check`
+passes; the migration gate reports `unclassified: 0`.
 
 ### AC13 — Documentation describes only the final system ✅
-`docs/architecture/editorial-process.md`, `system/workflow.md`, `docs/guides/usage.md`, and
-`docs/architecture/overview.md` describe the ten-stage workflow.
+`docs/architecture/editorial-pipeline-v2.md`, `system/workflow.md`, the guides, and
+`docs/architecture/overview.md` describe the ten-stage workflow. The obsolete duplicate
+`docs/architecture/editorial-process.md` is removed.
 
 ### AC14 — Quality gates pass ✅
 Full suite exits 0; the deleted `scripts/prompt_diff.py` is no longer imported.
@@ -77,6 +80,7 @@ Full suite exits 0; the deleted `scripts/prompt_diff.py` is no longer imported.
 |---|---|---|
 | 1 | FAIL | AC10 residue (concise/detailed templates + `system/html-rendering.md`); AC13 staleness (`editorial-process.md`, `workflow.md`, `usage.md` still named `line-edit`/`copy-verify`); AC13 gap (`overview.md` did not name the ten stages). |
 | 2 | PASS | All three issues fixed; all 14 criteria verified; three quality gates pass. |
+| 3 | PASS | Corrected final-prose provenance, source-specific status checks, required-component and manifest verification, advisory Publication Verify documentation, stale runtime contracts, prompt inspections, and regression coverage; the full suite passes. |
 
 ## Key issues raised by the Inspector and how they were resolved
 

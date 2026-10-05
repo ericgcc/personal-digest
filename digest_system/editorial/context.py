@@ -12,6 +12,7 @@ concurrent execution safer.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
@@ -122,6 +123,23 @@ class RunContext:
         )
 
     # --- canonical provenance -----------------------------------------------------------
+
+    def published_source_note_manifest(self) -> Mapping[str, Any] | None:
+        """Read the exact manifest Publication Verify recorded for the final artifact.
+
+        Render must use the same final-prose manifest that verification audited. The fallback
+        keeps offline prompt inspection useful before a publication artifact exists.
+        """
+        artifact = self.artifacts.get("publication-verify")
+        if artifact is None:
+            return None
+        report_path = artifact.path.parent / "verification.json"
+        try:
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        manifest = report.get("source_note_manifest") if isinstance(report, Mapping) else None
+        return manifest if isinstance(manifest, Mapping) else None
 
     def source_note_manifest(self):
         """The canonical source-note manifest: one identity per source, per published unit.

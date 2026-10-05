@@ -498,6 +498,7 @@ PROVENANCE_ADDED_CHECKS: frozenset[str] = frozenset(
         "reading-time:present",
         "components:required",
         "localization:metadata",
+        "provenance:manifest",
     }
 )
 

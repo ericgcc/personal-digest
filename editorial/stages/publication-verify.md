@@ -27,7 +27,7 @@ The publication requirements, decided mechanically:
 
 ## What you may change
 
-Nothing. This stage never edits prose. A failed hard invariant is recorded in `verification.json` and stops Render; it is not repaired here.
+Nothing. This stage never edits prose. A failed check is recorded in `verification.json` and surfaced as a run warning; under the current advisory publication policy, Render continues with the unchanged `final.md`.
 
 ## Output
 

@@ -58,4 +58,4 @@ The complete editorial body in the digest's configured language, as Markdown, in
 
 Return only the Markdown body. No HTML, no commentary, no code fence, no tools, no questions.
 
-The draft is not the deliverable. It will be reviewed, revised, and line edited. Write it so those stages can work on real prose rather than on a skeleton.
+The draft is not the deliverable. It will be reviewed, revised, and copy edited. Write it so those stages can work on real prose rather than on a skeleton.

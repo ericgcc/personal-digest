@@ -74,10 +74,10 @@ sections it can still act on.
 | Draft | `Reader`, `Content preferences`, `Optional highlights` |
 | Developmental Review | `Reader` |
 | Writer Revision | `Reader` |
-| Line Edit | `Reader` |
+| Copy Edit | `Reader` |
 | Reader Review | `Reader` |
 | Targeted Repair | `Reader` |
-| Copy / Verify | `Optional highlights` |
+| Publication Verify | `Optional highlights` |
 | Render | none |
 
 The effective Reader Brief is `editorial/shared/reader.md` plus the digest's optional

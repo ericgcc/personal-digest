@@ -523,20 +523,22 @@ def _check_by_id(result: dict, check_id: str) -> dict:
     return next(c for c in result["checks"] if c["id"] == check_id)
 
 
-def test_catalog_statuses_must_match_the_corpus_status_vocabulary():
+def test_catalog_statuses_must_match_the_frame_outcome_for_each_source():
     from digest_system.editorial.validation.copy_verify import run_deterministic_checks
 
-    # Passing: catalogue labels match the corpus's recorded outcomes.
-    matching = corpus()
-    for source in matching["sources"]:
-        source["reading_outcome"] = "reviewed"
-    ok = run_deterministic_checks(prose=PROSE, corpus=matching, frame=frame_valid())
+    # Passing: every catalogue row matches the Frame's source-specific status partition.
+    matching_frame = frame_valid()
+    matching_frame["catalog_only"] = {"selected": [], "worth_reading": [], "reviewed": [1, 2, 3, 5]}
+    ok = run_deterministic_checks(prose=PROSE, corpus=corpus(), frame=matching_frame)
     assert _check_by_id(ok, "status:consistent")["status"] == "pass"
 
-    # Failing: the fixture's "Reviewed" label is not one of the corpus's recorded statuses.
-    bad = run_deterministic_checks(prose=PROSE, corpus=corpus(), frame=frame_valid())
+    # Failing: one source is rendered as Reviewed even though the Frame marks it Selected.
+    mismatched_frame = frame_valid()
+    mismatched_frame["catalog_only"] = {"selected": [1], "worth_reading": [], "reviewed": [2, 3, 5]}
+    bad = run_deterministic_checks(prose=PROSE, corpus=corpus(), frame=mismatched_frame)
     check = _check_by_id(bad, "status:consistent")
     assert check["status"] == "fail"
+    assert check["details"]["inconsistent"] == [{"number": 1, "expected": "selected", "actual": "reviewed"}]
 
 
 def test_a_source_is_never_both_selected_and_worth_reading():
@@ -617,6 +619,24 @@ def test_style_required_components_are_present():
     )
     assert _check_by_id(bad, "components:required")["status"] == "fail"
 
+    # An opening and Sources alone are not a Synthesis MAX narrative edition.
+    no_narrative_unit = "\n".join(
+        [
+            "## THE BIG PICTURE",
+            "",
+            "An opening [1].",
+            "",
+            "## Sources",
+            "",
+            "1. [A mechanism for incremental evaluation](https://example.invalid/a) · 12 min · Reviewed",
+        ]
+    )
+    structural_constraints = {"composition": {"opening": "THE BIG PICTURE", "min_units": 1, "max_units": 4}}
+    incomplete = run_deterministic_checks(
+        prose=no_narrative_unit, corpus=corpus(), frame=frame_valid(), style_constraints=structural_constraints
+    )
+    assert _check_by_id(incomplete, "components:required")["status"] == "fail"
+
     # Without style constraints the check warns rather than guessing.
     unknown = run_deterministic_checks(prose=PROSE, corpus=corpus(), frame=frame_valid())
     assert _check_by_id(unknown, "components:required")["status"] == "warn"
@@ -633,13 +653,13 @@ def test_localized_artifacts_carry_no_operational_metadata():
     assert _check_by_id(bad, "localization:metadata")["status"] == "fail"
 
 
-def test_the_deterministic_checks_return_the_provenance_manifest():
+def test_the_deterministic_checks_return_a_final_prose_manifest():
     from digest_system.editorial.validation.copy_verify import run_deterministic_checks
 
     result = run_deterministic_checks(prose=PROSE, corpus=corpus(), frame=frame_valid())
-    manifest = result["provenance_manifest"]
-    assert manifest is not None
+    manifest = result["source_note_manifest"]
     assert {source["source_number"] for source in manifest["sources"]} == {1, 2, 3, 5}
+    assert _check_by_id(result, "provenance:manifest")["status"] == "pass"
 
     no_frame = run_deterministic_checks(prose=PROSE, corpus=corpus())
-    assert no_frame["provenance_manifest"] is None
+    assert {source["source_number"] for source in no_frame["source_note_manifest"]["sources"]} == {1, 2, 3, 5}

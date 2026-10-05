@@ -22,7 +22,7 @@
     {
       "path": "editorial/stages/draft.md",
       "bytes": 5215,
-      "sha256": "b58cfb91462518081fc046f94adf217fbc2fdc3690b1159450ed9f1d05957c8a",
+      "sha256": "acbbe94b3132caac2710ebd1ee5cb9ef3ffdc660245d26393f4bed7e70aeab1e",
       "owner": "shared stage contract"
     },
     {
@@ -33,8 +33,8 @@
     },
     {
       "path": "editorial/shared/editorial-base.md",
-      "bytes": 14693,
-      "sha256": "eba403a5cecbc3c0e5b4cf09db4a94f859b8bbaef3b5fb277375681abfcf78e0",
+      "bytes": 14411,
+      "sha256": "454168d2774a3b63fc5b325931be360e10c87aa9942a9f4e1f764fa739a1153f",
       "owner": "shared cross-cutting contract"
     }
   ],
@@ -146,6 +146,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 51376,
+  "system_bytes": 51094,
   "user_bytes": 6812
 }

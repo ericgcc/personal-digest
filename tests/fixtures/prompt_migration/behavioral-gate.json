@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
-  "approved_candidate_sha256": "6d384e2d0b38e434bcb422d8ffedfd31842b5e03b7bc5ad267242da0cc8d3bb4",
+  "approved_candidate_sha256": "3c086c55f8acb5654797c86f598f0f21c71e03858dfb4620bf015a560c795f04",
   "categories": [
     "packaging-only",
     "deduplication-without-semantic-loss",
@@ -484,6 +484,38 @@
       "block": "system/contracts/targeted-repair.md",
       "category": "behavioral-change",
       "justification": "The Targeted Repair contract moved to editorial/stages/targeted-repair.md and was sharpened to stay one pass, localized and diagnosis-driven."
+    },
+    {
+      "profile": "*",
+      "stage": "draft",
+      "kind": "removed",
+      "block": "system/contracts/draft.md",
+      "category": "behavioral-change",
+      "justification": "The Draft contract moved to editorial/stages/draft.md and now names Copy Edit as the downstream editing stage, matching the approved Phase 2 workflow replacement of Line Edit and editorial Copy/Verify."
+    },
+    {
+      "profile": "*",
+      "stage": "draft",
+      "kind": "added",
+      "block": "editorial/stages/draft.md",
+      "category": "behavioral-change",
+      "justification": "The Draft contract moved to editorial/stages/draft.md and now names Copy Edit as the downstream editing stage, matching the approved Phase 2 workflow replacement of Line Edit and editorial Copy/Verify."
+    },
+    {
+      "profile": "*",
+      "stage": "draft",
+      "kind": "novel-content",
+      "block": "editorial/stages/draft.md",
+      "category": "behavioral-change",
+      "justification": "The Draft contract now says the draft will be copy edited instead of line edited, reflecting the approved Phase 2 stage replacement without changing Draft authority."
+    },
+    {
+      "profile": "*",
+      "stage": "draft",
+      "kind": "lost-content",
+      "block": "system/contracts/draft.md",
+      "category": "behavioral-change",
+      "justification": "The superseded Line Edit name was removed from the Draft contract because Copy Edit now owns that downstream work."
     },
     {
       "profile": "*",

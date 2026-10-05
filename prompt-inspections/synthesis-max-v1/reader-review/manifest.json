@@ -54,8 +54,8 @@
     },
     {
       "path": "styles/synthesis-max/stages/reader-review.md",
-      "bytes": 8690,
-      "sha256": "7d9a6473138818e0550b13caa0012efecbd778b79400d2c7c2041488823375de",
+      "bytes": 8686,
+      "sha256": "9da5a2bc95e3b8e4b920242007508ea2c84336a9bb2cad065bc638f879d03bdc",
       "owner": "review"
     },
     {
@@ -74,7 +74,7 @@
   "blocks": [
     {
       "tag": "evaluation_input",
-      "bytes": 28911,
+      "bytes": 28907,
       "purpose": "combined judge prompt",
       "source": {
         "kind": "evaluation-adapter",

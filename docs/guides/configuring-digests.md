@@ -7,16 +7,15 @@ A digest is assembled from separate layers with different responsibilities:
 | Layer | Location | Responsibility |
 | --- | --- | --- |
 | Workflow | `system/workflow.md` | Shared execution, state, safety, routing, precedence, and delivery. |
-| Editorial process | `system/editorial-process.md` | Shared autonomous production method: SELECT → ANALYZE → FRAME → DRAFT → DEVELOPMENTAL REVIEW → WRITER REVISION → COPY EDIT → READER REVIEW → [TARGETED REPAIR] → PUBLICATION VERIFY. |
-| Editorial pipeline v2 | `system/editorial-pipeline-v2.md` | The v2 stages, the per-stage context matrix, evidence projection, adapters, and failure semantics. |
+| Editorial pipeline | `docs/architecture/editorial-pipeline-v2.md` | The active ten stages, instruction ownership, provenance, and advisory verification policy. |
 | Stage contracts | `editorial/stages/` | What each current stage receives, decides, and must not do. |
 | Runtime configuration | `system/runtime.json` | Active pipeline, the WOPS project root, and the Python interpreter per component. |
 | Style interface | `styles/<style>/interface.md` | The selected style's purpose, composition model, structure, voice, and editorial boundaries. |
 | Shared editorial contracts | `editorial/shared/` | Purpose-specific reader, evidence, revision, verification, and prose contracts shared by declared stages. |
 | Style stage instructions | `styles/<style>/stages/` | Optional style-specific behavior for a particular stage. |
 | Style constraints | `styles/<style>/style.yaml` | Declarative composition, evaluation, and rendering values used by prompts and validators. |
-| Style profile | `prompts/profiles/<profile-id>.yaml` | Execution policy such as frame failure behavior; instruction routing is resolved by convention. |
-| Stage prompt templates | `prompts/stages/<stage>/{system,user}.j2` | How a stage's instruction is framed. Rendered by Jinja2 with strict undefined variables. |
+| Style profile | `styles/<style>/style.yaml` | Execution policy and declarative constraints; instruction routing is resolved by convention. |
+| Prompt composition | `digest_system/editorial/prompts/` | How resolved whole-file instructions and runtime data are framed. |
 | Digest config | `digests/<digest-id>.md` | Which digest this is, what sources it uses, and its four optional reading-instruction sections. |
 | Reading instructions | `docs/architecture/reading-instructions.md` | What each reading-instruction section may influence, precedence, and stage routing. This is parser and architecture documentation, not a runtime prompt. |
 | Adapter | `adapters/<adapter>.md` | How a particular source type must be read. |
@@ -183,8 +182,8 @@ Each stage receives only the sections that can still change its decision. Select
 | --- | --- |
 | Analyze | `Selection`, `Reader` |
 | Frame, Draft | `Reader`, `Content preferences`, `Optional highlights` |
-| Developmental Review, Writer Revision, Line Edit, Reader Review, Targeted Repair | `Reader` |
-| Copy / Verify | `Optional highlights` |
+| Developmental Review, Writer Revision, Copy Edit, Reader Review, Targeted Repair | `Reader` |
+| Publication Verify | `Optional highlights` |
 | Render | *(none)* |
 
 The runtime records, for every run, the resolved reading-instruction version and which sections each stage received, so routing is auditable.
@@ -206,7 +205,7 @@ in every framework. Explain framework-specific terms where they first matter.
 
 Reading instructions refine the digest **inside the selected style**. They must not:
 
-* weaken the shared editorial-base quality floor or skip/reorder mandatory stages in `system/editorial-process.md`;
+* weaken the shared editorial quality floor or skip/reorder mandatory pipeline stages;
 * weaken `editorial/shared/reader.md`, which defines what the reader must be able to understand;
 * turn `concise` or `detailed` into cross-source synthesis;
 * force `curated-discovery` to search for connections or themes merely because they exist;
@@ -240,7 +239,6 @@ styles/<style>/stages/*.md     (purpose-specific procedure; optional per stage)
 styles/<style>/style.yaml      (declarative constraints and runtime paths)
 styles/<style>/rendering.md
 templates/<style>-email-v1.html
-prompts/profiles/<profile>.yaml (execution policy only)
 ```
 
 The canonical style ID must be identical in all of these locations. If any piece is missing, the workflow stops rather than borrow another style's template.
@@ -323,7 +321,7 @@ Finally, wire the visual implementation:
 
 1. Create `styles/<style>/rendering.md`.
 2. Create `templates/<style>-email-v1.html` using `templates/email-theme.html` as the visual language. Every reader-facing literal must be an explicit localization placeholder; do not hard-code English labels into the template.
-3. Add an execution profile under `prompts/profiles/` if the style needs a selectable policy.
+3. Declare the style's profile status, execution policy, constraints, and rendering paths in `style.yaml`.
 4. Verify that the rendering profile/template implement the style's actual structure rather than copying another style's composition.
 5. Run preflight and prompt inspection before using the style in a digest.
 

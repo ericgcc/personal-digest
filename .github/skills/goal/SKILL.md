@@ -11,7 +11,11 @@ description: >-
   autonomous task completion with independent quality review.
 metadata:
   author: "Gaetan Semet <gaetan@xeberon.net>"
-  recommended-models: ["DeepSeek V4 Pro (New) (Go) (opencode)", "Muse Spark 1.3 Contributor (opencodego)"]
+  recommended-models: ["DeepSeek V4 Pro (New) (Go) (opencode)", "GLM-5.3-Flash (Go) (opencode)"]
+  # Prefer the "(Go)" provider variants. Plain Zen variants are mostly for free
+  # models and fail with "Insufficient account funds" or "Model access is
+  # disabled" on funded models. If a model name is rejected as "not found",
+  # re-read the available-models list from the error and pick a current one.
 ---
 
 # Goal — Verified Autonomous Task Completion
@@ -25,7 +29,7 @@ Inspector — to achieve a user-defined goal with independent verification.
 | Role | Agent Name | Model | Purpose |
 |------|-----------|-------|---------|
 | Builder | `Goal: Builder` | DeepSeek V4 Pro (New) (Go) (opencode) | Does the work |
-| Inspector | `Goal: Inspector` | Muse Spark 1.3 Contributor (opencodego) | Judges the result |
+| Inspector | `Goal: Inspector` | GLM-5.3-Flash (Go) (opencode) | Judges the result |
 
 Builder implements. Inspector verifies with **fresh context**.
 They never share state — only files and git history connect them.
@@ -110,18 +114,64 @@ Record `initial_sha` — it is needed for the squash command at conclusion.
 
 ## Phase 3 — Builder ↔ Inspector Loop
 
+### Dispatch discipline (mandatory — prevents doom-loops)
+
+Subagents have a limited tool-call budget per dispatch. An open-ended prompt
+("read the goal, understand the codebase, implement") burns that budget on
+comprehension before the first edit — the agent reads 15+ files, runs out of
+budget, and returns nothing. This happens **regardless of model strength**.
+Follow these rules for every dispatch:
+
+1. **Verify the return against git, never against the agent's word.**
+   After every subagent returns, run `git log --oneline -3` and
+   `git status --short`. Agents have claimed work they never did, and have
+   done real work while returning "no output". The git state is the only
+   source of truth.
+
+2. **Give the Builder a closed brief, not an open mandate.** Before
+   dispatching, convert the goal/feedback into an explicit work list:
+   exact file paths, line numbers, function names, check IDs, and test
+   names. The Builder's first action should be an edit, not a read.
+   Write the brief to `.goals/<id>/builder-brief-<N>.md` and dispatch with:
+   "Execute the brief at `.goals/<id>/builder-brief-<N>.md` exactly as
+   written. Your job is EXECUTION ONLY, not planning."
+
+3. **Forbid exploration explicitly.** Include in every Builder dispatch:
+   - "Do NOT search the repository. Read only the files named in the brief."
+   - "Do NOT run the full test suite until the end; run it once."
+   - "Never repeat a failing command without changing something first."
+
+4. **Order the work mechanical-first.** Put pure text substitutions and
+   config edits before design-heavy code changes, so progress is visible
+   early and a budget overrun cannot leave the run empty-handed.
+
+5. **Scope retries narrowly.** If a dispatch fails or stalls, re-dispatch
+   with a *smaller* scope (e.g. "FIX 1 and FIX 2 only"), not the same
+   broad prompt again.
+
+6. **Provider/model errors are user-actionable.** On `Insufficient account
+   funds`, `Model access is disabled`, `requires Global regions`, or
+   `trains on request data`, stop and surface the exact error to the user —
+   these are account/privacy settings only the user can change. Prefer the
+   `(Go)` provider variants over plain Zen variants; Zen is mostly for free
+   models. If a model name is rejected as "not found", re-read the
+   available-models list from the error and pick a current one.
+
 ### Step 1: Dispatch Builder
 
-Dispatch the `Goal: Builder` subagent with this prompt:
+First write the closed brief (see *Dispatch discipline* above), then dispatch
+the `Goal: Builder` subagent with this prompt:
 
-> Read the goal file at `.goals/<id>/goal.md`.
-> This is iteration **<N>**.
-> [If N > 1]: Read the Inspector's feedback at
-> `.goals/<id>/inspector-feedback-<N-1>.md`
-> for what to fix.
-> Achieve the goal. When done, make a **single commit** for the
-> full iteration. Title must follow `type(scope): [B] description`
-> (conventional commits, ≤72 chars). Then return.
+> Execute the brief at `.goals/<id>/builder-brief-<N>.md` exactly as written.
+> This is iteration **<N>**. Your job is EXECUTION ONLY, not planning.
+> [If N > 1]: The Inspector's findings are summarized in the brief; do not
+> re-read `goal.md` or the feedback files.
+> Do NOT search the repository. Read only the files named in the brief.
+> Do NOT run the full test suite until the end; run it once.
+> Never repeat a failing command without changing something first.
+> When done, make a **single commit** for the full iteration. Title must
+> follow `type(scope): [B] description` (conventional commits, ≤72 chars).
+> Then return a concise summary of what you implemented and the gate results.
 
 Update `status.json`: `"status": "building"`.
 
@@ -137,6 +187,10 @@ Dispatch the `Goal: Inspector` subagent with this prompt:
 > is met by examining codebase changes, running quality gates,
 > and — if the goal involves UI — opening the application in
 > a browser to visually verify.
+> Do NOT read the full `git diff HEAD~1` if the commit is large
+> (over ~50 files); use `git show --stat HEAD` and read only the
+> files relevant to each criterion.
+> Do NOT run the full test suite more than once.
 > Write your verdict to `.goals/<id>/inspector-feedback-<N>.md`.
 > Make a **single commit** that includes the feedback file and the
 > updated `status.json`. Title must follow
@@ -144,6 +198,11 @@ Dispatch the `Goal: Inspector` subagent with this prompt:
 > Return **PASS** or **FAIL** as your final word.
 
 Update `status.json`: `"status": "inspecting"`.
+
+**After the Inspector returns, verify it actually wrote the feedback file**
+(`.goals/<id>/inspector-feedback-<N>.md`) before reading the verdict. An
+Inspector that returns no output and writes no file has not run — re-dispatch
+with a different model rather than looping.
 
 ### Step 3: Evaluate verdict
 

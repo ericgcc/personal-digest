@@ -74,7 +74,7 @@ EXPECTED_COMPOSITION: dict[str, dict[str, object]] = {
     "copy-edit": {"style_stage": True, "interface": False, "shared": ("naturalness",), "constraints": False},
     "reader-review": {"style_stage": True, "interface": True, "shared": ("reader",), "constraints": False},
     "targeted-repair": {"style_stage": True, "interface": False, "shared": ("reader",), "constraints": False},
-    "publication-verify": {"style_stage": False, "interface": True, "shared": (), "constraints": True},
+    "publication-verify": {"style_stage": False, "interface": False, "shared": (), "constraints": False},
     "render": {"style_stage": False, "interface": False, "shared": (), "constraints": False},
 }
 

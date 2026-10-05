@@ -14,8 +14,8 @@
     },
     {
       "path": "prompts/shared/task.j2",
-      "bytes": 863,
-      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+      "bytes": 595,
+      "sha256": "97cfa109d8d2984946de4a1dfde8741f44bfb08e234674f6c00e719822cf464f"
     }
   ],
   "documents": [
@@ -35,20 +35,20 @@
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/frame.md",
-      "bytes": 22677,
-      "sha256": "0a54395dbc0540bf560496e814da8eb48bd2cd8012b92bd3b4099245835a09c4",
+      "bytes": 2935,
+      "sha256": "cbc32e40661816f714ebfd9254b1f142a43a17f9312b2d734b82350467a17478",
       "owner": "style-specific stage specialization"
     },
     {
       "path": "styles/synthesis-max/interface.md",
-      "bytes": 2758,
-      "sha256": "be4b146191d85c5da9680e408b001361a107a577303b572d82d9978cdfce1812",
+      "bytes": 2773,
+      "sha256": "19d3e9cfa543f388e043387be32ef29b38ce8ecaac4dd235b0a47fa571e3595f",
       "owner": "style interface declaration"
     },
     {
       "path": "styles/synthesis-max/style.yaml",
       "bytes": 808,
-      "sha256": "94164faee23e4cbc4958acc3078335b2290fc4c7149aba33f957373558a7817c",
+      "sha256": "014041abed22d4f16b91a6c19fab2c1cab6d484d7b859b738f12135592bc2682",
       "owner": "declarative style constraints"
     }
   ],
@@ -69,7 +69,7 @@
     },
     {
       "tag": "stage_task",
-      "bytes": 706,
+      "bytes": 540,
       "source": {
         "path": "prompts/shared/task.j2"
       },
@@ -77,6 +77,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 41159,
-  "user_bytes": 2638
+  "system_bytes": 21432,
+  "user_bytes": 2472
 }

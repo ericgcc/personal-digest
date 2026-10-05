@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
-  "approved_candidate_sha256": "3c086c55f8acb5654797c86f598f0f21c71e03858dfb4620bf015a560c795f04",
+  "approved_candidate_sha256": "8bb2c2620900d5418698951ab4c957e485f9a7b8a2945393a3b14a5e95834ffc",
   "categories": [
     "packaging-only",
     "deduplication-without-semantic-loss",
@@ -10,6 +10,54 @@
     "behavioral-change"
   ],
   "classifications": [
+    {
+      "profile": "synthesis-max-v1",
+      "stage": "*",
+      "kind": "*",
+      "block": "styles/synthesis-max/stages/*.md",
+      "category": "behavioral-change",
+      "justification": "Goal 2 Phase 1 deliberately rewrites each Synthesis MAX stage specialization around its single stage responsibility, removes personal preference leakage and cross-stage procedure, and preserves only the approved Synthesis-specific method."
+    },
+    {
+      "profile": "synthesis-max-v1",
+      "stage": "draft",
+      "kind": "*",
+      "block": "editorial/shared/editorial-base.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The shared prose contract is reduced to its executable cross-style quality floor; extended rationale and repeated examples were removed while clarity, coherence, orientation, fidelity, economy and naturalness obligations remain."
+    },
+    {
+      "profile": "synthesis-max-v1",
+      "stage": "analyze",
+      "kind": "*",
+      "block": "system/writing-reasoning-and-source-fidelity.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The legacy multi-style reasoning guide is replaced by a focused shared source-fidelity contract; Synthesis relationship testing now belongs to the Analyze specialization and instructions for unrelated styles no longer enter its prompt."
+    },
+    {
+      "profile": "synthesis-max-v1",
+      "stage": "analyze",
+      "kind": "*",
+      "block": "editorial/shared/reasoning-fidelity.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The focused source-fidelity contract preserves evidence, qualification and canonical relationship obligations without the legacy guide's other-style procedures or research exposition."
+    },
+    {
+      "profile": "synthesis-max-v1",
+      "stage": "render",
+      "kind": "*",
+      "block": "rendering/shared.md",
+      "category": "deduplication-without-semantic-loss",
+      "justification": "The shared renderer now contains only reusable HTML, localization, provenance, callout and safety primitives; multi-style architecture and duplicated profile-level instructions were removed."
+    },
+    {
+      "profile": "synthesis-max-v1",
+      "stage": "*",
+      "kind": "*",
+      "block": "stage_task",
+      "category": "behavioral-change",
+      "justification": "The shared task keeps the artifact and no-commentary requirements while removing prohibitions for tools the model call cannot access and output rules already owned by stage contracts."
+    },
     {
       "profile": "*",
       "stage": "*",

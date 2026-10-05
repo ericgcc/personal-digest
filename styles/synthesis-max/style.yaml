@@ -34,13 +34,11 @@ constraints:
   version: 1
 
   # The stages that receive this style's interface declaration (styles/<style>/interface.md).
-  # One owner: this list. The legacy profile routed the interface module to exactly these
-  # stages, so the delivery set is unchanged.
+  # One owner: this list. Only stages that need the composition model receive it.
   interface_stages:
     - analyze
     - frame
     - draft
-    - publication-verify
     - developmental-review
     - reader-review
 

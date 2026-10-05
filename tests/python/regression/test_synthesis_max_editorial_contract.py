@@ -3,15 +3,15 @@
 Each item is asserted here so the acceptance is a test result rather than a claim:
 
 1.  Analyze and Frame were verified against the September 21 Tech corpus before Draft changed.
-2.  Draft states a small number of executable responsibilities.
+2.  Draft contains only the Synthesis-specific writing method.
 3.  Draft forbids giving a source a paragraph merely because it was selected.
 4.  Draft treats `narrative_spine` as logical order, not a paragraph plan.
 5.  Draft explains terminology at the point the reader needs it.
-6.  The domain-accessibility module reaches the stages that need it.
+6.  Accessibility obligations are focused by stage rather than copied wholesale.
 7.  Developmental Review diagnoses the design's failure categories.
 8.  A frame defect is recorded as a frame defect, not converted into a demand for more prose.
-9.  Writer Revision acts on the highest-impact problems and does not invent a synthesis.
-10. Line Edit does not trade explanation for brevity.
+9.  Writer Revision has explicit evidence-bounded structural authority.
+10. Copy Edit does not trade explanation for brevity.
 11. Reader Review uses the same effective Reader Brief as drafting.
 12. Targeted Repair stays optional and localized.
 13. The Synthesis MAX legacy profile is retired and v1 is the default.
@@ -35,10 +35,6 @@ PROMPT_MIGRATION = ROOT / "tests" / "fixtures" / "prompt_migration"
 #: The style's stage specializations now live in the runtime instruction tree. The old
 #: ``system/style-pipelines/`` documents were consolidated into these files.
 STYLE_STAGES = ROOT / "styles" / "synthesis-max" / "stages"
-#: The domain-accessibility instruction was consolidated into the stage files that need it.
-DOMAIN_MARKER = "Domain accessibility in synthesis"
-
-
 def _run(args: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(
         [PYTHON, *args],
@@ -118,6 +114,17 @@ def test_analyze_requires_a_structured_cluster_schema():
         assert field in missing, field
 
 
+def test_synthesis_analyze_contains_no_digest_specific_value_policy():
+    text = (STYLE_STAGES / "analyze.md").read_text(encoding="utf-8").lower()
+    for leaked_policy in (
+        "teaching, applicability, ideas, and events",
+        "practical transferability",
+        "technical novelty",
+    ):
+        assert leaked_policy not in text
+    assert "apply the active digest's `selection` instructions as written" in text
+
+
 def test_frame_keeps_the_composition_constraints():
     """The one-to-four-thread and two-to-four-source constraints are still enforced."""
     from digest_system.editorial.validation.editorial import validate_frame
@@ -134,51 +141,48 @@ def test_frame_keeps_the_composition_constraints():
 # ---------------------------------------------------------------------------------------
 
 
-def test_draft_states_executable_responsibilities():
-    """The responsibilities are a small numbered list of obligations, not prose."""
+def test_draft_contains_only_the_synthesis_writing_method():
     text = _draft()
-    section = text.split("## Your responsibility in this style", 1)[1].split("## Boundaries", 1)[0]
-    numbered = [line for line in section.splitlines() if line.strip()[:2].rstrip(".").isdigit()]
-    assert 5 <= len(numbered) <= 12, f"expected a small list, found {len(numbered)}"
+    assert text.startswith("# Synthesis MAX — Draft")
+    assert "Write one explanation, not adjacent summaries" in text
+    assert "Respect upstream authority" in text
+    assert "assess each source" not in text
+    assert "Decide the edition mode" not in text
 
 
 def test_draft_forbids_a_paragraph_per_source():
     text = _draft()
-    assert "does not receive a paragraph because it was selected" in text
-    assert "merely to give it one" in text
+    assert "does not receive a paragraph merely because it was selected" in text
 
 
 def test_draft_treats_narrative_spine_as_logical_order():
     text = _draft()
-    assert "logical order, not a paragraph plan" in text
-    assert "A move is not a paragraph and not a sentence" in text
+    assert "logical order" in text
+    assert "not a paragraph template" in text
 
 
 def test_draft_explains_terminology_at_the_point_of_need():
     text = _draft()
-    assert "at the point the reader needs it" in text
+    assert "at the point of need" in text
 
 
 # ---------------------------------------------------------------------------------------
-# 6. The domain-accessibility module reaches the stages that need it
+# 6. Accessibility obligations stay focused by stage
 # ---------------------------------------------------------------------------------------
 
 
-def test_the_domain_module_reaches_draft_and_the_reviews():
-    """The module existed but reached no stage; it is now part of the stages that need it.
+def test_accessibility_obligations_are_stage_specific():
+    draft = _draft()
+    developmental = (STYLE_STAGES / "developmental-review.md").read_text(encoding="utf-8")
+    copy_edit = (STYLE_STAGES / "copy-edit.md").read_text(encoding="utf-8")
+    reader = (STYLE_STAGES / "reader-review.md").read_text(encoding="utf-8")
 
-    Under the convention resolver the module's text is consolidated into the stage's own style
-    file, so the check is that the module's instruction text reaches the stage — not that a
-    separate module path appears in the manifest.
-    """
-    from digest_system.editorial.prompts.inspection import inspect_stage
-
-    for stage_name in ("draft", "copy-edit", "developmental-review", "reader-review"):
-        inspection = inspect_stage(
-            digest_id="tech-bi-daily", profile_id="synthesis-max-v1", stage_name=stage_name
-        )
-        delivered = _normalize(inspection.prompt_text)
-        assert DOMAIN_MARKER in delivered, f"{stage_name} does not receive the domain instruction"
+    assert "Introduce specialized terminology at the point of need" in draft
+    assert "Missing orientation" in developmental
+    assert "sentence and local paragraph level" in copy_edit
+    assert "first-read comprehension" in reader
+    assert "Begin each thread" not in developmental
+    assert "Begin each thread" not in reader
 
 
 # ---------------------------------------------------------------------------------------
@@ -191,20 +195,20 @@ def test_the_review_diagnoses_the_design_categories():
     for category in (
         "Unclear subject",
         "Missing orientation",
-        "Unsupported abstraction",
-        "Unexplained relationship",
-        "Inventory of source findings",
+        "Reader promise not fulfilled",
+        "Weak explanatory progression",
+        "Source inventory",
+        "Unexplained relationship or unsupported abstraction",
         "Unnecessary secondary material",
-        "Disproportionate depth",
-        "Genuine frame defect",
+        "Disproportionate depth or frame defect",
     ):
         assert category in text, category
 
 
 def test_a_frame_defect_is_recorded_as_a_frame_defect():
-    text = _review()
+    text = _normalize(_review())
     assert "frame defect" in text.lower()
-    assert "do not instruct the writer to add explanations indefinitely" in text
+    assert "do not disguise it as a request for indefinitely more prose" in text
 
 
 # ---------------------------------------------------------------------------------------
@@ -215,22 +219,25 @@ def test_a_frame_defect_is_recorded_as_a_frame_defect():
 def test_writer_revision_acts_on_the_highest_impact_problems():
     text = _review()
     assert "highest-impact" in text
-    assert "Invent a different synthesis" in text
+    assert "reorder, expand, cut, split, merge, reframe, rewrite" in text
+    assert "approved evidence set" in text
 
 
 def test_copy_edit_does_not_trade_explanation_for_brevity():
-    text = _review()
-    assert "A shorter passage is not automatically a better one" in text
+    text = _normalize(_review())
+    assert "shorter prose is not automatically better prose" in text
 
 
-def test_reader_review_uses_the_same_effective_reader_brief():
+def test_reader_review_checks_copy_edit_regression():
     text = _review()
-    assert "same effective Reader Brief" in text
+    assert "losses caused by Copy Edit" in text
+    assert "damaged source relationships" in text
 
 
 def test_targeted_repair_stays_optional_and_localized():
-    text = _review()
-    assert "one diagnosed reader-facing problem, at one location, in one pass" in text
+    text = _normalize(_review())
+    assert "single diagnosed reader-facing problem at its stated location, once" in text
+    assert "second general revision pass" in text
 
 
 # ---------------------------------------------------------------------------------------

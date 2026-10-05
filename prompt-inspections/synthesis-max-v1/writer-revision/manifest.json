@@ -14,8 +14,8 @@
     },
     {
       "path": "prompts/shared/task.j2",
-      "bytes": 863,
-      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+      "bytes": 595,
+      "sha256": "97cfa109d8d2984946de4a1dfde8741f44bfb08e234674f6c00e719822cf464f"
     }
   ],
   "documents": [
@@ -29,8 +29,8 @@
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/writer-revision.md",
-      "bytes": 5706,
-      "sha256": "353d80b49176b4f76d1ebd434ac1613b182f5e8102ea6fc18f12f28f57e31cf3",
+      "bytes": 1428,
+      "sha256": "e3ec79c36b0ea14977f96c79db724a28f352f43291d47d337a7de76950010208",
       "owner": "style-specific stage specialization"
     }
   ],
@@ -122,7 +122,7 @@
     },
     {
       "tag": "stage_task",
-      "bytes": 693,
+      "bytes": 527,
       "source": {
         "path": "prompts/shared/task.j2"
       },
@@ -130,6 +130,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 12120,
-  "user_bytes": 6371
+  "system_bytes": 7842,
+  "user_bytes": 6205
 }

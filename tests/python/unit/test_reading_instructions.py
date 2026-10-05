@@ -225,10 +225,10 @@ def test_the_render_stage_receives_no_reading_instructions():
 def test_routed_sections_reach_their_stage(profile_id):
     """Each stage's prompt contains exactly the sections the contract routes to it.
 
-    An LLM or copy-verify stage receives a `reading_instructions` block. An evaluation stage
-    receives the reader through its `reader` contract instead, because the judge is given one
-    combined prompt rather than data blocks; the reader section reaches it as the digest reader
-    brief, and no other section reaches it at all.
+    An LLM stage receives a `reading_instructions` block. An evaluation stage receives the
+    reader through its `reader` contract instead, because the judge is given one combined prompt
+    rather than data blocks. A deterministic stage consumes any routed configuration in code and
+    therefore receives no prompt reading-instructions block.
     """
     from digest_system.config import resolve_digest
 
@@ -238,6 +238,11 @@ def test_routed_sections_reach_their_stage(profile_id):
         inspection = inspect_stage(digest_id=digest_id, profile_id=profile_id, stage_name=stage_name)
         text = inspection.prompt_text
         expected = instructions.for_stage(stage_name)
+        if inspection.executor == "deterministic":
+            assert "<reading_instructions>" not in text, (
+                f"{profile_id}/{stage_name}: deterministic stage must not receive a prompt block"
+            )
+            continue
         if inspection.executor == "evaluation":
             # Only the Reader section reaches an evaluation stage, and only through the contract.
             assert expected == ("Reader",) or expected == (), stage_name

@@ -14,8 +14,8 @@
     },
     {
       "path": "prompts/shared/task.j2",
-      "bytes": 863,
-      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+      "bytes": 595,
+      "sha256": "97cfa109d8d2984946de4a1dfde8741f44bfb08e234674f6c00e719822cf464f"
     }
   ],
   "documents": [
@@ -27,8 +27,8 @@
     },
     {
       "path": "rendering/shared.md",
-      "bytes": 18317,
-      "sha256": "fa3cc361874d575e37cd8c5aedfd456f61a34df42c42ac767a2af302ed5727e0",
+      "bytes": 5723,
+      "sha256": "06e73e136854ac7162303e9f317d127dbe9df4ae5a6a92342c7375fd7d9d45e2",
       "owner": "shared rendering contract"
     },
     {
@@ -89,16 +89,8 @@
       "purpose": "prior artifact or digest reading instructions"
     },
     {
-      "tag": "rendering_values",
-      "bytes": 139,
-      "source": {
-        "kind": "executor-derived"
-      },
-      "purpose": "stage-specific runtime input"
-    },
-    {
       "tag": "stage_task",
-      "bytes": 533,
+      "bytes": 367,
       "source": {
         "path": "prompts/shared/task.j2"
       },
@@ -106,6 +98,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 41393,
-  "user_bytes": 5147
+  "system_bytes": 28799,
+  "user_bytes": 4981
 }

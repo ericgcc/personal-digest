@@ -14,8 +14,8 @@
     },
     {
       "path": "prompts/shared/task.j2",
-      "bytes": 863,
-      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+      "bytes": 595,
+      "sha256": "97cfa109d8d2984946de4a1dfde8741f44bfb08e234674f6c00e719822cf464f"
     }
   ],
   "documents": [
@@ -27,28 +27,28 @@
     },
     {
       "path": "editorial/shared/reasoning-fidelity.md",
-      "bytes": 8325,
-      "sha256": "5a41b81c27003c0496f9bcebc09d0397c5c27ff77c1d4f778cc0caf3a32d5710",
+      "bytes": 3091,
+      "sha256": "2aaa3dcc9b42d7162bf4124af65aa5e443222c0007a4c3dae12f6d5b993d6da4",
       "owner": "shared cross-cutting contract"
     }
   ],
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/analyze.md",
-      "bytes": 11736,
-      "sha256": "f941d502c82e70e5ca8ee6d06657d7cfe87c9829030b1a3a00ba0b82a4c68e8e",
+      "bytes": 4260,
+      "sha256": "327e16a95a2eac5be4b46dfc978aa5b6935bea3a6de2d39a63cb0f07243d157a",
       "owner": "style-specific stage specialization"
     },
     {
       "path": "styles/synthesis-max/interface.md",
-      "bytes": 2758,
-      "sha256": "be4b146191d85c5da9680e408b001361a107a577303b572d82d9978cdfce1812",
+      "bytes": 2773,
+      "sha256": "19d3e9cfa543f388e043387be32ef29b38ce8ecaac4dd235b0a47fa571e3595f",
       "owner": "style interface declaration"
     },
     {
       "path": "styles/synthesis-max/style.yaml",
       "bytes": 808,
-      "sha256": "94164faee23e4cbc4958acc3078335b2290fc4c7149aba33f957373558a7817c",
+      "sha256": "014041abed22d4f16b91a6c19fab2c1cab6d484d7b859b738f12135592bc2682",
       "owner": "declarative style constraints"
     }
   ],
@@ -91,7 +91,7 @@
     },
     {
       "tag": "stage_task",
-      "bytes": 552,
+      "bytes": 386,
       "source": {
         "path": "prompts/shared/task.j2"
       },
@@ -99,6 +99,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 31272,
-  "user_bytes": 6997
+  "system_bytes": 18577,
+  "user_bytes": 6831
 }

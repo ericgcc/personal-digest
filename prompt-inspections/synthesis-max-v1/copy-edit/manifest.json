@@ -14,8 +14,8 @@
     },
     {
       "path": "prompts/shared/task.j2",
-      "bytes": 863,
-      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+      "bytes": 595,
+      "sha256": "97cfa109d8d2984946de4a1dfde8741f44bfb08e234674f6c00e719822cf464f"
     }
   ],
   "documents": [
@@ -35,8 +35,8 @@
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/copy-edit.md",
-      "bytes": 7460,
-      "sha256": "436904227b7727023a335fbd2d2fe3e3d1e91118d2f07fd4b4692c93a6d5bdd3",
+      "bytes": 922,
+      "sha256": "759c87df2f321e4e9b30c946d0589531496638dd0d5b353b1101717094c78d7e",
       "owner": "style-specific stage specialization"
     }
   ],
@@ -65,7 +65,7 @@
     },
     {
       "tag": "stage_task",
-      "bytes": 879,
+      "bytes": 713,
       "source": {
         "path": "prompts/shared/task.j2"
       },
@@ -73,6 +73,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 16530,
-  "user_bytes": 2346
+  "system_bytes": 9992,
+  "user_bytes": 2180
 }

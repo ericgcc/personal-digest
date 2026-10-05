@@ -232,7 +232,6 @@ STAGES_V2: tuple[Stage, ...] = (
         on_failure="recoverable",
         extra_artifacts=("verification.json",),
         purpose="PUBLICATION VERIFY: run the deterministic publication checks over the revised prose and produce an auditable report. It never edits prose.",
-        blocks=lambda ctx: (ctx.reading_instructions_block("publication-verify"),),
     ),
     Stage(
         name="render",

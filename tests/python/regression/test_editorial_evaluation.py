@@ -155,6 +155,19 @@ def test_the_section_schema_carries_the_synthesis_flags() -> None:
         assert name in fields, name
 
 
+def test_the_comparison_prompt_requests_every_scored_schema_field() -> None:
+    """Defaults must not hide a field the comparison judge was never asked to return."""
+    from evaluation.semantic.schema import DocumentDimensions, SectionEvaluation
+
+    prompt = (ROOT / "prompts" / "evaluation" / "comparison.j2").read_text(encoding="utf-8")
+    for name in DocumentDimensions.model_fields:
+        assert f'"{name}"' in prompt, name
+    for name in SectionEvaluation.model_fields:
+        if name == "validation_notes":
+            continue
+        assert f'"{name}"' in prompt, name
+
+
 # ---------------------------------------------------------------------------------------
 # 5-7. The selection audit
 # ---------------------------------------------------------------------------------------

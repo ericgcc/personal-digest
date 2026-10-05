@@ -4,7 +4,7 @@
 | **Purpose** | Help the reader understand the strongest material through meaningful relationships between sources. The synthesis must improve explanation, not merely produce a higher-level interpretation. |
 | **Composition unit** | A reader-understandable concrete topic, question, mechanism, development, or tension explained through at least two substantively contributing sources. |
 | **Source relationship** | Cross-source synthesis is mandatory in every narrative thread. Prefer two or three sources. Four are permitted only when each one has a distinct, explainable role in the same concrete subject. No thread may declare more than four contributing sources. Single-source threads are not permitted. |
-| **Selection model** | Highly selective: include material that contributes enough information, explanatory power, practical significance, novelty, or relationship value to justify space. |
+| **Selection model** | Apply the active digest's selection preferences. Among material that serves them, retain only sources and relationships whose evidence and explanatory contribution justify space. |
 | **Depth model** | Variable-high depth within the resolved body budget, excluding the catalog. |
 | **Organization model** | Big Picture opening → evidence-supported numbered synthesized threads within the resolved unit and source bounds; use fewer when the corpus cannot support honest multi-source grouping, and when no thread qualifies at all publish the explicit catalog-only edition. |
 | **Progression model** | Each thread develops from concrete orientation → integrated explanation and source contributions → supported synthesis or implication, with material ordered by the explanation rather than by source. |

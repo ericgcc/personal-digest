@@ -67,11 +67,11 @@ SHARED_CONTRACT_FILES: dict[str, str] = {
 #: The delivery set is declared by the style itself (``constraints.interface_stages`` in
 #: ``styles/<style>/style.yaml``), so a style owns which stages see its interface.
 DEFAULT_INTERFACE_STAGES: frozenset[str] = frozenset(
-    {"analyze", "frame", "draft", "publication-verify", "developmental-review", "reader-review"}
+    {"analyze", "frame", "draft", "developmental-review", "reader-review"}
 )
 
 #: Stages that receive the resolved declarative constraints block.
-CONSTRAINT_STAGES: frozenset[str] = frozenset({"analyze", "frame", "draft", "publication-verify"})
+CONSTRAINT_STAGES: frozenset[str] = frozenset({"analyze", "frame", "draft"})
 
 #: The stages the Python evaluation adapter executes. Derived from the stage registry so
 #: the API follows execution responsibility rather than a loosely related grouping.

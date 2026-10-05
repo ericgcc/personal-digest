@@ -65,136 +65,84 @@ One complete HTML document, beginning with its doctype, containing no Markdown, 
 </instruction>
 
 <instruction path="rendering/shared.md" purpose="shared rendering contract">
-# HTML email rendering
-Apply this shared contract together with the resolved style rendering profile and its matching reference template. If either style asset is unavailable, stop safely.
+# Shared HTML Email Rendering Contract
 
-## Complete-output localization
-The configured digest `language` applies to every generated reader-facing HTML string. This includes `<title>`, subject-derived display text, preheader, dates, masthead labels, recurring purpose, section and component headings, generated editorial titles, body copy, statuses, reading-time wording and units, counts, calls to action, callout labels, footer, `alt`, `title`, and `aria-label` attributes. Original source/article titles are the explicit invariant exception below.
+Render the approved prose with the active style's rendering profile and matching template.
+The template supplies structure and visual primitives; it is never a source of editorial
+content, section count, or example values.
 
-* Resolve a valid BCP 47 value for `{{HTML_LANG}}` and use it in `<html lang>`.
-* Use natural target-language editorial phrasing, grammar, capitalization, pluralization, date formatting, and time notation. Do not mechanically translate English word order.
-* Translate descriptive digest names and generated editorial titles when needed for a fully localized reading experience.
-* **Never translate a source/article title.** Every `{{SOURCE_TITLE}}` value must be the exact original title as published, displayed in its original language without paraphrase, normalization, or transliteration. Preserve the original URL and use the same verbatim title in source-led entries and final catalogs.
-* `{{SOURCE_TITLE}}` is the verbatim title text alone. `{{SOURCE_TITLE_HTML}}` is the same verbatim title already wrapped in its presentation markup—linked when a valid source locator exists, plain text otherwise. Per-source entry titles use the latter form so the linked/unlinked branch lives in the renderer rather than in the template. Neither placeholder may ever carry a translated, paraphrased, or normalized title.
-* Preserve author/publication names, brands, products, code, identifiers, citations, and URLs unless a conventional localized reader-facing name exists.
-* Canonical English component/status names are semantic tokens. Their visible labels must be localized without changing their color, structural role, or internal state value.
-* Do not emit a bilingual interface or parenthetical English labels unless the active digest explicitly requests bilingual delivery.
-* Template comments and placeholder identifiers may remain English because they are not delivered as reader-visible copy. Every visible literal in a canonical style template must be a placeholder or language-invariant symbol; hard-coded English UI text is invalid.
+## Localization
 
-## Shared visual language
-All style templates are built from the same visual language and should feel like one publication family without becoming clones.
+Use the digest's configured language for every generated reader-facing string, including
+metadata, dates, labels, statuses, reading-time wording, calls to action, footer text, and
+accessibility attributes. Use natural target-language grammar and pluralization.
 
-`templates/email-theme.html` is the shared visual reference and component library. It contains the primitives from which the style templates were derived: typography hierarchy, columns, backgrounds, borders, spacing, buttons, table patterns, and responsive utilities. It is not itself a required digest layout.
+Original source or article titles are the invariant exception: reproduce them verbatim in
+their original language. Preserve proper names, brands, code, identifiers, citations, and
+URLs unless a conventional localized reader-facing name exists. Set `<html lang>` to the
+resolved BCP 47 value.
 
-Preserve the common family characteristics demonstrated by the templates:
+## Email-safe shell and responsive behavior
 
-* Email-safe nested presentation tables with `cellpadding="0"`, `cellspacing="0"`, and no JavaScript.
-* Slate-blue page background `#d1deec`.
-* Centered white card, maximum width `720px`, rounded corners, subtle shadow, and the blue top accent.
-* Inner editorial reading measure of approximately `596px` on desktop.
-* Georgia / Times-style serif for editorial headlines and major section titles.
-* Arial / Helvetica for body copy, metadata, labels, source metadata, citations, buttons, and statuses.
-* The same blue accent, muted secondary text, light rules, cream reading-time capsule, and dark footer family.
-* Inline critical styles plus reusable CSS classes because Gmail and other email clients vary in CSS support.
+Preserve the template's publication family: its email-safe presentation tables, centered
+card, editorial reading measure, typography hierarchy, palette, spacing, and dark footer.
+Keep critical styles inline where the template does. Do not introduce external fonts,
+scripts, forms, required remote images, CSS grid, flexbox, complex positioning, or active
+content. Escape untrusted text and allow only validated `https` links.
 
-Do not introduce a new color system, font family, card language, or decorative motif merely to differentiate styles. Style identity should come primarily from **composition, hierarchy, density, and rhythm**.
+Responsive output should reflow before it shrinks. Reduce rails, gaps, and horizontal
+padding on narrow screens; stack width-expensive components when the style profile says to;
+keep body copy comfortably readable; and let metadata, source notes, and the reading-time
+capsule wrap. Never preserve desktop geometry when it leaves an unusably narrow text
+column. Collapse adjacent component borders so only one separator appears.
 
-Do not introduce external fonts, scripts, forms, required remote images, complex positioning, CSS grid, or flexbox. Escape untrusted source text and allow only validated `https` links.
+## Authoritative rendering values
 
-## Responsive principle
-**Responsive design should preserve the visual language, not the desktop geometry.**
+Use the supplied rendering values exactly. Do not invent a run key, date, subject, language
+tag, reading time, source count, or body-word count.
 
-Prefer reflow over shrinking. The email must remain comfortable to read on desktop, tablet, and phone.
+* Fill the template's hidden `{{RUN_KEY}}` marker with the supplied run key.
+* Use `delivery_subject` when supplied. Use `date_iso` only to format the same date naturally
+  for the target language.
+* The normal reading capsule represents reviewed-source time, digest time, and time saved.
+  Localize its units and labels. When the source time is genuinely unavailable, replace the
+  whole capsule with the supplied degraded digest-only form; do not display a missing value
+  as measured.
+* Show a source's recorded substantive reading time wherever the style renders that source.
+  Omit it when the source was not substantively read.
 
-Shared rules:
+## Links and numerical citations
 
-* Desktop may use the full editorial composition shown by the active template.
-* Tablet may tighten rails, gaps, and horizontal padding while preserving the intended hierarchy when space permits.
-* Mobile should stack or remove width-expensive side rails instead of squeezing the text column.
-* Keep body copy near `16px / 25–26px` on mobile unless the active template deliberately specifies otherwise.
-* Reduce horizontal padding before reducing readable type size. Mobile content padding should normally remain around `22–24px`.
-* Do not preserve a desktop multi-column arrangement when it leaves the main reading column uncomfortably narrow.
-* Compact indexes may use two columns on desktop/tablet and one column on mobile.
-* Source metadata, dates, and reading-time details may wrap or stack; never force them into tiny type simply to remain on one line.
-* Never create consecutive horizontal rules or visually doubled separators. When adjacent components both provide a boundary, keep only one separator; prefer removing the later component's top border when the previous component already has a bottom border.
+Use the canonical source-note manifest for source identity, numbering, and locators. Do not
+reconstruct an identity or URL from prose.
 
-Each rendering profile defines any additional responsive transformations required by that style.
-
-## Shared shell
-### Document metadata and preheader
-* Set `<html lang="{{HTML_LANG}}">` using the resolved BCP 47 tag.
-* Set `<title>` to `<localized full digest name> — <localized formatted digest date>`. The full name must contain one natural localized digest/summary descriptor, matching the delivered subject invariant.
-* Replace the hidden preheader with one natural target-language sentence, ideally 90–140 characters, that adds inbox-preview value rather than repeating the subject.
-* Preserve `<meta name="x-apple-disable-message-reformatting">` and the compatibility resets from the reference template.
-
-### Masthead
-* Keep the small blue uppercase publication label in the upper left; generate a concise reusable target-language label through `{{PUBLICATION_LABEL}}` unless the digest profile specifies a localized alternative.
-* Place the localized digest date opposite it on larger screens and allow the pair to stack on narrow mobile layouts when needed.
-* Use the localized digest display name as the large serif headline. Preserve it unchanged only when it is a deliberate proper name or brand.
-* Under it, write one target-language sentence describing the recurring purpose of the digest, not the findings of only this run.
-
-### Reading-time and time-saved capsule
-* Preserve the centered cream capsule and its typography.
-* The normal semantic form is **`<reviewed-source reading time> → <digest reading time> · ⚡ <localized saved label> ~<difference>`**. Treat this as the default required output, not an optional enhancement. Localize the label, time units, number formatting, and pluralization.
-* Compute the reviewed-source time from the substantive material actually read during this run, including reviewed items later omitted from the editorial body. Do not count duplicates skipped without rereading, promotional/admin material discarded without substantive reading, or inaccessible items.
-* Prefer a source's explicit reading-time estimate when it is available and trustworthy. Otherwise estimate from the full substantive text actually read using the shared reading-speed assumption defined by the workflow.
-* Estimate digest reading time from the finished editorial body, excluding the bibliographic source catalog and boilerplate footer.
-* Round for human readability; the displayed saved time is `max(reviewed-source time - digest time, 0)`.
-* Do not invent time for content that was not actually read. If the run genuinely lacks enough information to estimate reviewed-source time, use a natural localized equivalent of `About <digest time> read` and treat that as an exceptional degraded state. In that degraded state, replace the **entire** capsule text with that localized form; never leave the `<reviewed-source reading time> → <digest reading time>` structure partially filled, and never render a missing source time as a measured value.
-* Allow the capsule to wrap gracefully on mobile rather than reducing it to unreadable type.
-
-### Per-source reading time
-Whenever any current or future style reports an individual source or article—inside a source-led entry, source catalog, index, or other source-facing component—show that item's original substantive reading time in the configured language when it was actually read substantively. `<N> min` is only the English-format example; localize the unit and formatting when the target language differs.
-
-* Reuse the per-item value recorded during source normalization: prefer a trustworthy source-provided estimate; otherwise estimate from the substantive text actually read at the workflow's shared reading speed.
-* Round for human readability and describe the original source, not the digest summary. This per-source value is separate from the aggregate capsule.
-* In a source-status badge, append the value with a middle dot: `Selected · 12 min`, `Worth reading · 8 min`, `Reviewed · 4 min`, or `Limited content · 1 min`.
-* If the style has no status badge at that location, render `<N> min` as quiet source metadata beside or below the source identity.
-* Omit the value for duplicates skipped without rereading, pre-filtered candidates, promotional/administrative material discarded without substantive reading, and inaccessible content. A limited preview or email-only item may show a time only for the substantive material actually read.
-* This rule does not require a source catalog or statuses in a style whose editorial contract does not use them.
-
-## Shared link and citation primitives
-The active summary style decides whether stable numerical citations are required. Resolve source locators using `system/workflow.md`; clickability is conditional on having a valid locator.
-
-When a valid locator exists, use the shared clickable citation pill:
+When a valid locator exists, render the stable number as a clickable citation pill:
 
 ```html
 <a class="citation" href="https://original-source.example/article">7</a>
 ```
 
-When an email-only source has no reliable locator, preserve the same source number with a non-clickable reference pill:
+Without a reliable locator, preserve the number as a non-clickable pill:
 
 ```html
 <span class="citation" aria-label="{{SOURCE_CITATION_ARIA_LABEL}}">7</span>
 ```
 
-* The visible content is only the stable source number.
-* Place it immediately after the supported claim.
-* Reuse the same number everywhere the source appears, and reuse the same validated URL everywhere when one exists.
-* Keep adjacent citation pills separated by a normal space.
-* Do not put brackets around the number; the pill supplies the visual boundary.
-* A missing locator never authorizes a fabricated or approximate link.
+Place pills immediately after supported claims, keep adjacent pills separated, and never
+fabricate or approximate a link. A source has one canonical identity; author and publication
+are attributes of it, not additional sources.
 
-For per-source styles that do not require numerical inline citations, link the article/item title when a valid locator exists. Otherwise render the title as normal editorial text and preserve email-only provenance without a fake link.
+## Source statuses and catalog rows
 
-## Shared source-status badges
-When a style renders source statuses, use one shared semantic color system. The backticked English names below identify canonical semantics; the visible badge text must be the natural localized equivalent:
+Render only the catalog-eligible, substantively reviewed corpus. The active style profile
+defines its catalog grouping and visible status vocabulary. Keep selected, recommended, and
+reviewed sets disjoint, retain stable source numbers, and keep operational exclusions out of
+reader-facing rows. Apply the profile's color semantics and append the recorded per-source
+reading time where available.
 
-* **`Selected`**—pale green badge with dark green text. It means the source materially contributed to the digest body.
-* **`Worth reading`**—pale yellow badge with dark amber text. This status is authorized by `curated-discovery` and `synthesis-max`, only for an unselected source whose original the editor actively recommends if the reader has extra time. It is never a section, never a Discovery label, and is mutually exclusive with `Selected`.
-* **`Reviewed`**—neutral light-gray badge with muted slate text. It means the source was substantively reviewed but was neither selected nor marked `Worth reading`. This is the canonical reader-facing replacement for `Not selected`.
-* **`Limited content`**—an optional neutral qualifier only when a substantive but incomplete preview is catalog-eligible. `Email-only` is provenance and may accompany an editorial outcome; it is not a competing selection status.
+## Callout primitive
 
-New output must never display the deprecated `Not selected` label or a translation of that deprecated state. Historical state may still contain `not_selected`; when such a catalog-eligible record must be rendered and it represents a substantive ordinary omission, display the localized equivalent of `Reviewed`.
-
-Operational exclusions such as `Duplicate`, `Promotional content`, `Administrative`, `Social notification`, `Low signal`, `Inaccessible`, and `Excluded before read` remain internal and must not be rendered as source rows or badges. The catalog is the substantively reviewed corpus, not an inbox audit log.
-
-Validate statuses by source ID immediately before HTML generation: every source represented in the editorial body is `Selected`; `Worth reading` is drawn only from the unselected remainder; and the sets are disjoint. Localize the two Curated Discovery concepts distinctly in every supported language: the `Worth reading` catalog badge and the selected-item `Worth opening for:` depth cue must never collapse to the same translated string, because one is a recommendation about an unselected source and the other is a depth cue inside selected content.
-
-Use email-safe inline styles or matching classes from the active template. Status color communicates editorial state only; do not introduce icons or stars. Append per-source reading time according to the preceding shared rule.
-
-## Shared callout primitive
-The light-blue inset component is a reusable **callout**, independent of any digest's editorial vocabulary.
+The neutral inset callout is a presentation primitive, not an editorial vocabulary:
 
 ```html
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fc;border-radius:8px">
@@ -207,50 +155,34 @@ The light-blue inset component is a reusable **callout**, independent of any dig
 </table>
 ```
 
-The renderer supplies the container only. The active digest instructions decide whether a callout is authorized and what its label means.
+Render a callout only when the approved prose contains a valid directive and the supplied
+registry authorizes its type. Use the registry's label, keep the callout compact, and place
+it where the style profile permits. Never invent a callout or import a label from another
+digest.
 
-Callout rules:
+## Template completion and safety
 
-* Use callouts **only when explicitly requested or authorized by the active digest instructions and compatible with the selected style**.
-* Keep them compact: normally one label and one paragraph of one or two sentences.
-* Use them to elevate an application, warning, recommended source, memorable idea, question, or other digest-defined emphasis.
-* They may contain bold text, numerical citation pills, or one descriptive link using the shared link treatment.
-* Do not use them as decorative restatements of the paragraph immediately above.
-* Do not invent vocabulary from another digest. Labels such as `TREND`, `PRACTICAL`, `READ`, `WRITE`, or `DISCOVER` are digest-specific unless the active digest defines them.
-* Do not create a separate callout appendix.
+Map approved headings, paragraphs, lists, citations, source notes, catalog rows, and
+callouts to the components the style profile names. Preserve their order and wording. Fill
+every template placeholder and remove all specimen content. Preserve the hidden run-key
+comment and the template's compatibility metadata.
 
-The active rendering profile defines where a callout may appear. If a style does not support callouts, do not force one into its layout.
+Generated wrapper text may describe the recurring digest purpose but may not add an
+editorial conclusion. Do not expose costs, tokens, timings, model names, prompts, file
+paths, run directories, internal notes, or validation data. The hidden run key is the sole
+permitted operational value.
 
-## Source provenance
-Source presentation depends on the selected style:
+Before returning the document, verify that:
 
-* `curated-discovery` and `synthesis-max` use stable numerical citations, section/item-level `SOURCE NOTES`, and a final bibliographic `Sources` catalog. The catalog grouping follows the style default or a valid digest-level `source_catalog_grouping` override. Citations and catalog titles are clickable only when a valid source locator exists.
-
-Never add a source catalog merely because another style has one. Follow the selected style file and rendering profile.
-
-## Footer and run marker
-* Preserve the shared dark footer treatment.
-* Adapt its short line to the digest purpose without adding a new editorial conclusion or sign-off.
-* Insert `<!-- run-key: <deterministic run key> -->` before the closing body so Gmail Sent can be checked for duplicate protection and state repair.
-* The run key must remain invisible.
-* Nothing in the footer may violate the selected style's ending rules.
-
-## Final rendering checks
-Before sending:
-
-1. Confirm the editorial body has completed every stage through the render stage and satisfies `editorial/shared/editorial-base.md` plus the selected style's Writing character.
-2. Confirm the template and rendering profile match the selected summary style.
-3. Confirm no example text, dates, article links, source numbers, reading-time values, or placeholder labels remain from the reference template.
-4. Confirm the email preserves the shared visual language while retaining the selected style's distinct composition.
-5. Confirm desktop, tablet, and mobile layouts remain readable; mobile must not retain width-expensive desktop geometry that squeezes body text.
-6. Confirm every available source link/clickable citation points to the correct locator, and that email-only sources without a locator remain unlinked rather than receiving fabricated destinations.
-7. Confirm callouts appear only when authorized and in a location permitted by the active rendering profile.
-8. Confirm the selected style's source-provenance and ending rules are followed exactly.
-9. Confirm the dark footer and hidden run-key remain intact.
-10. Confirm no two horizontal rules/borders appear consecutively between adjacent content blocks; collapse any doubled separator to one subtle rule.
-11. Confirm the reading-time capsule uses the full source → digest → saved form whenever the run contains enough measured or estimable source text; do not silently downgrade to digest-only reading time.
-12. Confirm every placeholder or temporary marker is gone except the intentional hidden run-key comment.
-13. Confirm every generated reader-facing string and accessibility attribute uses the configured language, the `<html lang>` value is valid, every source/article title is displayed verbatim in its original language, and no hard-coded English template text leaked into a non-English digest.
+1. the HTML begins with its doctype and contains no Markdown or unresolved placeholder;
+2. every editorial word and source identity matches the approved prose and canonical
+   manifest;
+3. every link and citation resolves to the correct source or remains unlinked;
+4. localization is complete while original source titles remain verbatim;
+5. optional callouts are authorized and correctly placed;
+6. desktop, tablet, and mobile layouts remain readable;
+7. the dark footer and hidden run-key marker remain intact;
+8. no scripts, active content, example values, or internal data appear.
 
 </instruction>
 

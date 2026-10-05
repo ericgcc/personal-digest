@@ -10,7 +10,7 @@
 
 - `prompts/shared/preamble.j2` — 465 units, sha256 `8f60794abad6`
 - `prompts/stages/frame/user.j2` — 82 units, sha256 `9ffb1544aae2`
-- `prompts/shared/task.j2` — 863 units, sha256 `dc71250d7421`
+- `prompts/shared/task.j2` — 595 units, sha256 `97cfa109d8d2`
 
 ## Instruction documents
 
@@ -19,16 +19,16 @@
 
 ## Style-supplied instructions
 
-- `styles/synthesis-max/stages/frame.md` — 22677 chars; owner: style-specific stage specialization; sha256 `0a54395dbc05`
-- `styles/synthesis-max/interface.md` — 2758 chars; owner: style interface declaration; sha256 `be4b146191d8`
-- `styles/synthesis-max/style.yaml` — 808 chars; owner: declarative style constraints; sha256 `94164faee23e`
+- `styles/synthesis-max/stages/frame.md` — 2935 chars; owner: style-specific stage specialization; sha256 `cbc32e406618`
+- `styles/synthesis-max/interface.md` — 2773 chars; owner: style interface declaration; sha256 `19d3e9cfa543`
+- `styles/synthesis-max/style.yaml` — 808 chars; owner: declarative style constraints; sha256 `014041abed22`
 
 ## Data blocks
 
 - `reading_instructions` — 1882 chars; prior artifact or digest reading instructions; source `{"path": "digests/tech-bi-daily.md", "sections": ["Reader", "Content preferences", "Optional highlights"], "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"}`
-- `stage_task` — 706 chars; immediate task and output contract; source `{"path": "prompts/shared/task.j2"}`
+- `stage_task` — 540 chars; immediate task and output contract; source `{"path": "prompts/shared/task.j2"}`
 
 ## Sizes
 
-- System: 41159 units
-- User: 2638 units
+- System: 21432 units
+- User: 2472 units

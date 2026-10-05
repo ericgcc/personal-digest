@@ -1,261 +1,63 @@
-## Synthesis mode
-Produce one integrated briefing, not a collection of article summaries.
-
-Before writing:
-
-1. Form the catalog-eligible substantively reviewed corpus under the shared workflow, then assign every source in it a permanent sequential number based on input order.
-2. Interrogate each promising source before synthesizing it: identify its actual thesis, strongest evidence/mechanism, meaningful caveats or anomalies, and what it uniquely contributes.
-3. Evaluate each source for information value, explanatory power, practical significance, novelty and relevance to the broader source set.
-4. Identify and classify meaningful relationships precisely: reinforcement, extension, qualification, contradiction, complementarity, shared cause/consequence, or independence.
-5. For every proposed thread, ask: **What concrete topic, question, mechanism, development, or tension do at least two sources help the reader understand better together—and what does each source add?** Then apply the relationship, contribution, evidence, counter-test, comprehension, and semantic-distance checks in `editorial/shared/reasoning-fidelity.md`.
-6. Select the material that provides enough value to justify space in a short briefing.
-7. Choose the editorial structure that best reflects the evidence. Treat the initial synthesis as a working explanation, not a conclusion that later evidence must be made to fit.
-
-Organize the briefing around concrete shared subjects that become more understandable through synthesis—not publications, authors, individual articles, or abstract principles invented to connect distant material.
-
-Seek synthesis where it is genuinely supported. Do not assume the source set has one unifying theme.
-
-A strong section may answer questions such as:
-
-* What concrete development, mechanism, question, or tension do these sources jointly explain?
-* Where do sources reinforce, qualify or contradict one another?
-* What does each source contribute that the others do not?
-* What supported implication becomes visible after the shared subject is clear?
-
-Explicitly explain connections rather than placing adjacent article summaries under a shared heading.
-
-Every narrative thread must integrate at least two sources that contribute materially. Prefer two or three when they are sufficient. Four or more are welcome only when every source helps explain the same concrete subject and the thread remains easy to follow. A second source used only as decoration, analogy, or citation padding does not satisfy this requirement.
-
-If a valuable source has no honest synthesis partner, keep it outside the Synthesis MAX narrative; it may still appear as `Worth reading` or `Reviewed` in the source catalog. Never create a single-source thread.
-
-Do not group sources merely because they instantiate the same broad principle. If the relationship becomes visible only after translating distant domains into a slogan, metaphor, or high-level abstraction, keep them separate. The farther apart the source domains are, the stronger and more concrete the explanatory benefit must be.
-
-Recurring coverage is not automatically important. Repetition may represent duplication rather than signal.
-
-## Required structure
-### The Big Picture
-Open the briefing with one compact orientation within the resolved opening-word range and use inline numerical citations. Its first duty is to tell the reader, in plain language, what the most important development, mechanism, question, or tension is and why it matters. Establish the concrete world of the briefing before introducing specialized vocabulary or an overarching interpretation. Add a cross-source interpretation only when it makes that picture clearer. It must earn its place rather than act as a table of contents.
-
-If one well-supported overarching pattern, tension, or question **emerges from the analyzed evidence**, articulate it directly. It may be modest. If the strongest material instead forms several distinct threads, frame two or three of the most compelling ones and any honest relationship between them without forcing a single thesis or upgrading topical proximity into significance.
-
-Do not write inventory prose such as "today's edition moves from X to Y and closes with Z." Do not describe ingestion, filtering, ranking, or summarization. Do not open with a polished abstraction whose concrete meaning becomes clear only after reading the body. Put the clearest high-value orientation early enough that the reader wants to continue into the threads.
-
-### Thematic sections
-Use numbered thematic sections. Their renderer-visible numbering and fixed component label are controlled by the matching rendering profile; they are not editorial copy and must not be renamed or adapted by the style.
-
-Each section should normally contain:
-
-* Material from at least two substantively contributing sources, and never more than four.
-* A one-sentence subtitle that identifies the concrete subject and states what the combined material helps explain.
-* As many paragraphs as the idea's analytical development genuinely requires. Allocate depth independently: a richer relationship may need several paragraphs, while a narrower one may need fewer. Do not infer paragraph count or section length from neighboring threads or from the HTML template.
-* Inline numerical citations attached to the exact claims or synthesized inferences they support.
-* A short thread-level source-notes component exposing the principal source names and their stable numbers, linked when a valid locator exists. Its visible label and treatment come exclusively from the matching rendering profile.
-
-Section titles and subtitles must let the reader identify the concrete subject before reading the body. Use the most broadly understandable vocabulary that preserves the necessary precision; a specialized term may appear when essential, but it must not carry the full burden of orientation. Prefer specific mechanisms, developments, questions, or consequences over slogans, metaphors, or abstract conclusions that the body must decode. Do not repeat an article title.
-
-Do not add an article-by-article roundup.
-
-### The catalog-only edition
-When no honest cross-source thread qualifies — every candidate would need a broad abstraction, a slogan, or a metaphor to hold it together — do not manufacture one. Publish the explicit catalog-only edition instead: the orientation, then the source catalog.
-
-This is a legitimate outcome, not a failure, and it is rare. It is bounded by one condition: it is only honest when the corpus genuinely offers no concrete subject that two or more sources make easier to understand together. A corpus with an eligible thread must use it. The catalog-only edition is also longer than it looks, because the complete catalog of every substantively reviewed source remains required, and is exempt from the body-length expectation that governs a threaded briefing. Its orientation should tell the reader plainly what the edition is: the corpus was read, and nothing in it was worth combining.
-
-Do not pad it. There are no threads, no thread source-notes, and nothing after the catalog.
-
-## Length and density
-Aim for a dense three-to-five-minute briefing.
-
-Keep the briefing body within the resolved body-word range, excluding the final source catalog.
-
-Use a number of thematic sections within the resolved unit range and supported by the material. The range is a permission boundary, not a coverage target. Prefer a smaller number of developed insights over many shallow observations.
-
-Every thread's reading budget must be large enough to explain what it is about. A thread that names many sources without enough space to state what each contributes has stopped explaining and started cataloguing; reduce its sources, split it, or move its least essential material to the source catalog. A source needs at least roughly one explanatory sentence of space, and a thread needs room beyond that for the orientation and the relationship it exists to explain.
-
-Let information density determine length. Never create, split or expand a section merely to satisfy a target count or reading time.
-
-Every paragraph must contribute at least one of the following:
-
-* New understanding.
-* Practical or conceptual value.
-* Cross-source synthesis.
-* An important qualification, disagreement or tension.
-* A clear reason to read an original source.
-
-Remove repetition aggressively. Do not restate a section's thesis in its conclusion.
-
-## Citations
-Use numerical citations instead of article names in the prose.
-
-Assign each catalog-eligible substantively reviewed source one stable number and reuse it everywhere.
-
-Render every inline citation using the permanent source number:
-
-`[7]`
-
-When a valid source locator exists, make the numerical citation clickable. When the source is email-only and no reliable locator exists, keep the same visible numerical citation as a non-clickable reference. Never fabricate a destination merely to preserve clickability.
-
-When several sources directly support the same claim or jointly contribute to the same synthesized inference, group their citations:
-
-`[3] [7] [12]`
-
-Place citations immediately after the claim or inference they support.
-
-When a synthesized claim is derived from several sources, cite the contributing sources together on that claim rather than only citing them separately in surrounding paragraphs.
-
-A citation may either:
-
-* Directly support a factual claim established by the source.
-* Identify the sources from which a synthesized editorial inference is reasonably derived.
-
-Use language that makes editorial inference clear when a conclusion goes beyond what any single source states directly.
-
-Never cite a source that does not materially contribute to the preceding claim or inference.
-
-Do not add citations merely to make an interpretation appear more widely supported.
-
-Do not write full article titles or raw URLs inside the narrative; retain the numerical citation.
-
-## Final source catalog
-End with a section titled `Sources`.
-
-List every catalog-eligible substantively reviewed article or newsletter item, including material not selected for the narrative. Do not list operational exclusions or non-editorial residue merely to document that they were encountered.
-
-Preserve the permanent numbering used throughout the briefing.
-
-Resolve grouping from digest frontmatter:
-
-* `source-identity` (default)—use the most useful stable identity in this order: newsletter/publication, sender/editorial source, then recurring author identity. Use `Other sources` only when no meaningful identity exists. Within a group, do not repeat the group name on every row; show an author only when it adds information beyond the heading.
-* `editorial-topic`—when explicitly configured, derive a small set of reader-oriented topic headings from the reviewed corpus and assign each source once under its primary navigational topic. Do not simply copy thread titles, because a source may support several synthesized threads; do not imply exclusive contribution. Show author/publication/sender on every row when available.
-
-Keep each source's permanent global number unchanged inside its group; grouping must never renumber citations or alter the synthesis. Source identity remains the preferred default for auditability in this style.
-
-For every source include:
-
-* Its number.
-* The article/item title as a clickable link when a valid source locator exists; otherwise the plain title with email-only provenance.
-* The author or publication when available.
-* The original source reading time as `N min` whenever the item was substantively read, using the shared source-reporting rule.
-
-Add a short status label when it conveys editorial or operational state:
-
-* `Selected`
-* `Worth reading`—the source was not selected for the narrative, but after reading it the editor would still actively recommend the original if the reader has extra time. Use it sparingly—normally zero to three sources, occasionally more only in an exceptional corpus.
-* `Reviewed`—the source was substantively reviewed but was neither selected nor marked `Worth reading`.
-* `Limited content`
-
-`Email-only` may appear as provenance beside one of these outcomes; it is not a competing selection status. Operational outcomes such as duplicate, promotional/administrative, social notification, low signal, inaccessible, or excluded before read remain internal and do not appear in the catalog.
-
-`Selected` and `Worth reading` are mutually exclusive. `Worth reading` remains a catalog-only recommendation and does not create a narrative thread. Every source cited in the narrative is `Selected`; derive `Worth reading` only from the unselected remainder and validate that the sets are disjoint. When a status badge is shown for substantively read material, append the reading time with a middle dot, for example `Worth reading · 8 min` or `Reviewed · 4 min`.
-
-Do not explain why each unselected source was omitted.
-
-The catalog exists for transparency and navigation; it is not another summary section.
-
 # Synthesis MAX — Frame
 
-**Stage:** `frame` · **Style:** `synthesis-max` · **Profile:** `synthesis-max-v1`
+## Decide the edition mode
 
-This document is operational. It states what *this stage* is responsible for in this style. `styles/synthesis-max/interface.md` remains authoritative for the style's identity and output requirements, and `editorial/stages/frame.md` remains authoritative for the stage's role.
+Choose the edition's shape before designing its units:
 
----
+* `threads` when at least one concrete subject is made easier to understand by multiple
+  substantively contributing sources;
+* `catalog_only` when every proposed grouping would need a broad abstraction, slogan, or
+  metaphor to hold it together.
 
-## The two things this stage controls
+`catalog_only` is an honest editorial outcome, not a shortcut. Do not use it while an
+eligible thread remains, and do not manufacture a thread when none passes the relationship
+test.
 
-Frame is the authority on what Draft may see and on how much room it has.
+## Turn clusters into realizable threads
 
-1. **The amount of material the writer receives.** A unit that declares more sources than its allocation can explain does not fail here. It fails at Draft, as an inventory of findings, and no later stage is positioned to fix it: Draft follows the plan it is given, and the review stages diagnose prose rather than plans.
-2. **The edition's arithmetic.** Your per-unit allocations are what the writer spends. A plan that sums to more than the style permits is not a plan for the permitted document.
+Analyze proposed relationships; Frame decides which can become explanations within the
+resolved constraints. For every retained thread:
 
-Both are checked deterministically before Draft sees anything, and a plan that violates them is sent back once, with the specific problems, for you to correct. That is a revision opportunity rather than a rejection: return a corrected plan that fixes exactly what the findings name.
+* name one concrete subject and one reader promise;
+* preserve the approved relationship and its strongest counter-test;
+* give every selected source a distinct role and state what its contribution establishes;
+* order the `narrative_spine` from orientation through evidence or mechanism to the
+  relationship and supported implication;
+* record material to exclude so Draft does not turn the thread into a source inventory;
+* choose one `explanation_shape`: `mechanism`, `contradiction`, `comparison`,
+  `causal_chain`, `consequence`, or `tension`.
 
----
+The explanation shape names the thread's dominant logic. Its actual moves belong in the
+`narrative_spine`. Vary the shape only when the evidence differs; variety is not a quota.
 
-## What you receive
+## Reduce before allocating
 
-`editorial/stages/frame.md` states the stage's role and the unit rule. This style adds the plan's
-shape and arithmetic: the composition unit, source relationship, depth model, organisation model,
-opening behaviour and catalogue requirement (`## Style interface`); the thread-forming tests
-(`## Synthesis mode`); the required structure and catalog-only edition (`## Required structure`);
-the body budget and thread range (`## Length and density`); the citation rule
-(`## Citations`); and the catalogue's grouping and status semantics (`## Final source catalog`),
-which this stage records. The digest's reading instructions supply the reader and its
-preservation obligations.
+If a candidate carries more material than its allocation can explain, resolve it in this
+order:
 
-You do **not** receive `## Ending rules`: you plan a document, you do not terminate one, and the
-ending rule is enforced by the stage that publishes it. You do not receive `## Writing character`
-or `## Domain accessibility in synthesis`: you work in directions and structured fields, not prose.
+1. remove sources that add only another example or citation;
+2. split the candidate only when each resulting thread has its own concrete subject,
+   promise, and relationship;
+3. demote the least essential material to the source catalog.
 
----
+Do not hide an oversized plan behind compressed prose, smaller declared numbers, or extra
+threads. The resolved values in `style.yaml` are the authority for unit bounds, source
+bounds, body budget, opening range, and planning headroom. Use those values directly and
+make the frame's arithmetic internally exact.
 
-## Your responsibility in this style
+## Carry analysis forward honestly
 
-### 1. Decide the edition's shape before designing its threads
+Preserve selected, worth-reading, and reviewed outcomes as disjoint catalog states. Carry
+source numbers and per-source reading minutes unchanged. Record every demotion and omission
+with a reason.
 
-Declare `mode` first — it is the edition's most consequential single field.
-
-* **`"threads"`** — the normal edition. One to four retained threads.
-* **`"catalog_only"`** — no thread qualified. The edition is the orientation plus the complete source catalogue.
-
-`"catalog_only"` is honest when, and only when, every candidate grouping would need a broad abstraction, slogan, or metaphor to hold together. It is not a way to publish a short edition with threads still in it, and it is not a way to avoid the work of finding a relationship. If any concrete subject is genuinely made easier to understand by two or more sources, that thread exists and must be planned.
-
-### 2. Cut the material before designing the threads
-
-This is the stage's constructive act, and it comes before the planning rather than after it. Take the clusters Analyze proposed and reduce them to what can actually be explained.
-
-The resolved style constraints define the thread bounds, contributing-source bounds, and minimum capacity per source. The deterministic checks consume those same values.
-
-When a candidate cluster is too large, resolve it in this order:
-
-1. **Reduce the source count** to the members that actually carry the subject. A source that adds only a further example of a point already made is not contributing; it is padding the citation count.
-2. **Split** into two threads, but only if each resulting thread is independently coherent — each with its own concrete subject, passing the unit rule on its own. A split that produces two fragments sharing one explanation has not solved anything.
-3. **Demote** the least essential material to the source catalogue. This is a real editorial outcome, not a failure: a source can be worth reading without being worth a thread.
-
-Never solve an oversized thread by planning to discard its citations silently. Never solve it by compressing all of its material into a dense paragraph — enumerative compression is the symptom the style names explicitly. Never solve a budget problem by adding threads: a plan that does not fit is made to fit by cutting, not by spreading.
-
-### 3. Give every retained thread the fields its explanation needs
-
-Reuse the fields `editorial/stages/frame.md` already defines rather than inventing parallel ones. In this style they carry:
-
-* **`central_focus`, `reader_promise`, `plain_language_setup`, `reader_needs_to_understand`, `orientation_needed`** — what the thread is about and what the reader must already have. A thread whose `plain_language_setup` cannot be written without a specialised term is a thread whose subject is not yet concrete.
-* **`narrative_spine`** — the ordered explanatory moves, not a dramatic arc. In this style a spine may develop a mechanism, a contradiction, a comparison, a causal chain, a consequence, or a tension. It must begin from orientation and end at the relationship or the implication, which needs at least two moves.
-* **`explanation_shape`** — which of those kinds of explanation this thread uses, written as **exactly one** of these six words: `mechanism`, `contradiction`, `comparison`, `causal_chain`, `consequence`, `tension`. State the value alone. A phrase describing the moves, such as `"mechanism, closed by a measured comparison"`, is not a value from the vocabulary and cannot be counted or varied; the moves themselves belong in `narrative_spine`, which is where they are read. Declaring the shape is what stops the edition becoming one rhetorical template repeated: if every thread is a mechanism explanation, the digest reads as a format rather than as a set of discoveries. Vary it when the material genuinely differs; do not vary it by inventing a difference that is not there.
-* **`selected_source_numbers`** — the authoritative evidence selection, and the whole of what the writer receives. Two to four numbers.
-* **`evidence_refs`** — one entry per selected source, each with what is drawn from it and **the distinct role it plays**. Distinctness is the test: if two sources' roles can be exchanged without changing the thread, one of them is probably not needed. An identical role string on two sources is the signature of decoration.
-* **`branches_to_cut`** — correct material belonging to these sources but not to this thread.
-* **`depth_target_words`** — the thread's allocation, as an exact number.
-* **`single_idea_check`** — one sentence confirming the thread carries one idea, or naming why it does not.
-
-### 4. Make the arithmetic add up
-
-The plan's numbers are read as a single budget, and the checks are exact:
-
-* The Big Picture receives an exact number of words inside the style's stated band. Record it in `big_picture_words`.
-* Each retained thread's `depth_target_words` is an exact number.
-* `unit_depth_targets` maps every retained unit id to its allocation, and its values must equal the units' own `depth_target_words`.
-* `total_unit_words` is the sum of those allocations.
-* `total_body_words` is `big_picture_words` + `total_unit_words`.
-
-The total must not exceed the style's maximum, and the ceiling that binds is lower than it looks. The style reserves headroom for the writing stages to add explanation as they work, and a plan already at the maximum has nowhere to put it.
-
-Compute the planning ceiling from the resolved maximum body words and budget-headroom ratio. Leave that reserve unplanned deliberately. When the total exceeds the resulting ceiling, the remedy is in §2 above — reduce, split, or demote — and not a smaller number on an unchanged plan.
-
-The resolved minimum is not a target to fill either. A plan that comes in well under its ceiling has more room to explain each retained source, which is the trade this style makes.
-
-Approximate or ranged allocations do not satisfy this. Write exact numbers; a range cannot be added up, and a plan whose arithmetic cannot be checked is a plan nobody can hold to.
-
-### 5. Carry the analysis forward honestly
-
-Preserve the analysis's selection outcomes across the selected, worth-reading and reviewed sets, and carry per-source reading minutes through unchanged. Record what you set aside and why, so the omission is deliberate and auditable rather than invisible.
-
-Where Analyze recorded a `relationship_counter_test` for a cluster you retained, that caveat is part of the thread's obligation: either it is addressed in the plan or the thread is not as strong as it looked.
-
----
+The frame is the best pre-draft plan and the evidence authority for Draft. Give Draft only
+the sources each retained thread actually needs. A later developmental review may discover
+that the plan failed in prose; that possibility does not excuse an unresolved plan here.
 
 ## Boundaries
 
-* Do not write the digest. Directions, labels, working titles and structured fields only.
-* Do not introduce a source, claim or relationship the analysis does not support.
+* Plan threads; do not write their reader-facing prose.
+* Do not introduce a source, claim, or relationship Analyze did not support.
+* Do not give two sources interchangeable roles merely to satisfy the source minimum.
 * Do not state a reader promise the selected evidence cannot keep.
-* Do not resolve a framing problem with more prose, and do not resolve it by compressing two ideas into one unit.
-* Do not pass the plan to the writer knowing it exceeds the budget. An oversized plan is a decision to publish an oversized digest.
-* Return only the JSON artifact. No commentary, no code fence, no tools.

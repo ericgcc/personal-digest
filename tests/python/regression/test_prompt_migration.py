@@ -461,20 +461,21 @@ def test_the_cli_renders_synthesis_max_draft_offline():
     )
     assert result.returncode == 0
     assert "You are executing one stage of an autonomous editorial pipeline." in result.stdout
-    assert "## Synthesis mode" in result.stdout
+    assert "# Synthesis MAX" in result.stdout
+    assert "Write one explanation, not adjacent summaries" in result.stdout
     assert "<stage_task>" in result.stdout
 
 
 def test_the_synthesis_max_draft_inspection_is_recorded():
-    """The reference inspection is byte-deterministic and matches the committed example.
+    """The inspection is byte-deterministic and matches the committed active inspection.
 
-    The fixtures are the report's inspection example: the exact system and user prompt, the
-    dependency manifest and the report for `synthesis-max-v1` / `draft`.
+    The committed files contain the exact system and user prompt, dependency manifest, and report
+    for `synthesis-max-v1` / `draft`.
     """
     from digest_system.editorial.prompts.inspection import inspect_stage
 
-    example = PROMPT_MIGRATION / "inspection-example" / "synthesis-max-v1" / "draft"
-    assert example.is_dir(), "the recorded inspection example is missing"
+    example = ROOT / "prompt-inspections" / "synthesis-max-v1" / "draft"
+    assert example.is_dir(), "the active recorded inspection is missing"
     inspection = inspect_stage(
         digest_id="tech-bi-daily", profile_id="synthesis-max-v1", stage_name="draft"
     )

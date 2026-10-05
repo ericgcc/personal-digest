@@ -14,8 +14,8 @@
     },
     {
       "path": "prompts/shared/task.j2",
-      "bytes": 863,
-      "sha256": "dc71250d74212c307ffb67ae91b5f184babc174cd5d87dff48fd00bca8f7738a"
+      "bytes": 595,
+      "sha256": "97cfa109d8d2984946de4a1dfde8741f44bfb08e234674f6c00e719822cf464f"
     }
   ],
   "documents": [
@@ -26,20 +26,7 @@
       "owner": "shared stage contract"
     }
   ],
-  "instructions": [
-    {
-      "path": "styles/synthesis-max/interface.md",
-      "bytes": 2758,
-      "sha256": "be4b146191d85c5da9680e408b001361a107a577303b572d82d9978cdfce1812",
-      "owner": "style interface declaration"
-    },
-    {
-      "path": "styles/synthesis-max/style.yaml",
-      "bytes": 808,
-      "sha256": "94164faee23e4cbc4958acc3078335b2290fc4c7149aba33f957373558a7817c",
-      "owner": "declarative style constraints"
-    }
-  ],
+  "instructions": [],
   "blocks": [
     {
       "tag": "source_corpus",
@@ -65,20 +52,8 @@
       "purpose": "stage-permitted source evidence"
     },
     {
-      "tag": "reading_instructions",
-      "bytes": 760,
-      "source": {
-        "path": "digests/tech-bi-daily.md",
-        "sections": [
-          "Optional highlights"
-        ],
-        "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"
-      },
-      "purpose": "prior artifact or digest reading instructions"
-    },
-    {
       "tag": "stage_task",
-      "bytes": 448,
+      "bytes": 348,
       "source": {
         "path": "prompts/shared/task.j2"
       },
@@ -86,6 +61,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 7326,
-  "user_bytes": 1258
+  "system_bytes": 3648,
+  "user_bytes": 349
 }

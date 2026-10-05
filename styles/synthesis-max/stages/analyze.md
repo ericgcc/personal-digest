@@ -1,140 +1,83 @@
-## Synthesis mode
-Produce one integrated briefing, not a collection of article summaries.
-
-Before writing:
-
-1. Form the catalog-eligible substantively reviewed corpus under the shared workflow, then assign every source in it a permanent sequential number based on input order.
-2. Interrogate each promising source before synthesizing it: identify its actual thesis, strongest evidence/mechanism, meaningful caveats or anomalies, and what it uniquely contributes.
-3. Evaluate each source for information value, explanatory power, practical significance, novelty and relevance to the broader source set.
-4. Identify and classify meaningful relationships precisely: reinforcement, extension, qualification, contradiction, complementarity, shared cause/consequence, or independence.
-5. For every proposed thread, ask: **What concrete topic, question, mechanism, development, or tension do at least two sources help the reader understand better together—and what does each source add?** Then apply the relationship, contribution, evidence, counter-test, comprehension, and semantic-distance checks in `editorial/shared/reasoning-fidelity.md`.
-6. Select the material that provides enough value to justify space in a short briefing.
-7. Choose the editorial structure that best reflects the evidence. Treat the initial synthesis as a working explanation, not a conclusion that later evidence must be made to fit.
-
-Organize the briefing around concrete shared subjects that become more understandable through synthesis—not publications, authors, individual articles, or abstract principles invented to connect distant material.
-
-Seek synthesis where it is genuinely supported. Do not assume the source set has one unifying theme.
-
-A strong section may answer questions such as:
-
-* What concrete development, mechanism, question, or tension do these sources jointly explain?
-* Where do sources reinforce, qualify or contradict one another?
-* What does each source contribute that the others do not?
-* What supported implication becomes visible after the shared subject is clear?
-
-Explicitly explain connections rather than placing adjacent article summaries under a shared heading.
-
-Every narrative thread must integrate at least two sources that contribute materially. Prefer two or three when they are sufficient. Four or more are welcome only when every source helps explain the same concrete subject and the thread remains easy to follow. A second source used only as decoration, analogy, or citation padding does not satisfy this requirement.
-
-If a valuable source has no honest synthesis partner, keep it outside the Synthesis MAX narrative; it may still appear as `Worth reading` or `Reviewed` in the source catalog. Never create a single-source thread.
-
-Do not group sources merely because they instantiate the same broad principle. If the relationship becomes visible only after translating distant domains into a slogan, metaphor, or high-level abstraction, keep them separate. The farther apart the source domains are, the stronger and more concrete the explanatory benefit must be.
-
-Recurring coverage is not automatically important. Repetition may represent duplication rather than signal.
-
 # Synthesis MAX — Analyze
 
-**Stage:** `analyze` · **Style:** `synthesis-max` · **Profile:** `synthesis-max-v1`
+## Source-first assessment
 
-This document is operational. It states what *this stage* is responsible for in this style. It does not restate the style's identity or its output requirements: `styles/synthesis-max/interface.md` remains authoritative for both, and `editorial/stages/analyze.md` remains authoritative for the stage's role.
+Assess the corpus in two passes, in this order.
 
----
+**Pass one — assess each source.** Establish its actual thesis, strongest evidence or
+mechanism, meaningful qualifications or anomalies, unique contribution, and why it may
+deserve this reader's attention. Do this before proposing any grouping. Do not revise a
+source assessment merely to make a later grouping look stronger.
 
-## What you are given
+**Pass two — test relationships.** Among the sources that survive the first pass, ask what
+becomes easier to understand together than separately. A shared topic is not enough, and
+two reports of the same event may be duplication rather than synthesis. Classify the
+relationship with the supplied canonical vocabulary and keep sources independent when no
+honest relationship improves understanding.
 
-`editorial/stages/analyze.md` states the stage's role and what it receives. This style adds the
-selection standard you judge against: its selection model, composition unit and source
-relationship (`## Style interface`), its thread-forming tests (`## Synthesis mode`), and the
-canonical relationship vocabulary and synthesis test in
-`editorial/shared/reasoning-fidelity.md`. The digest's reading instructions are the
-authority for what this reader values; the style is the authority for how material is combined.
+For every proposed thread, test all of the following:
 
-You do **not** receive the style's writing character, its required structure, its citation rules,
-its ending rules or a rendering profile. Those govern stages that write and publish a document,
-and nothing in them should influence which sources are selected.
+1. **Concrete subject:** What recognizable topic, question, mechanism, development, or
+   tension do the sources illuminate?
+2. **Distinct contribution:** What does each source add that the others do not?
+3. **New understanding:** What becomes clearer through the combination?
+4. **Evidence boundary:** Which parts are source claims and which part is editorial
+   inference?
+5. **Counter-test:** What is the strongest reason this grouping may be unjustified,
+   including a decorative member or a material caveat?
+6. **Semantic distance:** Does the relationship remain concrete, or does it appear only
+   after translating distant material into a slogan, metaphor, or broad principle?
 
----
+If the combined idea is no more informative than separate summaries, do not synthesize it.
 
-## Your responsibility in this style
+## Cluster record
 
-### One call, two passes
-
-Assess the corpus in two distinct passes, in this order. The order is not a formality: a relationship can only be justified by what its members actually establish, so source assessment comes first and is not revised to fit a grouping you have already imagined.
-
-**Pass one — assess the sources.** For every promising source, establish its actual thesis, its strongest evidence or mechanism, what it uniquely contributes that no other source provides, its important caveats or anomalies, and why it is worth the reader's attention at all. Record this per source.
-
-**Pass two — assess the relationships.** For the sources that survived pass one, examine what can be explained *better together than separately*. A shared subject is not a relationship. Two sources covering the same announcement are duplication, and duplication is not synthesis.
-
-Evaluate the whole candidate set before choosing, and record what you decided against. A candidate that was weighed and demoted is useful to Frame; a candidate that never appears is indistinguishable from one that was never examined.
-
-### The cluster record
-
-The proposed groupings go in a top-level array named **`clusters`**. The name is a contract rather than a stylistic choice: Frame reads it to build the shortlist, and the run's validation reads it to check this stage's work. An array under any other name is not read, and an unread array is indistinguishable from an empty one.
-
-Every proposed cluster must carry these fields, with these meanings:
+Record proposed groupings in a top-level `clusters` array. Each cluster must contain:
 
 ```json
 {
-  "clusters": [
-    {
-      "cluster_id": "C1",
-      "concrete_subject": "<a subject a reader could recognise without having read the sources>",
-      "reader_question": "<the question the combination answers>",
-      "source_numbers": ["<approved contributing corpus source numbers within the resolved constraints>"],
-      "relationship_type": "<one value from the canonical vocabulary, listed below>",
-      "source_contributions": [
-        { "source_number": "<n>", "unique_contribution": "<what this source adds that no other does>" }
-      ],
-      "new_understanding": "<what becomes clearer through the combination than through separate summaries>",
-      "relationship_counter_test": "<the strongest reason the grouping might not be justified, including whether one member is decorative>",
-      "material_to_exclude": ["<material belonging to these sources but not to this cluster>"],
-      "selection_decision": "<keep|split|demote|cut>",
-      "selection_reason": "<why this decision, given this corpus>",
-      "reader_value_reason": "<why this reader values it, in the digest's configured terms>",
-      "value_basis": "<the consideration the selection actually rests on>"
-    }
-  ]
+  "cluster_id": "C1",
+  "concrete_subject": "<a subject understandable without reading the sources>",
+  "reader_question": "<the question the combination answers>",
+  "source_numbers": ["<contributing source numbers within the resolved bounds>"],
+  "relationship_type": "<one canonical relationship value>",
+  "source_contributions": [
+    {"source_number": "<n>", "unique_contribution": "<what only this source adds>"}
+  ],
+  "new_understanding": "<what the combination makes clearer>",
+  "relationship_counter_test": "<the strongest reason the grouping might fail>",
+  "material_to_exclude": ["<material that belongs to the sources but not this cluster>"],
+  "selection_decision": "<keep|split|demote|cut>",
+  "selection_reason": "<why this decision fits the corpus>",
+  "reader_value_reason": "<why it serves this digest's configured reader>",
+  "value_basis": "<the consideration the selection actually rests on>"
 }
 ```
 
-Rules for these fields:
+Use one relationship value from the supplied vocabulary. Do not compose labels such as
+`extension_plus_qualification`; that names two relationships and makes neither testable.
+Every source number must have one specific contribution. If two contributions can be
+swapped without loss, the sources are not contributing distinctly.
 
-* **`relationship_type`** must be one value from the canonical vocabulary in `editorial/shared/reasoning-fidelity.md` § *Compare sources by relationship, not topic*: `reinforcement`, `extension`, `qualification`, `contradiction`, `complementarity`, `shared_cause_or_consequence`, `independence`. Do not compose new labels. `extension_plus_qualification` is two relationships, and a thread labelled that way cannot be tested against either.
-* **`concrete_subject`** must name something a reader could recognise without having read the sources. If it only makes sense as an abstraction, the grouping is not yet justified.
-* **`new_understanding`** must say what becomes clearer *through the combination*. "Both sources discuss X" is not an answer. If nothing becomes clearer, the sources have independent value and belong apart.
-* **`relationship_counter_test`** must give the strongest reason the grouping might not be justified, including whether one member is merely decorative. A counter-test that nothing could disprove is not a counter-test.
-* **`source_contributions`** must cover every number in `source_numbers`, and each entry must be specific to its source. If two entries could be swapped without loss, the sources are not contributing distinctly.
-* **`selection_decision`** must be one of `keep`, `split`, `demote`, `cut` — the same vocabulary Frame uses for a unit's `disposition`, so a cluster's decision and a unit's disposition are directly comparable. Do not hedge with `selected_brief_or_catalog`; decide, and say why.
-* **`material_to_exclude`** records what belongs to these sources but not to this cluster. Listing nothing is a decision, but it must be a deliberate one.
+Record rejected or demoted groupings in `alternatives_considered`, with the decision and
+reason. Frame must be able to see what was considered rather than only the winning result.
 
-Record the candidates you weighed and did not keep in `alternatives_considered`, with their decision and reason. That record is what lets Frame and the editor see the selection rather than only its result.
+## Selection follows this digest's preferences
 
-### Selection is judged against the digest's priorities
+Apply the active digest's `Selection` instructions as written. Do not substitute a general
+notion of quality, infer priorities from the digest's topic, or import emphases from another
+digest or previous run.
 
-`digests/<digest-id>.md` states this digest's reader interests and its own selection calibration, including the order in which it values teaching, applicability, ideas, and events. Apply *its* priorities; do not substitute a general notion of quality, and do not assume that a previous run's emphases are this corpus's obligations.
+For every promising candidate, record a concise `reader_value_reason` grounded in those
+instructions and a `value_basis` that names what the decision actually rests on. Do not
+assume that any particular basis is universally favored or disfavored by Synthesis MAX.
 
-For every promising candidate, record a brief `reader_value_reason` grounded in those configured preferences, and name the `value_basis` the candidate actually rests on. Distinguish **practical transferability** from the considerations that are not by themselves reasons to select:
-
-* **technical novelty** — being new, clever, or technically sophisticated;
-* **scale** — being large, fast, or expensive;
-* **detail volume** — containing many extractable facts;
-* **recency** — being recent;
-* **prominence** — coming from a well-known origin.
-
-These are recorded, not forbidden. A candidate may legitimately rest on one of them when the material also carries practical or explanatory value. What must not happen is a candidate selected *primarily* because it is technically sophisticated or because it contains a lot of detail: those are the justifications the digest's own calibration asks you to downrank, and the recorded `value_basis` is what makes the judgement visible to the editor afterwards.
-
-The converse also holds. Do not exclude material outside the recurring interests when its practical or explanatory value is exceptional. Serendipity is part of the digest's brief, and the interests are affinity signals rather than a coverage plan.
-
-The priority order itself lives in `digests/<digest-id>.md`, not in this file. It is that digest's editorial policy; a different digest using this style may rank its values differently, and this stage follows whichever digest it is running for.
-
----
+Recurring interests are affinity signals rather than a coverage quota. Material outside
+them may still qualify when it serves the configured reader exceptionally well.
 
 ## Boundaries
 
-* Do not write reader-facing prose. Directions, short titles and structured fields only.
-* Do not plan the finished document's shape. Frame decides units, order and depth; Analyze decides what the corpus supports.
-* Do not invent a relationship, a fact or a qualification the corpus does not support.
-* Do not use a source for a purpose its evidence cannot carry.
-* Do not silently drop a source. Every catalog-eligible source receives an assessment and a planned outcome.
-* Do not select a group because it gives the digest a substantial thread. A smaller group that can be explained beats a larger one that can only be listed.
-* Return only the JSON artifact. No commentary, no code fence, no tools.
+* Decide what the corpus supports; do not design the finished edition's order or depth.
+* Do not select a grouping merely because it would make a substantial-looking thread.
+* Do not invent a relationship, fact, qualification, or reader preference.
+* Keep an independently valuable source independent when synthesis would weaken its value.

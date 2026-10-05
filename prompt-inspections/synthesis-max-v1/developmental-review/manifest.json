@@ -29,8 +29,8 @@
     },
     {
       "path": "styles/synthesis-max/stages/developmental-review.md",
-      "bytes": 7316,
-      "sha256": "ad0096bed66e13b85e8e73e04c29e71a7e491ee57e508688a482f625390b5e25",
+      "bytes": 1820,
+      "sha256": "51e2427f3efc24ea05bd7b9f44b66b418ea7f2da6b146b4b10324541aae96ad8",
       "owner": "review"
     },
     {
@@ -41,15 +41,15 @@
     },
     {
       "path": "styles/synthesis-max/interface.md",
-      "bytes": 2758,
-      "sha256": "be4b146191d85c5da9680e408b001361a107a577303b572d82d9978cdfce1812",
+      "bytes": 2773,
+      "sha256": "19d3e9cfa543f388e043387be32ef29b38ce8ecaac4dd235b0a47fa571e3595f",
       "owner": "style"
     }
   ],
   "blocks": [
     {
       "tag": "evaluation_input",
-      "bytes": 22993,
+      "bytes": 17512,
       "purpose": "combined judge prompt",
       "source": {
         "kind": "evaluation-adapter",

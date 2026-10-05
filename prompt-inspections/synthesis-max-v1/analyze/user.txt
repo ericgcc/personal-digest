@@ -128,6 +128,6 @@ Selected style: synthesis-max
 Output language: English
 Purpose: SELECT -> ANALYZE: evaluate the complete reviewed corpus, source fidelity, relationships, qualifications, and candidates.
 
-Return ONLY the complete JSON artifact. Do not wrap it in a Markdown code fence. Do not narrate, explain, or describe the artifact. Do not use tools. Do not edit files. Do not access the network, Gmail, Drive, Chrome, or SQLite. Do not ask questions. Do not write HTML unless this stage is render.
+Return ONLY the complete JSON artifact. Do not wrap it in a Markdown code fence. Do not narrate, explain, or describe the artifact.
 </stage_task>
 

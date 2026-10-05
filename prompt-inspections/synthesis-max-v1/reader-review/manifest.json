@@ -5,7 +5,7 @@
     {
       "path": "prompts/evaluation/comparison.j2",
       "bytes": 0,
-      "sha256": "1fed12fb14fe61ec512676789591cba1f2f9f827bd1e4ff34893fa15234b147b"
+      "sha256": "3fb32cc06bd82655a22bc0eb8428fbdaaf26ec2c7ff934e4e68b8d3d5d24353a"
     },
     {
       "path": "prompts/evaluation/shared/anti_leniency.j2",
@@ -54,8 +54,8 @@
     },
     {
       "path": "styles/synthesis-max/stages/reader-review.md",
-      "bytes": 8686,
-      "sha256": "9da5a2bc95e3b8e4b920242007508ea2c84336a9bb2cad065bc638f879d03bdc",
+      "bytes": 1121,
+      "sha256": "7dd16c446f13401284bb2bd8fcc1c7554a646c9b304c7066b2a68c539134edff",
       "owner": "review"
     },
     {
@@ -66,15 +66,15 @@
     },
     {
       "path": "styles/synthesis-max/interface.md",
-      "bytes": 2758,
-      "sha256": "be4b146191d85c5da9680e408b001361a107a577303b572d82d9978cdfce1812",
+      "bytes": 2773,
+      "sha256": "19d3e9cfa543f388e043387be32ef29b38ce8ecaac4dd235b0a47fa571e3595f",
       "owner": "style"
     }
   ],
   "blocks": [
     {
       "tag": "evaluation_input",
-      "bytes": 28907,
+      "bytes": 21818,
       "purpose": "combined judge prompt",
       "source": {
         "kind": "evaluation-adapter",

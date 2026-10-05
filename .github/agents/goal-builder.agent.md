@@ -5,7 +5,7 @@ description: >-
   Inspector feedback, implements everything needed to achieve
   the goal, runs quality gates, commits, and returns.
 user-invocable: false
-model: DeepSeek: DeepSeek V4.1 Flash (openrouter)
+model: DeepSeek V4 Pro (New) (Go) (opencode)
 metadata:
   agent-id: b4d1e5a2-9c3f-4b78-8d6e-2f1a0c5b3e7d
 ---

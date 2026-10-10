@@ -6,10 +6,15 @@ description: >-
   runs quality gates, optionally verifies in a browser, and
   writes a PASS or FAIL verdict with detailed feedback.
 user-invocable: false
-model: Muse Spark 1.3 Contributor (opencodego)
+model: Kimi K2.7 Code (Go) (opencode)
 tools:vscode, execute, read, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, 'pylance-mcp-server/*', todo
 metadata:
   agent-id: c9e2f1d3-7a4b-4c56-9e8f-3d2b1a0e5c4f
+  failover-model-precendence: ["Hy4 preview (Go) (opencode)", "Muse Spark 1.3 Contributor (Go) (opencode)", "GPT-5.6 Luna (Go) (opencode)", "DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
+  # OpenCode Go per-model monthly caps (USD). GPT-5.6 Luna has the lowest cap.
+  # Full catalog + rationale: .github/skills/goal/assets/model-catalog.md
+  # Check headroom with: python .github/skills/goal/scripts/opencode_usage.py
+  monthly-cap-usd: {"Kimi K2.7 Code": 60, "Hy4 preview": 30, "Muse Spark 1.3 Contributor": 60, "GPT-5.6 Luna": 15}
 ---
 
 # Inspector — Independent Goal Verification Agent

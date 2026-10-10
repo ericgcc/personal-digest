@@ -11,7 +11,8 @@ description: >-
   autonomous task completion with independent quality review.
 metadata:
   author: "Gaetan Semet <gaetan@xeberon.net>"
-  recommended-models: ["DeepSeek V4 Pro (New) (Go) (opencode)", "GLM-5.3-Flash (Go) (opencode)"]
+  recommended-builder-models: ["GLM-5.3 (Go) (opencode)", "GLM-5.2 (Go) (opencode)", "DeepSeek V4 Pro (New) (Go) (opencode)", "GLM-5.3-Flash (Go) (opencode)", "Z.ai: GLM 5.3 Flash (openrouter)"]
+  recommended-inspector-models: ["Kimi K2.7 Code (Go) (opencode)", "Hy4 preview (Go) (opencode)", "Muse Spark 1.3 Contributor (Go) (opencode)", "GPT-5.6 Luna (Go) (opencode)", "DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
   # Prefer the "(Go)" provider variants. Plain Zen variants are mostly for free
   # models and fail with "Insufficient account funds" or "Model access is
   # disabled" on funded models. If a model name is rejected as "not found",
@@ -26,13 +27,89 @@ Inspector — to achieve a user-defined goal with independent verification.
 
 ## Architecture
 
-| Role | Agent Name | Model | Purpose |
-|------|-----------|-------|---------|
-| Builder | `Goal: Builder` | DeepSeek V4 Pro (New) (Go) (opencode) | Does the work |
-| Inspector | `Goal: Inspector` | GLM-5.3-Flash (Go) (opencode) | Judges the result |
+| Role | Agent Name | Model | Failover Model Precedence | Purpose |
+|------|-----------|-------|----------------------------|---------|
+| Builder | `Goal: Builder` | GLM-5.3 (Go) (opencode) | GLM-5.2 (Go) (opencode), DeepSeek V4 Pro (New) (Go) (opencode), GLM-5.3-Flash (Go) (opencode), Z.ai: GLM 5.3 Flash (openrouter) | Does the work |
+| Inspector | `Goal: Inspector` | Kimi K2.7 Code (Go) (opencode) | Hy4 preview (Go) (opencode), Muse Spark 1.3 Contributor (Go) (opencode), GPT-5.6 Luna (Go) (opencode), DeepSeek: DeepSeek V4.1 Flash (openrouter) | Judges the result |
 
 Builder implements. Inspector verifies with **fresh context**.
 They never share state — only files and git history connect them.
+
+---
+
+## Usage-aware model selection
+
+**Philosophy: quality-first, subscription-first.** OpenCode Go is a flat
+monthly fee, so using the *best* Go models costs nothing extra until a
+per-model cap is hit. OpenRouter is pay-per-token. Therefore:
+
+1. Always start with the **best** model in the precedence list — even if
+   its monthly cap is small ($15). A few credits on a strong model are
+   worth more than many credits on a weak one.
+2. Exhaust the flat-fee Go subscription **before** falling back to paid
+   OpenRouter. OpenRouter is the last resort, never the first choice.
+3. Only move down the precedence list when a model actually returns a
+   quota/limit error — not pre-emptively.
+
+The full catalog, caps, and the selected precedence with rationale live in
+[`assets/model-catalog.md`](assets/model-catalog.md).
+
+### The gauge
+
+Before dispatching the Builder (and again before the Inspector on long
+runs), check the account-level usage:
+
+```bash
+python .github/skills/goal/scripts/opencode_usage.py
+```
+
+It reads `OPEN_CODE_API_KEY` from the environment or the repo `.env`,
+calls `GET https://opencode.ai/zen/go/v1/usage`, and prints the rolling
+(5-hour), weekly, and monthly percentages plus a selection hint. Add
+`--log` to append a timestamped snapshot to `.goals/usage-log.jsonl` for
+burn-rate tracking.
+
+**Limitation:** the endpoint is **account-level only**. It cannot attribute
+usage to a specific model — per-model consumption is only visible in the
+OpenCode console dashboard. Treat the gauge as a coarse "how close am I to
+a fallback" signal, not a per-model exhaustion check.
+
+### The exhaustion tracker
+
+Because the gauge cannot tell you *which* model is dead, the orchestrator
+keeps its own record of models that have actually returned a quota/limit
+error. This prevents repeating the same failing dispatch every iteration.
+
+```bash
+python .github/skills/goal/scripts/model_tracker.py check "<model>"   # exit 0 = available, 1 = exhausted
+python .github/skills/goal/scripts/model_tracker.py mark "<model>" --window monthly --reason "quota error"
+python .github/skills/goal/scripts/model_tracker.py list
+python .github/skills/goal/scripts/model_tracker.py prune
+```
+
+Records live in `.goals/model-exhaustion.json` and store the model, the
+date its credits ran out (`exhausted_at`), the reset time (`reset_at`),
+and the window. `mark` reads the reset time from the usage API; if the API
+is unreachable it falls back to the next monthly boundary (the 4th of the
+month). Expired records are pruned automatically on every `check`/`list`.
+
+### Selection rule
+
+1. Run the gauge before the first Builder dispatch of a goal.
+2. Use the precedence order as written — best model first.
+3. **Before every dispatch**, run `model_tracker.py check "<model>"`. If it
+   exits 1, skip that model and try the next one in precedence.
+4. On a quota/limit error, run
+   `model_tracker.py mark "<model>" --window <rolling|weekly|monthly>`
+   so the failure is never repeated, then move to the next model in
+   precedence.
+5. The gauge is for **awareness and burn-rate tracking**, not for
+   pre-emptive downgrading. Do not switch to a weaker model just because
+   the monthly percentage is climbing.
+6. OpenRouter (the final entry) is reached only when every Go option is
+   exhausted. It is paid per token, so prefer waiting for a rolling reset
+   or using the unlimited free models (LongCat 2.5 / Step 5 Preview) when
+   the task can tolerate it.
 
 ---
 
@@ -100,8 +177,8 @@ The Inspector's only reference for what the user wants is this file.
   "goal_id": "<id>",
   "status": "building",
   "iteration": 1,
-  "builder_model": "GPT:5.6-Luna",
-  "inspector_model": "GPT:6.1-Sol",
+  "builder_model": "<selected model>",
+  "inspector_model": "<selected model>",
   "initial_sha": "<git rev-parse HEAD>",
   "created_at": "<ISO 8601>",
   "history": []
@@ -155,12 +232,37 @@ Follow these rules for every dispatch:
    these are account/privacy settings only the user can change. Prefer the
    `(Go)` provider variants over plain Zen variants; Zen is mostly for free
    models. If a model name is rejected as "not found", re-read the
-   available-models list from the error and pick a current one.
+   available-models list from the error and pick a current one. On a
+   quota/limit error, `mark` the model in the exhaustion tracker (Step 0)
+   and move to the next model in precedence.
+
+### Step 0: Select a live model (every dispatch)
+
+Before dispatching either subagent, pick the first model in the role's
+precedence list that is **not** marked exhausted:
+
+```bash
+python .github/skills/goal/scripts/model_tracker.py check "<model>"
+```
+
+- exit 0 → available, use it.
+- exit 1 → exhausted, skip to the next model in precedence.
+
+If a dispatch fails with a quota/limit error, record it so the failure is
+never repeated:
+
+```bash
+python .github/skills/goal/scripts/model_tracker.py mark "<model>" \
+  --window monthly --reason "quota error"
+```
+
+Then re-select and re-dispatch with the next live model. Record the chosen
+model in `status.json` (`builder_model` / `inspector_model`).
 
 ### Step 1: Dispatch Builder
 
-First write the closed brief (see *Dispatch discipline* above), then dispatch
-the `Goal: Builder` subagent with this prompt:
+First write the closed brief (see *Dispatch discipline* above), then
+dispatch the `Goal: Builder` subagent with this prompt:
 
 > Execute the brief at `.goals/<id>/builder-brief-<N>.md` exactly as written.
 > This is iteration **<N>**. Your job is EXECUTION ONLY, not planning.
@@ -187,10 +289,6 @@ Dispatch the `Goal: Inspector` subagent with this prompt:
 > is met by examining codebase changes, running quality gates,
 > and — if the goal involves UI — opening the application in
 > a browser to visually verify.
-> Do NOT read the full `git diff HEAD~1` if the commit is large
-> (over ~50 files); use `git show --stat HEAD` and read only the
-> files relevant to each criterion.
-> Do NOT run the full test suite more than once.
 > Write your verdict to `.goals/<id>/inspector-feedback-<N>.md`.
 > Make a **single commit** that includes the feedback file and the
 > updated `status.json`. Title must follow

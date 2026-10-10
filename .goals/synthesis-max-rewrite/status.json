@@ -1,0 +1,10 @@
+{
+  "goal_id": "synthesis-max-rewrite",
+  "status": "building",
+  "iteration": 1,
+  "builder_model": "Z.ai: GLM 5.3 Flash (openrouter)",
+  "inspector_model": "DeepSeek V4 Pro (New) (Go) (opencode)",
+  "initial_sha": "3ff09a4c179ff17d84865c05c108cd4e01790e90",
+  "created_at": "2026-10-04T00:00:00Z",
+  "history": []
+}

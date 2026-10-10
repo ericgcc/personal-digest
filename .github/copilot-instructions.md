@@ -7,6 +7,18 @@ applyTo: "**/*"
 
 These rules apply to GitHub Copilot and any coding agent working in this repository. They complement the architectural and policy rules in [AGENTS.md](../AGENTS.md). Use [AGENTS.md](../AGENTS.md) for repo-level invariants and this file for execution discipline during edits, reads, tests, and verification.
 
+## Agent Execution Discipline
+
+- Be action-oriented. Prefer inspecting code, making a small change, and testing it over extended speculation.
+- Perform only the investigation necessary to identify the next concrete action.
+- After inspecting relevant files, choose the most likely solution and implement it.
+- Do not reconsider an earlier hypothesis unless new evidence contradicts it.
+- Never repeat an analysis, search, or investigation without new information.
+- If two attempts fail, stop retrying the same approach. Summarize the evidence, identify the blocker, and request guidance.
+- For complex tasks, create a short plan, then execute it incrementally.
+- Prefer a working, testable implementation over exhaustive upfront analysis.
+- Report progress through completed actions, not repeated reasoning.
+
 ## Core operating rules
 
 1. Start from the smallest plausible fix and the narrowest relevant evidence.

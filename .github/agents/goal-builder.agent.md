@@ -5,10 +5,15 @@ description: >-
   Inspector feedback, implements everything needed to achieve
   the goal, runs quality gates, commits, and returns.
 user-invocable: false
-model: DeepSeek V4 Pro (New) (Go) (opencode)
+model: GLM-5.3 (Go) (opencode)
 tools:vscode, execute, read, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, 'pylance-mcp-server/*', todo
 metadata:
   agent-id: b4d1e5a2-9c3f-4b78-8d6e-2f1a0c5b3e7d
+  failover-model-precendence: ["GLM-5.2 (Go) (opencode)", "DeepSeek V4 Pro (New) (Go) (opencode)", "GLM-5.3-Flash (Go) (opencode)", "Z.ai: GLM 5.3 Flash (openrouter)"]
+  # OpenCode Go per-model monthly caps (USD). Primary GLM-5.3 has the lowest cap.
+  # Full catalog + rationale: .github/skills/goal/assets/model-catalog.md
+  # Check headroom with: python .github/skills/goal/scripts/opencode_usage.py
+  monthly-cap-usd: {"GLM-5.3": 15, "GLM-5.2": 60, "DeepSeek V4 Pro": 15, "GLM-5.3-Flash": 60}
 ---
 
 # Builder — Goal Implementation Agent

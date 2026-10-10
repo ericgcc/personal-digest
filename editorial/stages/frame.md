@@ -63,12 +63,11 @@ Where the style's interface declares a bound on a unit — a minimum or maximum 
 
 The scale of the frame depends on the style's composition unit. A compact single-source entry may need two logical moves; a synthesised thread may need a longer arc over two or three substantively contributing sources. The fields above scale, but none of them may be omitted for a substantive unit.
 
-For a synthesised style, the frame must also state, per unit:
+For a synthesised style, the frame must also state, per unit, in these exact fields:
 
-* why the contributing sources belong together;
-* what each source uniquely contributes;
-* what becomes more understandable only in combination;
-* what each source's main explanatory value is, so the writer can keep it recoverable.
+* `why_sources_belong_together`: why the contributing sources belong together;
+* `what_becomes_understandable_only_in_combination`: what becomes more understandable only in combination;
+* `main_explanatory_value_to_preserve`: what each source's main explanatory value is, so the writer can keep it recoverable.
 
 For a source-independent style, topical similarity alone never justifies combining sources. If one source's valuable thesis would disappear inside another source's framing, keep them separate.
 
@@ -84,15 +83,14 @@ What is not a remedy: compressing several ideas into one unit, discarding source
 
 ## The edition's arithmetic
 
-The frame's `budget` block is read as one allocation, and it must be internally consistent and within the style's stated maximum:
+The frame's `budget` block is read as one allocation, and it must be internally consistent and within the style's stated maximum. The block carries these exact fields:
 
-* the opening's allocation, as an exact number, inside whatever band the style states;
-* each unit's `depth_target_words`, as an exact number;
-* `unit_depth_targets`, mapping every retained unit id to that same number;
-* `total_unit_words`, the sum of those allocations;
-* `total_body_words`, the opening plus the units.
+* `big_picture_words`: the opening's allocation, as an exact number, inside whatever band the style states;
+* `unit_depth_targets`: mapping every retained unit id to that unit's `depth_target_words`, as an exact number;
+* `total_unit_words`: the sum of those allocations;
+* `total_body_words`: `big_picture_words` plus `total_unit_words`.
 
-the total must not exceed the style's maximum, and should leave editing headroom rather than filling the ceiling: the writing stages add explanation as they work, and a plan already at the maximum has nowhere to put it. If the total does not fit, the material is reduced by the means above — never by writing a smaller number against an unchanged plan.
+The total must not exceed the style's maximum, and should leave editing headroom rather than filling the ceiling: the writing stages add explanation as they work, and a plan already at the maximum has nowhere to put it. If the total does not fit, the material is reduced by the means above — never by writing a smaller number against an unchanged plan.
 
 ## Edition mode
 

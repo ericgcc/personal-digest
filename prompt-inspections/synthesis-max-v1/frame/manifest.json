@@ -21,8 +21,8 @@
   "documents": [
     {
       "path": "editorial/stages/frame.md",
-      "bytes": 10680,
-      "sha256": "801fa06351d5ce9999117576278479a2709239141e0097871aaf448641f9664f",
+      "bytes": 10838,
+      "sha256": "9a3694e01d3381204b4939fe5473a6ef0c7a64390d33c351a82e005536427c87",
       "owner": "shared stage contract"
     },
     {
@@ -77,6 +77,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 21432,
+  "system_bytes": 21590,
   "user_bytes": 2472
 }

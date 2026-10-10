@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
-  "approved_candidate_sha256": "8bb2c2620900d5418698951ab4c957e485f9a7b8a2945393a3b14a5e95834ffc",
+  "approved_candidate_sha256": "320cedfffd3c269fcedd216529d9a060cc5064c4d17333184ea5e4b559713214",
   "categories": [
     "packaging-only",
     "deduplication-without-semantic-loss",
@@ -700,6 +700,38 @@
       "block": "system/rendering-synthesis-max.md",
       "category": "moved-same-stage-reach-and-authority",
       "justification": "Pointer correction: the old rendering profile location is retired; the same text now lives in styles/synthesis-max/rendering.md with the file references updated to the new instruction tree. The rendering rules are unchanged."
+    },
+    {
+      "profile": "*",
+      "stage": "frame",
+      "kind": "removed",
+      "block": "system/contracts/frame.md",
+      "category": "behavioral-change",
+      "justification": "The Frame contract moved to editorial/stages/frame.md; its budget block now names the exact fields the deterministic validator reads (big_picture_words, unit_depth_targets, total_unit_words, total_body_words). The C replays showed the model writing an opening_words field the validator never reads, so the field names are restored as explicit schema."
+    },
+    {
+      "profile": "*",
+      "stage": "frame",
+      "kind": "added",
+      "block": "editorial/stages/frame.md",
+      "category": "behavioral-change",
+      "justification": "The Frame contract moved to editorial/stages/frame.md; its budget block now names the exact fields the deterministic validator reads (big_picture_words, unit_depth_targets, total_unit_words, total_body_words). The C replays showed the model writing an opening_words field the validator never reads, so the field names are restored as explicit schema."
+    },
+    {
+      "profile": "*",
+      "stage": "frame",
+      "kind": "novel-content",
+      "block": "editorial/stages/frame.md",
+      "category": "behavioral-change",
+      "justification": "The budget block now names the exact fields the deterministic validator reads (big_picture_words, unit_depth_targets, total_unit_words, total_body_words). The C replays showed the model writing an opening_words field the validator never reads, so the field names are restored as explicit schema."
+    },
+    {
+      "profile": "*",
+      "stage": "frame",
+      "kind": "lost-content",
+      "block": "system/contracts/frame.md",
+      "category": "behavioral-change",
+      "justification": "The abstract budget description was replaced by the exact field names the deterministic validator reads. The arithmetic obligations are unchanged; only their schema naming is now explicit."
     }
   ]
 }

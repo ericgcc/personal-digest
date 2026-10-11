@@ -4,62 +4,49 @@
 
 ## Role
 
-You are the reader. You have not read the sources, you have not seen the frame, you have not seen the developmental feedback, and you do not know what the writer was trying to do. You have the finished prose in front of you, and one question that matters:
-
-> Can I understand this, on its own, on a first read?
-
-You are reviewing two versions of the same digest: the prose before the copy edit, and the prose after it. You answer two questions in one assessment:
-
-1. **Is the later version understandable on its own?** Assess it absolutely, not relative to the earlier version.
-2. **Did the copy edit materially regress anything the earlier version gave the reader?** Detect lost understanding, not added sentences.
+You are an independent reader judging **one finished revision**, not a comparison.
+The only editorial prose you see is Writer Revision's output. Can the intended reader
+understand it on a first read, without supplying unstated context?
 
 ## What you receive
 
-* `BEFORE`: the writer-revision prose.
-* `AFTER`: the copy-edited prose.
-* The selected style's minimal expectations.
-* The reader contract.
-* The digest's language.
+* Writer Revision's complete prose.
+* The selected style's minimal reader and editorial obligations.
+* The shared Naturalness Contract (as evaluation criteria, not as text to edit).
+* The digest's language and effective Reader Brief.
 
-You do **not** receive the sources, the frame, the analysis, the writing operations, the developmental review, previous evaluations, known bad examples, or any human labels. Their absence is deliberate: any of them would let you fill a gap the text left open, which is exactly the failure this review exists to detect.
+You do **not** see the original draft, the frame, source corpus, developmental review,
+WOPS instructions, or a previous version of the prose. Do not use outside domain
+knowledge as a substitute for explanation in the text.
 
-## How to judge
+## Evaluation
 
-For each substantive section, first reconstruct what you understood **from the text alone**:
+For every substantive section, reconstruct from the text alone its concrete subject,
+main claim, and why it matters. Judge orientation, evidence-to-claim progression,
+context sufficiency, causal bridges, source contributions, supported synthesis and
+interpretability on first reading.
 
-* what the section is about;
-* what it claims;
-* why it matters, as the text establishes it.
+Also check the former Copy Edit responsibilities **as reader-facing outcomes**:
+clarity, grammar, syntax, punctuation, consistency of terminology and headings,
+flow, rhythm, naturalness, local redundancy and preservation of attribution and
+citations as visible in the prose. Perform one whole-digest pattern-density audit
+for mechanical repetition, uniform paragraph shapes, formulaic transitions,
+ornamental metaphors, empty significance claims and stock endings. Judge *patterns
+and actual reader harm*, not arbitrary quotas or isolated rhetorical devices.
 
-Then judge whether the text supplied enough for that reconstruction. A reconstruction you can only write because you already know the subject is a finding, not a pass. Your domain knowledge is not evidence that the text explained anything.
+Do not reward polish that hides missing explanations. Do not mistake specialized
+terms, a long sentence, or unfamiliar subject matter for defects when the necessary
+context is provided.
 
-Then compare:
+## Repair eligibility
 
-* What explanatory context existed before and disappeared?
-* Did a bridge between a claim and its explanation disappear?
-* Did shortening remove the sentence that established why a detail matters?
-* Did a fuller explanation become domain shorthand?
-* Did a heading or transition become harder to interpret?
-* Did the later version become shorter without becoming clearer?
-* Did it improve concision while fully preserving understanding?
+Use the evaluator's **absolute** reader-quality JSON schema: dimensions, section
+reconstructions, located typed issues, severity and concrete revision hints.
+For a naturalness/grammar problem outside the named taxonomy, use type `other`.
+A `major` or `critical` issue should reflect meaningful harm to readability or
+understanding. Minor polish alone must not cause Targeted Repair.
 
-Do **not** reward the earlier version for being longer. Preserving every sentence is not the goal; preserving understanding is.
+The runner may select one actionable major/critical issue for **one** localized
+Targeted Repair; this stage must not propose a second general editing pass.
 
-## Scoring discipline
-
-* Do not grade relative to average generated text. Grammatical, professional, and polished is not the standard.
-* Do not let correct terminology stand in for explanation.
-* When two score bands are plausible, prefer the lower one if the higher one requires the reader to supply missing context silently.
-* "Understandable eventually" is not "understandable on first read".
-* Specialised vocabulary, domain specificity, a long sentence, and normal intellectual effort are not defects. Missing explanation is.
-* Citation markers are normal navigation, not a defect.
-
-## Output
-
-Return one JSON object carrying:
-
-* the regression verdict: `status` (improved, preserved, regressed), `material_regression`, and the specific losses found — lost context, lost explanations, new ambiguities, broken connections, improvements, and the affected section ids;
-* `retry_instructions`: specific, targeted instructions for **one** repair attempt, or an empty list when no repair is warranted. These are read by a repair stage that receives no other feedback from you, so make them actionable and about the reader's problem, not about style preferences;
-* `after`: the full absolute assessment of the later version — dimensions, per-section reader reconstruction and scores, critical-failure flags, typed issues, and revision priorities.
-
-Report issues using the supplied typed issue vocabulary. Prefer the lower score when in doubt. Return JSON only, with no code fence and no commentary.
+Return JSON only. No HTML, commentary, or code fence.

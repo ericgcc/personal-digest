@@ -39,14 +39,13 @@ from .instructions import (
 #: The shared contracts each stage receives, by stage name. One owner: this table.
 #: ``reader`` is the general reader obligation; ``fidelity`` is source/factual fidelity
 #: as the reasoning reference; ``editorial-base`` is the cross-style quality floor;
-#: ``naturalness`` is the copy-edit naturalness contract.
+#: ``naturalness`` is applied by Writer Revision and independently checked by Reader Review.
 SHARED_CONTRACTS_BY_STAGE: dict[str, tuple[str, ...]] = {
     "analyze": ("fidelity",),
     "frame": ("reader",),
     "draft": ("reader", "editorial-base"),
     "developmental-review": ("reader",),
-    "writer-revision": (),
-    "copy-edit": ("naturalness",),
+    "writer-revision": ("naturalness",),
     "reader-review": ("reader",),
     "targeted-repair": ("reader",),
     "publication-verify": (),
@@ -237,6 +236,9 @@ def resolve_evaluation_contracts(
     review_text = ""
     if (base / review_path).is_file():
         review_text = load_instruction(review_path, style=style, root=base).text
+    if stage == "reader-review":
+        naturalness = load_instruction(SHARED_CONTRACT_FILES["naturalness"], style=style, root=base)
+        review_text = (review_text + "\n\n" + naturalness.text).strip()
 
     contracts = {"role": role.text, "reader": reader_text, "review": review_text}
     if stage in interface_stages(style, root=base):
@@ -262,6 +264,8 @@ def evaluation_contract_sources(*, stage: str, style: str, root: Path | None = N
     review_path = f"styles/{style}/stages/{stage}.md"
     if (base / review_path).is_file():
         sources["review"] = [review_path]
+    if stage == "reader-review":
+        sources["review"].append(SHARED_CONTRACT_FILES["naturalness"])
     if stage in interface_stages(style, root=base):
         sources["style"] = [f"styles/{style}/interface.md"]
     return sources

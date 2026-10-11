@@ -1,22 +1,16 @@
 # Synthesis MAX — Reader Review
 
-## First-read synthesis test
+## First-read absolute synthesis and prose-quality test
 
-Assess the copy-edited prose as a reader who has not seen the sources or frame. For every
-thread, determine whether the reader can reconstruct:
+Judge Writer Revision on its own. Each thread should identify its concrete subject,
+why it matters, what each retained source establishes, and what the sources establish
+together. Assess whether mechanisms and relationships are explained rather than asserted,
+whether depth is proportionate, and whether the reader stays oriented without prior context.
 
-* its concrete subject and why it matters;
-* what each contributing source establishes;
-* what the sources establish together;
-* how the evidence or mechanism leads to the relationship and supported implication;
-* which conclusion is editorial inference rather than a source claim.
+Also detect remaining naturalness problems across the **whole** edition: mechanical
+sentence openings, rhetorical patterns, unnatural transitions, unexplained assumptions,
+empty significance claims or overly clever compression. Be concrete about the harm and
+location. Do not impose a voice template or treat isolated devices as defects.
 
-Judge first-read comprehension, orientation, explanatory progression, synthesis quality,
-and depth proportion. Identify source inventory, an asserted relationship, abstraction
-before evidence, unnecessary aggregation, and disproportionate depth explicitly.
-
-Compare the before and after prose for losses caused by Copy Edit: missing context, weakened
-explanations, new ambiguity, unexplained terminology, damaged source relationships, or
-citations detached from the claims they supported. Diagnose only what the prose itself
-fails to supply. Do not retrofit a different synthesis or ask for evidence the approved
-piece never had.
+Return actionable, located reader issues using the absolute evaluation schema. There
+is no Copy Edit before/after comparison and no warrant to request new sources.

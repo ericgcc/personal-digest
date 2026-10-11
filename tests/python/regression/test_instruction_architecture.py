@@ -13,7 +13,7 @@ assumptions:
 5.  The production executor and the inspection command use the new resolver.
 6.  Digest preferences remain exclusively in digest definitions.
 7.  Prompt inspection accounts for every instruction and data block actually delivered.
-8.  The ten-stage topology is unchanged.
+8.  The nine-stage topology is unchanged.
 """
 
 from __future__ import annotations
@@ -48,14 +48,13 @@ from tests.python.regression.test_generalization_firewall import PERSONAL_PRIORI
 PYTHON = sys.executable
 STYLE = "synthesis-max"
 
-#: The agreed ten-stage topology. It must not change.
-TEN_STAGES = (
+#: The agreed nine-stage topology. It must not change.
+NINE_STAGES = (
     "analyze",
     "frame",
     "draft",
     "developmental-review",
     "writer-revision",
-    "copy-edit",
     "reader-review",
     "targeted-repair",
     "publication-verify",
@@ -70,8 +69,7 @@ EXPECTED_COMPOSITION: dict[str, dict[str, object]] = {
     "frame": {"style_stage": True, "interface": True, "shared": ("reader",), "constraints": True},
     "draft": {"style_stage": True, "interface": True, "shared": ("reader", "editorial-base"), "constraints": True},
     "developmental-review": {"style_stage": True, "interface": True, "shared": ("reader",), "constraints": False},
-    "writer-revision": {"style_stage": True, "interface": False, "shared": (), "constraints": False},
-    "copy-edit": {"style_stage": True, "interface": False, "shared": ("naturalness",), "constraints": False},
+    "writer-revision": {"style_stage": True, "interface": False, "shared": ("naturalness",), "constraints": False},
     "reader-review": {"style_stage": True, "interface": True, "shared": ("reader",), "constraints": False},
     "targeted-repair": {"style_stage": True, "interface": False, "shared": ("reader",), "constraints": False},
     "publication-verify": {"style_stage": False, "interface": False, "shared": (), "constraints": False},
@@ -227,11 +225,11 @@ def test_a_style_scoped_file_requires_the_style():
 # ---------------------------------------------------------------------------------------
 
 
-def test_the_ten_stage_topology_is_unchanged():
-    assert tuple(stage_names_v2()) == TEN_STAGES
+def test_the_nine_stage_topology_without_copy_edit():
+    assert tuple(stage_names_v2()) == NINE_STAGES
 
 
-@pytest.mark.parametrize("stage", TEN_STAGES)
+@pytest.mark.parametrize("stage", NINE_STAGES)
 def test_each_stage_resolves_its_expected_composition(stage: str):
     expected = EXPECTED_COMPOSITION[stage]
     resolved = resolve_stage_instructions(stage=stage, style=STYLE)
@@ -248,7 +246,7 @@ def test_each_stage_resolves_its_expected_composition(stage: str):
 
 
 def test_a_normal_stage_resolves_a_small_instruction_set():
-    for stage in TEN_STAGES:
+    for stage in NINE_STAGES:
         resolved = resolve_stage_instructions(stage=stage, style=STYLE)
         assert len(resolved.loaded_instructions()) <= 5, (stage, len(resolved.loaded_instructions()))
 
@@ -267,7 +265,7 @@ def test_no_shared_five_stage_review_file_exists():
 
 def test_no_style_stage_file_duplicates_its_generic_contract():
     """A style specialization must add something, not copy the shared contract."""
-    for stage in TEN_STAGES:
+    for stage in NINE_STAGES:
         style_path = ROOT / "styles" / STYLE / "stages" / f"{stage}.md"
         if not style_path.is_file():
             continue
@@ -375,7 +373,7 @@ def test_every_active_style_resolves_every_stage():
     from digest_system.config.profiles import CANONICAL_STYLES
 
     for style in CANONICAL_STYLES:
-        for stage in TEN_STAGES:
+        for stage in NINE_STAGES:
             resolved = resolve_stage_instructions(stage=stage, style=style)
             assert resolved.stage_contract.path == f"editorial/stages/{stage}.md"
 
@@ -398,7 +396,7 @@ def test_no_instruction_file_carries_a_digest_preference():
 
 
 def test_the_reading_instructions_are_data_blocks_not_instruction_files():
-    for stage in TEN_STAGES:
+    for stage in NINE_STAGES:
         inspection = inspect_convention_stage(stage=stage, style=STYLE)
         for entry in inspection.manifest:
             assert not entry["path"].startswith("digests/"), (stage, entry["path"])
@@ -410,7 +408,7 @@ def test_the_reading_instructions_are_data_blocks_not_instruction_files():
 
 
 def test_the_inspection_names_an_owner_for_every_instruction():
-    for stage in TEN_STAGES:
+    for stage in NINE_STAGES:
         inspection = inspect_convention_stage(stage=stage, style=STYLE)
         assert inspection.manifest, stage
         for entry in inspection.manifest:
@@ -446,7 +444,7 @@ def test_the_evaluation_stage_set_is_derived_from_the_registry():
     assert EVALUATION_STAGES == {"developmental-review", "reader-review"}
 
 
-@pytest.mark.parametrize("stage", ["writer-revision", "copy-edit", "targeted-repair", "draft"])
+@pytest.mark.parametrize("stage", ["writer-revision", "targeted-repair", "draft"])
 def test_the_evaluation_resolver_rejects_non_evaluation_stages(stage: str):
     with pytest.raises(RunnerError):
         resolve_evaluation_contracts(stage=stage, style=STYLE)

@@ -1,7 +1,7 @@
 """Editorial pipeline stage declarations.
 
     analyze -> frame -> draft -> developmental-review (+ wops) -> writer-revision
-      -> copy-edit -> reader-review -> [targeted-repair] -> publication-verify -> render
+      -> reader-review -> [targeted-repair] -> publication-verify -> render
 
 Python port of ``src/editorial/stages.mjs``. This module owns the stage table and nothing
 else: it is the single source of truth for stage order, artifacts, corpus policy and
@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Sequence
 
 from ..runtime.artifacts import RunnerError
-from .validation.copy_verify import catalog_required, guard_copy_pass
+from .validation.copy_verify import catalog_required
 from .validation.editorial import validate_analysis_selection, validate_frame
 
 PIPELINE_V2 = "editorial-pipeline-v2"
@@ -168,40 +168,13 @@ STAGES_V2: tuple[Stage, ...] = (
         ),
     ),
     Stage(
-        name="copy-edit",
-        artifact="copy-edit.md",
-        format="Markdown",
-        executor="llm",
-        corpus="none",
-        on_failure="recoverable",
-        effort="medium",
-        budget=True,
-        purpose="COPY EDIT: detailed copyediting — clarity, grammar, syntax, spelling, punctuation, terminology consistency, local redundancy, naturalness, rhythm, awkward phrasing, minor local rewording, citation preservation, and heading/terminology consistency. It may not significantly restructure the document.",
-        # Gate: a copy pass that materially restructures the prose is rejected, not corrected,
-        # and the writer-revision prose is carried forward unchanged.
-        validation=StageValidation(
-            severity="gate",
-            run=lambda *, artifact, context, attempt_dir=None: guard_copy_pass(
-                before=context.artifacts["writer-revision"].text,
-                after=artifact,
-                budget=context.profile.budget,
-                catalogue_required=catalog_required(context.style_text),
-            ),
-        ),
-        blocks=lambda ctx: (
-            ctx.artifact_block("writer-revision", "previous_stage_artifact"),
-            ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),
-            ctx.reading_instructions_block("copy-edit"),
-        ),
-    ),
-    Stage(
         name="reader-review",
         artifact="review.json",
         format="JSON",
         executor="evaluation",
         corpus="none",
         on_failure="recoverable",
-        purpose="READER REVIEW: assess the copy-edited prose as a reader, and detect anything the copy edit materially regressed.",
+        purpose="READER REVIEW: independently assess Writer Revision for first-read clarity, naturalness, comprehension and synthesis.",
         blocks=lambda ctx: (),
     ),
     Stage(
@@ -217,7 +190,7 @@ STAGES_V2: tuple[Stage, ...] = (
         effort="medium",
         purpose="TARGETED REPAIR: repair one diagnosed reader-facing problem. Runs at most once, and only when the reader review found a material, repairable problem.",
         blocks=lambda ctx: (
-            ctx.artifact_block("copy-edit", "previous_stage_artifact"),
+            ctx.artifact_block("writer-revision", "previous_stage_artifact"),
             ctx.artifact_block("reader-review", "reader_review", "review.json"),
             ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),
             ctx.reading_instructions_block("targeted-repair"),

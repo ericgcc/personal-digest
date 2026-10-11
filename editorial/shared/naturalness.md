@@ -1,6 +1,6 @@
 # Naturalness Contract
 
-This is the small, digest-specific naturalness contract. It is what COPY EDIT enforces at the prose level. It replaces the previous complete naturalness manual as an inline instruction.
+This is the small, digest-specific naturalness contract. Writer Revision applies it during its final prose pass; Reader Review checks for remaining reader-facing defects. It replaces the previous complete naturalness manual as an inline instruction.
 
 Universal craft principles — the named failure modes, their detection signals, and their repairs — now live in **WOPS** as reusable operations and anti-patterns, and are retrieved per diagnosed problem rather than recited every time. What remains here are the rules that belong to this Digest System specifically, plus the invariants that must never be delegated.
 
@@ -14,19 +14,21 @@ Universal craft principles — the named failure modes, their detection signals,
 6. **Keep the qualification that carries meaning;** remove the ritual caveat that does not.
 7. **Every editorial choice must remain explainable** from the reviewed material: why this idea, why this source here, why this detail, why this ending.
 
-## What COPY EDIT may change
+## What the final prose pass in WRITER REVISION may change
 
-Rhythm, sentence length and shape, transitions, sentence openings, paragraph shape, local emphasis, word choice, redundancy, and concision — subject to the standing invariant stated in `editorial/stages/copy-edit.md`: never obtain concision by deleting explanatory setup, definitions, causal bridges, material qualifications, or reader orientation.
+Rhythm, sentence length and shape, transitions, sentence openings, paragraph shape, local emphasis, word choice, redundancy, and concision — subject to the standing invariant below.
 
-## What COPY EDIT may not change
+**Never obtain concision by deleting explanatory setup, definitions, causal bridges, material qualifications, or reader orientation.**
 
-* The frame's selection: which units exist, which ideas each unit carries, which sources support it.
-* The order of units, or the style's required structure.
+## What the final prose pass may not change
+
+* Approved sources and their evidence roles. Substantive structural changes must be justified by the developmental diagnosis and Writer Revision contract, not by sentence-level polishing.
+* The style's required structure. The revision may change unit order when developmental feedback justifies it, never solely for cosmetic reasons.
 * Claims, evidence, or the direction of an argument.
 * The presence of a required explanation, definition, or qualification.
 * The digest's language, catalogue, citation form, or status semantics.
 
-A pattern that a WOPS anti-pattern detects is only a defect when the diagnosis says it is. A single transition, dash, triplet, or rhetorical question proves nothing; repetition, or an unnecessary device, is the problem.
+A pattern that a WOPS anti-pattern detects is only a defect when the text makes it a defect. A single transition, dash, triplet, or rhetorical question proves nothing; repetition, or an unnecessary device, is the problem.
 
 ## Pattern-density audit
 

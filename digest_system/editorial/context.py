@@ -154,7 +154,7 @@ class RunContext:
         from .provenance import build_source_note_manifest_from_prose
 
         prose = ""
-        for name in ("publication-verify", "targeted-repair", "copy-edit", "writer-revision"):
+        for name in ("publication-verify", "targeted-repair", "writer-revision"):
             artifact = self.artifacts.get(name)
             if artifact is not None and artifact.text:
                 prose = artifact.text
@@ -172,7 +172,7 @@ class RunContext:
         """Computed lazily: the digest reading time depends on the approved prose, which does
         not exist until publication-verify has produced it."""
         prose = ""
-        for name in ("publication-verify", "targeted-repair", "copy-edit", "writer-revision"):
+        for name in ("publication-verify", "targeted-repair", "writer-revision"):
             artifact = self.artifacts.get(name)
             if artifact is not None and artifact.text:
                 prose = artifact.text

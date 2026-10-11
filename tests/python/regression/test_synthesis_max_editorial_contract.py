@@ -1,4 +1,4 @@
-﻿"""Synthesis MAX selection, drafting and review acceptance.
+"""Synthesis MAX selection, drafting and review acceptance.
 
 Each item is asserted here so the acceptance is a test result rather than a claim:
 
@@ -11,7 +11,7 @@ Each item is asserted here so the acceptance is a test result rather than a clai
 7.  Developmental Review diagnoses the design's failure categories.
 8.  A frame defect is recorded as a frame defect, not converted into a demand for more prose.
 9.  Writer Revision has explicit evidence-bounded structural authority.
-10. Copy Edit does not trade explanation for brevity.
+10. Writer Revision preserves explanation and owns final prose quality.
 11. Reader Review uses the same effective Reader Brief as drafting.
 12. Targeted Repair stays optional and localized.
 13. The Synthesis MAX legacy profile is retired and v1 is the default.
@@ -67,7 +67,6 @@ def _review() -> str:
         for name in (
             "developmental-review.md",
             "writer-revision.md",
-            "copy-edit.md",
             "reader-review.md",
             "targeted-repair.md",
         )
@@ -174,12 +173,12 @@ def test_draft_explains_terminology_at_the_point_of_need():
 def test_accessibility_obligations_are_stage_specific():
     draft = _draft()
     developmental = (STYLE_STAGES / "developmental-review.md").read_text(encoding="utf-8")
-    copy_edit = (STYLE_STAGES / "copy-edit.md").read_text(encoding="utf-8")
+    writer = (STYLE_STAGES / "writer-revision.md").read_text(encoding="utf-8")
     reader = (STYLE_STAGES / "reader-review.md").read_text(encoding="utf-8")
 
     assert "Introduce specialized terminology at the point of need" in draft
     assert "Missing orientation" in developmental
-    assert "sentence and local paragraph level" in copy_edit
+    assert "Final sentence-level editorial finish" in writer
     assert "first-read comprehension" in reader
     assert "Begin each thread" not in developmental
     assert "Begin each thread" not in reader
@@ -223,15 +222,15 @@ def test_writer_revision_acts_on_the_highest_impact_problems():
     assert "approved evidence set" in text
 
 
-def test_copy_edit_does_not_trade_explanation_for_brevity():
+def test_writer_revision_does_not_trade_explanation_for_brevity():
     text = _normalize(_review())
     assert "shorter prose is not automatically better prose" in text
 
 
-def test_reader_review_checks_copy_edit_regression():
+def test_reader_review_checks_absolute_reader_quality():
     text = _review()
-    assert "losses caused by Copy Edit" in text
-    assert "damaged source relationships" in text
+    assert "First-read absolute synthesis" in text
+    assert "unnatural transitions" in text
 
 
 def test_targeted_repair_stays_optional_and_localized():

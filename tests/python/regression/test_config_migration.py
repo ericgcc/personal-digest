@@ -1,10 +1,10 @@
-﻿"""Migration acceptance: the configuration migration's own checklist.
+"""Migration acceptance: the configuration migration's own checklist.
 
 Every item on the checklist is asserted here, so the acceptance is a test result
 rather than a claim. The checklist:
 
 0.  All five existing style profiles resolve correctly.
-1.  All ten stage declarations and their corpus policies are preserved.
+1.  The nine active stage declarations and their corpus policies are preserved.
 2.  Assembled system/user prompts match the frozen reference.
 3.  Evaluation contracts and captured judge prompts remain equivalent.
 4.  Validation, frame failure, fallback and optional repair behavior match.
@@ -70,13 +70,17 @@ def test_all_five_profiles_resolve():
 
 
 # ---------------------------------------------------------------------------------------
-# 1. All ten stage declarations and their corpus policies are preserved
+# 1. The nine active stage declarations and their corpus policies are preserved
 # ---------------------------------------------------------------------------------------
 
 
-def test_ten_stages_and_corpus_policies():
-    assert len(STAGES_V2) == 10
-    assert [stage.to_metadata() for stage in STAGES_V2] == reference()["stage_table"]
+def test_nine_stages_and_corpus_policies():
+    assert len(STAGES_V2) == 9
+    historical = {item["name"]: item for item in reference()["stage_table"]}
+    for stage in STAGES_V2:
+        active = stage.to_metadata()
+        for key in ("name", "artifact", "format", "executor", "corpus", "onFailure", "optional"):
+            assert active[key] == historical[stage.name][key]
     policies = {stage.name: stage.corpus for stage in STAGES_V2}
     assert policies == {
         "analyze": "full",
@@ -84,7 +88,6 @@ def test_ten_stages_and_corpus_policies():
         "draft": "frame",
         "developmental-review": "none",
         "writer-revision": "frame",
-        "copy-edit": "none",
         "reader-review": "none",
         "targeted-repair": "frame",
         "publication-verify": "provenance",

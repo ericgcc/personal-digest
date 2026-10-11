@@ -6,7 +6,7 @@
 
 You are the author, receiving developmental feedback on your own draft. You revise the whole piece.
 
-This is a **substantive** revision, not a polish. You may reorder, expand, cut, split, merge, reframe, rewrite a section, change headings, and redistribute emphasis when the developmental review justifies it. The draft is not sacred, and neither is the frame's layout. Individual wording is the least important thing in this room.
+This is a **substantive** revision, not a polish. You may reorder, expand, cut, split, merge, reframe, rewrite a section, change headings, and redistribute emphasis when the developmental review justifies it. The draft is not sacred, and neither is the frame's layout. Substantive understanding comes first. Once it is sound, finish your revised prose for publication in this same model call; there is no separate Copy Edit stage.
 
 The frame is the **best pre-draft plan**, not an immutable final layout. It is the plan the draft was written from, and it remains authoritative for **evidence** — which sources are approved and what each contributes. It is not a constraint on the shape the finished piece takes when the review shows the plan's shape is not serving the reader.
 
@@ -18,6 +18,7 @@ The frame is the **best pre-draft plan**, not an immutable final layout. It is t
 * The evidence for the frame-selected sources, so you can restore context or detail the review says is missing.
 * A small set of retrieved writing operations — reusable, named writing transformations selected for the diagnosed problems. Apply the ones that fit; ignore the ones that do not. They are candidate moves, not a checklist, and they never override the frame's evidence, the sources, or the reader contract.
 * The selected style's writing character.
+* The shared Naturalness Contract, including its whole-digest pattern-density audit.
 
 ## Priority order when goals conflict
 
@@ -60,6 +61,29 @@ A revision that keeps the original sentences and leaves the reader unable to fol
 * **Explain before compressing**, always. Never buy length by deleting the setup, definition, causal bridge, qualification, or orientation a reader needs.
 * **Keep the frame's evidence discipline.** Use the sources the frame selected and the roles it gave them. If the frame selected a source for a purpose, keep that source's contribution recoverable.
 * **Respect the style.** Its composition model, structure, depth allocation, citation form, and catalogue behaviour are unchanged by this revision.
+
+## Finish the prose in this revision
+
+After the substantive changes, perform a **sentence-level and whole-digest editorial pass**.
+This is part of Writer Revision, not a separate model call. Preserve substantive repairs.
+
+* **Clarity and naturalness:** make referents, actors, mechanisms, causal links, and
+  transitions explicit; correct awkward language, opaque metaphors, expert shorthand,
+  repeated formulaic openings, and unsupported statements of importance.
+* **Grammar and consistency:** correct grammar, spelling, punctuation, Markdown,
+  terminology, headings, code formatting and typography in the digest's language.
+* **Flow and rhythm:** adjust sentence and paragraph shapes to the thought, without
+  forced variation, rhetorical triplets, repetitious contrasts or generic house tone.
+* **Concision:** cut only repetition and secondary detail that do not advance the explanation.
+  Never remove the orientation, definitions, causal bridges or qualifications that carry meaning.
+* **Preservation:** verify claim-level citations, source identities, exact numbers,
+  attributions, source-role distinctions, evidence boundaries and source catalogue status.
+* **Whole-digest pattern audit:** apply the Naturalness Contract across all sections,
+  not as isolated quotas. Repair clusters of artificial patterns, retaining genuinely
+  effective stylistic moves.
+
+Read the completed edition once from the perspective of the intended reader. Make sure
+prose polishing has not undone the substantive review or made the edition harder to follow.
 
 ## Report what you could not fix
 

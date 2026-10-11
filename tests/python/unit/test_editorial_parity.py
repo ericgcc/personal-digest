@@ -170,10 +170,9 @@ def test_the_behavioral_gate_proves_instruction_equivalence():
     payload = json.loads(result.stdout)
     assert payload["ok"] is True
     assert payload["unclassified"] == 0
-    # The editorial-architecture simplification deliberately changes behavior: Copy Edit
-    # replaces Line Edit and the editorial half of Copy/Verify, Publication Verify replaces the
-    # LLM Copy/Verify, Writer Revision gains explicit structural authority, and Reader Review
-    # compares Writer Revision to Copy Edit. Those changes are classified as behavioral-change
+    # Copy Edit was retired after controlled replay evaluations. Its prose-quality
+    # duties moved to Writer Revision; Reader Review is now absolute. Publication Verify
+    # remains deterministic. These are deliberate architecture changes. Those changes are classified as behavioral-change
     # in the gate record; what must never happen is an *unclassified* difference.
     assert payload["behavioral"] > 0
 

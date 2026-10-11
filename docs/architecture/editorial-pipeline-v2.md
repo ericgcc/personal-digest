@@ -6,7 +6,7 @@ records remain auditable, but the runtime executes one workflow only.
 ## Workflow
 
 ```text
-Analyze → Frame → Draft → Developmental Review → Writer Revision → Copy Edit
+Analyze → Frame → Draft → Developmental Review → Writer Revision
         → Reader Review → [Targeted Repair] → Publication Verify → Render
 ```
 
@@ -16,9 +16,8 @@ Analyze → Frame → Draft → Developmental Review → Writer Revision → Cop
 | Frame | `frame.json` | model | Approve the evidence-bounded plan and source-status partition. |
 | Draft | `draft.md` | model | Write the first editorial artifact from the approved evidence. |
 | Developmental Review | `review.json`, `wops.json` | evaluation | Diagnose the draft; it does not rewrite it. |
-| Writer Revision | `revision.md` | model | Make substantive, evidence-bounded revisions. |
-| Copy Edit | `copy-edit.md` | model | Improve local clarity and correctness without restructuring. |
-| Reader Review | `review.json` | evaluation | Compare Writer Revision with Copy Edit for reader-facing regressions. |
+| Writer Revision | `revision.md` | model | Evidence-bounded substantive revision plus final grammar, clarity, naturalness, rhythm and consistency. |
+| Reader Review | `review.json` | evaluation | Absolute first-read assessment of Writer Revision, including whole-edition naturalness. |
 | Targeted Repair | `repair.md` | model | Optionally repair one diagnosed, localized problem. |
 | Publication Verify | `final.md`, `verification.json` | deterministic | Audit the final prose without editing it. |
 | Render | `email.html` | model | Transform verified prose and canonical rendering data into HTML without rewriting prose. |
@@ -70,8 +69,9 @@ canonical mapping for the visible `Selected`, `Worth reading`, and `Reviewed` ca
 
 ## Validation and failure behavior
 
-Copy Edit has a structural guard. If it drops headings, citations, catalogue content, or materially
-changes the body, the runner records the rejection and carries Writer Revision forward unchanged.
+Writer Revision now owns the former Copy Edit responsibilities and receives the preserved
+Naturalness Contract. Reader Review evaluates Writer Revision absolutely and may request
+one actionable major/critical repair. No standalone Copy Edit model call or comparison remains.
 
 Publication Verify checks citations, source/catalog membership, source-specific status consistency,
 disjoint status sets, reading-time presence, callout authorization and provenance, required

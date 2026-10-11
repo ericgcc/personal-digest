@@ -1,4 +1,4 @@
-﻿"""The prompt migration's own acceptance checklist.
+"""The prompt migration's own acceptance checklist.
 
 Each item is asserted here so the acceptance is a test result rather than a claim.
 The checklist:
@@ -166,7 +166,6 @@ def test_corpus_policies_are_unchanged():
         "draft": "frame",
         "developmental-review": "none",
         "writer-revision": "frame",
-        "copy-edit": "none",
         "reader-review": "none",
         "targeted-repair": "frame",
         "publication-verify": "provenance",
@@ -373,7 +372,7 @@ def test_the_approved_change_is_recorded_and_real():
                 if entry["document"].startswith("system/contracts/"):
                     current_name = {
                         "copy-verify.md": "publication-verify.md",
-                        "line-edit.md": "copy-edit.md",
+                        "line-edit.md": "writer-revision.md",
                     }.get(legacy.name, legacy.name)
                     current = ROOT / "editorial" / "stages" / current_name
                 elif entry["document"].startswith("system/style-pipelines/"):
@@ -383,7 +382,6 @@ def test_the_approved_change_is_recorded_and_real():
                             for stage in (
                                 "developmental-review",
                                 "writer-revision",
-                                "copy-edit",
                                 "reader-review",
                                 "targeted-repair",
                             )

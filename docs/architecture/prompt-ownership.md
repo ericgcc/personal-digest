@@ -74,7 +74,6 @@ sections it can still act on.
 | Draft | `Reader`, `Content preferences`, `Optional highlights` |
 | Developmental Review | `Reader` |
 | Writer Revision | `Reader` |
-| Copy Edit | `Reader` |
 | Reader Review | `Reader` |
 | Targeted Repair | `Reader` |
 | Publication Verify | `Optional highlights` |

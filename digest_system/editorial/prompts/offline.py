@@ -139,7 +139,7 @@ class OfflineContext:
         from ..provenance import build_source_note_manifest_from_prose
 
         prose = ""
-        for name in ("publication-verify", "targeted-repair", "copy-edit", "writer-revision"):
+        for name in ("publication-verify", "targeted-repair", "writer-revision"):
             artifact = self.artifacts.get(name)
             if artifact is not None and artifact.text:
                 prose = artifact.text
@@ -335,11 +335,10 @@ SYNTHETIC_WOPS = {
 }
 
 SYNTHETIC_READER_REVIEW = {
-    "status": "preserved",
-    "material_regression": False,
+    "semantic_overall_score": 8.0,
+    "semantic_critical_failure_count": 0,
     "semantic_issues": [],
     "retry_instructions": [],
-    "after": {"overall_score": 7.0},
 }
 
 
@@ -388,7 +387,6 @@ def seed_artifacts(context: OfflineContext, *, stages: list[str] | None = None) 
         suffix=".json",
     )
     context.artifacts["writer-revision"] = _artifact("writer-revision", SYNTHETIC_PROSE)
-    context.artifacts["copy-edit"] = _artifact("copy-edit", SYNTHETIC_PROSE)
     context.artifacts["reader-review"] = _artifact(
         "reader-review",
         json.dumps(SYNTHETIC_READER_REVIEW, ensure_ascii=False, indent=2),

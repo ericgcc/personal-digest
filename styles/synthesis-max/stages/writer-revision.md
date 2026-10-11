@@ -23,3 +23,13 @@ Write with Synthesis MAX's analytical restraint: concrete before abstract, expla
 before compression, exact relationships instead of announced significance, and depth in
 proportion to explanatory yield. Retrieved writing operations are candidates for diagnosed
 problems, not a checklist.
+
+## Final sentence-level editorial finish
+
+In the same call, apply the shared Naturalness Contract across the full Synthesis MAX
+edition. Repair grammar, clarity, terminology, rhythm, local transitions, mechanical
+repetition and formulaic significance claims. Keep concrete subjects, source roles,
+causal bridges, material qualifications, citations and the actual combined explanation.
+Do not obtain concision by deleting the context that makes a thread intelligible.
+
+Precision matters more than superficial compression: shorter prose is not automatically better prose.

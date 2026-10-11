@@ -48,7 +48,6 @@ from .prompts.convention_context import (
 from .stages import PIPELINE_ID, VALIDATION_ATTEMPTS, stage_names_v2
 from .validation.copy_verify import (
     catalog_required,
-    guard_copy_pass,
     narrative_evidence_numbers,
     run_deterministic_checks,
     summarize_frame_unit_declarations,
@@ -248,8 +247,7 @@ def split_copy_pass(text: str) -> dict[str, Any]:
 def should_run_optional_stage(stage: Any, context: Any) -> dict[str, Any]:
     """Whether the single optional repair should run.
 
-    It runs only for a material, repairable reader problem: a material regression, a critical
-    failure, or a major-or-worse reader issue with concrete retry instructions.
+    It runs only for a critical or major, actionable issue in the absolute reader review.
     """
     if stage.name != "targeted-repair":
         return {"run": True, "reason": "not an optional stage"}
@@ -259,12 +257,10 @@ def should_run_optional_stage(stage: Any, context: Any) -> dict[str, Any]:
     review = artifact.get("json") if isinstance(artifact, Mapping) else getattr(artifact, "json", None)
     if not review:
         return {"run": False, "reason": "reader review is unavailable, so no repair was requested"}
-    regression = review.get("regression") or {}
-    material = bool(regression.get("material_regression"))
     critical = int(review.get("semantic_critical_failure_count", 0) or 0) > 0
     instructions = [
-        item for item in (regression.get("retry_instructions") or []) if item
-    ] if isinstance(regression.get("retry_instructions"), list) else []
+        item for item in (review.get("retry_instructions") or []) if item
+    ] if isinstance(review.get("retry_instructions"), list) else []
     major_issues = [
         issue
         for issue in (review.get("semantic_issues") or [])
@@ -272,18 +268,13 @@ def should_run_optional_stage(stage: Any, context: Any) -> dict[str, Any]:
     ]
     if not instructions:
         return {"run": False, "reason": "reader review produced no targeted retry instructions"}
-    if not material and not critical and not major_issues:
-        return {"run": False, "reason": "reader review found no material, repairable reader problem"}
+    if not critical and not major_issues:
+        return {"run": False, "reason": "reader review found no major, repairable reader problem"}
     return {
         "run": True,
         "reason": (
-            "reader review found a material regression with targeted retry instructions"
-            if material
-            else (
-                "reader review reported a critical reader failure with targeted retry instructions"
-                if critical
-                else "reader review reported a major reader issue with targeted retry instructions"
-            )
+            "reader review reported a critical reader failure with targeted retry instructions"
+            if critical else "reader review reported a major reader issue with targeted retry instructions"
         ),
     }
 
@@ -503,22 +494,6 @@ def execute_stage(
             produced = context.artifacts.get(stage.name)
             if produced is not None and isinstance(produced.text, str) and produced.text:
                 write_artifact(attempt_dir / stage.artifact, produced.text)
-
-            # COPY EDIT's validator is the structural copy-pass guard. Unlike the frame and
-            # analysis validators it is not a correction loop: a rejected copy pass is not
-            # rewritten by the model, the writer-revision prose is carried forward unchanged
-            # (degradation, not suppression).
-            if stage.name == "copy-edit":
-                _run_copy_edit_guard(
-                    stage=stage,
-                    context=context,
-                    record=record,
-                    work_dir=work_dir,
-                    attempt_dir=attempt_dir,
-                    attempt_count=attempt_count,
-                    profile_id=profile.id,
-                )
-                break
 
             if not stage.validation:
                 break
@@ -864,29 +839,41 @@ def _run_evaluation_stage(
         }
         record["warnings"].extend(retrieval["warnings"])
     else:
-        before = _require_artifact(context, "writer-revision")
-        after = _require_artifact(context, "copy-edit")
-        response = evaluation.compare_reader_quality(
-            before_path=before.path,
-            after_path=after.path,
+        revision = _require_artifact(context, "writer-revision")
+        response = evaluation.evaluate_reader_quality(
+            text_path=revision.path,
             style=style,
             language=language,
-            digest_id=digest_id,
-            run_id=run_id,
             contracts=contracts,
             work_dir=work_dir,
         )
         if not response["ok"]:
             raise RunnerError(f"Reader review could not be produced: {response.get('error') or 'unknown adapter failure'}")
         record["warnings"].extend(response["warnings"])
-        artifact_text = json.dumps(response["result"], ensure_ascii=False, indent=2)
         result = response["result"] or {}
-        regression = result.get("regression") or {}
+        # Absolute evaluations do not have a before/after regression envelope.
+        # The optional repair has a budget of one located, actionable problem.
+        issues = [
+            issue for issue in (result.get("semantic_issues") or [])
+            if isinstance(issue, Mapping) and issue.get("severity") in {"major", "critical"}
+            and (issue.get("revision_hint") or issue.get("description"))
+        ]
+        issue = next((item for item in issues if item.get("severity") == "critical"), None)
+        if issue is None:
+            issue = issues[0] if issues else None
+        if issue is not None:
+            location = str(issue.get("section_id") or "the digest")
+            instruction = str(issue.get("revision_hint") or issue["description"]).strip()
+            result["retry_instructions"] = [f"In {location}: {instruction}"]
+        else:
+            result["retry_instructions"] = []
+        artifact_text = json.dumps(result, ensure_ascii=False, indent=2)
         record["notes"] = {
-            "status": regression.get("status"),
-            "material_regression": bool(regression.get("material_regression")),
+            "mode": "absolute",
+            "semantic_score": result.get("semantic_overall_score", result.get("semantic_score")),
             "critical_failure_count": result.get("semantic_critical_failure_count"),
             "problem_types": result.get("problem_types", []),
+            "targeted_repair_requested": bool(result["retry_instructions"]),
         }
 
     _copy_adapter_audit(response=response, attempt_dir=attempt_dir, root=context.root)
@@ -903,85 +890,6 @@ def _run_evaluation_stage(
     _register_artifact(stage=stage, context=context, output_path=output_path, text=artifact_text, record=record)
     record["adapter"] = response.get("adapter")
     record["adapter_versions"] = response.get("versions")
-
-
-def _run_copy_edit_guard(
-    *,
-    stage: Any,
-    context: RunContext,
-    record: dict[str, Any],
-    work_dir: Path,
-    attempt_dir: Path,
-    attempt_count: int,
-    profile_id: str,
-) -> None:
-    """Enforce the structural copy-pass guard and, on rejection, carry the revision forward.
-
-    The guard is a gate, not a correction loop: when the copy pass materially restructured the
-    prose (dropped headings or citations, shrank the body, removed the catalogue), the model is
-    not asked to redo it. The writer-revision prose is carried forward unchanged and the run is
-    degraded, mirroring the ``carried_forward_from`` recovery a transport failure uses.
-    """
-    produced = context.artifacts.get("copy-edit")
-    guard = stage.validation.run(
-        artifact=produced.text if produced and produced.text else "",
-        context=context,
-        attempt_dir=attempt_dir,
-    )
-    write_artifact(
-        attempt_dir / "validation.json",
-        json.dumps(
-            {
-                "stage": stage.name,
-                "attempt": attempt_count,
-                "severity": stage.validation.severity,
-                "profile": profile_id,
-                **guard,
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
-    )
-    record["validation_attempts"] = attempt_count
-    record["validation"] = {
-        "accepted": guard["accepted"],
-        "severity": stage.validation.severity,
-        "reasons": guard["reasons"],
-        "deltas": guard["deltas"],
-    }
-    if guard["accepted"]:
-        return
-
-    carried = _last_valid_artifact(context, stage)
-    if carried is None:
-        record["status"] = "failed"
-        record["error"] = "copy pass rejected and no earlier artifact could be carried forward"
-        record["completed_at"] = _now()
-        raise RunnerError(
-            f"{stage.name} failed its structural guard and no earlier artifact could be carried forward: "
-            + "; ".join(guard["reasons"])
-        )
-    record["status"] = "degraded"
-    record["degraded"] = True
-    record["provenance"] = f"carried-forward-from:{carried['stage']}"
-    record["output"] = relative_to_root(carried["artifact"].path, context.root)
-    record["warnings"].append("copy pass rejected: " + "; ".join(guard["reasons"]))
-    write_json(
-        work_dir / "degraded.json",
-        {
-            "stage": stage.name,
-            "reason": "copy pass rejected: " + "; ".join(guard["reasons"]),
-            "carried_forward_from": carried["stage"],
-            "at": _now(),
-        },
-    )
-    context.artifacts[stage.name] = Artifact(
-        path=carried["artifact"].path,
-        text=carried["artifact"].text,
-        json=carried["artifact"].json,
-        provenance=f"carried-forward-from:{carried['stage']}",
-        degraded=True,
-    )
 
 
 def _run_publication_verify_stage(
@@ -1002,7 +910,7 @@ def _run_publication_verify_stage(
     ``verification.json``. Failed checks are recorded as warnings; the current publication
     policy keeps delivery advisory and allows Render to continue.
     """
-    prose = context.artifacts.get("targeted-repair") or _require_artifact(context, "copy-edit")
+    prose = context.artifacts.get("targeted-repair") or _require_artifact(context, "writer-revision")
     frame = context.artifacts["frame"].json if context.artifacts.get("frame") else None
     catalogue_required = catalog_required(context.style_text)
     # A catalog-only edition is deliberately short: the style exempts it from the minimum body

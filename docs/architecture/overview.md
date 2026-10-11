@@ -51,7 +51,7 @@ digest_system/
 
 ## Editorial workflow
 
-The editorial pipeline runs ten stages in a fixed order. Each stage has one
+The editorial pipeline runs nine stages in a fixed order. Each stage has one
 responsibility and hands a named artifact to the next; `digest_system/editorial/stages.py`
 is the single source of truth for the order, artifacts, and corpus policy.
 
@@ -60,16 +60,15 @@ is the single source of truth for the order, artifacts, and corpus policy.
 3. `draft`
 4. `developmental-review`
 5. `writer-revision`
-6. `copy-edit`
-7. `reader-review`
-8. `targeted-repair`
-9. `publication-verify`
-10. `render`
+6. `reader-review`
+7. `targeted-repair`
+8. `publication-verify`
+9. `render`
 
-`copy-edit` produces `copy-edit.md` from `revision.md` and `wops.json` with no corpus
-block. `publication-verify` runs deterministic publication checks over the revised prose
-and writes `final.md` beside `verification.json`; it never edits prose. Reader Review
-compares Writer Revision (BEFORE) against Copy Edit (AFTER).
+Writer Revision combines substantive revision with the Naturalness Contract and the former
+Copy Edit obligations in one model call. Reader Review judges the revision absolutely,
+possibly triggering one targeted repair. Publication Verify runs deterministic checks and
+writes `final.md` beside `verification.json`; it never edits prose.
 
 ## Ownership rules
 

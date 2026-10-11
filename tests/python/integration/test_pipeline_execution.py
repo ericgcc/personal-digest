@@ -78,8 +78,9 @@ class MockEvaluation:
     python = "mock"
     python_source = "mock"
 
-    def __init__(self, *, ok: bool = True) -> None:
+    def __init__(self, *, ok: bool = True, major_issue: bool = False) -> None:
         self.ok = ok
+        self.major_issue = major_issue
 
     def evaluate_developmental_review(self, **kwargs):
         return {
@@ -105,24 +106,29 @@ class MockEvaluation:
             "adapter": {"python": "mock", "duration_ms": 1},
         }
 
-    def compare_reader_quality(self, **kwargs):
+    def evaluate_reader_quality(self, **kwargs):
+        issue = {
+            "section_id": "S1",
+            "type": "missing_context",
+            "severity": "major",
+            "description": "An essential definition is missing.",
+            "revision_hint": "Define the central term before relying on it.",
+        }
         return {
             "ok": self.ok,
             "degraded": not self.ok,
             "error": None if self.ok else "mock judge unavailable",
             "warnings": [],
             "result": {
-                "regression": {"status": "pass", "material_regression": False, "retry_instructions": []},
-                "evaluation": {"score": 8.0},
+                "semantic_overall_score": 7.0,
                 "semantic_critical_failure_count": 0,
-                "semantic_issues": [],
+                "semantic_issues": [issue] if self.major_issue else [],
                 "problem_types": [],
             },
             "versions": {"evaluation": {"evaluation_id": "reader_quality_v4"}},
             "usage": {"judge_prompt_tokens": 100, "judge_completion_tokens": 20},
             "adapter": {"python": "mock", "duration_ms": 1},
         }
-
 
 # ---------------------------------------------------------------------------------------
 # Fixtures
@@ -158,7 +164,6 @@ def _responses() -> dict[str, str]:
         "frame": json.dumps(frame_valid()),
         "draft": PROSE,
         "writer-revision": PROSE,
-        "copy-edit": PROSE,
         "targeted-repair": PROSE,
         "publication-verify": PROSE,
         "render": "<html><body>digest</body></html>",
@@ -203,7 +208,7 @@ def _run(workspace: Path, *, run_id: str, provider, **kwargs):
         root=workspace,
         provider=provider,
         wops=MockWops(),
-        evaluation=MockEvaluation(),
+        evaluation=kwargs.pop("evaluation", MockEvaluation()),
         **kwargs,
     )
 
@@ -241,7 +246,7 @@ def test_a_mocked_pipeline_executes_every_stage_and_produces_compatible_artifact
 
     # The run-directory contract is preserved: attempt records, context manifests, prompts.
     # `publication-verify` is deterministic and makes no model call, so it has no prompt.
-    for stage in ("analyze", "frame", "draft", "copy-edit", "render"):
+    for stage in ("analyze", "frame", "draft", "writer-revision", "render"):
         attempt = run_dir / stage / "attempts" / "attempt-1"
         assert (attempt / "attempt.json").exists(), stage
         assert (attempt / "context-manifest.json").exists(), stage
@@ -254,7 +259,6 @@ def test_publication_findings_are_advisory_and_render_uses_the_audited_manifest(
     invalid = PROSE.replace("checkable [1]", "checkable [999]", 1)
     responses = _responses()
     responses["writer-revision"] = invalid
-    responses["copy-edit"] = invalid
     provider = MockProvider(responses)
 
     result = _run(workspace, run_id="mock-advisory-publication", provider=provider)
@@ -325,47 +329,31 @@ def test_a_fatal_stage_failure_stops_the_run(workspace):
         _run(workspace, run_id="mock-fatal", provider=provider)
 
 
-def test_a_recoverable_stage_failure_carries_the_last_valid_artifact_forward(workspace):
-    provider = MockProvider(_responses(), fail_stages={"copy-edit"})
+def test_a_recoverable_writer_failure_carries_the_draft_forward(workspace):
+    provider = MockProvider(_responses(), fail_stages={"writer-revision"})
     result = _run(workspace, run_id="mock-degraded", provider=provider)
 
-    assert "copy-edit" in result["degraded"]
+    assert "writer-revision" in result["degraded"]
     run_dir = workspace / ".digest-runs" / "mock-degraded"
-    degraded = read_json(run_dir / "copy-edit" / "degraded.json")
-    assert degraded["carried_forward_from"] == "writer-revision"
-    stage_records = read_json(run_dir / "stage-records.json")
-    record = next(item for item in stage_records["stages"] if item["stage"] == "copy-edit")
-    assert record["provenance"] == "carried-forward-from:writer-revision"
+    degraded = read_json(run_dir / "writer-revision" / "degraded.json")
+    assert degraded["carried_forward_from"] == "draft"
+    review = read_json(run_dir / "reader-review" / "output" / "review.json")
+    assert review["semantic_overall_score"] == 7.0
 
 
-def test_a_copy_edit_that_restructures_is_rejected_and_the_revision_is_carried_forward(workspace):
-    """A copy-edit that drops a heading and removes citations is rejected by the structural
-    guard, and the writer-revision prose is carried forward as the copy-edit artifact."""
-    bad_copy_edit = "\n".join(
-        [
-            "## THE BIG PICTURE",
-            "",
-            "Incremental evaluation changes what a claim costs to check.",
-            "",
-            "The mechanism makes the claim checkable [2].",
-            "",
-            "## Sources",
-            "",
-            "2. [Qualifying the evaluation claim](https://example.invalid/b) · 8 min · Reviewed",
-        ]
-    )
-    provider = MockProvider({**_responses(), "copy-edit": bad_copy_edit})
-    result = _run(workspace, run_id="mock-copy-guard", provider=provider)
-
-    assert "copy-edit" in result["degraded"]
-    run_dir = workspace / ".digest-runs" / "mock-copy-guard"
-    degraded = read_json(run_dir / "copy-edit" / "degraded.json")
-    assert degraded["carried_forward_from"] == "writer-revision"
-    stage_records = read_json(run_dir / "stage-records.json")
-    record = next(item for item in stage_records["stages"] if item["stage"] == "copy-edit")
-    assert record["provenance"] == "carried-forward-from:writer-revision"
-    # The copy-edit artifact is the writer-revision prose, unchanged.
-    assert (workspace / record["output"]).read_text(encoding="utf-8") == PROSE
+def test_absolute_reader_review_triggers_one_targeted_repair(workspace):
+    provider = MockProvider(_responses())
+    result = _run(workspace, run_id="mock-reader-repair", provider=provider,
+                  evaluation=MockEvaluation(major_issue=True))
+    assert "targeted-repair" not in result["degraded"]
+    assert provider.calls.count("targeted-repair") == 1
+    run_dir = workspace / ".digest-runs" / "mock-reader-repair"
+    review = read_json(run_dir / "reader-review" / "output" / "review.json")
+    assert review["retry_instructions"] == [
+        "In S1: Define the central term before relying on it."
+    ]
+    records = read_json(run_dir / "stage-records.json")
+    assert "copy-edit" not in [item["stage"] for item in records["stages"]]
 
 
 def test_the_synthesis_max_profile_stops_rather_than_deriving_a_recovery_frame(workspace):

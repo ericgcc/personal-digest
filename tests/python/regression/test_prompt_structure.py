@@ -78,12 +78,11 @@ def test_stage_resolution_follows_the_standard_order():
 
 def test_every_retained_instruction_has_one_owner():
     """The concision invariant has one owner, not two."""
-    copy_edit = (ROOT / "editorial" / "stages" / "copy-edit.md").read_text(encoding="utf-8")
+    writer_revision = (ROOT / "editorial" / "stages" / "writer-revision.md").read_text(encoding="utf-8")
     naturalness = (ROOT / "editorial" / "shared" / "naturalness.md").read_text(encoding="utf-8")
     invariant = "Never obtain concision by deleting explanatory setup"
-    assert invariant in copy_edit, "copy-edit no longer owns the invariant"
-    # The naturalness contract refers to it rather than restating it as a block quote.
-    assert f"> **{invariant}" not in naturalness, "the invariant is still duplicated as its own block"
+    assert invariant in naturalness, "naturalness must preserve the invariant"
+    assert "Concision" in writer_revision and "Naturalness Contract" in writer_revision
 
 
 def test_maintainer_material_is_not_inlined():

@@ -59,24 +59,34 @@ with the current brief, plan and shared headroom.
   region and privacy constraints before selection; never invent provider labels.
 - Supply estimated uncached input, cached read, output and cache-write tokens
   **per API request**, and expected request count for the next brief. Defaults
-  are a comparison scenario (8K/60K/2K/0, 200 requests), not observed usage.
+  are a comparison scenario (8K/60K/2K/0, 200 requests). The bundled observed
+  costs are a provisional **Builder-only** baseline and are used only after at
+  least 10 requests: DeepSeek V4 Pro (66 at
+  $0.0068), Hy4 (50 at $0.0076), Claude Haiku 5.5 (44 at $0.0689), and
+  GLM-5.3 (12 at $0.0375). GLM-5.2's one $0.0600 sample remains insufficient,
+  so it uses the conservative profile estimate. Refresh these samples from
+  actual billing exports; do not infer tokens from a dollar-only sample. The
+  Inspector observed-cost map is deliberately empty: use the cold profile until
+  a role-keyed JSON file is supplied with `--observed`. Its shape is
+  `{\"builder\": {\"Model\": {\"requests\": 10, \"usd_per_request\": 0.01}},
+  \"inspector\": {...}}`; do not apply Builder samples to an Inspector.
   For a fresh Inspector start with a cold-cache estimate such as 68K/0/2K/0;
   do not copy Builder cache assumptions or session state.
-- The selector first finds models that fit that batch in **all three windows**
-  after a 15% reserve. Within that set it prefers the highest subjective role
-  quality, then the lowest normalized five-hour consumption. If none fit, it
-  chooses the most efficient eligible paid-Go candidate and flags a shorter
-  brief. Set `--min-quality 4` or `5` for demanding work instead of silently
-  accepting a weaker review. This is a transparent planning heuristic, not a
-  promise of maximum wall-clock time.
+- Builder preserves a 15% verification reserve; Inspector has a 2% safety
+  margin and may consume that reserved capacity. The selector finds models
+  that fit the whole next batch in **all three windows**. Within that set it
+  prefers the highest subjective role quality, then the lowest normalized
+  five-hour consumption. If none fit, it returns no selection: split the brief,
+  wait, or obtain authorization for a different fallback. It must not dispatch
+  an infeasible batch. Set `--min-quality 4` or `5` for demanding work.
 - Inspector always starts fresh and uses a different family from the actual
   Builder (`--builder-model`). For Inspector-only runs with no Builder, use
   `--builder-model none` and record that family independence is unverified.
 - Paid Go has shared normalized rolling/weekly/monthly meters. The published
   caps are single-model USD equivalents, not additive balances. An account
   limit blocks every paid-Go candidate, not free models or OpenRouter.
-- Suitable free models may be enabled with `--allow-free`; use them only for
-  a brief whose quality needs they meet. Muse Contributor candidates require
+- Suitable free models require Builder role plus both `--allow-free` and
+  `--allow-low-quality-free`; Inspector never selects them. Muse Contributor candidates require
   explicit training-data consent and allowed region (`--allow-training`).
   Existing user consent may be reused; never change provider settings yourself.
 - OpenRouter is last, enabled only by existing spending authorization through
@@ -98,7 +108,8 @@ Change `go` to `go-plus` for that plan. The selector fetches fresh usage;
 `--usage-file` may instead read a timestamped `--json` gauge snapshot
 matching the plan and no older than five minutes. No key or invalid/missing
 usage means exit 3 (unknown): refresh, never interpret it as unused allowance.
-Exit 2 means no eligible candidate; wait or report the concrete constraint.
+Exit 2 means no eligible model can finish the declared batch; split it, wait,
+or report the concrete constraint. Do not dispatch.
 Exit 0 returns ranked estimates and a selected exact host label.
 
 `--prepare` writes only the generated

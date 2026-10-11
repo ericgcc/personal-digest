@@ -47,3 +47,7 @@ __pycache__/
 .github/skills/openspec-sync-specs/
 .github/skills/openspec-update-change/
 .openspec-go/
+# OpenSpec Go run evidence is intentionally auditable when the workflow uses
+# authorized per-iteration commits. Keep only runs beneath tracked changes.
+!openspec/changes/**/.openspec-go/
+!openspec/changes/**/.openspec-go/**

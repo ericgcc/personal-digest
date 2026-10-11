@@ -42,6 +42,37 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(e["windows"]["rolling"]["requests"],41)
         self.assertEqual(e["windows"]["rolling"]["tokens"],41*70000)
 
+    def test_observed_cost_is_used_only_after_sufficient_samples(self):
+        labels=["DeepSeek V4 Pro (opencodego)","GLM-5.2 (opencodego)"]
+        result=s.rank_models(healthy(),"go","builder",labels,empty(),target=200)
+        self.assertEqual(result["selected"]["canonical"],"DeepSeek V4 Pro")
+        self.assertEqual(result["selected"]["cost_source"],"observed")
+        self.assertEqual(result["selected"]["usd_per_request"],.0068)
+        glm=next(item for item in result["ranked"] if item["canonical"]=="GLM-5.2")
+        self.assertEqual(glm["cost_source"],"profile")
+
+    def test_observed_costs_are_role_scoped(self):
+        labels=["DeepSeek V4 Pro (opencodego)"]
+        builder=s.rank_models(healthy(),"go","builder",labels,empty(),target=20)
+        inspector=s.rank_models(healthy(),"go","inspector",labels,empty(),builder="GLM-5.2",target=20)
+        self.assertEqual(builder["selected"]["cost_source"],"observed")
+        self.assertEqual(inspector["selected"]["cost_source"],"profile")
+
+    def test_builder_reserves_inspector_capacity_but_inspector_can_use_it(self):
+        usage=healthy(85)
+        labels=["Hy4 preview (opencodego)"]
+        builder=s.rank_models(usage,"go","builder",labels,empty(),target=1)
+        inspector=s.rank_models(usage,"go","inspector",labels,empty(),builder="GLM-5.2",target=1)
+        self.assertIsNone(builder["selected"])
+        self.assertIsNotNone(inspector["selected"])
+        self.assertEqual(builder["reserve_fraction"],.15)
+        self.assertEqual(inspector["reserve_fraction"],.02)
+
+    def test_no_selection_when_no_model_can_finish_batch(self):
+        result=s.rank_models(healthy(),"go","builder",["GLM-5.3 (opencodego)"],empty(),target=10000)
+        self.assertIsNone(result["selected"])
+        self.assertTrue(result["infeasible_candidates"])
+
     def test_context_peak_and_cache_write_prices(self):
         self.assertEqual(b.prices("Claude Haiku 5.5",100000)[0],.1)
         self.assertEqual(b.prices("Claude Haiku 5.5",100001)[0],.5)
@@ -105,8 +136,15 @@ class BudgetTests(unittest.TestCase):
     def test_free_before_openrouter(self):
         usage=healthy(100)
         labels=["LongCat 2.5 Preview Free (opencodego)","Z.ai: GLM 5.3 Flash (openrouter)"]
-        r=s.rank_models(usage,"go","builder",labels,empty(),allow_free=True,allow_openrouter=True)
+        r=s.rank_models(usage,"go","builder",labels,empty(),allow_free=True,
+            allow_low_quality_free=True,allow_openrouter=True)
         self.assertEqual(r["selected"]["provider"],"free")
+
+    def test_free_models_never_select_for_inspector_or_without_low_quality_consent(self):
+        labels=["LongCat 2.5 Preview Free (opencodego)"]
+        self.assertIsNone(s.rank_models(healthy(100),"go","builder",labels,empty(),allow_free=True)["selected"])
+        self.assertIsNone(s.rank_models(healthy(100),"go","inspector",labels,empty(),
+            builder="GLM-5.2",allow_free=True,allow_low_quality_free=True)["selected"])
 
     def test_unknown_usage_cannot_select(self):
         with self.assertRaises(ValueError):

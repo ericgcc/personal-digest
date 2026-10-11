@@ -11,6 +11,21 @@ WINDOWS = {"rolling": .2, "weekly": .5, "monthly": 1.0}
 # Input, cached read, output, cache-write tokens: a common comparison workload,
 # not OpenCode's model-specific request estimates or a promised quota.
 PROFILE = (8000, 60000, 2000, 0)
+# User-observed billing samples. They are intentionally cost-only: this source
+# did not include role or token/cache breakdowns. A sample is eligible only
+# after OBSERVED_MIN_REQUESTS requests, and then remains conservative evidence
+# rather than an inferred token profile.
+OBSERVED_MIN_REQUESTS = 10
+OBSERVED_COSTS = {
+    "builder": {
+        "Claude Haiku 5.5": {"requests": 44, "usd_per_request": 0.0689},
+        "DeepSeek V4 Pro": {"requests": 66, "usd_per_request": 0.0068},
+        "GLM-5.3": {"requests": 12, "usd_per_request": 0.0375},
+        "Hy4 preview": {"requests": 50, "usd_per_request": 0.0076},
+        "GLM-5.2": {"requests": 1, "usd_per_request": 0.0600},
+    },
+    "inspector": {},
+}
 CATALOG = json.loads(r'''{
   "GLM-5.3-Flash": {
     "name": "GLM-5.3-Flash",

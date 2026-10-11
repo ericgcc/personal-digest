@@ -258,6 +258,40 @@ the current repository and official documentation were used.
 
 ## Operational commands and dispatch contract
 
+## Observed billing samples
+
+The selector has a small, versioned, cost-only sample set from the user's
+usage data. Because the supplied records did not identify an agent role, the
+current entries are a **provisional Builder baseline only**. It uses a sample
+only at 10 or more requests; a dollar-only sample does not establish a token or
+cache profile. The Inspector map is deliberately empty and continues to use a
+cold-cache profile until role-specific measurements are supplied.
+
+| Model | Requests | Observed USD/request | Go 5-hour allowance consumed/request | Selector use |
+|---|---:|---:|---:|---|
+| Claude Haiku 5.5 | 44 | $0.0689 | 2.295% | Builder observed cost |
+| DeepSeek V4 Pro | 66 | $0.0068 | 0.227% | Builder observed cost |
+| GLM-5.3 | 12 | $0.0375 | 1.250% | Builder observed cost |
+| Hy4 Preview | 50 | $0.0076 | 0.127% | Builder observed cost |
+| GLM-5.2 | 1 | $0.0600 | 0.500% | Profile estimate only; insufficient sample |
+
+These rows explain why DeepSeek V4 Pro can be viable for a Builder despite a
+conservative generic profile. The figures are not assumed to be stable across
+roles, task size, cache state, or peak pricing. Update the bundled sample only
+from an attributable billing export with request count and measured cost. Load
+role-specific measurements via `--observed` with separate `builder` and
+`inspector` objects, each mapping a canonical model name to
+`{\"requests\": N, \"usd_per_request\": C}`.
+
+## Builder reserve and Inspector capacity
+
+The Builder has a 15% reserve in each paid-Go meter; this protects the next
+independent review. Inspector has a separate 2% estimation margin and can use
+the Builder's reserved capacity. The selector rejects every model that cannot
+finish the declared next batch across rolling, weekly, and monthly windows;
+it returns exit 2 rather than selecting a partial-run candidate. Free models
+are Builder-only and require explicit `--allow-free --allow-low-quality-free`.
+
 Use either skill's scripts from the repo root. Explicitly set the active plan:
 
 ```text

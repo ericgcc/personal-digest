@@ -34,3 +34,15 @@ __pycache__/
 # reproducible from the templates and profiles, never source. Committed and guarded by
 # `inspect --check` (tests/python/regression/test_phase6_checklist.py) so prompt drift is visible.
 #prompt-inspections/
+
+# OpenSpec-generated agent customization, reconstructed with `openspec update`.
+# The openspec/ directory (specs, changes, archive) IS tracked; only the generated
+# skills/prompts/instructions are derived. openspec-go is hand-maintained and tracked.
+.github/prompts/
+.github/instructions/
+.github/skills/openspec-apply-change/
+.github/skills/openspec-archive-change/
+.github/skills/openspec-explore/
+.github/skills/openspec-propose/
+.github/skills/openspec-sync-specs/
+.github/skills/openspec-update-change/

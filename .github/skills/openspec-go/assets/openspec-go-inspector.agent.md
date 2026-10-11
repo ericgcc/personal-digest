@@ -5,14 +5,17 @@ description: >-
   to verify implementation against OpenSpec requirements, scenarios,
   design, tasks, and quality gates. Writes PASS, FAIL, or BLOCKED feedback.
 user-invocable: false
-model: Kimi K2.7 Code (Go) (opencode)
+model: Hy4 preview (opencodego)
 metadata:
-  failover-model-precendence: ["Hy4 preview (Go) (opencode)", "Muse Spark 1.3 Contributor (Go) (opencode)", "GPT-5.6 Luna (Go) (opencode)", "DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
+  failover-model-precendence: ["Muse Spark 1.3 Contributor (opencodego)", "GPT-5.6 Luna (opencodego)", "Qwen3.8 Max (opencodego)", "DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
   # OpenCode Go per-model monthly caps (USD). GPT-5.6 Luna has the lowest cap.
+  # Kimi K2.7 Code was removed from this list: its Moonshot upstream rejects the
+  # workspace's tool schemas (missing `type` on some properties) with a 400 error,
+  # so it cannot serve as a subagent here. Re-add only after that schema is fixed.
   # Full catalog + rationale: .github/skills/goal/assets/model-catalog.md
   # Check headroom: python .github/skills/goal/scripts/opencode_usage.py
   # Check exhaustion: python .github/skills/goal/scripts/model_tracker.py check "<model>"
-  monthly-cap-usd: {"Kimi K2.7 Code": 60, "Hy4 preview": 30, "Muse Spark 1.3 Contributor": 60, "GPT-5.6 Luna": 15}
+  monthly-cap-usd: {"Hy4 preview": 30, "Muse Spark 1.3 Contributor": 60, "GPT-5.6 Luna": 15, "Qwen3.8 Max": 15}
 ---
 
 # Inspector - Independent OpenSpec Verification

@@ -9,8 +9,8 @@ description: >-
   of an existing OpenSpec change.
 compatibility: Requires openspec CLI, git, and subagent support.
 metadata:
-  recommended-builder-models: ["GLM-5.3 (Go) (opencode)", "GLM-5.2 (Go) (opencode)", "DeepSeek V4 Pro (New) (Go) (opencode)", "GLM-5.3-Flash (Go) (opencode)", "Z.ai: GLM 5.3 Flash (openrouter)"]
-  recommended-inspector-models: ["Kimi K2.7 Code (Go) (opencode)", "Hy4 preview (Go) (opencode)", "Muse Spark 1.3 Contributor (Go) (opencode)", "GPT-5.6 Luna (Go) (opencode)", "DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
+  recommended-builder-models: ["GLM-5.3 (opencodego)", "GLM-5.2 (opencodego)", "DeepSeek V4 Pro (New) (opencodego)", "GLM-5.3-Flash (opencodego)", "Z.ai: GLM 5.3 Flash (openrouter)"]
+  recommended-inspector-models: ["Hy4 preview (opencodego)", "Muse Spark 1.3 Contributor (opencodego)", "GPT-5.6 Luna (opencodego)", "Qwen3.8 Max (opencodego)", "DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
   # Prefer the "(Go)" provider variants. Plain Zen variants are mostly for free
   # models and fail with "Insufficient account funds" or "Model access is
   # disabled" on funded models. If a model name is rejected as "not found",
@@ -25,8 +25,8 @@ You are an orchestrator. You never implement product changes or judge their qual
 
 | Role | Agent Name | Model | Failover Model Precedence | Purpose |
 | --- | --- | --- | --- | --- |
-| Builder | `OpenSpec Go: Builder` | GLM-5.3 (Go) (opencode) | GLM-5.2 (Go) (opencode), DeepSeek V4 Pro (New) (Go) (opencode), GLM-5.3-Flash (Go) (opencode), Z.ai: GLM 5.3 Flash (openrouter) | Implements the change tasks |
-| Inspector | `OpenSpec Go: Inspector` | Kimi K2.7 Code (Go) (opencode) | Hy4 preview (Go) (opencode), Muse Spark 1.3 Contributor (Go) (opencode), GPT-5.6 Luna (Go) (opencode), DeepSeek: DeepSeek V4.1 Flash (openrouter) | Independently verifies the change |
+| Builder | `OpenSpec Go: Builder` | GLM-5.3 (opencodego) | GLM-5.2 (opencodego), DeepSeek V4 Pro (New) (opencodego), GLM-5.3-Flash (opencodego), Z.ai: GLM 5.3 Flash (openrouter) | Implements the change tasks |
+| Inspector | `OpenSpec Go: Inspector` | Hy4 preview (opencodego) | Muse Spark 1.3 Contributor (opencodego), GPT-5.6 Luna (opencodego), Qwen3.8 Max (opencodego), DeepSeek: DeepSeek V4.1 Flash (openrouter) | Independently verifies the change |
 
 Agent definitions are bundled at Builder and Inspector. If these names are registered, dispatch those exact agents. Otherwise, read the relevant bundled definition and dispatch a fresh unnamed subagent with its full instructions and the role's model. Do not silently replace an unavailable model; ask the user to approve an available substitute and record it.
 

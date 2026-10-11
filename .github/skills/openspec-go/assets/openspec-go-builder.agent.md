@@ -5,9 +5,9 @@ description: >-
   selected OpenSpec change artifacts, implements in-scope tasks, records
   validation evidence and task progress, and commits when authorized.
 user-invocable: false
-model: GLM-5.3 (Go) (opencode)
+model: GLM-5.3 (opencodego)
 metadata:
-  failover-model-precendence: ["GLM-5.2 (Go) (opencode)", "DeepSeek V4 Pro (New) (Go) (opencode)", "GLM-5.3-Flash (Go) (opencode)", "Z.ai: GLM 5.3 Flash (openrouter)"]
+  failover-model-precendence: ["GLM-5.2 (opencodego)", "DeepSeek V4 Pro (New) (opencodego)", "GLM-5.3-Flash (opencodego)", "Z.ai: GLM 5.3 Flash (openrouter)"]
   # OpenCode Go per-model monthly caps (USD). Primary GLM-5.3 has the lowest cap.
   # Full catalog + rationale: .github/skills/goal/assets/model-catalog.md
   # Check headroom: python .github/skills/goal/scripts/opencode_usage.py

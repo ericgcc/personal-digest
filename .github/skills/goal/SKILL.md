@@ -12,7 +12,7 @@ description: >-
 metadata:
   author: "Gaetan Semet <gaetan@xeberon.net>"
   recommended-builder-models: ["GLM-5.3 (Go) (opencode)", "GLM-5.2 (Go) (opencode)", "DeepSeek V4 Pro (New) (Go) (opencode)", "GLM-5.3-Flash (Go) (opencode)", "Z.ai: GLM 5.3 Flash (openrouter)"]
-  recommended-inspector-models: ["Kimi K2.7 Code (Go) (opencode)", "Hy4 preview (Go) (opencode)", "Muse Spark 1.3 Contributor (Go) (opencode)", "GPT-5.6 Luna (Go) (opencode)", "DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
+  recommended-inspector-models: ["Hy4 preview (Go) (opencode)", "Muse Spark 1.3 Contributor (Go) (opencode)", "GPT-5.6 Luna (Go) (opencode)", "Qwen3.8 Max (Go) (opencode)", "DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
   # Prefer the "(Go)" provider variants. Plain Zen variants are mostly for free
   # models and fail with "Insufficient account funds" or "Model access is
   # disabled" on funded models. If a model name is rejected as "not found",
@@ -30,7 +30,7 @@ Inspector — to achieve a user-defined goal with independent verification.
 | Role | Agent Name | Model | Failover Model Precedence | Purpose |
 |------|-----------|-------|----------------------------|---------|
 | Builder | `Goal: Builder` | GLM-5.3 (Go) (opencode) | GLM-5.2 (Go) (opencode), DeepSeek V4 Pro (New) (Go) (opencode), GLM-5.3-Flash (Go) (opencode), Z.ai: GLM 5.3 Flash (openrouter) | Does the work |
-| Inspector | `Goal: Inspector` | Kimi K2.7 Code (Go) (opencode) | Hy4 preview (Go) (opencode), Muse Spark 1.3 Contributor (Go) (opencode), GPT-5.6 Luna (Go) (opencode), DeepSeek: DeepSeek V4.1 Flash (openrouter) | Judges the result |
+| Inspector | `Goal: Inspector` | Hy4 preview (Go) (opencode) | Muse Spark 1.3 Contributor (Go) (opencode), GPT-5.6 Luna (Go) (opencode), Qwen3.8 Max (Go) (opencode), DeepSeek: DeepSeek V4.1 Flash (openrouter) | Judges the result |
 
 Builder implements. Inspector verifies with **fresh context**.
 They never share state — only files and git history connect them.

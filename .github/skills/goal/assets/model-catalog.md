@@ -30,7 +30,7 @@ Reference for the Goal skill's Builder/Inspector model selection.
 | GLM-5.3 | 220 / 1,760 | $15 / $120 |
 | GLM-5.2 | 880 / 2,640 | $60 / $180 |
 | DeepSeek V4 Pro | 1,050 / 4,200 | $15 / $60 |
-| Kimi K2.7 Code | 1,350 / 4,050 | $60 / $180 |
+| Kimi K2.7 Code | 1,350 / 4,050 | $60 / $180 | **EXCLUDED from subagent dispatch** — its Moonshot upstream rejects the workspace's tool schemas (some properties lack `type`) with a 400 error, so it cannot serve as a Builder/Inspector subagent here. Re-add only after that schema is fixed. |
 | Hy4 preview | 1,350 / 5,400 | $30 / $120 |
 | GPT 5.6 Luna | 2,050 / 8,200 | $15 / $60 |
 | Space Bunny | 3,130 / 12,500 | $30 / $120 |
@@ -71,11 +71,17 @@ Reference for the Goal skill's Builder/Inspector model selection.
 
 | # | Model | Cap | Why |
 |---|-------|-----|-----|
-| 1 | Kimi K2.7 Code (Go) | $60 | Strong code reviewer; large cap |
-| 2 | Hy4 preview (Go) | $30 | Independent reviewer, different family |
-| 3 | Muse Spark 1.3 Contributor (Go) | $60 | Large cap; independent perspective |
-| 4 | GPT-5.6 Luna (Go) | $15 | Different family; use before paid fallback |
+| 1 | Hy4 preview (Go) | $30 | Independent reviewer, different family; verified working in this workspace |
+| 2 | Muse Spark 1.3 Contributor (Go) | $60 | Large cap; independent perspective |
+| 3 | GPT-5.6 Luna (Go) | $15 | Different family; use before paid fallback |
+| 4 | Qwen3.8 Max (Go) | $15 | Strong generalist; different family |
 | 5 | DeepSeek: DeepSeek V4.1 Flash (openrouter) | paid | **Last resort** — paid per token |
+
+Kimi K2.7 Code was removed from this list (2026-10-11): its Moonshot upstream
+rejects the workspace's tool schemas with `tools.function.parameters is not a
+valid moonshot flavored json schema` (400), so every subagent dispatch fails
+regardless of prompt. The schema defect lives in an extension-contributed MCP
+server, not in this repository.
 
 **Rule:** the final entry of each list is always an OpenRouter model
 (DeepSeek V4.1 Flash or GLM 5.3 Flash), reached only when every Go option

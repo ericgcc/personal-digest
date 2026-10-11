@@ -482,3 +482,37 @@ def test_a_configured_budget_changes_the_selection():
     assert len(narrow_meta["selected_ids"]) < len(wide_meta["selected_ids"])
     assert narrow_meta["bytes"] <= 400
     assert narrow_meta["max_bytes"] == 400
+
+
+def test_the_default_budget_fits_the_live_drafting_subset():
+    """The default budget must fit the live catalogue's drafting-tagged entries.
+
+    This is the drift guard: WOPS owns the entry sizes, so when the catalogue grows or its
+    entries lengthen, this test fails and forces a deliberate re-tune of
+    ``DEFAULT_PREVENTION_BYTES`` (or a runtime-config override) instead of silent degradation.
+    Skips when no WOPS root is configured, so offline CI stays green.
+    """
+    root = _wops_root_from_environment()
+    if not root:
+        pytest.skip("WOPS_ROOT is not configured")
+    path = Path(root).expanduser().resolve()
+    if not path.is_dir():
+        pytest.skip(f"WOPS_ROOT is not a readable local directory: {path}")
+
+    from digest_system.integrations.wops import create_wops_adapter
+
+    catalogue = load_catalogue(create_wops_adapter(root=str(path)))
+    assert catalogue.available is True
+
+    text, metadata = prevention_block(catalogue)
+
+    drafting_ids = [
+        record["id"] for record in catalogue.records if "drafting" in (record.get("activities") or [])
+    ]
+    assert metadata["omitted_by_budget"]["ids"] == [], (
+        f"the default budget of {DEFAULT_PREVENTION_BYTES} bytes no longer fits the live "
+        f"catalogue's drafting entries; re-tune DEFAULT_PREVENTION_BYTES or set "
+        f"adapters.anti_pattern_budget_bytes. Omitted by budget: {metadata['omitted_by_budget']['ids']}"
+    )
+    assert set(metadata["selected_ids"]) == set(drafting_ids[:MAX_PREVENTION_ITEMS])
+    assert metadata["bytes"] <= DEFAULT_PREVENTION_BYTES

@@ -22,9 +22,12 @@ from typing import Any, Mapping, Sequence
 #: subset, never the whole catalogue.
 MAX_PREVENTION_ITEMS = 5
 
-#: The default byte budget for the rendered prevention block. Overridable per call; the byte
-#: count uses the same JavaScript UTF-16 length the prompt manifest records, so the two agree.
-DEFAULT_PREVENTION_BYTES = 2500
+#: The default byte budget for the rendered prevention block, in UTF-8 bytes. Sized so the
+#: full ``MAX_PREVENTION_ITEMS`` subset of drafting-tagged entries fits: the live WOPS 0.4.0
+#: catalogue renders its five preferred entries at 3260 bytes (entries run 516-775 bytes), so
+#: 3500 makes the item cap the binding bound rather than the budget. Re-measure when WOPS
+#: grows; the budget is overridable via runtime configuration in the meantime.
+DEFAULT_PREVENTION_BYTES = 3500
 
 
 @dataclass

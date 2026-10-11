@@ -9,9 +9,9 @@ model: GLM-5.3 (opencodego)
 metadata:
   failover-model-precendence: ["GLM-5.2 (opencodego)", "DeepSeek V4 Pro (New) (opencodego)", "GLM-5.3-Flash (opencodego)", "Z.ai: GLM 5.3 Flash (openrouter)"]
   # OpenCode Go per-model monthly caps (USD). Primary GLM-5.3 has the lowest cap.
-  # Full catalog + rationale: .github/skills/goal/assets/model-catalog.md
-  # Check headroom: python .github/skills/goal/scripts/opencode_usage.py
-  # Check exhaustion: python .github/skills/goal/scripts/model_tracker.py check "<model>"
+  # Full catalog + rationale: .github/skills/openspec-go/assets/model-catalog.md
+  # Check headroom: python .github/skills/openspec-go/scripts/opencode_usage.py
+  # Check exhaustion: python .github/skills/openspec-go/scripts/model_tracker.py check "<model>"
   monthly-cap-usd: {"GLM-5.3": 15, "GLM-5.2": 60, "DeepSeek V4 Pro": 15, "GLM-5.3-Flash": 60}
 ---
 

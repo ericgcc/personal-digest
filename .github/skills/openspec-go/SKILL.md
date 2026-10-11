@@ -39,25 +39,27 @@ down the precedence list only when a model actually errors. OpenRouter is
 always the final entry, reached only when every Go option is exhausted.
 
 The full catalog, caps, and rationale live in
-[`../goal/assets/model-catalog.md`](../goal/assets/model-catalog.md).
+[`assets/model-catalog.md`](assets/model-catalog.md) (a copy of the goal
+skill's catalog; update both when the precedence changes).
 
 ### The gauge and the exhaustion tracker
 
-The scripts are shared with the goal skill and live in
-`.github/skills/goal/scripts/`:
+This skill ships its own copies of the scripts (identical to the goal
+skill's); they live in `scripts/` next to this file and share the same
+`.goals/` state files, so either copy can be used interchangeably:
 
 ```bash
 # account-level rolling (5h) / weekly / monthly usage
-python .github/skills/goal/scripts/opencode_usage.py
+python .github/skills/openspec-go/scripts/opencode_usage.py
 
 # exit 0 = available, 1 = exhausted (consult before EVERY dispatch)
-python .github/skills/goal/scripts/model_tracker.py check "<model>"
+python .github/skills/openspec-go/scripts/model_tracker.py check "<model>"
 
 # per-model failure
-python .github/skills/goal/scripts/model_tracker.py mark "<model>" --window monthly --reason "quota error"
+python .github/skills/openspec-go/scripts/model_tracker.py mark "<model>" --window monthly --reason "quota error"
 
 # account-wide failure (GoUsageLimitError) — blocks ALL Go models
-python .github/skills/goal/scripts/model_tracker.py mark --scope account --from-error "<error text>"
+python .github/skills/openspec-go/scripts/model_tracker.py mark --scope account --from-error "<error text>"
 ```
 
 The 5-hour, weekly, and monthly Go limits are **account-wide** (one counter
@@ -180,7 +182,7 @@ dispatch:
 ### Step 1 - Dispatch Builder
 
 Before dispatching, select a live model: run
-`python .github/skills/goal/scripts/model_tracker.py check "<model>"` down
+`python .github/skills/openspec-go/scripts/model_tracker.py check "<model>"` down
 the Builder precedence list and use the first that exits 0. Record the
 chosen model in `status.json`.
 

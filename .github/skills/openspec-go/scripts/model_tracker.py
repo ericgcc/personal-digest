@@ -1,300 +1,212 @@
 #!/usr/bin/env python3
-"""OpenCode Go model exhaustion tracker.
-
-Records which models have hit their usage limit, when their credits ran
-out, and when they become available again. The orchestrator consults this
-before every Builder/Inspector dispatch so it never repeats a call to a
-model that is known to be exhausted.
-
-The tracker is a small JSON file (default `.goals/model-exhaustion.json`).
-A record is considered expired once its `reset_at` time has passed, so
-`check` auto-prunes stale entries.
-
-Two kinds of record exist:
-
-- **model** (default) — one specific model is dead (e.g. a disabled model).
-- **account** — the whole Go subscription is rate-limited. The 5-hour,
-  weekly, and monthly limits are enforced against a single account-wide
-  counter (OpenCode's `LiteTable`, keyed by workspace + user, not by
-  model), so a `GoUsageLimitError` blocks **every** Go model until reset.
-  Mark these with `--scope account`.
-
-Usage:
-    python model_tracker.py check <model>          # exit 0 available, 1 exhausted
-    python model_tracker.py mark <model> [--window monthly] [--reason "..."]
-    python model_tracker.py mark --scope account --from-error "<error text>"
-    python model_tracker.py list                   # show all live records
-    python model_tracker.py prune                  # drop expired records
-    python model_tracker.py reset <model>          # clear a record manually
-    python model_tracker.py reset --scope account  # clear the account record
-
-`mark` fetches the reset time from the usage API for the given window
-(rolling / weekly / monthly). If the API is unreachable it falls back to
-the next monthly boundary (the 4th of the month). `--from-error` parses
-OpenCode's `limitName` ("5 hour" / "weekly" / "monthly") out of an error
-message and selects the matching window automatically.
-
-Exit codes:
-    0  model available (check) / command succeeded
-    1  model exhausted (check)
-    3  could not read or write the tracker
-"""
-
+"""Provider-scoped exhaustion records. Exit: 0 usable, 1 blocked, 3 unknown/error."""
 from __future__ import annotations
-
 import argparse
 import json
+import os
+import re
 import sys
+import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from budget_models import canonical, provider, EXCLUDED, WINDOWS
 
-# Sibling module in the same scripts/ directory.
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from opencode_usage import REPO_ROOT, fetch_usage, load_api_key  # noqa: E402
-
+REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_TRACKER_PATH = REPO_ROOT / ".goals" / "model-exhaustion.json"
-WINDOWS = ("rolling", "weekly", "monthly")
-ACCOUNT_KEY = "account"
+RECHECK_SECONDS = 300
 
 
-def _now() -> datetime:
+def now():
     return datetime.now(timezone.utc)
 
 
-def _parse(iso: str | None) -> datetime | None:
-    if not iso:
+def parse_time(value):
+    if not isinstance(value, str):
         return None
     try:
-        return datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return value.astimezone(timezone.utc) if value.tzinfo else None
     except ValueError:
         return None
 
 
-def _next_monthly_reset(now: datetime) -> datetime:
-    """Fallback: the monthly allowance resets on the 4th of each month."""
-    candidate = now.replace(day=4, hour=0, minute=0, second=0, microsecond=0)
-    if candidate <= now:
-        year = now.year + (1 if now.month == 12 else 0)
-        month = 1 if now.month == 12 else now.month + 1
-        candidate = candidate.replace(year=year, month=month)
-    return candidate
+def make_record(window, reset_at=None, reason="", at=None):
+    at = at or now()
+    reset = parse_time(reset_at)
+    confirmed = reset is not None and reset > at
+    return {"window": window, "exhausted_at": at.isoformat(), "reason": reason,
+            "reset_at": reset.isoformat() if confirmed else None,
+            "retry_at": None if confirmed else (at+timedelta(seconds=RECHECK_SECONDS)).isoformat(),
+            "reset_source": "usage-api" if confirmed else "unknown-recheck"}
 
 
-def load_tracker(path: Path) -> dict:
-    if not path.is_file():
-        return {"version": 1, "models": {}}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {"version": 1, "models": {}}
-    data.setdefault("version", 1)
+def live(record, at=None):
+    at = at or now()
+    reset = parse_time(record.get("reset_at"))
+    if record.get("reset_source") in ("computed", "computed-upper-bound"):
+        reset = None  # old guessed month-long blocks become short rechecks
+    end = reset or parse_time(record.get("retry_at"))
+    if end is None:
+        start = parse_time(record.get("exhausted_at"))
+        end = (start or at) + timedelta(seconds=RECHECK_SECONDS)
+    return end > at
+
+
+def migrate(data):
+    if not isinstance(data, dict) or not isinstance(data.get("models", {}), dict):
+        raise ValueError("invalid tracker structure; preserve it and repair before dispatch")
     data.setdefault("models", {})
+    data.setdefault("accounts", {})
+    if not isinstance(data["accounts"], dict):
+        raise ValueError("invalid account records")
+    old = data.pop("account", None)
+    if old:
+        data["accounts"].setdefault(old.get("window", "unknown"), old)
+    data["version"] = 2
+    for records in (data["models"], data["accounts"]):
+        for key, record in list(records.items()):
+            if not isinstance(record, dict):
+                raise ValueError("invalid exhaustion record")
+            if not parse_time(record.get("reset_at")) or record.get("reset_source") in ("computed", "computed-upper-bound"):
+                record["reset_at"] = None
+                record["reset_source"] = "unknown-recheck"
+                if not parse_time(record.get("retry_at")):
+                    start = parse_time(record.get("exhausted_at")) or now()
+                    record["retry_at"] = (start+timedelta(seconds=RECHECK_SECONDS)).isoformat()
     return data
 
 
-def save_tracker(path: Path, data: dict) -> None:
+def load_tracker(path):
+    if not path.exists():
+        return {"version": 2, "models": {}, "accounts": {}}
+    return migrate(json.loads(path.read_text(encoding="utf-8")))
+
+
+def save_tracker(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    fd, tmp = tempfile.mkstemp(prefix=path.name+".", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(data, f, indent=2)
+            f.write("\n")
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
 
 
-def _record_is_live(record: dict | None, now: datetime) -> bool:
-    if not record:
-        return False
-    reset = _parse(record.get("reset_at"))
-    return reset is None or reset > now
-
-
-def prune(data: dict, now: datetime | None = None) -> int:
-    """Remove records whose reset time has passed. Returns count removed."""
-    now = now or _now()
+def prune(data, at=None):
     removed = 0
-    models = data.get("models", {})
-    for name in list(models):
-        if not _record_is_live(models[name], now):
-            del models[name]
-            removed += 1
-    if ACCOUNT_KEY in data and not _record_is_live(data[ACCOUNT_KEY], now):
-        del data[ACCOUNT_KEY]
-        removed += 1
+    for records in (data["models"], data["accounts"]):
+        for key in list(records):
+            if not live(records[key], at):
+                del records[key]
+                removed += 1
     return removed
 
 
-def is_exhausted(data: dict, model: str, now: datetime | None = None) -> dict | None:
-    """Return the live record for a model, or None if it is available."""
-    now = now or _now()
-    record = data.get("models", {}).get(model)
-    return record if _record_is_live(record, now) else None
+def model_key(model):
+    return provider(model) + ":" + canonical(model)
 
 
-def account_exhausted(data: dict, now: datetime | None = None) -> dict | None:
-    """Return the live account-wide record, or None if the account is usable."""
-    now = now or _now()
-    record = data.get(ACCOUNT_KEY)
-    return record if _record_is_live(record, now) else None
-
-
-def parse_limit_name(error_text: str) -> str | None:
-    """Map an OpenCode `limitName` in an error message to a tracker window."""
-    lowered = error_text.lower()
-    if "5 hour" in lowered or "5-hour" in lowered or "rolling" in lowered:
-        return "rolling"
-    if "weekly" in lowered:
-        return "weekly"
-    if "monthly" in lowered:
-        return "monthly"
+def blocked(data, model, at=None):
+    name = canonical(model)
+    if name in EXCLUDED:
+        return {"reason": "excluded: incompatible tool schema", "window": "policy"}
+    # OpenRouter and free Go do not spend included paid-Go allowance.
+    if provider(model) == "go":
+        records = [r for r in data["accounts"].values() if live(r, at)]
+        if records:
+            return {"reason": "paid-Go account limit", "windows": records}
+    for key,record in data["models"].items():
+        if (key == model_key(model) or (":" not in key and model_key(key) == model_key(model))) and live(record, at):
+            return record
     return None
 
 
-def _resolve_reset(window: str, api_key: str | None) -> tuple[str | None, str]:
-    """Return (reset_at_iso, source) for the given window."""
-    if api_key:
-        try:
-            payload = fetch_usage(api_key)
-            resets_at = payload.get("usage", {}).get(window, {}).get("resetsAt")
-            if resets_at:
-                return resets_at, "usage-api"
-        except Exception:  # noqa: BLE001 - fall back to computed reset
-            pass
-    return _next_monthly_reset(_now()).isoformat(), "computed"
+def sync_usage(data, usage):
+    # Caller validates all windows first; refresh clears ONLY confirmed healthy windows.
+    for window in WINDOWS:
+        item = usage[window]
+        if item["status"] == "rate-limited" or item["percent"] >= 100:
+            data["accounts"][window] = make_record(window, item.get("resetsAt"), "usage gauge: rate-limited")
+        else:
+            data["accounts"].pop(window, None)
+    # A valid full snapshot supersedes legacy unidentified account errors.
+    data["accounts"].pop("unknown", None)
 
 
-def cmd_check(args: argparse.Namespace) -> int:
-    data = load_tracker(args.tracker)
-    if prune(data):
-        save_tracker(args.tracker, data)
-    account = account_exhausted(data)
-    if account is not None:
-        print(
-            "exhausted (account-wide): all Go models blocked "
-            f"until {account.get('reset_at')} (window {account.get('window')})"
-        )
-        return 1
-    record = is_exhausted(data, args.model)
-    if record is None:
-        print(f"available: {args.model}")
-        return 0
-    print(
-        f"exhausted: {args.model} "
-        f"(since {record.get('exhausted_at')}, "
-        f"resets {record.get('reset_at')}, window {record.get('window')})"
-    )
-    return 1
+def parse_limit_name(error):
+    text = error.lower()
+    for pattern,window in ((r"5[ -]?hour|rolling", "rolling"), (r"week", "weekly"), (r"month", "monthly")):
+        if re.search(pattern, text):
+            return window
+    return "unknown"
 
 
-def cmd_mark(args: argparse.Namespace) -> int:
-    data = load_tracker(args.tracker)
-    prune(data)
-    window = args.window
-    if args.from_error:
-        parsed = parse_limit_name(args.from_error)
-        if parsed:
-            window = parsed
-    if args.scope == "model" and not args.model:
-        print("error: a model name is required for --scope model", file=sys.stderr)
-        return 3
-    api_key = load_api_key(args.env)
-    reset_at, source = _resolve_reset(window, api_key)
-    record = {
-        "exhausted_at": _now().isoformat(),
-        "reset_at": reset_at,
-        "window": window,
-        "reason": args.reason or args.from_error or "",
-        "reset_source": source,
-    }
-    if args.scope == "account":
-        data[ACCOUNT_KEY] = record
-        print(f"marked account-wide exhausted (resets {reset_at}, via {source})")
-    else:
-        data.setdefault("models", {})[args.model] = record
-        print(f"marked exhausted: {args.model} (resets {reset_at}, via {source})")
-    save_tracker(args.tracker, data)
-    return 0
-
-
-def cmd_reset(args: argparse.Namespace) -> int:
-    data = load_tracker(args.tracker)
-    if args.scope == "account":
-        existed = data.pop(ACCOUNT_KEY, None)
-        save_tracker(args.tracker, data)
-        print("cleared: account-wide" if existed else "no account record")
-        return 0
-    existed = data.get("models", {}).pop(args.model, None)
-    save_tracker(args.tracker, data)
-    print(f"cleared: {args.model}" if existed else f"no record for: {args.model}")
-    return 0
-
-
-def cmd_prune(args: argparse.Namespace) -> int:
-    data = load_tracker(args.tracker)
-    removed = prune(data)
-    save_tracker(args.tracker, data)
-    print(f"pruned {removed} expired record(s)")
-    return 0
-
-
-def cmd_list(args: argparse.Namespace) -> int:
-    data = load_tracker(args.tracker)
-    if prune(data):
-        save_tracker(args.tracker, data)
-    account = data.get(ACCOUNT_KEY)
-    models = data.get("models", {})
-    if not account and not models:
-        print("no exhausted models")
-        return 0
-    if account:
-        print(
-            "ACCOUNT-WIDE (all Go models blocked)\n"
-            f"  exhausted_at: {account.get('exhausted_at')}\n"
-            f"  reset_at:     {account.get('reset_at')} ({account.get('window')})\n"
-            f"  reason:       {account.get('reason') or '-'}"
-        )
-    for name, record in sorted(models.items()):
-        print(
-            f"{name}\n"
-            f"  exhausted_at: {record.get('exhausted_at')}\n"
-            f"  reset_at:     {record.get('reset_at')} ({record.get('window')})\n"
-            f"  reason:       {record.get('reason') or '-'}"
-        )
-    return 0
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="OpenCode Go model exhaustion tracker")
-    parser.add_argument("--tracker", type=Path, default=DEFAULT_TRACKER_PATH)
-    parser.add_argument("--env", type=Path, default=None, help="path to a .env file")
-    sub = parser.add_subparsers(dest="command", required=True)
-
-    p_check = sub.add_parser("check", help="exit 0 if available, 1 if exhausted")
-    p_check.add_argument("model")
-    p_check.set_defaults(func=cmd_check)
-
-    p_mark = sub.add_parser("mark", help="record a model or the account as exhausted")
-    p_mark.add_argument("model", nargs="?", default="")
-    p_mark.add_argument("--scope", choices=("model", "account"), default="model")
-    p_mark.add_argument("--window", choices=WINDOWS, default="monthly")
-    p_mark.add_argument("--reason", default="")
-    p_mark.add_argument(
-        "--from-error",
-        default="",
-        help="error text; parses limitName (5 hour/weekly/monthly)",
-    )
-    p_mark.set_defaults(func=cmd_mark)
-
-    p_reset = sub.add_parser("reset", help="clear a model or account record")
-    p_reset.add_argument("model", nargs="?", default="")
-    p_reset.add_argument("--scope", choices=("model", "account"), default="model")
-    p_reset.set_defaults(func=cmd_reset)
-
-    p_prune = sub.add_parser("prune", help="drop expired records")
-    p_prune.set_defaults(func=cmd_prune)
-
-    p_list = sub.add_parser("list", help="show live records")
-    p_list.set_defaults(func=cmd_list)
-
-    args = parser.parse_args(argv)
+def main(argv=None):
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--tracker", type=Path, default=DEFAULT_TRACKER_PATH)
+    p.add_argument("--env", type=Path)
+    sub = p.add_subparsers(dest="command", required=True)
+    check = sub.add_parser("check"); check.add_argument("model")
+    mark = sub.add_parser("mark"); mark.add_argument("model", nargs="?", default="")
+    mark.add_argument("--scope", choices=("model","account"), default="model")
+    mark.add_argument("--window", choices=(*WINDOWS, "unknown"), default="unknown")
+    mark.add_argument("--reason", default=""); mark.add_argument("--from-error", default="")
+    mark.add_argument("--reset-at", help="confirmed provider reset (ISO timestamp with timezone)")
+    reset = sub.add_parser("reset"); reset.add_argument("model", nargs="?", default="")
+    reset.add_argument("--scope", choices=("model","account"), default="model")
+    reset.add_argument("--window", choices=(*WINDOWS,"unknown"))
+    sub.add_parser("list"); sub.add_parser("prune")
+    args = p.parse_args(argv)
     try:
-        return args.func(args)
-    except OSError as exc:
+        data = load_tracker(args.tracker)
+        prune(data)
+        if args.command == "check":
+            save_tracker(args.tracker, data)  # persist bounded expiry for legacy unknown timestamps
+            if provider(args.model) == "unknown":
+                raise ValueError("unknown provider/model; use an exact catalog or OpenRouter label")
+            record = blocked(data, args.model)
+            print(json.dumps({"model":args.model, "blocked":bool(record), "detail":record}))
+            return 1 if record else 0
+        if args.command == "mark":
+            scope = "account" if "gousagelimiterror" in args.from_error.lower() else args.scope
+            window = parse_limit_name(args.from_error) if args.from_error else args.window
+            if scope == "model" and not args.model:
+                raise ValueError("model required")
+            reset_at = args.reset_at
+            if reset_at and not parse_time(reset_at):
+                raise ValueError("reset must be a timezone-aware ISO timestamp")
+            # Only account quota reset times can be inferred from account usage.
+            if scope == "account" and not reset_at:
+                from opencode_usage import load_api_key, fetch_usage, validate_usage
+                try:
+                    key = load_api_key(args.env)
+                    if key:
+                        usage = validate_usage(fetch_usage(key))
+                        sync_usage(data, usage)
+                        reset_at = usage.get(window, {}).get("resetsAt")
+                except (OSError, ValueError, TimeoutError):
+                    pass
+            record = make_record(window, reset_at, args.reason or args.from_error)
+            if scope == "account":
+                data["accounts"][window] = record
+            else:
+                data["models"][model_key(args.model)] = record
+        if args.command == "reset":
+            if args.scope == "account":
+                if args.window: data["accounts"].pop(args.window, None)
+                else: data["accounts"].clear()
+            else:
+                if not args.model: raise ValueError("model required")
+                data["models"].pop(model_key(args.model), None)
+                data["models"].pop(args.model, None)
+        if args.command != "list":
+            save_tracker(args.tracker, data)
+        print(json.dumps(data, indent=2))
+        return 0
+    except (OSError, ValueError, TypeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 3
 

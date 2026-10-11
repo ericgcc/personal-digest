@@ -7,10 +7,11 @@ description: >-
   is verified. Use when the user says "openspec-go", "implement this
   OpenSpec change until done", or wants verified autonomous completion
   of an existing OpenSpec change.
-compatibility: Requires openspec CLI, git, and subagent support.
 metadata:
-  recommended-builder-models: ["GLM-5.3 (opencodego)", "GLM-5.2 (opencodego)", "DeepSeek V4 Pro (New) (opencodego)", "GLM-5.3-Flash (opencodego)", "Z.ai: GLM 5.3 Flash (openrouter)"]
-  recommended-inspector-models: ["Hy4 preview (opencodego)", "Muse Spark 1.3 Contributor (opencodego)", "GPT-5.6 Luna (opencodego)", "Qwen3.8 Max (opencodego)", "DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
+  compatibility: Requires openspec CLI, git, and subagent support.
+  selection-policy: "scripts/select_model.py (quality within sustainable budget)"
+  excluded-models: ["Kimi K2.6", "Kimi K2.7 Code"]
+  inspector-candidate: "Kimi K3 (eligible; budget checked)"
   # Prefer the "(Go)" provider variants. Plain Zen variants are mostly for free
   # models and fail with "Insufficient account funds" or "Model access is
   # disabled" on funded models. If a model name is rejected as "not found",
@@ -25,61 +26,110 @@ You are an orchestrator. You never implement product changes or judge their qual
 
 | Role | Agent Name | Model | Failover Model Precedence | Purpose |
 | --- | --- | --- | --- | --- |
-| Builder | `OpenSpec Go: Builder` | GLM-5.3 (opencodego) | GLM-5.2 (opencodego), DeepSeek V4 Pro (New) (opencodego), GLM-5.3-Flash (opencodego), Z.ai: GLM 5.3 Flash (openrouter) | Implements the change tasks |
-| Inspector | `OpenSpec Go: Inspector` | Hy4 preview (opencodego) | Muse Spark 1.3 Contributor (opencodego), GPT-5.6 Luna (opencodego), Qwen3.8 Max (opencodego), DeepSeek: DeepSeek V4.1 Flash (openrouter) | Independently verifies the change |
+| Builder | `Budget openspec-go: Builder` | Exact selector result | Re-select and regenerate after error | Implements the scoped brief |
+| Inspector | `Budget openspec-go: Inspector` | Exact selector result, different family | Kimi K3 eligible; K2.6/K2.7 Code excluded | Fresh independent verification |
 
-Agent definitions are bundled at Builder and Inspector. If these names are registered, dispatch those exact agents. Otherwise, read the relevant bundled definition and dispatch a fresh unnamed subagent with its full instructions and the role's model. Do not silently replace an unavailable model; ask the user to approve an available substitute and record it.
+Role templates are bundled under assets/. Use the generated model-bound agents described below; templates alone do not perform budget-aware dispatch.
 
 ## Usage-aware model selection
 
-Same policy as the goal skill: **quality-first, subscription-first**. OpenCode
-Go is a flat monthly fee, so use the best Go model first (even with a small
-per-model cap), exhaust the subscription before paid OpenRouter, and move
-down the precedence list only when a model actually errors. OpenRouter is
-always the final entry, reached only when every Go option is exhausted.
+Use [assets/model-catalog.md](assets/model-catalog.md) for the full allowance,
+pricing, estimate, privacy and selection reference. The executable policy is
+`scripts/select_model.py`. This section governs every Builder/Inspector dispatch.
 
-The full catalog, caps, and rationale live in
-[`assets/model-catalog.md`](assets/model-catalog.md) (a copy of the goal
-skill's catalog; update both when the precedence changes).
+Kimi K2.6 and Kimi K2.7 Code are **excluded from all agent dispatch**, including
+OpenRouter aliases, because the workspace's tool schemas are incompatible.
+Kimi K3 remains an eligible Inspector; its Go cap is $15/month ($3/5h).
+Do not promote it merely because it is newer: compare its estimated consumption
+with the current brief, plan and shared headroom.
 
-### The gauge and the exhaustion tracker
+### Budget and independence
 
-This skill ships its own copies of the scripts (identical to the goal
-skill's); they live in `scripts/` next to this file and share the same
-`.goals/` state files, so either copy can be used interchangeably:
+- Record `plan: go|go-plus` in run status; use the active subscription plan.
+  Do not infer Go Plus from model names or a fixed multiplier.
+- Obtain the current host model inventory and save its exact labels as a JSON
+  list in the run directory, e.g. `available-models.json`. Filter availability,
+  region and privacy constraints before selection; never invent provider labels.
+- Supply estimated uncached input, cached read, output and cache-write tokens
+  **per API request**, and expected request count for the next brief. Defaults
+  are a comparison scenario (8K/60K/2K/0, 200 requests), not observed usage.
+  For a fresh Inspector start with a cold-cache estimate such as 68K/0/2K/0;
+  do not copy Builder cache assumptions or session state.
+- The selector first finds models that fit that batch in **all three windows**
+  after a 15% reserve. Within that set it prefers the highest subjective role
+  quality, then the lowest normalized five-hour consumption. If none fit, it
+  chooses the most efficient eligible paid-Go candidate and flags a shorter
+  brief. Set `--min-quality 4` or `5` for demanding work instead of silently
+  accepting a weaker review. This is a transparent planning heuristic, not a
+  promise of maximum wall-clock time.
+- Inspector always starts fresh and uses a different family from the actual
+  Builder (`--builder-model`). For Inspector-only runs with no Builder, use
+  `--builder-model none` and record that family independence is unverified.
+- Paid Go has shared normalized rolling/weekly/monthly meters. The published
+  caps are single-model USD equivalents, not additive balances. An account
+  limit blocks every paid-Go candidate, not free models or OpenRouter.
+- Suitable free models may be enabled with `--allow-free`; use them only for
+  a brief whose quality needs they meet. Muse Contributor candidates require
+  explicit training-data consent and allowed region (`--allow-training`).
+  Existing user consent may be reused; never change provider settings yourself.
+- OpenRouter is last, enabled only by existing spending authorization through
+  `--allow-openrouter`. Consider suitable free work or waiting first. Do not
+  enable paid Zen balance fallback implicitly.
+
+### Gauge, tracker and exact dispatch binding
+
+Run from the repository root before **every** dispatch:
 
 ```bash
-# account-level rolling (5h) / weekly / monthly usage
-python .github/skills/openspec-go/scripts/opencode_usage.py
-
-# exit 0 = available, 1 = exhausted (consult before EVERY dispatch)
-python .github/skills/openspec-go/scripts/model_tracker.py check "<model>"
-
-# per-model failure
-python .github/skills/openspec-go/scripts/model_tracker.py mark "<model>" --window monthly --reason "quota error"
-
-# account-wide failure (GoUsageLimitError) — blocks ALL Go models
-python .github/skills/openspec-go/scripts/model_tracker.py mark --scope account --from-error "<error text>"
+python .github/skills/openspec-go/scripts/opencode_usage.py --plan go --record --log
+python .github/skills/openspec-go/scripts/select_model.py --plan go --role builder --available "<run>/available-models.json" --target 200 --prepare openspec-go
+# Inspector: use actual Builder model and an independent cold-cache profile
+python .github/skills/openspec-go/scripts/select_model.py --plan go --role inspector --available "<run>/available-models.json" --builder-model "<actual Builder model>" --profile 68000 0 2000 0 --target 20 --prepare openspec-go
 ```
 
-The 5-hour, weekly, and monthly Go limits are **account-wide** (one counter
-per workspace, not per model): a `GoUsageLimitError` blocks every Go model
-until the window resets. The tracker records that separately from per-model
-failures; `check` reports it for any model. The gauge's `--record` flag
-auto-marks an account-wide block when a window is rate-limited.
+Change `go` to `go-plus` for that plan. The selector fetches fresh usage;
+`--usage-file` may instead read a timestamped `--json` gauge snapshot
+matching the plan and no older than five minutes. No key or invalid/missing
+usage means exit 3 (unknown): refresh, never interpret it as unused allowance.
+Exit 2 means no eligible candidate; wait or report the concrete constraint.
+Exit 0 returns ranked estimates and a selected exact host label.
 
-### Selection rule
+`--prepare` writes only the generated
+`.github/agents/budget-openspec-go-<role>.agent.md` and returns its exact
+`dispatch.agent_name`. It copies the role instructions and puts the selected
+label into the supported **scalar `model:` frontmatter**. It refuses to
+overwrite an unrelated file. Advisory metadata and text in a prompt do not
+override the model.
 
-1. Run the gauge before the first Builder dispatch of a run.
-2. Use the precedence order as written — best model first.
-3. Before every dispatch, run `model_tracker.py check "<model>"`; if it
-   exits 1, skip to the next model in precedence.
-4. On a per-model quota error, `mark` that model; on a
-   `GoUsageLimitError`, `mark --scope account` and stop retrying Go models
-   until the reset.
-5. The gauge is for awareness and burn-rate tracking, not pre-emptive
-   downgrading. Do not switch to a weaker model just because the monthly
-   percentage is climbing.
+1. Load/reload that generated agent in the host and dispatch **the returned
+   agent name**. Never dispatch the old fixed-model role agent after selection.
+   Where the host exposes a verified model override, that exact override is
+   equivalent. If neither binding nor reload can be verified, stop with a
+   dispatch-capability blocker; do not silently use the parent/default model.
+2. Record requested model, generated agent path, plan, profile, remaining
+   estimates, and selection reason in run status. Record actual model/provider
+   only from host execution metadata; keep it null if unavailable. A mismatch
+   requires stopping/reselection, not changing the record to claim success.
+3. Run roles sequentially; do not overwrite a generated role definition while
+   it is executing. Inspector receives files and acceptance criteria with fresh
+   context, never Builder conversation or unchecked conclusions.
+4. For failover, record the precise error and rerun selection/preparation.
+   A `GoUsageLimitError` is always account scoped. Network/schema/region/privacy
+   errors are not evidence of monthly exhaustion.
+
+```bash
+python .github/skills/openspec-go/scripts/model_tracker.py mark --scope account --from-error "GoUsageLimitError ... weekly"
+python .github/skills/openspec-go/scripts/model_tracker.py mark "<exact model>" --window unknown --reason "<actual model-specific error>"
+python .github/skills/openspec-go/scripts/model_tracker.py check "<exact model>"
+```
+
+The tracker keeps simultaneous account windows separately and scopes model
+records by provider. Missing/invalid reset timestamps create a **five-minute
+recheck**, never a guessed billing date or infinite block. After it expires,
+refresh usage or allow one controlled probe; it does not prove quota reset.
+A successful gauge `--record` clears only confirmed healthy account windows.
+Malformed tracker state returns exit 3 and is preserved. Both skills share
+`.goals/model-exhaustion.json`; serialize tracker writes within this repo.
 
 Builder implements. Inspector verifies with fresh context. Only files and git history connect them; do not pass Builder's claims to Inspector.
 
@@ -174,17 +224,14 @@ dispatch:
    funds`, `Model access is disabled`, `requires Global regions`, or
    `trains on request data`, stop and surface the exact error to the user.
    On a `GoUsageLimitError` (5-hour/weekly/monthly), `mark --scope account`
-   in the exhaustion tracker - it blocks **all** Go models, so do not retry
-   them; wait for the reset or fall back to OpenRouter. On any other
-   quota/limit error, `mark` the specific model and move to the next one in
-   precedence.
+   in the exhaustion tracker - it blocks **all paid** Go models, so do not retry
+   paid Go; consider suitable free work or wait, then authorized OpenRouter last. On any other
+   model-specific quota error, mark that model with a known reset or a short
+   unknown recheck and rerun selection/preparation.
 
 ### Step 1 - Dispatch Builder
 
-Before dispatching, select a live model: run
-`python .github/skills/openspec-go/scripts/model_tracker.py check "<model>"` down
-the Builder precedence list and use the first that exits 0. Record the
-chosen model in `status.json`.
+Before dispatching, run the selector and prepare the exact model-bound Builder as described above. Record requested and host-confirmed actual models separately.
 
 Set status to `building`, then dispatch Builder:
 
@@ -194,10 +241,7 @@ Display Builder's returned summary as a progress update, not a verification verd
 
 ### Step 2 - Dispatch Inspector
 
-Before dispatching, select a live model the same way as for the Builder,
-walking the Inspector precedence list with
-`model_tracker.py check "<model>"`. Record the chosen model in
-`status.json`.
+Before dispatching, rerun selection for Inspector using the actual Builder model and an independent request profile. Prepare and verify the exact model-bound Inspector.
 
 Set status to `inspecting`, then dispatch a fresh Inspector:
 

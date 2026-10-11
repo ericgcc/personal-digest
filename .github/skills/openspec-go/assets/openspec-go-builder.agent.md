@@ -5,15 +5,19 @@ description: >-
   selected OpenSpec change artifacts, implements in-scope tasks, records
   validation evidence and task progress, and commits when authorized.
 user-invocable: false
-model: GLM-5.3 (opencodego)
+model: "GLM-5.2 (opencodego)"
 metadata:
-  failover-model-precendence: ["GLM-5.2 (opencodego)", "DeepSeek V4 Pro (New) (opencodego)", "GLM-5.3-Flash (opencodego)", "Z.ai: GLM 5.3 Flash (openrouter)"]
-  # OpenCode Go per-model monthly caps (USD). Primary GLM-5.3 has the lowest cap.
-  # Full catalog + rationale: .github/skills/openspec-go/assets/model-catalog.md
-  # Check headroom: python .github/skills/openspec-go/scripts/opencode_usage.py
-  # Check exhaustion: python .github/skills/openspec-go/scripts/model_tracker.py check "<model>"
-  monthly-cap-usd: {"GLM-5.3": 15, "GLM-5.2": 60, "DeepSeek V4 Pro": 15, "GLM-5.3-Flash": 60}
+  model-selection: "Use scripts/select_model.py and generated scalar model binding"
+  excluded-models: ["Kimi K2.6", "Kimi K2.7 Code"]
+  inspector-candidates: ["Hy4 preview", "Kimi K3"]
+  allowance-catalog: ".github/skills/openspec-go/scripts/budget_models.py"
 ---
+
+This is a role template with a bootstrap model. Budget-aware orchestration must
+use select_model.py --prepare openspec-go and dispatch the generated agent.
+Kimi K2.6 and Kimi K2.7 Code are excluded under every provider. Kimi K3 is eligible.
+Record actual model only when confirmed by host metadata. Respect the run's
+commit mode; never commit in no-commit mode.
 
 # Builder - OpenSpec Change Implementation
 
@@ -74,7 +78,7 @@ In `none` mode do not commit; leave the scoped changes available for review. On 
 
 If your requests fail with a provider error, report it verbatim rather than retrying blindly:
 
-- `GoUsageLimitError` (5-hour/weekly/monthly) — the account-wide Go limit tripped; **every** Go model is blocked until the window resets. Return `BLOCKED: GoUsageLimitError <limitName> resets <time>` immediately; do not attempt other Go models.
+- `GoUsageLimitError` (5-hour/weekly/monthly) — the account-wide Go limit tripped; every paid-Go model is blocked until the window resets. Return `BLOCKED: GoUsageLimitError <limitName> resets <time>` immediately; do not attempt other Go models.
 - `Insufficient account funds`, `Model access is disabled`, `requires Global regions`, `trains on request data` — account/privacy settings only the user can change. Return `BLOCKED: <error>`.
 - Transient errors (`Response contained no choices`, network hiccups) — retry once; if it repeats, return `BLOCKED: <error>`.
 

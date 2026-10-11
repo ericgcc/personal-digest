@@ -5,16 +5,21 @@ description: >-
   Inspector feedback, implements everything needed to achieve
   the goal, runs quality gates, commits, and returns.
 user-invocable: false
-model: GLM-5.3 (Go) (opencode)
-tools:vscode, execute, read, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, 'pylance-mcp-server/*', todo
+model: "GLM-5.2 (Go) (opencode)"
+tools: ["vscode","execute","read","ms-python.python/getPythonEnvironmentInfo","ms-python.python/getPythonExecutableCommand","ms-python.python/installPythonPackage","ms-python.python/configurePythonEnvironment","edit","search","web","pylance-mcp-server/*","todo"]
 metadata:
   agent-id: b4d1e5a2-9c3f-4b78-8d6e-2f1a0c5b3e7d
-  failover-model-precendence: ["GLM-5.2 (Go) (opencode)", "DeepSeek V4 Pro (New) (Go) (opencode)", "GLM-5.3-Flash (Go) (opencode)", "Z.ai: GLM 5.3 Flash (openrouter)"]
-  # OpenCode Go per-model monthly caps (USD). Primary GLM-5.3 has the lowest cap.
-  # Full catalog + rationale: .github/skills/goal/assets/model-catalog.md
-  # Check headroom with: python .github/skills/goal/scripts/opencode_usage.py
-  monthly-cap-usd: {"GLM-5.3": 15, "GLM-5.2": 60, "DeepSeek V4 Pro": 15, "GLM-5.3-Flash": 60}
+  model-selection: "Use scripts/select_model.py and generated scalar model binding"
+  excluded-models: ["Kimi K2.6", "Kimi K2.7 Code"]
+  inspector-candidates: ["Hy4 preview", "Kimi K3"]
+  allowance-catalog: ".github/skills/goal/scripts/budget_models.py"
 ---
+
+This is a role template with a bootstrap model. Budget-aware orchestration must
+use select_model.py --prepare goal and dispatch the generated agent.
+Kimi K2.6 and Kimi K2.7 Code are excluded under every provider. Kimi K3 is eligible.
+Record actual model only when confirmed by host metadata. Respect the run's
+commit mode; never commit in no-commit mode.
 
 # Builder — Goal Implementation Agent
 
@@ -83,7 +88,7 @@ type(scope): [B] what changed
 
 User-impact description.
 
-Assisted-by: OpenAI:GPT-5.6 Luna
+Assisted-by: <actual provider>:<actual model>
 ```
 
 - `[B]` marker is mandatory — it identifies this as a Builder commit.

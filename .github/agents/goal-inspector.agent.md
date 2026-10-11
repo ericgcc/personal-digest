@@ -6,16 +6,21 @@ description: >-
   runs quality gates, optionally verifies in a browser, and
   writes a PASS or FAIL verdict with detailed feedback.
 user-invocable: false
-model: Kimi K2.7 Code (Go) (opencode)
-tools:vscode, execute, read, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, edit, search, web, 'pylance-mcp-server/*', todo
+model: "Hy4 preview (Go) (opencode)"
+tools: ["vscode","execute","read","ms-python.python/getPythonEnvironmentInfo","ms-python.python/getPythonExecutableCommand","ms-python.python/installPythonPackage","ms-python.python/configurePythonEnvironment","edit","search","web","pylance-mcp-server/*","todo"]
 metadata:
   agent-id: c9e2f1d3-7a4b-4c56-9e8f-3d2b1a0e5c4f
-  failover-model-precendence: ["Hy4 preview (Go) (opencode)", "Muse Spark 1.3 Contributor (Go) (opencode)", "GPT-5.6 Luna (Go) (opencode)", "DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
-  # OpenCode Go per-model monthly caps (USD). GPT-5.6 Luna has the lowest cap.
-  # Full catalog + rationale: .github/skills/goal/assets/model-catalog.md
-  # Check headroom with: python .github/skills/goal/scripts/opencode_usage.py
-  monthly-cap-usd: {"Kimi K2.7 Code": 60, "Hy4 preview": 30, "Muse Spark 1.3 Contributor": 60, "GPT-5.6 Luna": 15}
+  model-selection: "Use scripts/select_model.py and generated scalar model binding"
+  excluded-models: ["Kimi K2.6", "Kimi K2.7 Code"]
+  inspector-candidates: ["Hy4 preview", "Kimi K3"]
+  allowance-catalog: ".github/skills/goal/scripts/budget_models.py"
 ---
+
+This is a role template with a bootstrap model. Budget-aware orchestration must
+use select_model.py --prepare goal and dispatch the generated agent.
+Kimi K2.6 and Kimi K2.7 Code are excluded under every provider. Kimi K3 is eligible.
+Record actual model only when confirmed by host metadata. Respect the run's
+commit mode; never commit in no-commit mode.
 
 # Inspector — Independent Goal Verification Agent
 
@@ -49,13 +54,14 @@ Review what the Builder changed:
 
 ```bash
 git log --oneline -10
-git diff HEAD~1 --stat
-git diff HEAD~1
+git diff <initial_sha> --stat
+git diff <initial_sha>
 ```
 
-`[B]` in the log identifies Builder commits; `[I]` identifies
-previous Inspector reviews. `HEAD~1` is the Builder's latest
-commit — always the diff to examine.
+`[B]` and `[I]` identify authorized iteration commits. Read initial_sha and
+commit_mode from run status. Include in-scope untracked implementation in
+no-commit mode; distinguish the user's pre-existing changes. Do not assume
+HEAD~1 is the Builder or omit uncommitted work from verification.
 
 Read the modified files. Understand what was done, not just
 what was changed.
@@ -116,7 +122,7 @@ git add .goals/<id>/inspector-feedback-<N>.md
 git add .goals/<id>/status.json
 git commit -m "chore(scope): [I] inspector feedback iteration <N>
 
-Assisted-by: OpenAI:GPT-6.1 Sol"
+Assisted-by: <actual provider>:<actual model>"
 ```
 
 ### Step 7 — Return verdict

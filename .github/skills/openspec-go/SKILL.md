@@ -143,24 +143,36 @@ Exit 2 means no eligible model can finish the declared batch; split it, wait,
 or report the concrete constraint. Do not dispatch.
 Exit 0 returns ranked estimates and a selected exact host label.
 
-`--prepare` writes only the generated
-`.github/agents/budget-openspec-go-<role>.agent.md` and returns its exact
+`--prepare` overwrites the **persistent** role agent
+`.github/agents/budget-openspec-go-<role>.agent.md` (one file per role, reused
+across runs — never a new file per selection) and returns its exact
 `dispatch.agent_name`. It copies the role instructions and puts the selected
-label into the supported **scalar `model:` frontmatter**. It refuses to
-overwrite an unrelated file. Advisory metadata and text in a prompt do not
-override the model.
+label into the supported **scalar `model:` frontmatter**. The selected label
+must be the **exact host label** from the inventory file — provider suffix
+included (e.g. `DeepSeek V4 Pro (New) (Go) (opencode)`); a bare catalog name
+cannot be resolved by the host and silently falls back to the session's
+default chat model. When no selection is active the agent's `model:` is empty
+(host default). It refuses to overwrite an unrelated file. Advisory metadata
+and text in a prompt do not override the model.
 
-1. Load/reload that generated agent in the host and dispatch **the returned
-   agent name**. Never dispatch the old fixed-model role agent after selection.
-   Where the host exposes a verified model override, that exact override is
-   equivalent. If neither binding nor reload can be verified, stop with a
-   dispatch-capability blocker; do not silently use the parent/default model.
-2. Record requested model, generated agent path, plan, profile, remaining
-   estimates, and selection reason in run status. Record actual model/provider
-   only from host execution metadata; keep it null if unavailable. A mismatch
-   requires stopping/reselection, not changing the record to claim success.
-3. Run roles sequentially; do not overwrite a generated role definition while
-   it is executing. Inspector receives files and acceptance criteria with fresh
+1. Load/reload that persistent agent in the host and dispatch **the returned
+   agent name**. Verify before dispatching that the agent's `model:` field
+   carries the exact selected host label (suffix included); an empty or bare
+   name means the binding will silently fall back — stop with a
+   dispatch-capability blocker rather than dispatch. Where the host exposes a
+   verified model override, that exact override is equivalent. If neither
+   binding nor reload can be verified, stop with a dispatch-capability
+   blocker; do not silently use the parent/default model.
+2. Record requested model, agent path, plan, profile, remaining estimates,
+   and selection reason in run status. Record actual model/provider only
+   from host execution metadata; keep it null if unavailable. A mismatch —
+   including a dispatch that executed on the session's default model instead
+   of the selected one — requires stopping/reselection, not changing the
+   record to claim success. Reconcile the requested provider against the
+   provider dashboards (OpenCode Go usage, OpenRouter) when host metadata is
+   unavailable: selection is a plan, billing is the execution truth.
+3. Run roles sequentially; do not overwrite the persistent role definition
+   while it is executing. Inspector receives files and acceptance criteria with fresh
    context, never Builder conversation or unchecked conclusions.
 4. For failover, record the precise error and rerun selection/preparation.
    A `GoUsageLimitError` is always account scoped. Network/schema/region/privacy
@@ -177,8 +189,10 @@ records by provider. Missing/invalid reset timestamps create a **five-minute
 recheck**, never a guessed billing date or infinite block. After it expires,
 refresh usage or allow one controlled probe; it does not prove quota reset.
 A successful gauge `--record` clears only confirmed healthy account windows.
-Malformed tracker state returns exit 3 and is preserved. Both skills share
-`.goals/model-exhaustion.json`; serialize tracker writes within this repo.
+Malformed tracker state returns exit 3 and is preserved. This skill is
+self-contained: its gauge log and exhaustion tracker default to
+`.github/skills/openspec-go/state/` (override with `--log-path`/`--tracker`);
+serialize tracker writes within this repo.
 
 Builder implements. Inspector verifies with fresh context. Only files and git history connect them; do not pass Builder's claims to Inspector.
 

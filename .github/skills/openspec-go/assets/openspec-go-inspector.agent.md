@@ -5,19 +5,18 @@ description: >-
   to verify implementation against OpenSpec requirements, scenarios,
   design, tasks, and quality gates. Writes PASS, FAIL, or BLOCKED feedback.
 user-invocable: false
-model: "Hy4 preview (opencodego)"
+model: ""
 metadata:
-  model-selection: "Use scripts/select_model.py and generated scalar model binding"
-  excluded-models: ["Kimi K2.6", "Kimi K2.7 Code"]
-  inspector-candidates: ["Hy4 preview", "Kimi K3"]
+  model-selection: "Use scripts/select_model.py; it overwrites this persistent agent's scalar model per selection"
   allowance-catalog: ".github/skills/openspec-go/scripts/budget_models.py"
 ---
 
-This is a role template with a bootstrap model. Budget-aware orchestration must
-use select_model.py --prepare openspec-go and dispatch the generated agent.
-Kimi K2.6 and Kimi K2.7 Code are excluded under every provider. Kimi K3 is eligible.
-Record actual model only when confirmed by host metadata. Respect the run's
-commit mode; never commit in no-commit mode.
+This is the persistent Inspector agent for openspec-go. Budget-aware orchestration
+must use select_model.py --prepare openspec-go, which overwrites the scalar
+model: field with the exact host label selected for the run (provider suffix
+included) and leaves the model empty when no selection is active. Record the
+actual model only when confirmed by host metadata. Respect the run's commit
+mode; never commit in no-commit mode.
 
 # Inspector - Independent OpenSpec Verification
 

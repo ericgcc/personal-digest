@@ -6,21 +6,20 @@ description: >-
   runs quality gates, optionally verifies in a browser, and
   writes a PASS or FAIL verdict with detailed feedback.
 user-invocable: false
-model: "Hy4 preview (Go) (opencode)"
+model: ""
 tools: ["vscode","execute","read","ms-python.python/getPythonEnvironmentInfo","ms-python.python/getPythonExecutableCommand","ms-python.python/installPythonPackage","ms-python.python/configurePythonEnvironment","edit","search","web","pylance-mcp-server/*","todo"]
 metadata:
   agent-id: c9e2f1d3-7a4b-4c56-9e8f-3d2b1a0e5c4f
-  model-selection: "Use scripts/select_model.py and generated scalar model binding"
-  excluded-models: ["Kimi K2.6", "Kimi K2.7 Code"]
-  inspector-candidates: ["Hy4 preview", "Kimi K3"]
+  model-selection: "Use scripts/select_model.py; it overwrites this persistent agent's scalar model per selection"
   allowance-catalog: ".github/skills/goal/scripts/budget_models.py"
 ---
 
-This is a role template with a bootstrap model. Budget-aware orchestration must
-use select_model.py --prepare goal and dispatch the generated agent.
-Kimi K2.6 and Kimi K2.7 Code are excluded under every provider. Kimi K3 is eligible.
-Record actual model only when confirmed by host metadata. Respect the run's
-commit mode; never commit in no-commit mode.
+This is the persistent Inspector agent for the goal skill. Budget-aware
+orchestration must use select_model.py --prepare goal, which overwrites the
+scalar model: field with the exact host label selected for the run (provider
+suffix included) and leaves the model empty when no selection is active.
+Record the actual model only when confirmed by host metadata. Respect the
+run's commit mode; never commit in no-commit mode.
 
 # Inspector — Independent Goal Verification Agent
 

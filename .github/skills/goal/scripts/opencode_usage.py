@@ -12,7 +12,10 @@ from pathlib import Path
 from budget_models import CATALOG, PROFILE, WINDOWS, canonical, estimate, markdown
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-DEFAULT_LOG_PATH = REPO_ROOT / ".goals" / "usage-log.jsonl"
+# Self-contained state: this skill owns its gauge log and tracker under its own
+# directory, never in another skill's state directory.
+SKILL_STATE = Path(__file__).resolve().parents[2] / "state"
+DEFAULT_LOG_PATH = SKILL_STATE / "usage-log.jsonl"
 USAGE_URL = "https://opencode.ai/zen/go/v1/usage"
 KEY_NAME = "OPEN_CODE_API_KEY"
 
@@ -83,7 +86,7 @@ def main(argv=None):
     p.add_argument("--log-path", type=Path, default=DEFAULT_LOG_PATH)
     p.add_argument("--env", type=Path)
     p.add_argument("--record", action="store_true")
-    p.add_argument("--tracker", type=Path, default=REPO_ROOT/".goals/model-exhaustion.json")
+    p.add_argument("--tracker", type=Path, default=SKILL_STATE/"model-exhaustion.json")
     p.add_argument("--catalog", action="store_true", help="offline full catalog and estimates")
     p.add_argument("--markdown", action="store_true", help="offline reference for both plans")
     p.add_argument("--plan", choices=("go","go-plus"), default="go")

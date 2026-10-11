@@ -23,6 +23,15 @@ MONTHLY_PRESSURE_THRESHOLD = 80.0
 BUILDER_RESERVE_PP = 15.0
 INSPECTOR_RESERVE_PP = 2.0
 
+# A host model label always carries a provider marker — a parenthesized suffix
+# like (Go)/(opencode)/(opencodego)/(openrouter) or a provider prefix like
+# "z.ai:"/"deepseek:"/"openrouter/". A label without one is a bare catalog name
+# the host cannot resolve; binding it would silently fall back to the session's
+# default chat model.
+PROVIDER_MARKER = re.compile(
+    r"\((?:go|opencode|opencodego|openrouter)\)|^(?:opencode-go/|opencode/|openrouter/|z\.ai:|deepseek:)",
+    re.IGNORECASE)
+
 
 def high_pressure(usage):
     """True when any account window crosses its policy pressure threshold."""
@@ -166,10 +175,16 @@ def rank_models(usage, plan, role, available, tracker, profile=CONSERVATIVE_PROF
 
 def prepare_agent(template, destination, label, role, workflow):
     # Bind through supported model frontmatter, not advisory metadata or prompt text.
-    if canonical(label) in EXCLUDED:
+    # The label must be the EXACT host label (provider suffix included) so the host
+    # can resolve the endpoint; a bare catalog name silently falls back to the
+    # session's default chat model. An empty label resets the agent to the host
+    # default (model: "").
+    if label and canonical(label) in EXCLUDED:
         raise ValueError("Kimi K2.6/K2.7 Code cannot be prepared")
-    if canonical(label) not in CATALOG:
+    if label and canonical(label) not in CATALOG:
         raise ValueError("unknown model cannot be prepared")
+    if label and not PROVIDER_MARKER.search(label):
+        raise ValueError("model label must be the exact host label with its provider suffix, not a bare catalog name")
     if "\n" in label or "\r" in label:
         raise ValueError("invalid model label")
     text = template.read_text(encoding="utf-8")
@@ -182,9 +197,10 @@ def prepare_agent(template, destination, label, role, workflow):
     if count != 1: raise ValueError("agent template requires one scalar model field")
     header = re.sub(r"(?m)^name:.*$", "name: "+json.dumps(name),header)
     header = re.sub(r"(?m)^tools:(?=\S)", "tools: ",header)
-    # Advisory metadata is preserved; runtime model is deliberately a single scalar.
     result = "---"+header+"---"+body
-    result += "\n\nRuntime binding: this agent must execute using "+json.dumps(label)+". Report a host/model mismatch as BLOCKED. Respect the run's commit mode.\n"
+    binding = ("the host default model" if not label
+        else "the exact host model "+json.dumps(label))
+    result += "\n\nRuntime binding: this agent must execute using "+binding+". Report a host/model mismatch as BLOCKED. Respect the run's commit mode.\n"
     destination.parent.mkdir(parents=True,exist_ok=True)
     if destination.exists() and "Runtime binding: this agent must execute using " not in destination.read_text(encoding="utf-8"):
         raise ValueError("refusing to replace an unrelated agent definition")
@@ -238,6 +254,9 @@ def main(argv=None):
             root=Path(__file__).resolve().parents[4]
             template = (root/".github/agents"/f"goal-{args.role}.agent.md" if args.prepare=="goal"
                 else root/".github/skills/openspec-go/assets"/f"openspec-go-{args.role}.agent.md")
+            # One persistent agent file per role, overwritten on every selection.
+            # The selected label is the EXACT host label from --available (provider
+            # suffix included), never a bare catalog name.
             destination=root/".github/agents"/f"budget-{args.prepare}-{args.role}.agent.md"
             result["dispatch"]=prepare_agent(template,destination,result["selected"]["model"],args.role,args.prepare)
         print(json.dumps(result,indent=2))

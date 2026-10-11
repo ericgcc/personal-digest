@@ -358,7 +358,7 @@ class BudgetTests(unittest.TestCase):
     def test_prepare_binds_exact_selected_model(self):
         with tempfile.TemporaryDirectory() as directory:
             source=Path(directory)/"source.md"; dest=Path(directory)/"generated.md"
-            source.write_text('---\nname: Builder\nmodel: Old\nuser-invocable: false\n---\nPreserved instructions.\n')
+            source.write_text('---\nname: Builder\nmodel: ""\nuser-invocable: false\n---\nPreserved instructions.\n')
             r=s.prepare_agent(source,dest,"GLM-5.2 (opencodego)","builder","goal")
             self.assertIn('model: "GLM-5.2 (opencodego)"',dest.read_text())
             self.assertIn("Preserved instructions.",dest.read_text())
@@ -366,12 +366,39 @@ class BudgetTests(unittest.TestCase):
             self.assertIsNone(r["actual_model"])
             with self.assertRaises(ValueError): s.prepare_agent(source,dest,"Kimi K2.6 (openrouter)","builder","goal")
 
+    def test_prepare_rejects_bare_catalog_name(self):
+        """A bare catalog name cannot be resolved by the host and would silently
+        fall back to the session default; preparation must refuse it."""
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/"source.md"; dest=Path(directory)/"generated.md"
+            source.write_text('---\nname: Builder\nmodel: ""\n---\nBody')
+            with self.assertRaises(ValueError): s.prepare_agent(source,dest,"GLM-5.2","builder","goal")
+
+    def test_prepare_empty_label_resets_to_host_default(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/"source.md"; dest=Path(directory)/"generated.md"
+            source.write_text('---\nname: Builder\nmodel: "GLM-5.2 (opencodego)"\n---\nBody')
+            s.prepare_agent(source,dest,"","builder","goal")
+            self.assertIn('model: ""',dest.read_text())
+            self.assertIn("the host default model",dest.read_text())
+
+    def test_prepare_overwrites_persistent_agent(self):
+        """The role agent is persistent: a later selection overwrites the earlier
+        binding in place, never creating a second file."""
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/"source.md"; dest=Path(directory)/"generated.md"
+            source.write_text('---\nname: Builder\nmodel: ""\n---\nBody')
+            s.prepare_agent(source,dest,"GLM-5.2 (opencodego)","builder","goal")
+            s.prepare_agent(source,dest,"DeepSeek V4 Pro (New) (Go) (opencode)","builder","goal")
+            self.assertIn('model: "DeepSeek V4 Pro (New) (Go) (opencode)"',dest.read_text())
+            self.assertNotIn("GLM-5.2",dest.read_text())
+
     def test_prepare_preserves_unrelated_definition(self):
         with tempfile.TemporaryDirectory() as directory:
             source=Path(directory)/"source.md"; dest=Path(directory)/"generated.md"
-            source.write_text('---\nname: Builder\nmodel: Old\n---\nBody')
+            source.write_text('---\nname: Builder\nmodel: ""\n---\nBody')
             dest.write_text("user owned")
-            with self.assertRaises(ValueError): s.prepare_agent(source,dest,"GLM-5.2","builder","goal")
+            with self.assertRaises(ValueError): s.prepare_agent(source,dest,"GLM-5.2 (opencodego)","builder","goal")
             self.assertEqual(dest.read_text(),"user owned")
 
     def test_gauge_json_and_record_handles_missing_reset(self):

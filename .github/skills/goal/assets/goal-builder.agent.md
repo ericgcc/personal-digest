@@ -5,21 +5,20 @@ description: >-
   Inspector feedback, implements everything needed to achieve
   the goal, runs quality gates, commits, and returns.
 user-invocable: false
-model: "GLM-5.2 (Go) (opencode)"
+model: ""
 tools: ["vscode","execute","read","ms-python.python/getPythonEnvironmentInfo","ms-python.python/getPythonExecutableCommand","ms-python.python/installPythonPackage","ms-python.python/configurePythonEnvironment","edit","search","web","pylance-mcp-server/*","todo"]
 metadata:
   agent-id: b4d1e5a2-9c3f-4b78-8d6e-2f1a0c5b3e7d
-  model-selection: "Use scripts/select_model.py and generated scalar model binding"
-  excluded-models: ["Kimi K2.6", "Kimi K2.7 Code"]
-  inspector-candidates: ["Hy4 preview", "Kimi K3"]
+  model-selection: "Use scripts/select_model.py; it overwrites this persistent agent's scalar model per selection"
   allowance-catalog: ".github/skills/goal/scripts/budget_models.py"
 ---
 
-This is a role template with a bootstrap model. Budget-aware orchestration must
-use select_model.py --prepare goal and dispatch the generated agent.
-Kimi K2.6 and Kimi K2.7 Code are excluded under every provider. Kimi K3 is eligible.
-Record actual model only when confirmed by host metadata. Respect the run's
-commit mode; never commit in no-commit mode.
+This is the persistent Builder agent for the goal skill. Budget-aware
+orchestration must use select_model.py --prepare goal, which overwrites the
+scalar model: field with the exact host label selected for the run (provider
+suffix included) and leaves the model empty when no selection is active.
+Record the actual model only when confirmed by host metadata. Respect the
+run's commit mode; never commit in no-commit mode.
 
 # Builder — Goal Implementation Agent
 

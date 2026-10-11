@@ -12,7 +12,8 @@ from pathlib import Path
 from budget_models import canonical, provider, EXCLUDED, WINDOWS
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-DEFAULT_TRACKER_PATH = REPO_ROOT / ".goals" / "model-exhaustion.json"
+# Self-contained state: this skill owns its tracker under its own directory.
+DEFAULT_TRACKER_PATH = Path(__file__).resolve().parents[2] / "state" / "model-exhaustion.json"
 RECHECK_SECONDS = 300
 
 

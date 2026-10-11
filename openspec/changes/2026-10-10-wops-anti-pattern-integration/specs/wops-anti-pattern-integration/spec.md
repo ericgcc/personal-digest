@@ -8,21 +8,26 @@ Integrate the WOPS anti-pattern catalogue into the editorial pipeline so common 
 
 ### Requirement: Anti-pattern catalogue is sourced from WOPS
 
-The system SHALL obtain anti-pattern definitions exclusively through the existing WOPS adapter interfaces (`list_anti_patterns`, `get_anti_patterns`) against the configured WOPS project, and SHALL NOT embed anti-pattern definitions, detection signals, or false-positive conditions as static data inside this repository. The run record SHALL state the catalogue's availability and version for every run.
+The system SHALL obtain anti-pattern definitions exclusively through the digest system's WOPS adapter (`WopsAdapter` in `digest_system/integrations/wops.py`), whose wrapper methods (`list_anti_patterns`, `get_anti_patterns`, `get_writing_operations`, `search_writing_operations`) are adapter-owned names backed by the WOPS CLI (`antipatterns`, `show-antipattern <id> --json`, `show <id> --json`, `search ... --json`); the system SHALL NOT call the WOPS Python API (`WritingOperationsLibrary`) directly, and its differently-named methods (`list_antipatterns`, `get_antipatterns`, `get_operations`) SHALL NOT be assumed to exist under the adapter's names. The system SHALL NOT embed anti-pattern definitions, detection signals, or false-positive conditions as static data, and SHALL NOT hardcode the catalogue's size: the active set is discovered dynamically at run time (16 entries at planning time; the count is not a constant). WOPS loads anti-patterns from its YAML files, so the configured `WOPS_ROOT` SHALL be a local filesystem path to a WOPS checkout (or synchronized copy) that the adapter's subprocess can read; a URL is not a valid root. The run record SHALL state the catalogue's availability and version for every run.
+
+#### Scenario: The adapter contract is verified against WOPS
+
+- **WHEN** the integration's contract tests run against a real WOPS checkout
+- **THEN** the adapter's wrapper methods return the catalogue records the WOPS CLI emits, and the test fails if the WOPS interface changes
 
 #### Scenario: Catalogue is available
 
-- **WHEN** a run starts with a configured, reachable WOPS project
-- **THEN** the run record reports the catalogue as available with the WOPS project version, and anti-pattern guidance and detection derive from records fetched through the adapter
+- **WHEN** a run starts with a configured, reachable WOPS project at a local filesystem path
+- **THEN** the run record reports the catalogue as available with the WOPS project version, the discovered active anti-pattern count is whatever WOPS currently provides, and anti-pattern guidance and detection derive from records fetched through the adapter
 
 #### Scenario: Catalogue is unavailable
 
-- **WHEN** the WOPS project is unconfigured, missing, or its anti-pattern CLI calls fail
+- **WHEN** the WOPS project is unconfigured, missing, its root is not a readable local path, or its anti-pattern CLI calls fail
 - **THEN** the run records the unavailability with the adapter's reason, prevention and detection degrade to the pre-integration behavior, and the pipeline completes without error
 
 ### Requirement: Draft receives bounded preventive anti-pattern guidance
 
-The Draft stage SHALL receive a compact preventive guidance block derived from the WOPS anti-pattern catalogue. The block SHALL contain a small, relevant subset selected using WOPS record metadata (including `activities[]`), bounded by a fixed maximum entry count and a configurable byte budget enforced in code, with the block's size recorded in the prompt manifest. Each included entry SHALL be complete (name, one-sentence summary, and false-positive conditions) and SHALL NOT be truncated mid-entry; when the budget is exhausted, lower-priority entries SHALL be omitted whole and the omitted count SHALL be recorded. The block SHALL NOT contain complete detection-signal lists, examples, or provenance.
+The Draft stage SHALL receive a compact preventive guidance block derived from the WOPS anti-pattern catalogue. The block SHALL contain a small, relevant subset selected using WOPS record metadata (including `activities[]`), bounded by a fixed maximum entry count and a configurable byte budget enforced in code, with the block's size recorded in the prompt manifest. Each included entry SHALL be complete (name, one-sentence summary, and false-positive conditions) and SHALL NOT be truncated mid-entry; when the budget is exhausted, lower-priority entries SHALL be omitted whole and the omitted count SHALL be recorded. The block SHALL NOT contain complete detection-signal lists, examples, or provenance. The subset SHALL be selected from the dynamically discovered catalogue, not from a hardcoded entry list.
 
 #### Scenario: Guidance is compact and measured
 

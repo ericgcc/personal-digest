@@ -63,6 +63,45 @@ No guidance line SHALL prohibit a rhetorical device outright: every line must be
 - **WHEN** the guidance mentions a defect pattern that resembles a legitimate device (a real contrast, a genuine ordinal range, a required formal conclusion)
 - **THEN** the guidance also carries the corresponding false-positive condition, so the writer is not told to avoid the device itself
 
+### Requirement: Prevention selection rotates fairly across runs
+
+Draft's prevention subset SHALL be selected by a deterministic, history-aware strategy: stage applicability (WOPS `activities[]` metadata) is the primary eligibility criterion; among eligible anti-patterns, those least recently supplied to Draft for the same digest and style profile SHALL be preferred, with a deterministic tie-breaker. Selection SHALL consider previous digest runs recorded in existing run artifacts (the Draft prompt manifests' prevention-selection records, scoped by digest and style profile); when history is missing, corrupted, or unavailable, selection SHALL fall back deterministically without interrupting the pipeline. The entry cap and byte budget SHALL bound prompt size only: an entry that does not fit SHALL be skipped and the next eligible entry considered; no entry SHALL be truncated, and no inapplicable anti-pattern SHALL be selected merely for fairness. Entries never previously supplied (including new catalogue entries) SHALL receive priority over recently supplied ones. The selection record SHALL list selected ids, omitted ids with the omission reason distinguished (inapplicable, item cap, byte budget), per-entry selection reasons, and the previous-run history used in the decision.
+
+#### Scenario: Consecutive runs rotate the subset
+
+- **WHEN** more eligible anti-patterns exist than the entry cap allows and recent history shows the same subset supplied repeatedly
+- **THEN** the next run prefers eligible entries that were not recently supplied
+
+#### Scenario: No eligible entry is permanently starved
+
+- **WHEN** the catalogue is stable across successive runs
+- **THEN** every eligible, budget-fitting anti-pattern eventually receives an opportunity to appear in Draft's guidance
+
+#### Scenario: Inapplicable entries are never selected for fairness
+
+- **WHEN** an anti-pattern lacks the stage-applicable `activities[]` metadata
+- **THEN** it is never selected for Draft's guidance regardless of its rotation priority, and its omission is recorded as inapplicable
+
+#### Scenario: Selection is reproducible
+
+- **WHEN** the same catalogue and the same run history are used
+- **THEN** the selection, including tie-breaks, is identical
+
+#### Scenario: Missing or corrupted history falls back
+
+- **WHEN** no prior run history exists, or the recorded history is unreadable or malformed
+- **THEN** selection falls back deterministically (all eligible entries treated as never supplied, catalogue order), the fallback is recorded, and the pipeline continues
+
+#### Scenario: New entries receive priority
+
+- **WHEN** the catalogue gains an eligible anti-pattern that has never been supplied
+- **THEN** it is preferred over entries supplied in recent runs
+
+#### Scenario: Omission reasons are distinguished
+
+- **WHEN** the selection record is written
+- **THEN** each omitted id carries exactly one reason: inapplicable, item cap, or byte budget
+
 ### Requirement: Developmental Review detects anti-patterns in the draft
 
 The developmental-review evaluation SHALL, in its existing single judge call, additionally report anti-pattern findings, each carrying the canonical WOPS anti-pattern id, the section it occurs in, a severity, and a one-sentence evidence statement. The judge SHALL receive a bounded projection of each anti-pattern's id, summary, detection signals, and false-positive conditions, so detection is grounded in WOPS's own definitions rather than the judge's general interpretation. Findings are additive; the existing developmental assessment SHALL be unchanged in shape and meaning.
@@ -186,6 +225,50 @@ The reader-review verification SHALL NOT add a judge call, and the existing cond
 
 - **WHEN** the review reports anti-pattern outcomes
 - **THEN** Targeted Repair still runs only for an actionable major/critical problem and at most once, and anti-pattern bookkeeping alone never triggers it
+
+### Requirement: Stage-specific WOPS history within a run
+
+The run SHALL maintain a structured WOPS history derived from existing artifacts, tracking: `prevention_supplied` (anti-pattern ids actually included in Draft's prompt), `detected` (findings with stable `finding_id`s and supporting evidence), `recommended` (writing operations selected for the diagnosed problems), `supplied` (operations actually included in Writer Revision's prompt), `application` (applied, not applied, or unknown — only when supported by evidence), and `outcome` (resolved, partially resolved, still present, or newly introduced, as assessed by Reader Review), all linked by canonical identifiers (`finding_id`, anti-pattern id, operation id). A rule or operation being supplied SHALL NEVER be interpreted as proof that it was followed, applied, or effective. Delivery is stage-scoped: Developmental Review may see the prevention-selection record for traceability but SHALL diagnose the actual prose independently, and supplied guidance SHALL neither suppress nor bias a finding; Writer Revision receives the relevant findings, its selected operations, and compact prevention context where useful, repairing diagnosed problems rather than mechanically applying every previously supplied rule; Reader Review receives the prior findings with stable ids, the applicable detection criteria and false-positive conditions, the operation ids actually supplied to Writer Revision, and relevant `overuse_of[]` relationships, SHALL assess the revised prose independently before consulting the history, and SHALL report outcomes without automatically attributing causality to supplied operations; Targeted Repair, when it runs, receives only relevant unresolved problems and repair history under its existing optional, at-most-once, actionable-problem rules. The history SHALL reuse existing artifacts (prompt manifests, `wops.json`, review JSON, stage records) rather than introducing a new artifact family, database, or state subsystem; missing or unavailable history SHALL degrade gracefully.
+
+#### Scenario: Every recorded supply corresponds to a composed prompt
+
+- **WHEN** the history records a prevention guideline or operation as supplied
+- **THEN** the corresponding stage's composed prompt (its prompt manifest) actually contained it
+
+#### Scenario: Findings and operations stay traceable across stages
+
+- **WHEN** a finding is diagnosed, an operation selected for it, and an outcome reported
+- **THEN** all three records are linked by the same canonical identifiers
+
+#### Scenario: Reader Review can evaluate prior and new defects
+
+- **WHEN** Reader Review runs with the history
+- **THEN** it has enough information to evaluate both previously diagnosed and newly introduced anti-patterns
+
+#### Scenario: A supplied operation is not automatically applied or effective
+
+- **WHEN** an operation was supplied to Writer Revision
+- **THEN** the history records its application only when evidence supports it, and never equates supply or a resolved outcome with application
+
+#### Scenario: A supplied prevention guideline does not suppress a diagnosis
+
+- **WHEN** Draft received preventive guidance for an anti-pattern that nonetheless occurs in the draft
+- **THEN** Developmental Review reports the finding normally, uninfluenced by the supply record
+
+#### Scenario: Missing history does not interrupt the pipeline
+
+- **WHEN** the history is absent or unreadable at any stage
+- **THEN** the stage proceeds without it, the gap is recorded, and no error is raised
+
+#### Scenario: Prompt overhead stays bounded and measurable
+
+- **WHEN** history context is added to a stage prompt
+- **THEN** it is bounded in code and its size is recorded in the prompt manifest
+
+#### Scenario: No new stages or calls
+
+- **WHEN** the history is built and delivered
+- **THEN** no additional editorial stage, LLM call, or external service is introduced
 
 ### Requirement: Score comparability is demonstrated, not assumed
 

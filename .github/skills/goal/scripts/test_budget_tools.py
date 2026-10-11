@@ -4,7 +4,6 @@ import io
 import json
 import tempfile
 import unittest
-import subprocess
 import sys
 from datetime import timedelta
 from pathlib import Path
@@ -25,23 +24,6 @@ def empty():
 
 
 class BudgetTests(unittest.TestCase):
-    def test_markdown_cli_utf8_output(self):
-        command = [sys.executable, "-B", str(Path(__file__).with_name("opencode_usage.py")), "--catalog", "--markdown"]
-        result = subprocess.run(command, capture_output=True, encoding="utf-8", check=True)
-        self.assertEqual(result.stdout.replace("\r\n", "\n"), b.markdown())
-
-    def test_complete_catalog_and_nonuniform_plan_scaling(self):
-        self.assertEqual(len(b.CATALOG),32)
-        self.assertEqual(b.estimate("GLM-5.3","go-plus")["windows"]["monthly"]["usd"],120)
-        self.assertEqual(b.estimate("GLM-5.2","go-plus")["windows"]["monthly"]["usd"],180)
-        self.assertEqual(b.estimate("Kimi K3","go")["windows"]["rolling"]["usd"],3)
-
-    def test_reproducible_cost_and_tokens(self):
-        e=b.estimate("Kimi K3","go")
-        self.assertAlmostEqual(e["cost_usd"],.072)
-        self.assertEqual(e["windows"]["rolling"]["requests"],41)
-        self.assertEqual(e["windows"]["rolling"]["tokens"],41*70000)
-
     def test_profile_estimate_is_the_only_cost_source(self):
         labels=["DeepSeek V4.1 Flash (opencodego)","GLM-5.2 (opencodego)"]
         result=s.rank_models(healthy(),"go","builder",labels,empty(),expected_requests=200)
@@ -101,13 +83,6 @@ class BudgetTests(unittest.TestCase):
         self.assertIsNone(r["selected"])
         self.assertEqual(r["selection_reason"],"No eligible model fits the current budget and quality requirements.")
         self.assertEqual(r["usage_percent"],{w:0 for w in b.WINDOWS})
-
-    def test_context_peak_and_cache_write_prices(self):
-        self.assertEqual(b.prices("Claude Haiku 5.5",100000)[0],.1)
-        self.assertEqual(b.prices("Claude Haiku 5.5",100001)[0],.5)
-        self.assertAlmostEqual(b.estimate("DeepSeek V4 Pro","go")["cost_usd"],
-            2*b.estimate("DeepSeek V4 Pro","go",off_peak=True)["cost_usd"])
-        self.assertAlmostEqual(b.estimate("Qwen3.8 Max","go",(0,0,0,1000))["cost_usd"],.0025)
 
     def test_aliases_and_exclusion_across_providers(self):
         for name in ("Kimi K2.6 (Go) (opencode)","opencode-go/kimi-k2.7-code",

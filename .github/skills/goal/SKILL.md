@@ -48,10 +48,24 @@ Selection is restricted to the **curated precedence lists** in
 `budget_models.py` (`BUILDER_PRECEDENCE`, `INSPECTOR_PRECEDENCE`, plus the
 `OPENROUTER_*_PRECEDENCE` lists for OpenRouter labels). These are the
 authoritative baseline preferences; subjective quality ratings in the catalog
-serve a different purpose and never replace them. Within the eligible set the
-selector dynamically reranks by estimated normalized allowance consumption and
-current account usage. Models outside the curated lists are never selected in
-normal automatic selection.
+serve a different purpose and never replace them. Models outside the curated
+lists are never selected in normal automatic selection.
+
+The selector runs in one of two modes, decided by account usage:
+
+- **Normal** (rolling < 50%, weekly < 80%, monthly < 80%): candidates are
+  ranked by their position in the curated precedence list; projected five-hour
+  consumption is only a tie-breaker. A cheaper low-quality model never
+  displaces a higher-preference model on cost alone.
+- **Conserve** (any window at or above those thresholds): feasible candidates
+  within a quality floor one tier below the strongest feasible candidate are
+  reranked by lowest projected five-hour allowance consumption, ties broken by
+  higher quality then precedence. Lower-quality candidates remain deferred
+  fallbacks and never jump ahead of the main consideration set.
+
+The full ranking is recomputed on every selection from current availability,
+usage and tracker state. The result records `selection_mode` (`normal` or
+`conserve`), `usage_percent`, and a specific `selection_reason`.
 
 Default minimum quality is **3 for Builder** and **4 for Inspector**; pass
 `--min-quality 5` for demanding work. Hy3 sits below the default Inspector
@@ -76,19 +90,25 @@ model was unavailable.
   list in the run directory, e.g. `available-models.json`. Filter availability,
   region and privacy constraints before selection; never invent provider labels.
 - Supply estimated uncached input, cached read, output and cache-write tokens
-  **per API request**, and expected request count for the next brief. Defaults
-  are a comparison scenario (8K/60K/2K/0, 200 requests). Predicted request
-  costs come only from `budget_models.estimate()` over the published catalog
-  prices; no historical billing numbers from past sessions are used as inputs.
-  For a fresh Inspector start with a cold-cache estimate such as 68K/0/2K/0;
-  do not copy Builder cache assumptions or session state.
-- Builder preserves a 15% verification reserve; Inspector has a 2% safety
-  margin and may consume that reserved capacity. The selector finds models
-  that fit the whole next batch in **all three windows**. Within that set it
-  prefers the highest subjective role quality, then the lowest normalized
-  five-hour consumption. If none fit, it returns no selection: split the brief,
-  wait, or obtain authorization for a different fallback. It must not dispatch
-  an infeasible batch. Set `--min-quality 4` or `5` for demanding work.
+  **per API request**, and the planned request count for the next brief
+  (`--expected-requests`; default 1 = single-request feasibility estimate, not
+  a forecast of the whole run — pass a larger justified estimate for a bounded
+  task). The default token profile is a comparison scenario (8K/60K/2K/0).
+  Predicted request costs come only from `budget_models.estimate()` over the
+  published catalog prices; no historical billing numbers from past sessions
+  are used as inputs. For unknown caching behavior use a conservative profile
+  with zero assumed cache reads; pass a warmer profile only when cache reuse is
+  supported by reliable runtime information. For a fresh Inspector start with
+  a cold-cache estimate such as 68K/0/2K/0; do not copy Builder cache
+  assumptions or session state.
+- Builder reserves **15 percentage points** of every window; Inspector keeps a
+  **2-percentage-point** margin and may consume the Builder's reserved
+  capacity. A candidate passes only when the planned batch fits **all three
+  windows**: `projected_burn_pp <= 100 - current_usage_percent - reserve_pp`,
+  with the reserve interpreted as absolute percentage points. If no candidate
+  fits, the selector returns no selection: split the brief, wait, or obtain
+  authorization for a different fallback. It must not dispatch an infeasible
+  batch. Set `--min-quality 4` or `5` for demanding work.
 - Inspector always starts fresh and uses a different family from the actual
   Builder (`--builder-model`). For Inspector-only runs with no Builder, use
   `--builder-model none` and record that family independence is unverified.
@@ -109,9 +129,9 @@ Run from the repository root before **every** dispatch:
 
 ```bash
 python .github/skills/goal/scripts/opencode_usage.py --plan go --record --log
-python .github/skills/goal/scripts/select_model.py --plan go --role builder --available "<run>/available-models.json" --target 200 --prepare goal
+python .github/skills/goal/scripts/select_model.py --plan go --role builder --available "<run>/available-models.json" --expected-requests 200 --prepare goal
 # Inspector: use actual Builder model and an independent cold-cache profile
-python .github/skills/goal/scripts/select_model.py --plan go --role inspector --available "<run>/available-models.json" --builder-model "<actual Builder model>" --profile 68000 0 2000 0 --target 20 --prepare goal
+python .github/skills/goal/scripts/select_model.py --plan go --role inspector --available "<run>/available-models.json" --builder-model "<actual Builder model>" --profile 68000 0 2000 0 --expected-requests 20 --prepare goal
 ```
 
 Change `go` to `go-plus` for that plan. The selector fetches fresh usage;

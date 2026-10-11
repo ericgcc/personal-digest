@@ -187,12 +187,34 @@ For example, $1 on a $15-cap model consumes about 6.67% of the monthly meter,
 versus 1.67% on a $60-cap model. The same spend also consumes the other windows.
 Two independent roles and concurrent clients contribute to the same account.
 
-The selector applies these estimates to the next brief, subtracts a configurable
-15 percentage-point reserve from each window, and requires all windows to fit.
-Among fitting candidates, highest subjective role tier wins, then lowest
-normalized five-hour burn. If none fits the target, choose the most efficient
-remaining eligible paid-Go model and shorten the brief. Estimates cannot forecast
-wall-clock uptime without observed requests/minute and actual cache/output usage.
+The selector applies these estimates to the planned request count
+(`--expected-requests`; default 1 = single-request feasibility estimate),
+subtracts a role-specific reserve in absolute percentage points from each
+window, and requires all three windows to fit:
+`projected_burn_pp <= 100 - current_usage_percent - reserve_pp`.
+Builder reserves 15 percentage points; Inspector keeps a 2-percentage-point
+margin and may consume the Builder's reserved capacity. These reserves and the
+pressure thresholds below are repository policy decisions, not published
+provider limits.
+
+Selection runs in one of two modes, decided by account usage:
+
+- **Normal** (rolling < 50%, weekly < 80%, monthly < 80%): candidates are
+  ranked by their position in the curated precedence list; projected five-hour
+  consumption is only a tie-breaker. A cheaper low-quality model never
+  displaces a higher-preference model on cost alone.
+- **Conserve** (any window at or above those thresholds): feasible candidates
+  within a quality floor one tier below the strongest feasible candidate are
+  reranked by lowest projected five-hour allowance consumption, ties broken by
+  higher quality then precedence. Lower-quality candidates remain deferred
+  fallbacks and never jump ahead of the main consideration set.
+
+The full ranking is recomputed on every selection from current availability,
+usage and tracker state. If no candidate fits, the selector returns no
+selection (exit 2) rather than a partial-run candidate. Estimates cannot
+forecast wall-clock working time: price-based request counts say nothing about
+requests per minute, actual cache hit rates, or output length, so a selected
+model is a planning estimate, never a guarantee of task completion.
 
 Kimi K2.6 and Kimi K2.7 Code are hard-excluded from selection and generated agents,
 including OpenRouter aliases. Their catalog rows document published availability
@@ -202,33 +224,37 @@ legitimate Inspector candidate; this change does not claim a new live K3 test.
 
 Kimi K3 costs $0.072 per comparison request: its $3 Go five-hour allowance yields
 41 requests before reserve. A cold Inspector profile of 68K input/0 cached/2K
-output costs $0.234: about 12 Go or 51 Plus requests before reserve. With a 15%
-reserve, a 20-request cold review fits Plus but not Go. It is useful for short,
-demanding reviews; placing it first for every long Go session would be expensive.
+output costs $0.234: about 12 Go or 51 Plus requests before reserve. It is
+eligible for Inspector subject to availability, compatibility and budget
+checks; no live Copilot integration test is assumed.
 
-### Illustrative precedence (recompute before dispatch)
+### Curated precedence (authoritative baseline)
 
-Assumptions: empty meters; 15% reserve; all catalog models available; training
-models disabled; peak prices; role tiers in the table above. Builder uses
-8K/60K/2K/0 and a 200-request target. Inspector uses 68K/0/2K/0 and a 20-request
-target, with a DeepSeek-family Builder. Real host inventory and actual Builder
-family take precedence over this illustration.
+Selection is restricted to the curated precedence lists in
+`budget_models.py`. These are the authoritative baseline preferences;
+subjective quality ratings in the catalog serve a different purpose and never
+replace them. Models outside these lists are never selected in normal
+automatic selection. Premium escalation (`--allow-premium`, default off)
+places `PREMIUM_BUILDER_MODELS` ahead of the normal Builder precedence only on
+an explicit run-level decision.
 
-| Plan/role | First fitting choices |
+| List | Models (in order) |
 |---|---|
-| Go Builder | GLM-5.2 → GLM-5.3-Flash → Qwen3.7 Plus → Claude Haiku 5.5 → GPT 6 Luna |
-| Plus Builder | GLM-5.2 → GLM-5.3 → DeepSeek V4 Pro → Qwen3.8 Max → GLM-5.3-Flash |
-| Go Inspector | Hy4 preview → Claude Haiku 5.5 → GPT 6 Luna → GPT 5.6 Luna → GLM-5.2 |
-| Plus Inspector | Hy4 preview → Qwen3.8 Max → Kimi K3 → Claude Haiku 5.5 → GPT 6 Luna |
+| BUILDER_PRECEDENCE | DeepSeek V4 Pro → GLM-5.3-Flash → GLM-5.2 → DeepSeek V4.1 Flash → MiMo-V2.6-Flash |
+| INSPECTOR_PRECEDENCE | Hy4 preview → GPT 5.6 Luna → Kimi K3 → Qwen3.8 Max → Hy3 |
+| PREMIUM_BUILDER_MODELS | GLM-5.3 |
+| OPENROUTER_BUILDER_PRECEDENCE | GLM-5.3-Flash |
+| OPENROUTER_INSPECTOR_PRECEDENCE | GLM-5.3-Flash → DeepSeek V4.1 Flash |
 
-All other eligible candidates follow dynamically. Known provider errors remove
+Under high pressure the conserve mode may reorder within these lists as
+described above; it never selects outside them. Known provider errors remove
 that exact provider/model temporarily; account exhaustion removes paid Go as a
 class. Appropriate free models can follow paid Go when explicitly enabled;
 `--allow-free` accepts their lower provisional tier for suitable simple work,
 but `--min-quality 4|5` prevents that downgrade. OpenRouter follows only with
-existing spending authorization, using GLM 5.3 Flash or DeepSeek V4.1 Flash.
-Waiting for a reset remains preferable when free work is unsuitable and no paid
-fallback is authorized.
+existing spending authorization, using its own precedence lists and skipping
+any model from the Builder's family. Waiting for a reset remains preferable
+when free work is unsuitable and no paid fallback is authorized.
 
 ### Privacy, context and uncertain estimates
 
@@ -253,42 +279,13 @@ These tables replace the earlier inconsistent request estimates. Dollar caps
 and prices were transcribed from the current official source; all request/token
 counts here are calculated from the stated common profile. Subjective quality
 tiers are provisional repository planning judgments, not provider benchmarks.
-The earlier uploaded screenshots were not available for reinspection here;
-the current repository and official documentation were used.
 
 ## Operational commands and dispatch contract
 
-## Observed billing samples
-
-The selector has a small, versioned, cost-only sample set from the user's
-usage data. Because the supplied records did not identify an agent role, the
-current entries are a **provisional Builder baseline only**. It uses a sample
-only at 10 or more requests; a dollar-only sample does not establish a token or
-cache profile. The Inspector map is deliberately empty and continues to use a
-cold-cache profile until role-specific measurements are supplied.
-
-| Model | Requests | Observed USD/request | Go 5-hour allowance consumed/request | Selector use |
-|---|---:|---:|---:|---|
-| Claude Haiku 5.5 | 44 | $0.0689 | 2.295% | Builder observed cost |
-| DeepSeek V4 Pro | 66 | $0.0068 | 0.227% | Builder observed cost |
-| GLM-5.3 | 12 | $0.0375 | 1.250% | Builder observed cost |
-| Hy4 Preview | 50 | $0.0076 | 0.127% | Builder observed cost |
-| GLM-5.2 | 1 | $0.0600 | 0.500% | Profile estimate only; insufficient sample |
-
-These rows explain why DeepSeek V4 Pro can be viable for a Builder despite a
-conservative generic profile. The figures are not assumed to be stable across
-roles, task size, cache state, or peak pricing. Update the bundled sample only
-from an attributable billing export with request count and measured cost. Load
-role-specific measurements via `--observed` with separate `builder` and
-`inspector` objects, each mapping a canonical model name to
-`{\"requests\": N, \"usd_per_request\": C}`.
-
-## Builder reserve and Inspector capacity
-
-The Builder has a 15% reserve in each paid-Go meter; this protects the next
-independent review. Inspector has a separate 2% estimation margin and can use
-the Builder's reserved capacity. The selector rejects every model that cannot
-finish the declared next batch across rolling, weekly, and monthly windows;
+The Builder reserves 15 percentage points in each paid-Go meter; this protects
+the next independent review. Inspector keeps a separate 2-percentage-point
+margin and can use the Builder's reserved capacity. The selector rejects every
+candidate whose planned batch cannot fit all three windows after the reserve;
 it returns exit 2 rather than selecting a partial-run candidate. Free models
 are Builder-only and require explicit `--allow-free --allow-low-quality-free`.
 
@@ -298,8 +295,8 @@ Use either skill's scripts from the repo root. Explicitly set the active plan:
 python .github/skills/goal/scripts/opencode_usage.py --plan go-plus --record --log
 python .github/skills/goal/scripts/opencode_usage.py --catalog --plan go-plus
 python .github/skills/goal/scripts/opencode_usage.py --model "Kimi K3" --plan go --profile 68000 0 2000 0
-python .github/skills/goal/scripts/select_model.py --plan go-plus --role builder --available <run>/available-models.json --prepare goal
-python .github/skills/goal/scripts/select_model.py --plan go-plus --role inspector --available <run>/available-models.json --builder-model "<actual Builder model>" --profile 68000 0 2000 0 --target 20 --prepare goal
+python .github/skills/goal/scripts/select_model.py --plan go-plus --role builder --available <run>/available-models.json --expected-requests 200 --prepare goal
+python .github/skills/goal/scripts/select_model.py --plan go-plus --role inspector --available <run>/available-models.json --builder-model "<actual Builder model>" --profile 68000 0 2000 0 --expected-requests 20 --prepare goal
 ```
 
 The inventory file is a JSON list of exact model labels actually exposed by the

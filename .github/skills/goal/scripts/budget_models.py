@@ -779,6 +779,37 @@ CATALOG = json.loads(r'''{
 }''')
 EXCLUDED = {"Kimi K2.6", "Kimi K2.7 Code"}
 
+# Authoritative baseline preferences per role. Canonical CATALOG names.
+# Quality ratings in CATALOG serve a different purpose and never replace these.
+BUILDER_PRECEDENCE = (
+    "DeepSeek V4 Pro",
+    "GLM-5.3-Flash",
+    "GLM-5.2",
+    "DeepSeek V4.1 Flash",
+    "MiMo-V2.6-Flash",
+)
+
+INSPECTOR_PRECEDENCE = (
+    "Hy4 preview",
+    "GPT 5.6 Luna",
+    "Kimi K3",
+    "Qwen3.8 Max",
+    "Hy3",
+)
+
+PREMIUM_BUILDER_MODELS = (
+    "GLM-5.3",
+)
+
+OPENROUTER_BUILDER_PRECEDENCE = (
+    "GLM-5.3-Flash",
+)
+
+OPENROUTER_INSPECTOR_PRECEDENCE = (
+    "GLM-5.3-Flash",
+    "DeepSeek V4.1 Flash",
+)
+
 
 def canonical(label: str) -> str:
     text = label.lower().replace("(new)", "")

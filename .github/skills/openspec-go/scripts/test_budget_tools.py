@@ -1,4 +1,4 @@
-"""Offline regression tests; no network, credentials or production tracker writes."""
+﻿"""Offline regression tests; no network, credentials or production tracker writes."""
 import contextlib
 import io
 import json
@@ -43,12 +43,13 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(e["windows"]["rolling"]["tokens"],41*70000)
 
     def test_profile_estimate_is_the_only_cost_source(self):
-        labels=["DeepSeek V4 Pro (opencodego)","GLM-5.2 (opencodego)"]
-        result=s.rank_models(healthy(),"go","builder",labels,empty(),target=200)
+        labels=["DeepSeek V4.1 Flash (opencodego)","GLM-5.2 (opencodego)"]
+        result=s.rank_models(healthy(),"go","builder",labels,empty(),expected_requests=200)
         self.assertEqual(result["selected"]["canonical"],"GLM-5.2")
         self.assertEqual(result["selected"]["usd_per_request"],
             b.estimate("GLM-5.2","go")["cost_usd"])
-        self.assertIn("DeepSeek V4 Pro",[m["canonical"] for m in result["infeasible_candidates"]])
+        self.assertEqual([m["canonical"] for m in result["ranked"]],
+            ["GLM-5.2","DeepSeek V4.1 Flash"])
         for item in result["ranked"]:
             self.assertNotIn("cost_source",item)
             self.assertNotIn("observed_requests",item)
@@ -56,17 +57,26 @@ class BudgetTests(unittest.TestCase):
     def test_builder_reserves_inspector_capacity_but_inspector_can_use_it(self):
         usage=healthy(85)
         labels=["Hy4 preview (opencodego)"]
-        builder=s.rank_models(usage,"go","builder",labels,empty(),target=1)
-        inspector=s.rank_models(usage,"go","inspector",labels,empty(),builder="GLM-5.2",target=1)
+        builder=s.rank_models(usage,"go","builder",labels,empty(),expected_requests=1)
+        inspector=s.rank_models(usage,"go","inspector",labels,empty(),builder="GLM-5.2",expected_requests=1)
         self.assertIsNone(builder["selected"])
         self.assertIsNotNone(inspector["selected"])
-        self.assertEqual(builder["reserve_fraction"],.15)
-        self.assertEqual(inspector["reserve_fraction"],.02)
+        self.assertEqual(builder["reserve_pp"],15.0)
+        self.assertEqual(inspector["reserve_pp"],2.0)
 
     def test_no_selection_when_no_model_can_finish_batch(self):
-        result=s.rank_models(healthy(),"go","builder",["GLM-5.3 (opencodego)"],empty(),target=10000)
+        result=s.rank_models(healthy(),"go","builder",["GLM-5.2 (opencodego)"],empty(),expected_requests=10000)
         self.assertIsNone(result["selected"])
-        self.assertTrue(result["infeasible_candidates"])
+        self.assertEqual(result["rejected"][0]["reason"],"planned batch exceeds reserved allowance in a window")
+
+    def test_single_request_default_and_check_scope(self):
+        result=s.rank_models(healthy(),"go","builder",["GLM-5.2 (opencodego)"],empty())
+        self.assertEqual(result["expected_requests"],1)
+        self.assertEqual(result["check_scope"],"single-request feasibility estimate")
+        batch=s.rank_models(healthy(),"go","builder",["GLM-5.2 (opencodego)"],empty(),expected_requests=50)
+        self.assertEqual(batch["check_scope"],"estimated multi-request batch")
+        with self.assertRaises(ValueError):
+            s.rank_models(healthy(),"go","builder",["GLM-5.2 (opencodego)"],empty(),expected_requests=0)
 
     def test_context_peak_and_cache_write_prices(self):
         self.assertEqual(b.prices("Claude Haiku 5.5",100000)[0],.1)
@@ -82,19 +92,38 @@ class BudgetTests(unittest.TestCase):
             self.assertIsNotNone(t.blocked(empty(),name))
         self.assertEqual(b.canonical("DeepSeek V4 Pro (New) (opencodego)"),"DeepSeek V4 Pro")
 
-    def test_quality_then_efficiency_for_sustainable_batch(self):
-        r=s.rank_models(healthy(),"go","builder",
-            ["GLM-5.3 (opencodego)","GLM-5.2 (opencodego)","GLM-5.3-Flash (opencodego)"],
-            empty(),target=50)
-        self.assertEqual(r["selected"]["canonical"],"GLM-5.2")
-        self.assertTrue(r["selected"]["fits_target"])
+    def test_precedence_order_and_dynamic_rerank(self):
+        names=["GLM-5.2 (opencodego)","GLM-5.3-Flash (opencodego)","DeepSeek V4 Pro (opencodego)"]
+        r=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=50)
+        self.assertEqual(r["selected"]["canonical"],"DeepSeek V4 Pro")
+        self.assertEqual([m["canonical"] for m in r["ranked"]],
+            ["DeepSeek V4 Pro","GLM-5.3-Flash","GLM-5.2"])
 
     def test_pressure_changes_choice_before_exhaustion(self):
-        names=["GLM-5.2 (opencodego)","GLM-5.3-Flash (opencodego)"]
-        low=s.rank_models(healthy(),"go","builder",names,empty(),target=50)
-        high=s.rank_models(healthy(75),"go","builder",names,empty(),target=50)
-        self.assertEqual(low["selected"]["canonical"],"GLM-5.2")
+        names=["DeepSeek V4 Pro (opencodego)","GLM-5.3-Flash (opencodego)"]
+        low=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=50)
+        high=s.rank_models(healthy(75),"go","builder",names,empty(),expected_requests=50)
+        self.assertEqual(low["selected"]["canonical"],"DeepSeek V4 Pro")
         self.assertEqual(high["selected"]["canonical"],"GLM-5.3-Flash")
+
+    def test_models_outside_precedence_rejected(self):
+        r=s.rank_models(healthy(),"go","builder",["GLM-5.3 (opencodego)"],empty(),expected_requests=50)
+        self.assertIsNone(r["selected"])
+        self.assertEqual(r["rejected"][0]["reason"],"outside curated role precedence")
+
+    def test_premium_requires_explicit_opt_in_and_goes_first(self):
+        names=["GLM-5.3-Flash (opencodego)","GLM-5.3 (opencodego)"]
+        base=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=50)
+        self.assertEqual(base["selected"]["canonical"],"GLM-5.3-Flash")
+        r=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=50,allow_premium=True)
+        self.assertEqual(r["selected"]["canonical"],"GLM-5.3")
+
+    def test_inspector_default_min_quality_four_blocks_hy3(self):
+        r=s.rank_models(healthy(),"go","inspector",["Hy3 (opencodego)"],empty(),builder="GLM-5.2")
+        self.assertIsNone(r["selected"])
+        self.assertEqual(r["rejected"][0]["reason"],"below required subjective quality tier")
+        self.assertIsNotNone(s.rank_models(healthy(),"go","inspector",["Hy3 (opencodego)"],
+            empty(),builder="GLM-5.2",min_quality=3)["selected"])
 
     def test_weekly_and_monthly_constrain_selection(self):
         for window in ("weekly","monthly"):
@@ -105,20 +134,23 @@ class BudgetTests(unittest.TestCase):
     def test_kimi3_eligible_but_excluded_versions_never_selected(self):
         r=s.rank_models(healthy(),"go","inspector",
             ["Kimi K2.6 (opencodego)","Kimi K2.7 Code (opencodego)","Kimi K3 (opencodego)"],
-            empty(),builder="GLM-5.2",target=10)
+            empty(),builder="GLM-5.2",expected_requests=10)
         self.assertEqual(r["selected"]["canonical"],"Kimi K3")
         self.assertEqual(len(r["rejected"]),2)
 
     def test_independent_inspector_family(self):
-        r=s.rank_models(healthy(),"go","inspector",["GLM-5.3 (opencodego)","Hy4 preview (opencodego)"],
-            empty(),builder="GLM-5.2")
+        r=s.rank_models(healthy(),"go","inspector",["Kimi K3 (opencodego)","Hy4 preview (opencodego)"],
+            empty(),builder="Kimi K2.7 Code")
         self.assertEqual(r["selected"]["canonical"],"Hy4 preview")
         self.assertEqual(r["rejected"][0]["reason"],"same family as Builder")
 
     def test_training_requires_opt_in(self):
         labels=["Muse Spark 1.3 Contributor (opencodego)"]
         self.assertIsNone(s.rank_models(healthy(),"go","builder",labels,empty())["selected"])
-        self.assertIsNotNone(s.rank_models(healthy(),"go","builder",labels,empty(),allow_training=True)["selected"])
+        # Muse Contributor models are outside curated precedence regardless of consent.
+        r=s.rank_models(healthy(),"go","builder",labels,empty(),allow_training=True)
+        self.assertIsNone(r["selected"])
+        self.assertEqual(r["rejected"][0]["reason"],"outside curated role precedence")
 
     def test_openrouter_last_and_paid_go_block_does_not_block_it(self):
         labels=["Z.ai: GLM 5.3 Flash (openrouter)","GLM-5.2 (opencodego)"]

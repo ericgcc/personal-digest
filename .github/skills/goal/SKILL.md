@@ -44,11 +44,29 @@ Use [assets/model-catalog.md](assets/model-catalog.md) for the full allowance,
 pricing, estimate, privacy and selection reference. The executable policy is
 `scripts/select_model.py`. This section governs every Builder/Inspector dispatch.
 
-Kimi K2.6 and Kimi K2.7 Code are **excluded from all agent dispatch**, including
-OpenRouter aliases, because the workspace's tool schemas are incompatible.
-Kimi K3 remains an eligible Inspector; its Go cap is $15/month ($3/5h).
-Do not promote it merely because it is newer: compare its estimated consumption
-with the current brief, plan and shared headroom.
+Selection is restricted to the **curated precedence lists** in
+`budget_models.py` (`BUILDER_PRECEDENCE`, `INSPECTOR_PRECEDENCE`, plus the
+`OPENROUTER_*_PRECEDENCE` lists for OpenRouter labels). These are the
+authoritative baseline preferences; subjective quality ratings in the catalog
+serve a different purpose and never replace them. Within the eligible set the
+selector dynamically reranks by estimated normalized allowance consumption and
+current account usage. Models outside the curated lists are never selected in
+normal automatic selection.
+
+Default minimum quality is **3 for Builder** and **4 for Inspector**; pass
+`--min-quality 5` for demanding work. Hy3 sits below the default Inspector
+minimum and is only selectable when a lower minimum is explicitly requested.
+Kimi K2.6 and Kimi K2.7 Code remain excluded from all dispatch, including
+OpenRouter aliases. Kimi K3 stays eligible for Inspector subject to
+availability, compatibility and budget checks; no live Copilot integration
+test is assumed. Muse Contributor models stay disabled unless training-data
+consent and regional eligibility are explicitly established.
+
+**Premium escalation** (`--allow-premium`, default off) places
+`PREMIUM_BUILDER_MODELS` ahead of the normal Builder precedence when explicitly
+enabled, then applies the same budget checks and dynamic ranking. It is an
+explicit run-level decision — never triggered automatically because a cheaper
+model was unavailable.
 
 ### Budget and independence
 

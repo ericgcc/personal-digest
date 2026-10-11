@@ -37,9 +37,9 @@ __pycache__/
 
 # OpenSpec-generated agent customization, reconstructed with `openspec update`.
 # The openspec/ directory (specs, changes, archive) IS tracked; only the generated
-# skills/prompts/instructions are derived. openspec-go is hand-maintained and tracked.
-.github/prompts/
-.github/instructions/
+# skills and prompts are derived. Tracked exceptions: the hand-maintained
+# openspec-go skill, .github/instructions/, and any other non-opsx content.
+.github/prompts/opsx-*.prompt.md
 .github/skills/openspec-apply-change/
 .github/skills/openspec-archive-change/
 .github/skills/openspec-explore/

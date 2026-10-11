@@ -59,17 +59,9 @@ with the current brief, plan and shared headroom.
   region and privacy constraints before selection; never invent provider labels.
 - Supply estimated uncached input, cached read, output and cache-write tokens
   **per API request**, and expected request count for the next brief. Defaults
-  are a comparison scenario (8K/60K/2K/0, 200 requests). The bundled observed
-  costs are a provisional **Builder-only** baseline and are used only after at
-  least 10 requests: DeepSeek V4 Pro (66 at
-  $0.0068), Hy4 (50 at $0.0076), Claude Haiku 5.5 (44 at $0.0689), and
-  GLM-5.3 (12 at $0.0375). GLM-5.2's one $0.0600 sample remains insufficient,
-  so it uses the conservative profile estimate. Refresh these samples from
-  actual billing exports; do not infer tokens from a dollar-only sample. The
-  Inspector observed-cost map is deliberately empty: use the cold profile until
-  a role-keyed JSON file is supplied with `--observed`. Its shape is
-  `{\"builder\": {\"Model\": {\"requests\": 10, \"usd_per_request\": 0.01}},
-  \"inspector\": {...}}`; do not apply Builder samples to an Inspector.
+  are a comparison scenario (8K/60K/2K/0, 200 requests). Predicted request
+  costs come only from `budget_models.estimate()` over the published catalog
+  prices; no historical billing numbers from past sessions are used as inputs.
   For a fresh Inspector start with a cold-cache estimate such as 68K/0/2K/0;
   do not copy Builder cache assumptions or session state.
 - Builder preserves a 15% verification reserve; Inspector has a 2% safety

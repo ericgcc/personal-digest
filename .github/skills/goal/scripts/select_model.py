@@ -8,39 +8,16 @@ import re
 import sys
 from pathlib import Path
 from budget_models import (
-    CATALOG, EXCLUDED, OBSERVED_COSTS, OBSERVED_MIN_REQUESTS, PROFILE, WINDOWS,
-    canonical, provider, estimate,
+    CATALOG, EXCLUDED, PROFILE, WINDOWS, canonical, provider, estimate,
 )
 from model_tracker import DEFAULT_TRACKER_PATH, blocked, load_tracker, now, save_tracker, sync_usage
 from opencode_usage import fetch_usage, load_api_key, snapshot_from_file, validate_usage
 
 
-def load_observed(path):
-    """Load role-keyed measured costs without accepting ambiguous records."""
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise ValueError("observed costs must be a JSON object keyed by builder/inspector")
-    for role in ("builder", "inspector"):
-        if role in data and not isinstance(data[role], dict):
-            raise ValueError(f"observed costs {role} must be an object")
-    return data
-
-
-def observed_cost(name, observed, role):
-    samples = observed.get(role, {})
-    sample = samples.get(canonical(name))
-    if not isinstance(sample, dict):
-        return None
-    count, cost = sample.get("requests"), sample.get("usd_per_request")
-    if isinstance(count, int) and count >= OBSERVED_MIN_REQUESTS and isinstance(cost, (int, float)) and cost > 0:
-        return {"usd_per_request": float(cost), "requests": count}
-    return None
-
-
 def rank_models(usage, plan, role, available, tracker, profile=PROFILE, target=200,
                 reserve=None, builder="", allow_training=False, allow_free=False,
                 allow_low_quality_free=False, allow_openrouter=False, off_peak=False,
-                min_quality=3, observed=None):
+                min_quality=3):
     validate_usage({"usage":usage})
     if role not in ("builder","inspector") or plan not in ("go","go-plus"):
         raise ValueError("invalid role/plan")
@@ -52,7 +29,6 @@ def rank_models(usage, plan, role, available, tracker, profile=PROFILE, target=2
     if role == "inspector" and builder != "none" and canonical(builder) not in CATALOG:
         raise ValueError("Inspector requires actual Builder model; use 'none' only for Inspector-only runs")
     builder_family = CATALOG.get(canonical(builder),{}).get("family")
-    observed = OBSERVED_COSTS if observed is None else observed
     candidates, rejected, free, paid = [], [], [], []
     for label in available:
         name = canonical(label)
@@ -82,15 +58,13 @@ def rank_models(usage, plan, role, available, tracker, profile=PROFILE, target=2
         if any(usage[w]["status"]=="rate-limited" or usage[w]["percent"]>=100 for w in WINDOWS):
             rejected.append({"model":label,"reason":"paid-Go account exhausted"}); continue
         e = estimate(name,plan,profile,off_peak)
-        sample = observed_cost(name, observed, role)
-        cost = sample["usd_per_request"] if sample else e["cost_usd"]
+        cost = e["cost_usd"]
         headroom = {w:max(0,1-usage[w]["percent"]/100-reserve) for w in WINDOWS}
         remaining = {w:math.floor(headroom[w]*e["windows"][w]["usd"]/cost) for w in WINDOWS}
         if min(remaining.values()) < 1:
             rejected.append({"model":label,"reason":"reserved allowance leaves no estimated request"}); continue
         candidates.append({"model":label,"canonical":name,"provider":"go","quality":quality,
-            "usd_per_request":cost,"cost_source":"observed" if sample else "profile",
-            "observed_requests":sample["requests"] if sample else None,
+            "usd_per_request":cost,
             "remaining_requests":remaining,
             "fits_target":min(remaining.values())>=target,
             "rolling_burn_fraction":cost/e["windows"]["rolling"]["usd"],
@@ -153,7 +127,6 @@ def main(argv=None):
     p.add_argument("--reserve",type=float,default=None,help="Builder default .15; Inspector safety margin .02")
     p.add_argument("--profile",nargs=4,type=int,default=PROFILE)
     p.add_argument("--off-peak",action="store_true")
-    p.add_argument("--observed",type=Path,help="role-keyed JSON measured costs; replaces bundled samples")
     p.add_argument("--min-quality",type=int,choices=(3,4,5),default=3)
     p.add_argument("--allow-training",action="store_true")
     p.add_argument("--allow-free",action="store_true")
@@ -175,10 +148,9 @@ def main(argv=None):
         save_tracker(args.tracker,tracker)
         # Validate profile even if all candidates are rejected.
         estimate("GLM-5.2",args.plan,args.profile,args.off_peak)
-        observed=load_observed(args.observed) if args.observed else OBSERVED_COSTS
         result=rank_models(usage,args.plan,args.role,json.loads(args.available.read_text(encoding="utf-8")),
             tracker,args.profile,args.target,args.reserve,args.builder_model,args.allow_training,
-            args.allow_free,args.allow_low_quality_free,args.allow_openrouter,args.off_peak,args.min_quality,observed)
+            args.allow_free,args.allow_low_quality_free,args.allow_openrouter,args.off_peak,args.min_quality)
         if args.prepare and result["selected"]:
             root=Path(__file__).resolve().parents[4]
             template = (root/".github/agents"/f"goal-{args.role}.agent.md" if args.prepare=="goal"

@@ -42,21 +42,16 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(e["windows"]["rolling"]["requests"],41)
         self.assertEqual(e["windows"]["rolling"]["tokens"],41*70000)
 
-    def test_observed_cost_is_used_only_after_sufficient_samples(self):
+    def test_profile_estimate_is_the_only_cost_source(self):
         labels=["DeepSeek V4 Pro (opencodego)","GLM-5.2 (opencodego)"]
         result=s.rank_models(healthy(),"go","builder",labels,empty(),target=200)
-        self.assertEqual(result["selected"]["canonical"],"DeepSeek V4 Pro")
-        self.assertEqual(result["selected"]["cost_source"],"observed")
-        self.assertEqual(result["selected"]["usd_per_request"],.0068)
-        glm=next(item for item in result["ranked"] if item["canonical"]=="GLM-5.2")
-        self.assertEqual(glm["cost_source"],"profile")
-
-    def test_observed_costs_are_role_scoped(self):
-        labels=["DeepSeek V4 Pro (opencodego)"]
-        builder=s.rank_models(healthy(),"go","builder",labels,empty(),target=20)
-        inspector=s.rank_models(healthy(),"go","inspector",labels,empty(),builder="GLM-5.2",target=20)
-        self.assertEqual(builder["selected"]["cost_source"],"observed")
-        self.assertEqual(inspector["selected"]["cost_source"],"profile")
+        self.assertEqual(result["selected"]["canonical"],"GLM-5.2")
+        self.assertEqual(result["selected"]["usd_per_request"],
+            b.estimate("GLM-5.2","go")["cost_usd"])
+        self.assertIn("DeepSeek V4 Pro",[m["canonical"] for m in result["infeasible_candidates"]])
+        for item in result["ranked"]:
+            self.assertNotIn("cost_source",item)
+            self.assertNotIn("observed_requests",item)
 
     def test_builder_reserves_inspector_capacity_but_inspector_can_use_it(self):
         usage=healthy(85)

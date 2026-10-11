@@ -54,14 +54,20 @@
     },
     {
       "path": "styles/synthesis-max/stages/reader-review.md",
-      "bytes": 1121,
-      "sha256": "7dd16c446f13401284bb2bd8fcc1c7554a646c9b304c7066b2a68c539134edff",
+      "bytes": 947,
+      "sha256": "4c38411b6fb59ca6e260af1bd59073536d03e355f18226e3ae3a08c16b7ee22e",
+      "owner": "review"
+    },
+    {
+      "path": "editorial/shared/naturalness.md",
+      "bytes": 3944,
+      "sha256": "2a4cdf558760a868514772d7f02da536e03bbbcbbc877fdff89edbed096cecd0",
       "owner": "review"
     },
     {
       "path": "editorial/stages/reader-review.md",
-      "bytes": 3879,
-      "sha256": "2a1a9a13ba961058780914bfb2efa9f6a0b7cbd95964278155c180aa73d5f86d",
+      "bytes": 2512,
+      "sha256": "1a65f27ed391af16a6abcc13b9737e23435c5bd5574c9c8f91a4f937c7f6e4fc",
       "owner": "role"
     },
     {
@@ -74,7 +80,7 @@
   "blocks": [
     {
       "tag": "evaluation_input",
-      "bytes": 21818,
+      "bytes": 24223,
       "purpose": "combined judge prompt",
       "source": {
         "kind": "evaluation-adapter",

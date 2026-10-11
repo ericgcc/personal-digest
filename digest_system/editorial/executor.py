@@ -45,7 +45,7 @@ from .prompts.convention_context import (
     assemble_convention_contracts,
     assemble_convention_documents,
 )
-from .stages import PIPELINE_ID, VALIDATION_ATTEMPTS, stage_names_v2
+from .stages import PIPELINE_ID, VALIDATION_ATTEMPTS, stage_names_v2, stage_v2
 from .validation.copy_verify import (
     catalog_required,
     narrative_evidence_numbers,
@@ -987,12 +987,22 @@ def _require_artifact(context: RunContext, name: str) -> Artifact:
 
 
 def _last_valid_artifact(context: RunContext, stage: Any) -> dict[str, Any] | None:
+    """The most recent earlier artifact this stage can stand in for.
+
+    The candidate must have the same artifact format as the failed stage: a Markdown stage
+    degrades to the last Markdown artifact (the prose), never to a JSON diagnosis, and a JSON
+    stage degrades to the last JSON artifact. Without the format match, a failed Writer
+    Revision would carry the developmental review's JSON forward as if it were prose.
+    """
     names = stage_names_v2()
     index = names.index(stage.name)
     for position in range(index - 1, -1, -1):
         candidate = context.artifacts.get(names[position])
-        if candidate is not None:
-            return {"artifact": candidate, "stage": names[position]}
+        if candidate is None:
+            continue
+        if stage_v2(names[position]).format != stage.format:
+            continue
+        return {"artifact": candidate, "stage": names[position]}
     return None
 
 

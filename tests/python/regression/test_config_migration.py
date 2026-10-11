@@ -389,9 +389,82 @@ def test_cost_arithmetic_matches_the_reference():
     assert cost_for_band("peak", {"hit": 1000, "miss": 20000, "output": 4000}) == expected["cost_for_band"]["peak"]
 
 
-def test_run_summary_matches_the_reference():
-    from tests.python.unit.test_editorial_parity import _frozen_stages
+def _frozen_stages():
+    """The two-stage attempt record the frozen reference's run summary was built from."""
+    return [
+        {
+            "name": "analyze",
+            "startedAt": "2026-09-20T02:00:00.000Z",
+            "completedAt": "2026-09-20T02:05:00.000Z",
+            "seconds": 300,
+            "model_seconds": 300,
+            "attempt_count": 1,
+            "hit": 1000,
+            "miss": 20000,
+            "output": 4000,
+            "reasoning": 1500,
+            "provenance": "runner",
+            "attempts": [
+                {
+                    "attempt": 1,
+                    "completed": True,
+                    "started_at": "2026-09-20T02:00:00.000Z",
+                    "completed_at": "2026-09-20T02:05:00.000Z",
+                    "seconds": 300,
+                    "cache_hit_tokens": 1000,
+                    "cache_miss_tokens": 20000,
+                    "output_tokens": 4000,
+                    "reasoning_tokens": 1500,
+                    "finish_reason": "stop",
+                    "validation_correction": False,
+                }
+            ],
+        },
+        {
+            "name": "frame",
+            "startedAt": "2026-09-20T02:05:00.000Z",
+            "completedAt": "2026-09-20T02:12:00.000Z",
+            "seconds": 420,
+            "model_seconds": 400,
+            "attempt_count": 2,
+            "hit": 2000,
+            "miss": 30000,
+            "output": 6000,
+            "reasoning": 2500,
+            "provenance": "runner",
+            "attempts": [
+                {
+                    "attempt": 1,
+                    "completed": True,
+                    "started_at": "2026-09-20T02:05:00.000Z",
+                    "completed_at": "2026-09-20T02:09:00.000Z",
+                    "seconds": 240,
+                    "cache_hit_tokens": 1000,
+                    "cache_miss_tokens": 15000,
+                    "output_tokens": 3000,
+                    "reasoning_tokens": 1200,
+                    "finish_reason": "stop",
+                    "validation_correction": False,
+                },
+                {
+                    "attempt": 2,
+                    "completed": True,
+                    "started_at": "2026-09-20T02:09:00.000Z",
+                    "completed_at": "2026-09-20T02:12:00.000Z",
+                    "seconds": 160,
+                    "cache_hit_tokens": 1000,
+                    "cache_miss_tokens": 15000,
+                    "output_tokens": 3000,
+                    "reasoning_tokens": 1300,
+                    "finish_reason": "stop",
+                    "validation_correction": True,
+                },
+            ],
+        },
+    ]
 
+
+def test_run_summary_matches_the_reference():
     from digest_system.runtime.reporting import build_run_summary, format_cost_summary
 
     expected = reference()["cost_arithmetic"]

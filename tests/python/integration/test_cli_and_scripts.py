@@ -139,7 +139,8 @@ def test_measure_context_runs_offline_and_reports_every_profile():
     ]
     for row in payload["profiles"]:
         assert row["total_bytes"] > 0
-        assert len(row["stages"]) == 10
+        # Copy Edit was retired: the active pipeline has nine stages.
+        assert len(row["stages"]) == 9
 
 
 def test_measure_context_matches_the_frozen_reference():

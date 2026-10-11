@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
-  "approved_candidate_sha256": "320cedfffd3c269fcedd216529d9a060cc5064c4d17333184ea5e4b559713214",
+  "approved_candidate_sha256": "5e9a45322d1d32f0a3430f42afd1e6f5bd39230d83b6b36bc2cdd8e40405cbd8",
   "categories": [
     "packaging-only",
     "deduplication-without-semantic-loss",
@@ -732,6 +732,14 @@
       "block": "system/contracts/frame.md",
       "category": "behavioral-change",
       "justification": "The abstract budget description was replaced by the exact field names the deterministic validator reads. The arithmetic obligations are unchanged; only their schema naming is now explicit."
+    },
+    {
+      "profile": "*",
+      "stage": "*",
+      "kind": "*",
+      "block": "editorial/shared/naturalness.md",
+      "category": "behavioral-change",
+      "justification": "Copy Edit was retired after controlled replay evaluations: its prose-quality duties moved to Writer Revision, which now applies the naturalness contract during its final prose pass, and Reader Review checks for remaining reader-facing defects absolutely. The contract text was rewritten to name the owning stages instead of COPY EDIT and to state the concision invariant inline. Approved by the copy-edit retirement."
     }
   ]
 }

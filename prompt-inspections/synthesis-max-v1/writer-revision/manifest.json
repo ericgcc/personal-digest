@@ -21,16 +21,22 @@
   "documents": [
     {
       "path": "editorial/stages/writer-revision.md",
-      "bytes": 5722,
-      "sha256": "3d8494ba1a4653dee10cb2f16f99d163c387fd449521cbebb533fe01e8db79ed",
+      "bytes": 7456,
+      "sha256": "06aa9f04c0cc2ddaa53f4b2ec0dca82069edb1ad0b949c1af4f1cd6c955d56eb",
       "owner": "shared stage contract"
+    },
+    {
+      "path": "editorial/shared/naturalness.md",
+      "bytes": 3944,
+      "sha256": "2a4cdf558760a868514772d7f02da536e03bbbcbbc877fdff89edbed096cecd0",
+      "owner": "shared cross-cutting contract"
     }
   ],
   "instructions": [
     {
       "path": "styles/synthesis-max/stages/writer-revision.md",
-      "bytes": 1428,
-      "sha256": "e3ec79c36b0ea14977f96c79db724a28f352f43291d47d337a7de76950010208",
+      "bytes": 1999,
+      "sha256": "e82c87369263059a4cbfd97cd62deccb9d6ba666bde7d5fea8a046e45210af61",
       "owner": "style-specific stage specialization"
     }
   ],
@@ -130,6 +136,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 7842,
+  "system_bytes": 14201,
   "user_bytes": 6205
 }

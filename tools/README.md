@@ -18,7 +18,7 @@ One pipeline is active: `editorial-pipeline-v2`.
 
 ```text
 analyze → frame → draft → developmental-review (+wops) → writer-revision
-        → line-edit → reader-review → [targeted-repair] → copy-verify → render
+        → reader-review → [targeted-repair] → publication-verify → render
 ```
 
 The retired v1 pipeline is preserved only as static stage metadata in
@@ -50,12 +50,12 @@ from `styles/<style>/stages/`. Profiles under `prompts/profiles/` select executi
 
 | Profile | Style | Status | Notes |
 | --- | --- | --- | --- |
-| `<style>-legacy` | all four | active | Compatibility profile name for the style's established execution policy. |
-| `synthesis-max-v1` | `synthesis-max` | active | Uses strict frame failure behavior with the Synthesis MAX convention-resolved instructions and constraints. |
+| `synthesis-max-v1` | `synthesis-max` | active | Strict frame failure behavior with the Synthesis MAX convention-resolved instructions and constraints. |
+| `curated-discovery-v1` | `curated-discovery` | unavailable | Pending a rebuild against the current architecture; rejected before any run directory is created. |
 
 The profile declares **`frame_failure_policy`** — `fail` (stop the run) or `recovery-frame`
-(derive the documented recovery frame and continue degraded). `synthesis-max-v1` fails; every
-legacy profile recovers.
+(derive the documented recovery frame and continue degraded). `synthesis-max-v1` fails;
+`curated-discovery-v1` recovers.
 
 Composition constraints, evaluation settings, and rendering settings are owned by
 `styles/<style>/style.yaml`. The same values are rendered into model prompts when the model needs
@@ -101,15 +101,6 @@ Runtime instructions resolve by convention from `editorial/stages/`, `editorial/
 Markdown heading or routes archived style modules. Cross-style isolation is proven by
 `tests/python/integration/test_style_isolation.py`.
 
-### Maintaining archived style references
-
-The readable legacy style documents and their modules are non-runtime migration references:
-
-```powershell
-python scripts/build_style_docs.py            # split the document into modules + manifest
-python scripts/build_style_docs.py --check    # verify they have not drifted apart
-```
-
 Executable procedure lives in purpose-specific stage files. Declarative constraints live in
 `styles/<style>/style.yaml`.
 
@@ -121,8 +112,8 @@ The corpus block is tiered per stage rather than sent whole to every call:
 | --- | --- | --- |
 | `full` | The complete catalog-eligible corpus, unchanged | `analyze` |
 | `frame` | **Only the sources FRAME declared for each editorial unit** | `draft`, `writer-revision`, `targeted-repair` |
-| `provenance` | Per-source metadata only — number, title, author/publication, locators, reading time, outcome — with no article bodies | `copy-verify` |
-| `none` | No corpus block at all | `frame`, `developmental-review`, `line-edit`, `reader-review`, `render` |
+| `provenance` | Per-source metadata only — number, title, author/publication, locators, reading time, outcome — with no article bodies | `publication-verify` |
+| `none` | No corpus block at all | `frame`, `developmental-review`, `reader-review`, `render` |
 
 The projection is computed in `digest_system/editorial/evidence/projection.py`. FRAME is
 authoritative for what the draft may see; the projection is recorded in
@@ -187,17 +178,18 @@ python -m pytest        # tests/python (backend) and evaluation/tests (evaluator
 They need no API key, no network and no run directory. The suites:
 
 * `tests/python/unit/test_config_parity.py` — digest resolution, the profile registry, preflight.
-* `tests/python/unit/test_editorial_parity.py` — stage table, validators, evidence projection,
-  rendering values, cost arithmetic, and every instruction document reaching its stage.
+* `tests/python/unit/test_editorial_invariants.py` — instruction delivery (every resolved file
+  exists, is delivered once, and reaches its stage verbatim), the behavioral gate, and the live
+  validators (word allocation, copy-pass split, optional-repair decision).
 * `tests/python/integration/test_style_isolation.py` — the style-isolation guarantee, with a
   sensitivity control.
 * `tests/python/integration/test_pipeline_execution.py` — a full mocked run, degradation, resume,
   partial runs, attempt accounting.
 * `tests/python/integration/test_cli_and_scripts.py` — the CLI surface and every maintenance
   script.
-* `tests/python/regression/test_migration_checklist.py` — the Python migration's acceptance.
-* `tests/python/regression/test_phase2b_checklist.py` — this migration's acceptance, including the
-  claim that no instruction text changed silently.
+* `tests/python/regression/test_instruction_architecture.py` — the instruction architecture's
+  acceptance: the nine-stage topology, per-stage composition, and the behavioral gate.
+* `tests/python/regression/test_config_migration.py` — the config migration's acceptance.
 
 ## CLI commands
 

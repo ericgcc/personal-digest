@@ -179,7 +179,10 @@ def test_accessibility_obligations_are_stage_specific():
     assert "Introduce specialized terminology at the point of need" in draft
     assert "Missing orientation" in developmental
     assert "Final sentence-level editorial finish" in writer
-    assert "first-read comprehension" in reader
+    # Copy Edit was retired: Reader Review judges the revision absolutely on a first read,
+    # with no before/after comparison.
+    assert "First-read absolute synthesis" in reader
+    assert "no Copy Edit before/after comparison" in reader
     assert "Begin each thread" not in developmental
     assert "Begin each thread" not in reader
 

@@ -14,11 +14,12 @@
 
 ## Instruction documents
 
-- `editorial/stages/writer-revision.md` — 5722 chars; owner: shared stage contract; sha256 `3d8494ba1a46`
+- `editorial/stages/writer-revision.md` — 7456 chars; owner: shared stage contract; sha256 `06aa9f04c0cc`
+- `editorial/shared/naturalness.md` — 3944 chars; owner: shared cross-cutting contract; sha256 `2a4cdf558760`
 
 ## Style-supplied instructions
 
-- `styles/synthesis-max/stages/writer-revision.md` — 1428 chars; owner: style-specific stage specialization; sha256 `e3ec79c36b0e`
+- `styles/synthesis-max/stages/writer-revision.md` — 1999 chars; owner: style-specific stage specialization; sha256 `e82c87369263`
 
 ## Data blocks
 
@@ -30,5 +31,5 @@
 
 ## Sizes
 
-- System: 7842 units
+- System: 14201 units
 - User: 6205 units

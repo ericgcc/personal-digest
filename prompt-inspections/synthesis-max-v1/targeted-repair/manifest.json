@@ -21,8 +21,8 @@
   "documents": [
     {
       "path": "editorial/stages/targeted-repair.md",
-      "bytes": 2656,
-      "sha256": "344a956c7bb7e8f1e62886e7579dff8ab89e17c401cbc194b37c077ebfcfe2dd",
+      "bytes": 2704,
+      "sha256": "c288ee730927a06e5191cbf6822f8989a749f2e305f8fef1c66a3520a7668fbd",
       "owner": "shared stage contract"
     },
     {
@@ -98,8 +98,8 @@
       "tag": "previous_stage_artifact",
       "bytes": 332,
       "source": {
-        "stage": "copy-edit",
-        "path": ".digest-runs/synthetic/copy-edit/output/copy-edit.md",
+        "stage": "writer-revision",
+        "path": ".digest-runs/synthetic/writer-revision/output/writer-revision.md",
         "provenance": "runner"
       },
       "purpose": "prior artifact or digest reading instructions"
@@ -126,6 +126,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 7414,
+  "system_bytes": 7462,
   "user_bytes": 3877
 }

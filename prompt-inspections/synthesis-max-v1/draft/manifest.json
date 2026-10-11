@@ -21,8 +21,8 @@
   "documents": [
     {
       "path": "editorial/stages/draft.md",
-      "bytes": 5215,
-      "sha256": "acbbe94b3132caac2710ebd1ee5cb9ef3ffdc660245d26393f4bed7e70aeab1e",
+      "bytes": 5201,
+      "sha256": "61629ef9468eea3441503a65acbd7904c8e26e58bc38b700fcb2f13b8a664510",
       "owner": "shared stage contract"
     },
     {
@@ -146,6 +146,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 19117,
+  "system_bytes": 19103,
   "user_bytes": 6646
 }

@@ -64,10 +64,12 @@ python .github/skills/goal/scripts/opencode_usage.py
 ```
 
 It reads `OPEN_CODE_API_KEY` from the environment or the repo `.env`,
-calls `GET https://opencode.ai/zen/go/v1/usage`, and prints the rolling
-(5-hour), weekly, and monthly percentages plus a selection hint. Add
-`--log` to append a timestamped snapshot to `.goals/usage-log.jsonl` for
-burn-rate tracking.
+calls `GET https://opencode.ai/zen/go/v1/usage`, and prints the three
+account-wide windows — **rolling (5-hour)**, **weekly**, and **monthly** —
+with their percentages and reset times, plus a selection hint. Add `--log`
+to append a timestamped snapshot to `.goals/usage-log.jsonl` for burn-rate
+tracking, or `--record` to auto-record an account-wide block in the
+exhaustion tracker when a window is rate-limited.
 
 **Limitation:** the endpoint is **account-level only**. It cannot attribute
 usage to a specific model — per-model consumption is only visible in the
@@ -83,6 +85,7 @@ error. This prevents repeating the same failing dispatch every iteration.
 ```bash
 python .github/skills/goal/scripts/model_tracker.py check "<model>"   # exit 0 = available, 1 = exhausted
 python .github/skills/goal/scripts/model_tracker.py mark "<model>" --window monthly --reason "quota error"
+python .github/skills/goal/scripts/model_tracker.py mark --scope account --from-error "<error text>"
 python .github/skills/goal/scripts/model_tracker.py list
 python .github/skills/goal/scripts/model_tracker.py prune
 ```
@@ -93,20 +96,46 @@ and the window. `mark` reads the reset time from the usage API; if the API
 is unreachable it falls back to the next monthly boundary (the 4th of the
 month). Expired records are pruned automatically on every `check`/`list`.
 
+#### Account-wide vs per-model limits
+
+The 5-hour, weekly, and monthly Go limits are enforced against a **single
+account-wide counter** (OpenCode's `LiteTable`, keyed by workspace + user,
+not by model). A `GoUsageLimitError` therefore blocks **every** Go model
+until the window resets — it is not a per-model failure. The tracker
+distinguishes the two:
+
+- **Per-model** (`--scope model`, default) — one model is dead.
+- **Account-wide** (`--scope account`) — all Go models are blocked.
+
+When a dispatch fails with a `GoUsageLimitError`, mark it account-wide and
+parse the window straight from the error:
+
+```bash
+python .github/skills/goal/scripts/model_tracker.py mark --scope account \
+  --from-error "GoUsageLimitError ... limitName 5 hour"
+```
+
+`--from-error` maps `limitName` (`5 hour` → rolling, `weekly`, `monthly`)
+to the right window and pulls the matching reset time. `check` then reports
+the account as blocked for **any** model, so the orchestrator stops
+retrying Go models and either waits for the reset or falls back to
+OpenRouter.
+
 ### Selection rule
 
 1. Run the gauge before the first Builder dispatch of a goal.
 2. Use the precedence order as written — best model first.
 3. **Before every dispatch**, run `model_tracker.py check "<model>"`. If it
    exits 1, skip that model and try the next one in precedence.
-4. On a quota/limit error, run
-   `model_tracker.py mark "<model>" --window <rolling|weekly|monthly>`
-   so the failure is never repeated, then move to the next model in
-   precedence.
-5. The gauge is for **awareness and burn-rate tracking**, not for
+4. On a **per-model** quota error, run
+   `model_tracker.py mark "<model>" --window <rolling|weekly|monthly>`.
+5. On a **`GoUsageLimitError`** (account-wide), run
+   `model_tracker.py mark --scope account --from-error "<error text>"`.
+   Every Go model is now blocked until the reset — do not retry them.
+6. The gauge is for **awareness and burn-rate tracking**, not for
    pre-emptive downgrading. Do not switch to a weaker model just because
    the monthly percentage is climbing.
-6. OpenRouter (the final entry) is reached only when every Go option is
+7. OpenRouter (the final entry) is reached only when every Go option is
    exhausted. It is paid per token, so prefer waiting for a rolling reset
    or using the unlimited free models (LongCat 2.5 / Step 5 Preview) when
    the task can tolerate it.
@@ -233,8 +262,11 @@ Follow these rules for every dispatch:
    `(Go)` provider variants over plain Zen variants; Zen is mostly for free
    models. If a model name is rejected as "not found", re-read the
    available-models list from the error and pick a current one. On a
-   quota/limit error, `mark` the model in the exhaustion tracker (Step 0)
-   and move to the next model in precedence.
+   `GoUsageLimitError` (5-hour/weekly/monthly), `mark --scope account` in
+   the exhaustion tracker (Step 0) — it blocks **all** Go models, so do not
+   retry them; wait for the reset or fall back to OpenRouter. On any other
+   quota/limit error, `mark` the specific model and move to the next one in
+   precedence.
 
 ### Step 0: Select a live model (every dispatch)
 
@@ -248,12 +280,22 @@ python .github/skills/goal/scripts/model_tracker.py check "<model>"
 - exit 0 → available, use it.
 - exit 1 → exhausted, skip to the next model in precedence.
 
+`check` also reports **account-wide** exhaustion: if the 5-hour, weekly, or
+monthly Go limit has tripped, every Go model is blocked and `check` exits 1
+for all of them. In that case do not retry Go models — wait for the reset
+or fall back to OpenRouter.
+
 If a dispatch fails with a quota/limit error, record it so the failure is
 never repeated:
 
 ```bash
+# per-model failure
 python .github/skills/goal/scripts/model_tracker.py mark "<model>" \
   --window monthly --reason "quota error"
+
+# account-wide failure (GoUsageLimitError) — blocks all Go models
+python .github/skills/goal/scripts/model_tracker.py mark --scope account \
+  --from-error "<error text>"
 ```
 
 Then re-select and re-dispatch with the next live model. Record the chosen

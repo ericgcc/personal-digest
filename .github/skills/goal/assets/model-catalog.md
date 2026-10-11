@@ -88,9 +88,11 @@ python .github/skills/goal/scripts/opencode_usage.py
 ```
 
 Reads `OPEN_CODE_API_KEY` from the environment or the repo `.env`, calls
-`GET https://opencode.ai/zen/go/v1/usage`, and prints rolling (5-hour),
-weekly, and monthly percentages. `--log` appends a snapshot to
-`.goals/usage-log.jsonl`.
+`GET https://opencode.ai/zen/go/v1/usage`, and prints the three
+account-wide windows — **rolling (5-hour)**, **weekly**, and **monthly** —
+with their percentages and reset times. `--log` appends a snapshot to
+`.goals/usage-log.jsonl`; `--record` auto-records an account-wide block in
+the exhaustion tracker when a window is rate-limited.
 
 **Limitation:** account-level only — it cannot attribute usage to a
 specific model. Per-model consumption is only visible in the OpenCode
@@ -106,6 +108,7 @@ error:
 ```bash
 python .github/skills/goal/scripts/model_tracker.py check "<model>"   # 0 = available, 1 = exhausted
 python .github/skills/goal/scripts/model_tracker.py mark "<model>" --window monthly --reason "quota error"
+python .github/skills/goal/scripts/model_tracker.py mark --scope account --from-error "<error text>"
 python .github/skills/goal/scripts/model_tracker.py list
 python .github/skills/goal/scripts/model_tracker.py prune
 ```
@@ -116,6 +119,29 @@ and the window. `mark` reads the reset time from the usage API; if the API
 is unreachable it falls back to the next monthly boundary (the 4th of the
 month). Expired records are pruned automatically on every `check`/`list`.
 
+### Account-wide vs per-model limits
+
+The 5-hour, weekly, and monthly Go limits are enforced against a **single
+account-wide counter** (OpenCode's `LiteTable`, keyed by workspace + user,
+not by model). A `GoUsageLimitError` therefore blocks **every** Go model
+until the window resets — it is not a per-model failure.
+
+- **Per-model** (`--scope model`, default) — one model is dead.
+- **Account-wide** (`--scope account`) — all Go models are blocked.
+
+On a `GoUsageLimitError`, mark it account-wide and parse the window from
+the error:
+
+```bash
+python .github/skills/goal/scripts/model_tracker.py mark --scope account \
+  --from-error "GoUsageLimitError ... limitName 5 hour"
+```
+
+`--from-error` maps `limitName` (`5 hour` → rolling, `weekly`, `monthly`)
+to the right window and pulls the matching reset time. `check` then reports
+the account as blocked for **any** model.
+
 **Orchestrator duty:** before every Builder/Inspector dispatch, run
-`check` on the candidate model and skip any that exit 1. On a quota error,
-`mark` the model so the same failing call is never repeated.
+`check` on the candidate model and skip any that exit 1. On a per-model
+quota error, `mark` that model; on a `GoUsageLimitError`, `mark --scope
+account` so no Go model is retried until the reset.

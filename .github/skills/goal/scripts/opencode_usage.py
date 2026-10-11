@@ -132,26 +132,32 @@ def advise(usage: dict) -> str:
     Philosophy is quality-first, subscription-first: keep using the best Go
     model until it actually errors, and only fall back to paid OpenRouter as
     a last resort. The gauge is for awareness, not pre-emptive downgrading.
-    """
-    monthly = usage.get("monthly", {}).get("percent", 0)
-    rolling = usage.get("rolling", {}).get("percent", 0)
 
-    if rolling >= 80:
+    All three windows (rolling / weekly / monthly) are account-wide: hitting
+    any one of them blocks every Go model until it resets.
+    """
+    windows = {name: usage.get(name, {}) for name in ("rolling", "weekly", "monthly")}
+
+    for name, window in windows.items():
+        if window.get("status") == "rate-limited":
+            return (
+                f"{name} limit reached -> ALL Go models blocked until "
+                f"{window.get('resetsAt')}; wait for the reset or use OpenRouter"
+            )
+
+    name, window = max(
+        windows.items(), key=lambda item: item[1].get("percent", 0)
+    )
+    percent = window.get("percent", 0)
+    if percent >= 80:
         return (
-            "rolling window nearly exhausted -> if a model errors, prefer the "
-            "unlimited free models (LongCat 2.5 / Step 5 Preview) or wait for "
-            "the reset before reaching for paid OpenRouter"
+            f"{name} at {percent}% -> close to blocking all Go models; "
+            "expect a fallback soon"
         )
-    if monthly >= 80:
+    if percent >= 50:
         return (
-            "monthly allowance nearly exhausted -> keep using the best Go model "
-            "until it errors; on a quota error fall back to the next Go model, "
-            "then to paid OpenRouter only as a last resort"
-        )
-    if monthly >= 50:
-        return (
-            "monthly allowance half used -> still prefer the best Go model; "
-            "watch the burn rate and expect fallbacks soon"
+            f"{name} at {percent}% -> watch the burn rate; still use the best "
+            "Go model until it errors"
         )
     return "ample headroom -> use the best model in the precedence list"
 
@@ -195,6 +201,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--log-path", type=Path, default=DEFAULT_LOG_PATH)
     parser.add_argument("--advise", action="store_true", help="print only the model hint")
     parser.add_argument("--env", type=Path, default=None, help="path to a .env file")
+    parser.add_argument(
+        "--record",
+        action="store_true",
+        help="if a window is rate-limited, record an account-wide block in the tracker",
+    )
     args = parser.parse_args(argv)
 
     api_key = load_api_key(args.env)
@@ -227,11 +238,38 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(render(usage))
 
-    rate_limited = any(
-        usage.get(window, {}).get("status") == "rate-limited"
+    rate_limited = [
+        window
         for window in ("rolling", "weekly", "monthly")
-    )
+        if usage.get(window, {}).get("status") == "rate-limited"
+    ]
+
+    if args.record and rate_limited:
+        _record_account_block(usage, rate_limited[0])
+
     return 2 if rate_limited else 0
+
+
+def _record_account_block(usage: dict, window: str) -> None:
+    """Record an account-wide block in the tracker (best-effort)."""
+    try:
+        from model_tracker import (  # noqa: PLC0415 - optional sibling import
+            DEFAULT_TRACKER_PATH,
+            load_tracker,
+            save_tracker,
+        )
+    except ImportError:
+        return
+    data = load_tracker(DEFAULT_TRACKER_PATH)
+    data["account"] = {
+        "exhausted_at": datetime.now(timezone.utc).isoformat(),
+        "reset_at": usage.get(window, {}).get("resetsAt"),
+        "window": window,
+        "reason": "usage gauge: rate-limited",
+        "reset_source": "usage-api",
+    }
+    save_tracker(DEFAULT_TRACKER_PATH, data)
+    print(f"recorded account-wide block ({window}) in {DEFAULT_TRACKER_PATH}")
 
 
 if __name__ == "__main__":

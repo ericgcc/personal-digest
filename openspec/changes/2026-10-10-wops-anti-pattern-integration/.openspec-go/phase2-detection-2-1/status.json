@@ -1,8 +1,8 @@
 {
   "run_id": "phase2-detection-2-1",
   "created": "2026-10-11",
-  "status": "ready-to-dispatch-builder",
-  "iteration": 0,
+  "status": "completed",
+  "iteration": 1,
   "repository_root": "C:\\Users\\ericg\\OneDrive\\Documents\\GitHub\\digy",
   "change_name": "2026-10-10-wops-anti-pattern-integration",
   "change_dir": "openspec/changes/2026-10-10-wops-anti-pattern-integration",
@@ -36,22 +36,29 @@
       "provider": "go",
       "agent_path": ".github/skills/openspec-go/assets/openspec-go-builder.agent.md",
       "agent_name": "OpenSpec Go: Builder",
-      "actual": null,
-      "selection_reason": "DeepSeek V4 Pro selected: first eligible model in Builder precedence.",
+      "actual": "DeepSeek V4 Pro (New) (opencodego)",
+      "actual_verified": "probe dispatch 2026-10-11: agent self-reported running as DeepSeek V4 Pro (New); label matches extension catalog (hardcodedModelList.js: deepseek-v4-pro -> 'DeepSeek V4 Pro (New)') and live /zen/go/v1/models id deepseek-v4-pro",
+      "selection_reason": "DeepSeek V4 Pro selected: first eligible model in Builder precedence (re-confirmed at dispatch, 2026-10-11).",
       "selection_mode": "normal",
       "profile": [68000, 0, 2000, 0],
       "expected_requests": 2,
       "usage_percent": { "rolling": 0, "weekly": 56, "monthly": 32 },
-      "projected_burn_pp": { "rolling": 6.512, "weekly": 2.6048, "monthly": 1.3024 }
+      "projected_burn_pp": { "rolling": 6.512, "weekly": 2.6048, "monthly": 1.3024 },
+      "binding_verified": true
     },
     "inspector": {
-      "requested": null,
-      "provider": null,
-      "agent_path": null,
-      "agent_name": null,
-      "actual": null,
-      "selection_reason": "pending selection (after Builder completes; family independence from DeepSeek V4 Pro required)",
-      "profile": [68000, 0, 2000, 0]
+      "requested": "Hy4 preview (opencodego)",
+      "provider": "go",
+      "agent_path": ".github/skills/openspec-go/assets/openspec-go-inspector.agent.md",
+      "agent_name": "OpenSpec Go: Inspector",
+      "actual": "Hy4 preview (opencodego)",
+      "actual_verified": "agent self-reported model during iteration 1 dispatch; binding label matches extension catalog (hy4-preview -> 'Hy4 preview')",
+      "selection_reason": "Hy4 preview selected: first Inspector-precedence model of a different family from the Builder (DeepSeek).",
+      "selection_mode": "normal",
+      "profile": [68000, 0, 2000, 0],
+      "expected_requests": 1,
+      "usage_percent": { "rolling": 0, "weekly": 56, "monthly": 32 },
+      "projected_burn_pp": { "rolling": 1.0286, "weekly": 0.4114, "monthly": 0.2057 }
     },
     "selection_basis": "usage-aware precedence; gauge 2026-10-11: rolling 0%, weekly 56%, monthly 32%; tracker check exit 0 for DeepSeek V4 Pro (New) (opencodego); inventory derived from models.dev catalog (provider opencode-go) intersected with live https://opencode.ai/zen/go/v1/models list; host label format <display name> (opencodego) verified from extension source (vscode.lm vendor id 'opencodego')"
   },
@@ -62,5 +69,6 @@
   },
   "initial_sha": "8af56d0e9642107f502558efed8bbceae20c43c8",
   "builder_sha": null,
+  "builder_verified": "iteration 1: git status shows only the two task files + tasks.md checkbox + orchestrator-owned files changed; independent pytest re-run: 45 passed (evaluation/tests/test_adapters.py)",
   "pre_existing_changes": "worktree clean at run start (git status --short empty)"
 }

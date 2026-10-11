@@ -192,17 +192,23 @@ def prepare_agent(template, destination, label, role, workflow):
     if len(parts)!=3 or parts[0].strip():
         raise ValueError("agent template requires YAML frontmatter")
     header, body = parts[1], parts[2]
-    name = f"Budget {workflow}: {role.title()}"
+    # The agent keeps its own name from the assets file; only the scalar model:
+    # field is rewritten in place. The workflow argument is retained for the
+    # dispatch record's verification text but no longer renames the agent.
+    name_match = re.search(r"(?m)^name:\s*(.+)$",header)
+    if not name_match: raise ValueError("agent template requires a scalar name field")
+    name = json.loads(name_match.group(1).strip()) if name_match.group(1).strip().startswith('"') else name_match.group(1).strip().strip('"')
     header, count = re.subn(r"(?m)^model:.*$", "model: "+json.dumps(label),header)
     if count != 1: raise ValueError("agent template requires one scalar model field")
-    header = re.sub(r"(?m)^name:.*$", "name: "+json.dumps(name),header)
     header = re.sub(r"(?m)^tools:(?=\S)", "tools: ",header)
     result = "---"+header+"---"+body
     binding = ("the host default model" if not label
         else "the exact host model "+json.dumps(label))
     result += "\n\nRuntime binding: this agent must execute using "+binding+". Report a host/model mismatch as BLOCKED. Respect the run's commit mode.\n"
     destination.parent.mkdir(parents=True,exist_ok=True)
-    if destination.exists() and "Runtime binding: this agent must execute using " not in destination.read_text(encoding="utf-8"):
+    in_place = template.resolve() == destination.resolve()
+    if (not in_place and destination.exists()
+            and "Runtime binding: this agent must execute using " not in destination.read_text(encoding="utf-8")):
         raise ValueError("refusing to replace an unrelated agent definition")
     destination.write_text(result,encoding="utf-8",newline="\n")
     return {"agent_name":name,"agent_path":str(destination),"requested_model":label,
@@ -228,7 +234,7 @@ def main(argv=None):
     p.add_argument("--allow-free",action="store_true")
     p.add_argument("--allow-low-quality-free",action="store_true",help="Builder-only explicit authorization for provisional free models")
     p.add_argument("--allow-openrouter",action="store_true")
-    p.add_argument("--prepare",choices=("goal","openspec-go"))
+    p.add_argument("--prepare",choices=("goal",))
     args=p.parse_args(argv)
     try:
         if args.usage_file:
@@ -252,13 +258,12 @@ def main(argv=None):
             args.allow_free,args.allow_low_quality_free,args.allow_openrouter,args.off_peak,args.min_quality,args.allow_premium)
         if args.prepare and result["selected"]:
             root=Path(__file__).resolve().parents[4]
-            template = (root/".github/agents"/f"goal-{args.role}.agent.md" if args.prepare=="goal"
-                else root/".github/skills/openspec-go/assets"/f"openspec-go-{args.role}.agent.md")
-            # One persistent agent file per role, overwritten on every selection.
-            # The selected label is the EXACT host label from --available (provider
-            # suffix included), never a bare catalog name.
-            destination=root/".github/agents"/f"budget-{args.prepare}-{args.role}.agent.md"
-            result["dispatch"]=prepare_agent(template,destination,result["selected"]["model"],args.role,args.prepare)
+            # The role agent IS this skill's assets file: --prepare overwrites its
+            # scalar model: field in place, one persistent file per role, never a
+            # copy in .github/agents/. The selected label is the EXACT host label
+            # from --available (provider suffix included), never a bare name.
+            destination=root/".github/skills/goal/assets"/f"goal-{args.role}.agent.md"
+            result["dispatch"]=prepare_agent(destination,destination,result["selected"]["model"],args.role,args.prepare)
         print(json.dumps(result,indent=2))
         return 0 if result["selected"] else 2
     except (OSError, ValueError, TypeError, TimeoutError) as exc:

@@ -5,7 +5,7 @@ description: >-
   selected OpenSpec change artifacts, implements in-scope tasks, records
   validation evidence and task progress, and commits when authorized.
 user-invocable: false
-model: ""
+model: "DeepSeek V4 Pro (New) (opencodego)"
 metadata:
   model-selection: "Use scripts/select_model.py; it overwrites this persistent agent's scalar model per selection"
   allowance-catalog: ".github/skills/openspec-go/scripts/budget_models.py"
@@ -84,3 +84,6 @@ If your requests fail with a provider error, report it verbatim rather than retr
 ### Step 6 - Return
 
 Return completed task identifiers, requirement/scenario mapping, exact validation results, remaining work, and the Builder commit SHA (or null in no-commit mode). If blocked, return `BLOCKED: <reason and required decision or prerequisite>` instead of claiming completion.
+
+
+Runtime binding: this agent must execute using the exact host model "DeepSeek V4 Pro (New) (opencodego)". Report a host/model mismatch as BLOCKED. Respect the run's commit mode.

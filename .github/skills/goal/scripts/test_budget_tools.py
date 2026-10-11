@@ -362,7 +362,9 @@ class BudgetTests(unittest.TestCase):
             r=s.prepare_agent(source,dest,"GLM-5.2 (opencodego)","builder","goal")
             self.assertIn('model: "GLM-5.2 (opencodego)"',dest.read_text())
             self.assertIn("Preserved instructions.",dest.read_text())
-            self.assertEqual(r["agent_name"],"Budget goal: Builder")
+            # The agent keeps its own name from the assets file; only model: is
+            # rewritten in place.
+            self.assertEqual(r["agent_name"],"Builder")
             self.assertIsNone(r["actual_model"])
             with self.assertRaises(ValueError): s.prepare_agent(source,dest,"Kimi K2.6 (openrouter)","builder","goal")
 

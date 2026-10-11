@@ -150,17 +150,18 @@ Exit 2 means no eligible model can finish the declared batch; split it, wait,
 or report the concrete constraint. Do not dispatch.
 Exit 0 returns ranked estimates and a selected exact host label.
 
-`--prepare` overwrites the **persistent** role agent
-`.github/agents/budget-goal-<role>.agent.md` (one file per role, reused
-across runs — never a new file per selection) and returns its exact
-`dispatch.agent_name`. It copies the role instructions and puts the selected
-label into the supported **scalar `model:` frontmatter**. The selected label
-must be the **exact host label** from the inventory file — provider suffix
-included (e.g. `DeepSeek V4 Pro (New) (Go) (opencode)`); a bare catalog name
-cannot be resolved by the host and silently falls back to the session's
-default chat model. When no selection is active the agent's `model:` is empty
-(host default). It refuses to overwrite an unrelated file. Advisory metadata
-and text in a prompt do not override the model.
+`--prepare` overwrites the **persistent** role agent in this skill's own
+assets folder — `.github/skills/goal/assets/goal-<role>.agent.md` (one file
+per role, reused across runs — never a new file per selection, never a copy
+in `.github/agents/`) — and returns its exact `dispatch.agent_name`. It puts
+the selected label into the supported **scalar `model:` frontmatter** in
+place; the agent keeps its own name and instructions. The selected label must
+be the **exact host label** from the inventory file — provider suffix included
+(e.g. `DeepSeek V4 Pro (New) (opencodego)`); a bare catalog name cannot be
+resolved by the host and silently falls back to the session's default chat
+model. When no selection is active the agent's `model:` is empty (host
+default). It refuses to overwrite an unrelated file. Advisory metadata and
+text in a prompt do not override the model.
 
 1. Load/reload that persistent agent in the host and dispatch **the returned
    agent name**. Verify before dispatching that the agent's `model:` field

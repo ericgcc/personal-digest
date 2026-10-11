@@ -36,7 +36,6 @@ STAGE_NAMES: tuple[str, ...] = (
     "draft",
     "developmental-review",
     "writer-revision",
-    "copy-edit",
     "reader-review",
     "targeted-repair",
     "publication-verify",

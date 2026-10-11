@@ -205,13 +205,13 @@ def test_stage_routing_table_matches_the_contract():
     assert STAGE_SECTIONS["draft"] == ("Reader", "Content preferences", "Optional highlights")
     assert STAGE_SECTIONS["publication-verify"] == ("Optional highlights",)
     assert STAGE_SECTIONS["render"] == ()
-    for stage in ("developmental-review", "writer-revision", "copy-edit", "reader-review", "targeted-repair"):
+    for stage in ("developmental-review", "writer-revision", "reader-review", "targeted-repair"):
         assert STAGE_SECTIONS[stage] == ("Reader",), stage
 
 
 def test_analyze_does_not_receive_selection_again_downstream():
     """Selection is recorded by Analyze and Frame; the writing stages do not re-litigate it."""
-    for stage in ("draft", "writer-revision", "copy-edit", "reader-review"):
+    for stage in ("draft", "writer-revision", "reader-review"):
         assert "Selection" not in STAGE_SECTIONS[stage], stage
 
 

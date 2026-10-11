@@ -366,12 +366,10 @@ An editorial component failure means **use the last valid artifact and continue*
 
 | Failure | Behaviour |
 | --- | --- |
-| WOPS unavailable or a retrieval error | Revise and copy edit using the reviewer's feedback alone; `wops.json` records `available: false` or the failed query |
+| WOPS unavailable or a retrieval error | Revise using the reviewer's feedback alone; `wops.json` records `available: false` or the failed query |
 | Developmental review unavailable | Record degraded mode, carry the draft forward, and skip writer revision |
-| Writer revision unavailable or invalid | Carry the draft forward into Copy Edit |
-| Copy Edit unavailable or invalid | Carry the writer revision forward into Reader Review |
-| Reader Review unavailable | Skip Targeted Repair and continue with Copy Edit |
-| Targeted Repair unavailable, invalid, or not requested | Use Copy Edit |
+| Writer revision unavailable or invalid | Carry the draft forward into Reader Review |
+| Reader Review unavailable | Skip Targeted Repair and continue with the writer revision |
 | Publication Verify finds failed checks | Preserve the unmodified input prose, record warnings in `verification.json`, and continue to Render |
 | Frame unavailable | Derive a deterministic recovery frame from `analysis.json`, record the degradation, and continue. A profile whose `frame_failure_policy` is `fail` stops instead |
 | Python adapter unavailable | Record degraded mode in the stage's adapter envelope and continue. A call that exceeds its declared timeout budget is recorded as over-budget |

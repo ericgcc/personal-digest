@@ -48,7 +48,6 @@ STAGE_SECTIONS: dict[str, tuple[str, ...]] = {
     "draft": ("Reader", "Content preferences", "Optional highlights"),
     "developmental-review": ("Reader",),
     "writer-revision": ("Reader",),
-    "copy-edit": ("Reader",),
     "reader-review": ("Reader",),
     "targeted-repair": ("Reader",),
     "publication-verify": ("Optional highlights",),

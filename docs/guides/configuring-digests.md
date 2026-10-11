@@ -182,7 +182,7 @@ Each stage receives only the sections that can still change its decision. Select
 | --- | --- |
 | Analyze | `Selection`, `Reader` |
 | Frame, Draft | `Reader`, `Content preferences`, `Optional highlights` |
-| Developmental Review, Writer Revision, Copy Edit, Reader Review, Targeted Repair | `Reader` |
+| Developmental Review, Writer Revision, Reader Review, Targeted Repair | `Reader` |
 | Publication Verify | `Optional highlights` |
 | Render | *(none)* |
 

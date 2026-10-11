@@ -5,7 +5,7 @@ description: >-
   Inspector feedback, implements everything needed to achieve
   the goal, runs quality gates, commits, and returns.
 user-invocable: false
-model: ""
+model: "<model>"
 tools: ["vscode","execute","read","ms-python.python/getPythonEnvironmentInfo","ms-python.python/getPythonExecutableCommand","ms-python.python/installPythonPackage","ms-python.python/configurePythonEnvironment","edit","search","web","pylance-mcp-server/*","todo"]
 metadata:
   agent-id: b4d1e5a2-9c3f-4b78-8d6e-2f1a0c5b3e7d

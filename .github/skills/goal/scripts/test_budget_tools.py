@@ -403,6 +403,33 @@ class BudgetTests(unittest.TestCase):
             with self.assertRaises(ValueError): s.prepare_agent(source,dest,"GLM-5.2 (opencodego)","builder","goal")
             self.assertEqual(dest.read_text(),"user owned")
 
+    def test_prepare_refuses_to_overwrite_another_agents_file(self):
+        """A generated copy must never clobber a different agent registered under
+        .github/agents/ — the guard matches on the agent name in frontmatter."""
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/"source.md"; dest=Path(directory)/"generated.md"
+            source.write_text('---\nname: Builder\nmodel: ""\n---\nBody')
+            dest.write_text('---\nname: Some Other Agent\nmodel: ""\n---\nBody')
+            with self.assertRaises(ValueError): s.prepare_agent(source,dest,"GLM-5.2 (opencodego)","builder","goal")
+            self.assertIn("Some Other Agent",dest.read_text())
+
+    def test_prepare_regenerates_from_template_resetting_stale_binding(self):
+        """The template→runtime-copy lifecycle: the destination is reset from the
+        template on every selection, so a stale binding in the copy is replaced
+        and the template itself is never modified."""
+        with tempfile.TemporaryDirectory() as directory:
+            template=Path(directory)/"template.md"; dest=Path(directory)/"agents"/"builder.agent.md"
+            template.write_text('---\nname: Builder\nmodel: ""\n---\nBody')
+            s.prepare_agent(template,dest,"GLM-5.2 (opencodego)","builder","goal")
+            self.assertIn('model: "GLM-5.2 (opencodego)"',dest.read_text())
+            # Re-selection with a different model resets the copy from the template.
+            s.prepare_agent(template,dest,"DeepSeek V4 Pro (New) (opencodego)","builder","goal")
+            self.assertIn('model: "DeepSeek V4 Pro (New) (opencodego)"',dest.read_text())
+            self.assertNotIn("GLM-5.2",dest.read_text())
+            # The template is untouched.
+            self.assertIn('model: ""',template.read_text())
+            self.assertNotIn("DeepSeek",template.read_text())
+
     def test_gauge_json_and_record_handles_missing_reset(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/"tracker.json"

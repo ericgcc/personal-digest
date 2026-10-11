@@ -135,22 +135,37 @@ Exit 2 means no eligible model can finish the declared batch; split it, wait,
 or report the concrete constraint. Do not dispatch.
 Exit 0 returns ranked estimates and a selected exact host label.
 
-`--prepare` overwrites the **persistent** role agent in this skill's own
-assets folder — `.github/skills/openspec-go/assets/openspec-go-<role>.agent.md`
-(one file per role, reused across runs — never a new file per selection, never
-a copy in `.github/agents/`) — and returns its exact `dispatch.agent_name`. It
-puts the selected label into the supported **scalar `model:` frontmatter** in
-place; the agent keeps its own name and instructions. The selected label must
-be the **exact host label** from the inventory file — provider suffix included
-(e.g. `DeepSeek V4 Pro (New) (opencodego)`); a bare catalog name cannot be
-resolved by the host and silently falls back to the session's default chat
-model. When no selection is active the agent's `model:` is empty (host
-default). Advisory metadata and text in a prompt do not override the model.
+`--prepare` regenerates the **runtime role agent** under `.github/agents/` —
+`.github/agents/openspec-go-<role>.agent.md` — from this skill's **template**
+in its assets folder,
+`.github/skills/openspec-go/assets/openspec-go-<role>.agent.md`, on **every**
+selection. The assets file is the template: the source of truth for the
+agent's name and instructions, carrying an empty `model: ""` placeholder, and
+is never dispatched directly and never modified by selection. The generated
+copy under `.github/agents/` is the only file the host registers and
+dispatches; it is reset from the template each time before the selected label
+is bound, so no stale binding from a previous run can survive. `--prepare`
+returns the exact `dispatch.agent_name` and `dispatch.agent_path`. It puts
+the selected label into the supported **scalar `model:` frontmatter** of the
+generated copy; the agent keeps its own name and instructions. The selected
+label must be the **exact host label** from the inventory file — provider
+suffix included (e.g. `DeepSeek V4 Pro (New) (opencodego)`); a bare catalog
+name cannot be resolved by the host and silently falls back to the session's
+default chat model. When no selection is active the generated agent's
+`model:` is empty (host default). It refuses to overwrite a file under
+`.github/agents/` that is not a previously generated copy of this skill's
+template (same agent name). Advisory metadata and text in a prompt do not
+override the model.
 
-1. Load/reload that persistent agent in the host and dispatch **the returned
-   agent name**. Verify before dispatching that the agent's `model:` field
-   carries the exact selected host label (suffix included); an empty or bare
-   name means the binding will silently fall back — stop with a
+Before dispatching, the orchestrator must verify the generated copy's
+`model:` field carries the exact selected host label (suffix included); an
+empty or bare name means the binding will silently fall back — stop with a
+dispatch-capability blocker rather than dispatch.
+
+1. Load/reload that generated agent in the host and dispatch **the returned
+   agent name**. Verify before dispatching that the generated copy's `model:`
+   field carries the exact selected host label (suffix included); an empty or
+   bare name means the binding will silently fall back — stop with a
    dispatch-capability blocker rather than dispatch. Where the host exposes a
    verified model override, that exact override is equivalent. If neither
    binding nor reload can be verified, stop with a dispatch-capability
@@ -159,8 +174,8 @@ default). Advisory metadata and text in a prompt do not override the model.
    estimates, and selection reason in run status. Record actual model/provider
    only from host execution metadata; keep it null if unavailable. A mismatch
    requires stopping/reselection, not changing the record to claim success.
-3. Run roles sequentially; do not overwrite a generated role definition while
-   it is executing. Inspector receives files and acceptance criteria with fresh
+3. Run roles sequentially; do not regenerate a role agent while it is
+   executing. Inspector receives files and acceptance criteria with fresh
    context, never Builder conversation or unchecked conclusions.
 4. For failover, record the precise error and rerun selection/preparation.
    A `GoUsageLimitError` is always account scoped. Network/schema/region/privacy

@@ -207,9 +207,20 @@ def prepare_agent(template, destination, label, role, workflow):
     result += "\n\nRuntime binding: this agent must execute using "+binding+". Report a host/model mismatch as BLOCKED. Respect the run's commit mode.\n"
     destination.parent.mkdir(parents=True,exist_ok=True)
     in_place = template.resolve() == destination.resolve()
-    if (not in_place and destination.exists()
-            and "Runtime binding: this agent must execute using " not in destination.read_text(encoding="utf-8")):
-        raise ValueError("refusing to replace an unrelated agent definition")
+    if not in_place and destination.exists():
+        # The destination must be a previously generated copy of THIS template
+        # (same agent name in frontmatter). Anything else — a hand-written agent,
+        # another skill's agent, an unrelated file — is never overwritten.
+        existing = destination.read_text(encoding="utf-8")
+        existing_parts = existing.split("---",2)
+        existing_name = None
+        if len(existing_parts)==3 and not existing_parts[0].strip():
+            m = re.search(r"(?m)^name:\s*(.+)$",existing_parts[1])
+            if m:
+                raw = m.group(1).strip()
+                existing_name = json.loads(raw) if raw.startswith('"') else raw.strip('"')
+        if existing_name != name:
+            raise ValueError("refusing to replace an unrelated agent definition")
     destination.write_text(result,encoding="utf-8",newline="\n")
     return {"agent_name":name,"agent_path":str(destination),"requested_model":label,
             "actual_model":None,"verification":"Host must load this exact agent; confirm model before work. If reload/model override is unavailable, stop."}
@@ -258,12 +269,15 @@ def main(argv=None):
             args.allow_free,args.allow_low_quality_free,args.allow_openrouter,args.off_peak,args.min_quality,args.allow_premium)
         if args.prepare and result["selected"]:
             root=Path(__file__).resolve().parents[4]
-            # The role agent IS this skill's assets file: --prepare overwrites its
-            # scalar model: field in place, one persistent file per role, never a
-            # copy in .github/agents/. The selected label is the EXACT host label
-            # from --available (provider suffix included), never a bare name.
-            destination=root/".github/skills/goal/assets"/f"goal-{args.role}.agent.md"
-            result["dispatch"]=prepare_agent(destination,destination,result["selected"]["model"],args.role,args.prepare)
+            # assets/goal-<role>.agent.md is the TEMPLATE (source of truth, model
+            # placeholder, never dispatched directly). --prepare resets the runtime
+            # copy under .github/agents/ from it on EVERY selection — so no stale
+            # binding survives a re-selection — then binds the selected exact host
+            # label into the copy's scalar model: field. The template is never
+            # modified. The host registers agents from .github/agents/ only.
+            template=root/".github/skills/goal/assets"/f"goal-{args.role}.agent.md"
+            destination=root/".github/agents"/f"goal-{args.role}.agent.md"
+            result["dispatch"]=prepare_agent(template,destination,result["selected"]["model"],args.role,args.prepare)
         print(json.dumps(result,indent=2))
         return 0 if result["selected"] else 2
     except (OSError, ValueError, TypeError, TimeoutError) as exc:

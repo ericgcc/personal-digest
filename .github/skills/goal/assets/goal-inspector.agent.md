@@ -6,7 +6,7 @@ description: >-
   runs quality gates, optionally verifies in a browser, and
   writes a PASS or FAIL verdict with detailed feedback.
 user-invocable: false
-model: ""
+model: "<model>"
 tools: ["vscode","execute","read","ms-python.python/getPythonEnvironmentInfo","ms-python.python/getPythonExecutableCommand","ms-python.python/installPythonPackage","ms-python.python/configurePythonEnvironment","edit","search","web","pylance-mcp-server/*","todo"]
 metadata:
   agent-id: c9e2f1d3-7a4b-4c56-9e8f-3d2b1a0e5c4f

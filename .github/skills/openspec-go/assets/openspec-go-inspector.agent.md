@@ -5,7 +5,8 @@ description: >-
   to verify implementation against OpenSpec requirements, scenarios,
   design, tasks, and quality gates. Writes PASS, FAIL, or BLOCKED feedback.
 user-invocable: false
-model: ""
+model: "<model>"
+tools: ["vscode","execute","read","ms-python.python/getPythonEnvironmentInfo","ms-python.python/getPythonExecutableCommand","ms-python.python/installPythonPackage","ms-python.python/configurePythonEnvironment","edit","search","web","pylance-mcp-server/*","todo"]
 metadata:
   model-selection: "Use scripts/select_model.py; it overwrites this persistent agent's scalar model per selection"
   allowance-catalog: ".github/skills/openspec-go/scripts/budget_models.py"

@@ -78,6 +78,30 @@ class BudgetTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             s.rank_models(healthy(),"go","builder",["GLM-5.2 (opencodego)"],empty(),expected_requests=0)
 
+    def test_normal_pressure_keeps_precedence_order(self):
+        names=["GLM-5.2 (opencodego)","DeepSeek V4 Pro (opencodego)"]
+        r=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=50)
+        self.assertEqual(r["selection_mode"],"normal")
+        self.assertEqual(r["selected"]["canonical"],"DeepSeek V4 Pro")
+        self.assertEqual(r["selection_reason"],"DeepSeek V4 Pro selected: first eligible model in Builder precedence.")
+
+    def test_high_pressure_conserve_reranks_within_quality_floor(self):
+        # DeepSeek V4 Pro (q5, expensive) vs GLM-5.3-Flash (q4, cheap): under
+        # rolling pressure >= 50 the cheaper q4 model leads within the floor.
+        names=["DeepSeek V4 Pro (opencodego)","GLM-5.3-Flash (opencodego)"]
+        r=s.rank_models(healthy(55),"go","builder",names,empty(),expected_requests=50)
+        self.assertEqual(r["selection_mode"],"conserve")
+        self.assertEqual(r["selected"]["canonical"],"GLM-5.3-Flash")
+        self.assertIn("lower projected 5-hour",r["selection_reason"])
+        # Quality floor: a model two tiers below the strongest feasible is deferred.
+        self.assertEqual(r["ranked"][0]["quality"],4)
+
+    def test_no_candidate_reason(self):
+        r=s.rank_models(healthy(),"go","builder",["GLM-5.2 (opencodego)"],empty(),expected_requests=10000)
+        self.assertIsNone(r["selected"])
+        self.assertEqual(r["selection_reason"],"No eligible model fits the current budget and quality requirements.")
+        self.assertEqual(r["usage_percent"],{w:0 for w in b.WINDOWS})
+
     def test_context_peak_and_cache_write_prices(self):
         self.assertEqual(b.prices("Claude Haiku 5.5",100000)[0],.1)
         self.assertEqual(b.prices("Claude Haiku 5.5",100001)[0],.5)
@@ -143,6 +167,43 @@ class BudgetTests(unittest.TestCase):
             empty(),builder="Kimi K2.7 Code")
         self.assertEqual(r["selected"]["canonical"],"Hy4 preview")
         self.assertEqual(r["rejected"][0]["reason"],"same family as Builder")
+
+    def test_inspector_only_mode_without_builder(self):
+        r=s.rank_models(healthy(),"go","inspector",["Hy4 preview (opencodego)"],empty(),builder="none")
+        self.assertIsNotNone(r["selected"])
+        self.assertEqual(r["family_independence"],"unverified: no Builder")
+
+    def test_no_independent_inspector_means_no_selection(self):
+        # Only same-family candidates available: no selection rather than violation.
+        r=s.rank_models(healthy(),"go","inspector",["Kimi K3 (opencodego)"],empty(),builder="Kimi K2.7 Code")
+        self.assertIsNone(r["selected"])
+        self.assertEqual(r["rejected"][0]["reason"],"same family as Builder")
+
+    def test_openrouter_inspector_skips_builder_family_and_keeps_declared_order(self):
+        # GLM-5.3-Flash (glm) is first in OPENROUTER_INSPECTOR_PRECEDENCE but shares
+        # the Builder's family; DeepSeek V4.1 Flash (deepseek) is independent.
+        labels=["Z.ai: GLM 5.3 Flash (openrouter)","DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
+        r=s.rank_models(healthy(),"go","inspector",labels,empty(),builder="GLM-5.2",allow_openrouter=True)
+        self.assertEqual(r["selected"]["canonical"],"DeepSeek V4.1 Flash")
+        self.assertEqual(r["rejected"][0]["reason"],"same family as Builder")
+        # With no family conflict, declared order wins (GLM-5.3-Flash first).
+        r2=s.rank_models(healthy(),"go","inspector",labels,empty(),builder="DeepSeek V4 Pro",allow_openrouter=True)
+        self.assertEqual(r2["selected"]["canonical"],"GLM-5.3-Flash")
+
+    def test_openrouter_requires_explicit_authorization(self):
+        labels=["Z.ai: GLM 5.3 Flash (openrouter)","GLM-5.2 (opencodego)"]
+        r=s.rank_models(healthy(),"go","builder",labels,empty())
+        self.assertEqual(r["selected"]["provider"],"go")
+        self.assertEqual(r["rejected"][0]["reason"],"outside curated OpenRouter precedence or --allow-openrouter not set")
+
+    def test_paid_go_exhaustion_does_not_block_openrouter_or_free(self):
+        labels=["Z.ai: GLM 5.3 Flash (openrouter)","LongCat 2.5 Preview Free (opencodego)","GLM-5.2 (opencodego)"]
+        usage=healthy(); usage["rolling"].update(status="rate-limited",percent=100)
+        data=empty(); t.sync_usage(data,usage)
+        r=s.rank_models(usage,"go","builder",labels,data,allow_free=True,
+            allow_low_quality_free=True,allow_openrouter=True)
+        self.assertEqual(r["rejected"][-1]["reason"],"paid-Go account exhausted")
+        self.assertEqual(r["selected"]["provider"],"free")
 
     def test_training_requires_opt_in(self):
         labels=["Muse Spark 1.3 Contributor (opencodego)"]

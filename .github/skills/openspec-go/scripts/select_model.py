@@ -15,6 +15,21 @@ from budget_models import (
 from model_tracker import DEFAULT_TRACKER_PATH, blocked, load_tracker, now, save_tracker, sync_usage
 from opencode_usage import fetch_usage, load_api_key, snapshot_from_file, validate_usage
 
+# Policy defaults for budget pressure, not published OpenCode limits.
+ROLLING_PRESSURE_THRESHOLD = 50.0
+WEEKLY_PRESSURE_THRESHOLD = 80.0
+MONTHLY_PRESSURE_THRESHOLD = 80.0
+
+BUILDER_RESERVE_PP = 15.0
+INSPECTOR_RESERVE_PP = 2.0
+
+
+def high_pressure(usage):
+    """True when any account window crosses its policy pressure threshold."""
+    return (usage["rolling"]["percent"] >= ROLLING_PRESSURE_THRESHOLD
+        or usage["weekly"]["percent"] >= WEEKLY_PRESSURE_THRESHOLD
+        or usage["monthly"]["percent"] >= MONTHLY_PRESSURE_THRESHOLD)
+
 
 def rank_models(usage, plan, role, available, tracker, profile=PROFILE, expected_requests=1,
                 reserve=None, builder="", allow_training=False, allow_free=False,
@@ -26,7 +41,7 @@ def rank_models(usage, plan, role, available, tracker, profile=PROFILE, expected
     if not isinstance(available,list) or any(not isinstance(x,str) for x in available):
         raise ValueError("available must be a JSON list of exact host model labels")
     # Reserve is absolute percentage points, not a fraction of the remaining balance.
-    reserve_pp = 15.0 if reserve is None and role == "builder" else 2.0 if reserve is None else 100.0*reserve
+    reserve_pp = BUILDER_RESERVE_PP if reserve is None and role == "builder" else INSPECTOR_RESERVE_PP if reserve is None else 100.0*reserve
     # Role defaults: Builder 3, Inspector 4. Explicit --min-quality overrides.
     if min_quality is None:
         min_quality = 3 if role == "builder" else 4
@@ -49,6 +64,7 @@ def rank_models(usage, plan, role, available, tracker, profile=PROFILE, expected
         reason = None
         if name in EXCLUDED: reason = "excluded: Kimi tool-schema incompatibility"
         elif not m: reason = "not in verified catalog"
+        elif role == "inspector" and m["family"] == builder_family: reason = "same family as Builder"
         elif kind == "openrouter":
             if not allow_openrouter or name not in or_precedence:
                 reason = "outside curated OpenRouter precedence or --allow-openrouter not set"
@@ -58,7 +74,6 @@ def rank_models(usage, plan, role, available, tracker, profile=PROFILE, expected
         elif name not in precedence:
             reason = "outside curated role precedence"
         elif m["training"] and not allow_training: reason = "training/region eligibility not approved"
-        elif role == "inspector" and m["family"] == builder_family: reason = "same family as Builder"
         if reason:
             rejected.append({"model":label,"reason":reason}); continue
         quality = m["quality"][0 if role=="builder" else 1]
@@ -66,7 +81,9 @@ def rank_models(usage, plan, role, available, tracker, profile=PROFILE, expected
             free.append({"model":label,"canonical":name,"provider":kind,"quality":quality})
             continue
         if kind == "openrouter":
-            paid.append({"model":label,"canonical":name,"provider":kind,"quality":quality})
+            # External final fallback: declared precedence order, Builder family skipped.
+            paid.append({"model":label,"canonical":name,"provider":kind,"quality":quality,
+                "precedence_index":or_precedence.index(name)})
             continue
         if quality < min_quality:
             rejected.append({"model":label,"reason":"below required subjective quality tier"}); continue
@@ -98,17 +115,42 @@ def rank_models(usage, plan, role, available, tracker, profile=PROFILE, expected
             "fits_expected_requests":True,
             "rolling_burn_fraction":cost/e["windows"]["rolling"]["usd"],
             "projected_usage_percent":{w:usage[w]["percent"]+projected_burn_pp[w] for w in WINDOWS}})
-    # A dispatch may start only if the planned batch fits all windows. Curated
-    # precedence ranks viable models; it never turns an infeasible candidate into
-    # a selection. Dynamic reranking within precedence uses normalized 5h burn.
     fitting = [m for m in candidates if m["fits_expected_requests"]]
-    ordered = sorted(fitting,key=lambda m:(precedence.index(m["canonical"]),m["rolling_burn_fraction"],m["model"]))
+    # Step C/D: adaptive reranking. Normal pressure keeps curated precedence
+    # order with 5h burn only as tie-breaker; high pressure conserves allowance
+    # within a quality floor one tier below the strongest feasible candidate.
+    conserve = high_pressure(usage)
+    if conserve and fitting:
+        highest_quality = max(m["quality"] for m in fitting)
+        quality_floor = max(min_quality, highest_quality - 1)
+        main = [m for m in fitting if m["quality"] >= quality_floor]
+        deferred = [m for m in fitting if m["quality"] < quality_floor]
+        main.sort(key=lambda m:(m["projected_burn_pp"]["rolling"],-m["quality"],
+            precedence.index(m["canonical"]),m["model"]))
+        deferred.sort(key=lambda m:(m["projected_burn_pp"]["rolling"],-m["quality"],
+            precedence.index(m["canonical"]),m["model"]))
+        ordered = main + deferred
+    else:
+        ordered = sorted(fitting,key=lambda m:(precedence.index(m["canonical"]),
+            m["projected_burn_pp"]["rolling"],m["model"]))
     ordered += sorted(free,key=lambda m:(-m["quality"],m["model"]))
-    ordered += sorted(paid,key=lambda m:(-m["quality"],m["model"]))
+    ordered += sorted(paid,key=lambda m:(m["precedence_index"],m["model"]))
     selected = ordered[0] if ordered else None
+    if selected:
+        if conserve:
+            selection_reason = (f"{selected['canonical']} selected: lower projected 5-hour "
+                "allowance consumption within the permitted quality range.")
+        else:
+            selection_reason = (f"{selected['canonical']} selected: first eligible model "
+                f"in {role.title()} precedence.")
+    else:
+        selection_reason = "No eligible model fits the current budget and quality requirements."
     infeasible = [m for m in candidates if not m["fits_expected_requests"]]
-    return {"plan":plan,"role":role,"selected":selected,"ranked":ordered,"rejected":rejected,
+    return {"plan":plan,"role":role,"selection_mode":"conserve" if conserve else "normal",
+        "selected":selected,"ranked":ordered,"rejected":rejected,
+        "usage_percent":{w:usage[w]["percent"] for w in WINDOWS},
         "profile":list(profile),"expected_requests":expected_requests,
+        "selection_reason":selection_reason,
         "check_scope":"single-request feasibility estimate" if expected_requests == 1 else "estimated multi-request batch",
         "reserve_pp":reserve_pp,
         "infeasible_candidates":infeasible,

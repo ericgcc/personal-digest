@@ -142,6 +142,28 @@ def resolve_adapter_timeout(*, kind: str, config: Mapping[str, Any] | None = Non
     return value if value > 0 else fallback
 
 
+def resolve_anti_pattern_budget(*, config: Mapping[str, Any] | None = None) -> int:
+    """The Draft prevention block's byte budget: environment, then runtime.json, then default.
+
+    The budget bounds the rendered anti-pattern guidance block in UTF-8 bytes. It follows the
+    same resolution order as the adapter timeout: ``DIGEST_ANTI_PATTERN_BUDGET_BYTES`` wins,
+    then ``adapters.anti_pattern_budget_bytes`` in the runtime configuration, then the module
+    default. An unparseable or non-positive value falls back to the default.
+    """
+    from ..editorial.anti_patterns import DEFAULT_PREVENTION_BYTES
+
+    active = config if config is not None else load_runtime_config()
+    adapters = active.get("adapters") if isinstance(active.get("adapters"), Mapping) else {}
+    raw = os.environ.get("DIGEST_ANTI_PATTERN_BUDGET_BYTES") or adapters.get("anti_pattern_budget_bytes")
+    if raw is None:
+        return DEFAULT_PREVENTION_BYTES
+    try:
+        value = int(float(raw))
+    except (TypeError, ValueError):
+        return DEFAULT_PREVENTION_BYTES
+    return value if value > 0 else DEFAULT_PREVENTION_BYTES
+
+
 @dataclass
 class SpawnResult:
     ok: bool

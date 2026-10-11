@@ -14,7 +14,7 @@
 
 ## Instruction documents
 
-- `editorial/stages/draft.md` — 5201 chars; owner: shared stage contract; sha256 `61629ef9468e`
+- `editorial/stages/draft.md` — 5636 chars; owner: shared stage contract; sha256 `c0a9834a85c3`
 - `editorial/shared/reader.md` — 3357 chars; owner: shared cross-cutting contract; sha256 `c653190e8179`
 - `editorial/shared/editorial-base.md` — 3257 chars; owner: shared cross-cutting contract; sha256 `36674056046c`
 
@@ -34,5 +34,5 @@
 
 ## Sizes
 
-- System: 19103 units
+- System: 19538 units
 - User: 7150 units

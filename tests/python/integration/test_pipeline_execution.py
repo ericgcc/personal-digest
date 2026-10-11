@@ -339,6 +339,23 @@ def test_draft_receives_the_anti_pattern_prevention_block_when_available(workspa
     assert anti["reason"] is None
 
 
+def test_a_configured_anti_pattern_budget_changes_the_draft_prompt(workspace):
+    """The runtime-configured byte budget is passed through to the prevention block."""
+    provider = MockProvider(_responses())
+    result = _run(
+        workspace,
+        run_id="mock-antipatterns-budget",
+        provider=provider,
+        wops=MockWopsWithAntiPatterns(),
+        runtime_config={"adapters": {"anti_pattern_budget_bytes": 10}},
+    )
+
+    assert result["degraded"] == []
+    draft_request = next(request for request in provider.requests if request.stage_name == "draft")
+    # A 10-byte budget cannot fit any entry whole, so the block is omitted entirely.
+    assert "<anti_pattern_prevention>" not in draft_request.user_text
+
+
 def test_draft_omits_the_block_and_completes_when_wops_is_unavailable(workspace):
     """With the unavailable mock, the block is omitted and the run is not degraded."""
     provider = MockProvider(_responses())

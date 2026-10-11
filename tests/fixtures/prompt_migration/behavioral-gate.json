@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
-  "approved_candidate_sha256": "18a88f0f9b007e6f3daf0bf517b47097e257eda99303122368b82c853eeee4bb",
+  "approved_candidate_sha256": "b374e639bfaa9f30840eb29ed71edb62917ca848f411b1bf6e9573ca9f634818",
   "categories": [
     "packaging-only",
     "deduplication-without-semantic-loss",
@@ -756,6 +756,17 @@
       "block": "anti_pattern_prevention",
       "category": "behavioral-change",
       "justification": "WOPS anti-pattern prevention added to Draft: the block's lines are the synthetic offline catalogue entries (name — summary plus false-positive conditions) that exercise the same code path a real WOPS checkout does. The vocabulary is fixture data, not embedded instruction text. OpenSpec change 2026-10-10-wops-anti-pattern-integration, Phase 1."
+    },
+    {
+      "profile": "*",
+      "stage": "draft",
+      "kind": "novel-content",
+      "block": "editorial/stages/draft.md",
+      "detail_contains": [
+        "An anti-pattern prevention block, when the writing-operations library is configured"
+      ],
+      "category": "behavioral-change",
+      "justification": "The Draft contract now names the anti-pattern prevention block in 'What you receive' and states its authority: conditional writing guidance, not absolute prohibitions, never overriding factual accuracy, the evidence, or the approved frame. Phase 1 review correction for the same OpenSpec change."
     }
   ]
 }

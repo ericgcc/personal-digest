@@ -15,8 +15,9 @@
     "_note": "Optional per-style default for the editorial style profile a v2 run executes. Keys are canonical style names; values are profile ids from the style-profile registry. An entry here is the configured default for that style, overridden by DIGEST_STYLE_PROFILE and then by --style-profile on the command line. This block is intentionally empty: every style currently defaults to its <style>-legacy profile."
   },
   "adapters": {
-    "_note": "Both adapters degrade rather than fail. A missing WOPS root, an unusable interpreter, an unconfigured credential, or a judge error is recorded as a degraded stage and the pipeline continues with the last valid artifact.",
+    "_note": "Both adapters degrade rather than fail. A missing WOPS root, an unusable interpreter, an unconfigured credential, or a judge error is recorded as a degraded stage and the pipeline continues with the last valid artifact. anti_pattern_budget_bytes bounds the Draft prevention block in UTF-8 bytes (default 2500); DIGEST_ANTI_PATTERN_BUDGET_BYTES overrides it.",
     "wops_timeout_ms": 120000,
-    "evaluation_timeout_ms": 600000
+    "evaluation_timeout_ms": 600000,
+    "anti_pattern_budget_bytes": 2500
   }
 }

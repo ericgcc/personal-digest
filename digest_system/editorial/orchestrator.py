@@ -25,7 +25,7 @@ from ..config.profiles import (
     validate_style_profile,
 )
 from ..config.reading_instructions import empty_instructions, read_reading_instructions
-from ..config.runtime import load_runtime_config
+from ..config.runtime import load_runtime_config, resolve_anti_pattern_budget
 from ..integrations.evaluation import create_evaluation_adapter
 from ..integrations.wops import create_wops_adapter
 from ..runtime.artifacts import (
@@ -99,6 +99,7 @@ def execute_pipeline_v2(
     wops = wops if wops is not None else create_wops_adapter(config=config)
     evaluation = evaluation if evaluation is not None else create_evaluation_adapter(config=config)
     anti_pattern_catalogue = load_catalogue(wops)
+    anti_pattern_budget = resolve_anti_pattern_budget(config=config)
 
     corpus = json.loads(read_text_raw(source_path))
     # The style's interface declaration is the runtime owner of the `## Style interface`
@@ -142,6 +143,7 @@ def execute_pipeline_v2(
     ctx._preflight_cache = preflight  # noqa: SLF001 - the context caches its own preflight
     ctx.wops = wops
     ctx.anti_pattern_catalogue = anti_pattern_catalogue
+    ctx.anti_pattern_budget_bytes = anti_pattern_budget
 
     # Seed the artifact map with the corpus.
     ctx.artifacts["source-acquisition"] = Artifact(

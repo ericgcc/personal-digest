@@ -18,8 +18,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
-from ..runtime.artifacts import js_length
-
 #: The bound on how many anti-pattern entries the prevention block may carry. A small, relevant
 #: subset, never the whole catalogue.
 MAX_PREVENTION_ITEMS = 5
@@ -89,6 +87,15 @@ def load_catalogue(wops: Any) -> AntiPatternCatalogue:
         )
 
     ids = [entry["id"] for entry in listed.get("antipatterns", []) if entry.get("id")]
+    if not ids:
+        # A reachable adapter whose catalogue lists nothing is recorded as unusable, not as
+        # available-but-empty: Phase 2's detection must be able to trust ``available``.
+        return AntiPatternCatalogue(
+            available=False,
+            version=version,
+            reason=adapter_reason or "the WOPS anti-pattern catalogue listed no entries",
+            records=[],
+        )
 
     try:
         fetched = wops.get_anti_patterns(ids)
@@ -108,19 +115,26 @@ def load_catalogue(wops: Any) -> AntiPatternCatalogue:
         )
 
     records = [record for record in fetched.get("antipatterns", []) if isinstance(record, Mapping)]
+    if not records:
+        return AntiPatternCatalogue(
+            available=False,
+            version=version,
+            reason=adapter_reason or "the WOPS anti-pattern catalogue returned no records",
+            records=[],
+        )
     return AntiPatternCatalogue(available=True, version=version, reason=None, records=records)
 
 
-def _select_records(records: Sequence[dict], max_items: int) -> list[dict]:
+def _order_records(records: Sequence[dict]) -> list[dict]:
     """Order the catalogue for the prevention subset.
 
     Entries whose ``activities[]`` include the drafting activity are preferred; the rest follow
-    catalogue order. The result is a stable order (drafting-relevant first, then the rest),
-    truncated to ``max_items``.
+    catalogue order. The full preference order is returned; the caller applies the item cap so
+    that cap omissions can be accounted separately from budget omissions.
     """
     preferred = [record for record in records if "drafting" in (record.get("activities") or [])]
     rest = [record for record in records if "drafting" not in (record.get("activities") or [])]
-    return [*preferred, *rest][:max_items]
+    return [*preferred, *rest]
 
 
 def _render_entry(record: Mapping[str, Any]) -> str:
@@ -149,44 +163,58 @@ def prevention_block(
     """Compose the bounded preventive guidance block.
 
     Selects a small, relevant subset (``activities[]`` drafting entries preferred), renders each
-    selected entry whole, and omits remaining entries whole once the byte budget is exhausted —
-    never cutting an entry mid-sentence. Returns ``(None, metadata)`` when the catalogue is
-    unavailable or empty. The metadata records ``selected_ids``, ``omitted_count``,
-    ``omitted_ids``, and ``bytes``.
+    selected entry whole, and enforces two bounds strictly:
+
+    * at most ``max_items`` entries — entries beyond the cap are omitted whole;
+    * a byte budget of ``max_bytes`` measured in UTF-8 bytes over the complete rendered body,
+      including the blank-line separators between entries. Any entry that cannot fit whole is
+      omitted whole — including the first one. No entry is ever cut mid-sentence.
+
+    Returns ``(None, metadata)`` when the catalogue is unavailable or empty, or when no entry
+    fits. The metadata records ``selected_ids``, the omissions split into
+    ``omitted_by_item_cap`` and ``omitted_by_budget`` (each with ``count`` and ``ids``), their
+    union in ``omitted_count``/``omitted_ids``, and the rendered ``bytes``.
     """
     metadata: dict[str, Any] = {
         "selected_ids": [],
         "omitted_count": 0,
         "omitted_ids": [],
+        "omitted_by_item_cap": {"count": 0, "ids": []},
+        "omitted_by_budget": {"count": 0, "ids": []},
         "bytes": 0,
+        "max_bytes": max_bytes,
     }
     if not catalogue.available or not catalogue.records:
         return None, metadata
 
-    ordered = _select_records(catalogue.records, max_items)
-    entries: list[tuple[dict, str, int]] = []
-    for record in ordered:
-        text = _render_entry(record)
-        entries.append((record, text, js_length(text)))
+    ordered = _order_records(catalogue.records)
+    considered, cap_omitted = ordered[:max_items], ordered[max_items:]
 
+    separator_bytes = len("\n\n".encode("utf-8"))
     selected: list[tuple[dict, str]] = []
-    omitted_ids: list[str] = []
-    budget_used = 0
-    for record, text, size in entries:
-        # The first entry is always rendered whole even when it alone exceeds the budget, so no
-        # entry is ever cut. Every later entry is omitted whole when it would exceed the budget.
-        if selected and budget_used + size > max_bytes:
-            omitted_ids.append(record.get("id"))
+    budget_omitted: list[str] = []
+    used = 0
+    for record in considered:
+        text = _render_entry(record)
+        size = len(text.encode("utf-8"))
+        extra = size if not selected else size + separator_bytes
+        if used + extra > max_bytes:
+            budget_omitted.append(record.get("id"))
             continue
         selected.append((record, text))
-        budget_used += size
+        used += extra
 
+    cap_ids = [record.get("id") for record in cap_omitted]
+    omitted_ids = [*cap_ids, *budget_omitted]
     body = "\n\n".join(text for _record, text in selected)
     metadata = {
         "selected_ids": [record.get("id") for record, _text in selected],
         "omitted_count": len(omitted_ids),
         "omitted_ids": omitted_ids,
-        "bytes": js_length(body),
+        "omitted_by_item_cap": {"count": len(cap_ids), "ids": cap_ids},
+        "omitted_by_budget": {"count": len(budget_omitted), "ids": budget_omitted},
+        "bytes": len(body.encode("utf-8")),
+        "max_bytes": max_bytes,
     }
     if not selected:
         return None, metadata

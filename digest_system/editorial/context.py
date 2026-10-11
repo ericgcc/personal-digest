@@ -64,12 +64,15 @@ class RunContext:
     #: ``{tag, payload, source}``; ``source`` describes where the payload came from, which
     #: matters when an artifact was carried forward from an earlier stage.
     pending_blocks: list[dict[str, Any]] = field(default_factory=list)
-    #: The run's WOPS adapter, set by the orchestrator. Not a declared dataclass field with a
-    #: real default because the run context is built once and the adapter always exists by then.
+    #: The run's WOPS adapter, set by the orchestrator after the context is built (the adapter
+    #: is created once per run and always exists by the time a stage runs).
     wops: Any = None
     #: The anti-pattern catalogue loaded once per run, cached so the Draft block and the
     #: pipeline record agree on availability and version without re-fetching.
     anti_pattern_catalogue: Any = None
+    #: The prevention block's byte budget, resolved from the runtime configuration by the
+    #: orchestrator (environment wins, then runtime.json, then the module default).
+    anti_pattern_budget_bytes: int | None = None
 
     def stage_excluded_sections(self, stage_name: str) -> list[str]:
         """Convention composition has no withheld style fragments."""
@@ -226,14 +229,15 @@ class RunContext:
         the catalogue is unavailable or empty the block is ``None`` and the prompt is composed
         without it. The block is inert data, wrapped and printed exactly like every other block.
         """
-        from .anti_patterns import load_catalogue, prevention_block
+        from .anti_patterns import DEFAULT_PREVENTION_BYTES, load_catalogue, prevention_block
 
         if self.wops is None:
             return None
         catalogue = self.anti_pattern_catalogue
         if catalogue is None:
             catalogue = load_catalogue(self.wops)
-        text, metadata = prevention_block(catalogue)
+        budget = self.anti_pattern_budget_bytes or DEFAULT_PREVENTION_BYTES
+        text, metadata = prevention_block(catalogue, max_bytes=budget)
         if text is None:
             return None
         return {
@@ -247,6 +251,10 @@ class RunContext:
                 "selected_ids": metadata["selected_ids"],
                 "omitted_count": metadata["omitted_count"],
                 "omitted_ids": metadata["omitted_ids"],
+                "omitted_by_item_cap": metadata["omitted_by_item_cap"],
+                "omitted_by_budget": metadata["omitted_by_budget"],
+                "bytes": metadata["bytes"],
+                "max_bytes": metadata["max_bytes"],
             },
         }
 

@@ -65,6 +65,7 @@ def rank_models(usage, plan, role, available, tracker, profile=PROFILE, expected
         if name in EXCLUDED: reason = "excluded: Kimi tool-schema incompatibility"
         elif not m: reason = "not in verified catalog"
         elif role == "inspector" and m["family"] == builder_family: reason = "same family as Builder"
+        elif blocked(tracker,label): reason = "tracker block"
         elif kind == "openrouter":
             if not allow_openrouter or name not in or_precedence:
                 reason = "outside curated OpenRouter precedence or --allow-openrouter not set"
@@ -77,6 +78,11 @@ def rank_models(usage, plan, role, available, tracker, profile=PROFILE, expected
         if reason:
             rejected.append({"model":label,"reason":reason}); continue
         quality = m["quality"][0 if role=="builder" else 1]
+        # The quality minimum applies to every provider. Free models keep their
+        # explicit low-quality authorization, but --min-quality 4|5 still blocks
+        # that downgrade, as documented.
+        if quality < min_quality:
+            rejected.append({"model":label,"reason":"below required subjective quality tier"}); continue
         if kind == "free":
             free.append({"model":label,"canonical":name,"provider":kind,"quality":quality})
             continue
@@ -85,8 +91,6 @@ def rank_models(usage, plan, role, available, tracker, profile=PROFILE, expected
             paid.append({"model":label,"canonical":name,"provider":kind,"quality":quality,
                 "precedence_index":or_precedence.index(name)})
             continue
-        if quality < min_quality:
-            rejected.append({"model":label,"reason":"below required subjective quality tier"}); continue
         if any(usage[w]["status"]=="rate-limited" or usage[w]["percent"]>=100 for w in WINDOWS):
             rejected.append({"model":label,"reason":"paid-Go account exhausted"}); continue
         e = estimate(name,plan,profile,off_peak)

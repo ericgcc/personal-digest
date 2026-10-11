@@ -86,13 +86,13 @@ model was unavailable.
   **per API request**, and the planned request count for the next brief
   (`--expected-requests`; default 1 = single-request feasibility estimate, not
   a forecast of the whole run — pass a larger justified estimate for a bounded
-  task). The default token profile is a comparison scenario (8K/60K/2K/0).
-  Predicted request costs come only from `budget_models.estimate()` over the
-  published catalog prices; no historical billing numbers from past sessions
-  are used as inputs. For unknown caching behavior use a conservative profile
-  with zero assumed cache reads; pass a warmer profile only when cache reuse is
-  supported by reliable runtime information. For a fresh Inspector start with
-  a cold-cache estimate such as 68K/0/2K/0; do not copy Builder cache
+  task). Predicted request costs come only from `budget_models.estimate()` over
+  the published catalog prices; no historical billing numbers from past
+  sessions are used as inputs. Without reliable evidence of cache reuse, use a
+  conservative profile with zero assumed cache reads (e.g. 68K/0/2K/0 for a
+  Builder request of that size); pass a warmer profile only when cache reuse is
+  supported by reliable runtime information. For a fresh Inspector always start
+  with a cold-cache estimate such as 68K/0/2K/0; do not copy Builder cache
   assumptions or session state.
 - Builder reserves **15 percentage points** of every window; Inspector keeps a
   **2-percentage-point** margin and may consume the Builder's reserved
@@ -122,9 +122,9 @@ Run from the repository root before **every** dispatch:
 
 ```bash
 python .github/skills/openspec-go/scripts/opencode_usage.py --plan go --record --log
-python .github/skills/openspec-go/scripts/select_model.py --plan go --role builder --available "<run>/available-models.json" --expected-requests 200 --prepare openspec-go
+python .github/skills/openspec-go/scripts/select_model.py --plan go --role builder --available "<run>/available-models.json" --prepare openspec-go
 # Inspector: use actual Builder model and an independent cold-cache profile
-python .github/skills/openspec-go/scripts/select_model.py --plan go --role inspector --available "<run>/available-models.json" --builder-model "<actual Builder model>" --profile 68000 0 2000 0 --expected-requests 20 --prepare openspec-go
+python .github/skills/openspec-go/scripts/select_model.py --plan go --role inspector --available "<run>/available-models.json" --builder-model "<actual Builder model>" --profile 68000 0 2000 0 --prepare openspec-go
 ```
 
 Change `go` to `go-plus` for that plan. The selector fetches fresh usage;

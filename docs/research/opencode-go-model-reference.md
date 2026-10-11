@@ -295,8 +295,8 @@ Use either skill's scripts from the repo root. Explicitly set the active plan:
 python .github/skills/goal/scripts/opencode_usage.py --plan go-plus --record --log
 python .github/skills/goal/scripts/opencode_usage.py --catalog --plan go-plus
 python .github/skills/goal/scripts/opencode_usage.py --model "Kimi K3" --plan go --profile 68000 0 2000 0
-python .github/skills/goal/scripts/select_model.py --plan go-plus --role builder --available <run>/available-models.json --expected-requests 200 --prepare goal
-python .github/skills/goal/scripts/select_model.py --plan go-plus --role inspector --available <run>/available-models.json --builder-model "<actual Builder model>" --profile 68000 0 2000 0 --expected-requests 20 --prepare goal
+python .github/skills/goal/scripts/select_model.py --plan go-plus --role builder --available <run>/available-models.json --prepare goal
+python .github/skills/goal/scripts/select_model.py --plan go-plus --role inspector --available <run>/available-models.json --builder-model "<actual Builder model>" --profile 68000 0 2000 0 --prepare goal
 ```
 
 The inventory file is a JSON list of exact model labels actually exposed by the

@@ -157,13 +157,56 @@ class BudgetTests(unittest.TestCase):
     def test_openrouter_inspector_skips_builder_family_and_keeps_declared_order(self):
         # GLM-5.3-Flash (glm) is first in OPENROUTER_INSPECTOR_PRECEDENCE but shares
         # the Builder's family; DeepSeek V4.1 Flash (deepseek) is independent.
+        # Both are Inspector quality 3, so an explicit lowered minimum is required.
         labels=["Z.ai: GLM 5.3 Flash (openrouter)","DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
-        r=s.rank_models(healthy(),"go","inspector",labels,empty(),builder="GLM-5.2",allow_openrouter=True)
+        r=s.rank_models(healthy(),"go","inspector",labels,empty(),builder="GLM-5.2",
+            allow_openrouter=True,min_quality=3)
         self.assertEqual(r["selected"]["canonical"],"DeepSeek V4.1 Flash")
         self.assertEqual(r["rejected"][0]["reason"],"same family as Builder")
         # With no family conflict, declared order wins (GLM-5.3-Flash first).
-        r2=s.rank_models(healthy(),"go","inspector",labels,empty(),builder="DeepSeek V4 Pro",allow_openrouter=True)
+        r2=s.rank_models(healthy(),"go","inspector",labels,empty(),builder="DeepSeek V4 Pro",
+            allow_openrouter=True,min_quality=3)
         self.assertEqual(r2["selected"]["canonical"],"GLM-5.3-Flash")
+
+    def test_tracker_block_removes_candidate_from_selection(self):
+        # A model-specific failure recorded in the tracker must prevent the
+        # selector from choosing that model again, even with healthy usage.
+        labels=["DeepSeek V4 Pro (opencodego)","GLM-5.2 (opencodego)"]
+        base=s.rank_models(healthy(),"go","builder",labels,empty(),expected_requests=50)
+        self.assertEqual(base["selected"]["canonical"],"DeepSeek V4 Pro")
+        data=empty()
+        data["models"][t.model_key("DeepSeek V4 Pro (opencodego)")]=t.make_record("unknown")
+        r=s.rank_models(healthy(),"go","builder",labels,data,expected_requests=50)
+        self.assertEqual(r["selected"]["canonical"],"GLM-5.2")
+        self.assertEqual(r["rejected"][0]["reason"],"tracker block")
+
+    def test_openrouter_respects_quality_minimum(self):
+        # GLM-5.3-Flash (Inspector quality 3) must not serve as an Inspector
+        # fallback when the default minimum is 4; DeepSeek V4.1 Flash (3) also
+        # fails, so no external selection is returned. The family check runs
+        # first for the GLM label (same family as the GLM Builder).
+        labels=["Z.ai: GLM 5.3 Flash (openrouter)","DeepSeek: DeepSeek V4.1 Flash (openrouter)"]
+        r=s.rank_models(healthy(),"go","inspector",labels,empty(),builder="GLM-5.2",allow_openrouter=True)
+        self.assertIsNone(r["selected"])
+        reasons={x["model"]:x["reason"] for x in r["rejected"]}
+        self.assertEqual(reasons[labels[0]],"same family as Builder")
+        self.assertEqual(reasons[labels[1]],"below required subjective quality tier")
+        # An explicit lower minimum permits the independent fallback; the GLM
+        # label still loses to the family check against the GLM Builder.
+        r2=s.rank_models(healthy(),"go","inspector",labels,empty(),builder="DeepSeek V4 Pro",
+            allow_openrouter=True,min_quality=3)
+        self.assertEqual(r2["selected"]["canonical"],"GLM-5.3-Flash")
+
+    def test_free_models_blocked_by_explicit_high_min_quality(self):
+        # --min-quality 4|5 must prevent the documented free-model downgrade.
+        # LongCat is quality 2, so even the low-quality authorization needs an
+        # explicit lowered minimum.
+        labels=["LongCat 2.5 Preview Free (opencodego)"]
+        usage=healthy(100)
+        self.assertIsNotNone(s.rank_models(usage,"go","builder",labels,empty(),
+            allow_free=True,allow_low_quality_free=True,min_quality=2)["selected"])
+        self.assertIsNone(s.rank_models(usage,"go","builder",labels,empty(),
+            allow_free=True,allow_low_quality_free=True,min_quality=4)["selected"])
 
     def test_openrouter_requires_explicit_authorization(self):
         labels=["Z.ai: GLM 5.3 Flash (openrouter)","GLM-5.2 (opencodego)"]
@@ -176,8 +219,10 @@ class BudgetTests(unittest.TestCase):
         usage=healthy(); usage["rolling"].update(status="rate-limited",percent=100)
         data=empty(); t.sync_usage(data,usage)
         r=s.rank_models(usage,"go","builder",labels,data,allow_free=True,
-            allow_low_quality_free=True,allow_openrouter=True)
-        self.assertEqual(r["rejected"][-1]["reason"],"paid-Go account exhausted")
+            allow_low_quality_free=True,allow_openrouter=True,min_quality=2)
+        # The paid-Go candidate is rejected through the tracker's account-wide
+        # block; free and OpenRouter remain selectable.
+        self.assertEqual(r["rejected"][0]["reason"],"tracker block")
         self.assertEqual(r["selected"]["provider"],"free")
 
     def test_training_requires_opt_in(self):
@@ -200,7 +245,7 @@ class BudgetTests(unittest.TestCase):
         usage=healthy(100)
         labels=["LongCat 2.5 Preview Free (opencodego)","Z.ai: GLM 5.3 Flash (openrouter)"]
         r=s.rank_models(usage,"go","builder",labels,empty(),allow_free=True,
-            allow_low_quality_free=True,allow_openrouter=True)
+            allow_low_quality_free=True,allow_openrouter=True,min_quality=2)
         self.assertEqual(r["selected"]["provider"],"free")
 
     def test_free_models_never_select_for_inspector_or_without_low_quality_consent(self):

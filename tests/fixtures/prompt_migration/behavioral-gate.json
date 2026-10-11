@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
-  "approved_candidate_sha256": "5e9a45322d1d32f0a3430f42afd1e6f5bd39230d83b6b36bc2cdd8e40405cbd8",
+  "approved_candidate_sha256": "18a88f0f9b007e6f3daf0bf517b47097e257eda99303122368b82c853eeee4bb",
   "categories": [
     "packaging-only",
     "deduplication-without-semantic-loss",
@@ -740,6 +740,22 @@
       "block": "editorial/shared/naturalness.md",
       "category": "behavioral-change",
       "justification": "Copy Edit was retired after controlled replay evaluations: its prose-quality duties moved to Writer Revision, which now applies the naturalness contract during its final prose pass, and Reader Review checks for remaining reader-facing defects absolutely. The contract text was rewritten to name the owning stages instead of COPY EDIT and to state the concision invariant inline. Approved by the copy-edit retirement."
+    },
+    {
+      "profile": "*",
+      "stage": "draft",
+      "kind": "added",
+      "block": "anti_pattern_prevention",
+      "category": "behavioral-change",
+      "justification": "WOPS anti-pattern prevention added to Draft: the stage now receives a bounded preventive guidance block derived from the WOPS anti-pattern catalogue (summaries plus false-positive conditions), delivered as inert data. OpenSpec change 2026-10-10-wops-anti-pattern-integration, Phase 1."
+    },
+    {
+      "profile": "*",
+      "stage": "draft",
+      "kind": "novel-content",
+      "block": "anti_pattern_prevention",
+      "category": "behavioral-change",
+      "justification": "WOPS anti-pattern prevention added to Draft: the block's lines are the synthetic offline catalogue entries (name — summary plus false-positive conditions) that exercise the same code path a real WOPS checkout does. The vocabulary is fixture data, not embedded instruction text. OpenSpec change 2026-10-10-wops-anti-pattern-integration, Phase 1."
     }
   ]
 }

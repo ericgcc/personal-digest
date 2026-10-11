@@ -74,6 +74,72 @@ class MockWops:
         return {"ok": False, "error": self.reason, "operations": [], "failures": []}
 
 
+class MockWopsWithAntiPatterns:
+    """An available mock adapter exposing the anti-pattern wrapper methods.
+
+    The record names are invented; they exercise the same code path a real WOPS checkout does
+    without carrying any real anti-pattern vocabulary.
+    """
+
+    available = True
+    reason = None
+    root = None
+    version = "9.9.9-mock"
+
+    def __init__(self) -> None:
+        self._records = [
+            {
+                "id": "mock-defect-a",
+                "name": "Mock Defect A",
+                "summary": "A mock surface defect.",
+                "detection": ["a mock detection signal"],
+                "false_positives": ["a genuine contrast exists"],
+                "repair": [],
+                "overuse_of": [],
+                "activities": ["drafting"],
+                "status": "active",
+                "version": "9.9.9-mock",
+            },
+            {
+                "id": "mock-defect-b",
+                "name": "Mock Defect B",
+                "summary": "Another mock defect.",
+                "detection": ["a mock detection signal"],
+                "false_positives": ["a required formal conclusion is expected"],
+                "repair": [],
+                "overuse_of": [],
+                "activities": ["drafting"],
+                "status": "active",
+                "version": "9.9.9-mock",
+            },
+        ]
+
+    def describe(self):
+        return {"available": True, "reason": None, "version": self.version, "root": None, "adapter": "WopsAdapter"}
+
+    def search_writing_operations(self, **kwargs):
+        return {"ok": False, "error": "mock: no retrieval", "results": [], "request": kwargs}
+
+    def get_writing_operations(self, ids=()):
+        return {"ok": False, "error": "mock: no operations", "operations": [], "failures": []}
+
+    def list_anti_patterns(self):
+        return {
+            "ok": True,
+            "error": None,
+            "antipatterns": [{"id": record["id"], "summary": record["summary"]} for record in self._records],
+        }
+
+    def get_anti_patterns(self, ids=()):
+        wanted = set(ids)
+        return {
+            "ok": True,
+            "error": None,
+            "antipatterns": [record for record in self._records if record["id"] in wanted],
+            "failures": [],
+        }
+
+
 class MockEvaluation:
     python = "mock"
     python_source = "mock"
@@ -207,7 +273,7 @@ def _run(workspace: Path, *, run_id: str, provider, **kwargs):
         style_profile_source="explicit",
         root=workspace,
         provider=provider,
-        wops=MockWops(),
+        wops=kwargs.pop("wops", MockWops()),
         evaluation=kwargs.pop("evaluation", MockEvaluation()),
         **kwargs,
     )
@@ -252,6 +318,43 @@ def test_a_mocked_pipeline_executes_every_stage_and_produces_compatible_artifact
         assert (attempt / "context-manifest.json").exists(), stage
         assert (attempt / "prompt.txt").exists(), stage
         assert (attempt / "completed.json").exists(), stage
+
+
+def test_draft_receives_the_anti_pattern_prevention_block_when_available(workspace):
+    """With an available WOPS adapter, Draft's prompt carries the bounded prevention block."""
+    provider = MockProvider(_responses())
+    result = _run(workspace, run_id="mock-antipatterns", provider=provider, wops=MockWopsWithAntiPatterns())
+
+    assert result["degraded"] == []
+
+    draft_request = next(request for request in provider.requests if request.stage_name == "draft")
+    assert "<anti_pattern_prevention>" in draft_request.user_text
+    assert "Mock Defect A" in draft_request.user_text
+
+    run_dir = workspace / ".digest-runs" / "mock-antipatterns"
+    pipeline = read_json(run_dir / "pipeline.json")
+    anti = pipeline["runtime"]["wops"]["anti_patterns"]
+    assert anti["available"] is True
+    assert anti["version"] == "9.9.9-mock"
+    assert anti["reason"] is None
+
+
+def test_draft_omits_the_block_and_completes_when_wops_is_unavailable(workspace):
+    """With the unavailable mock, the block is omitted and the run is not degraded."""
+    provider = MockProvider(_responses())
+    result = _run(workspace, run_id="mock-no-antipatterns", provider=provider)
+
+    assert result["degraded"] == []
+
+    draft_request = next(request for request in provider.requests if request.stage_name == "draft")
+    assert "<anti_pattern_prevention>" not in draft_request.user_text
+
+    run_dir = workspace / ".digest-runs" / "mock-no-antipatterns"
+    pipeline = read_json(run_dir / "pipeline.json")
+    anti = pipeline["runtime"]["wops"]["anti_patterns"]
+    assert anti["available"] is False
+    assert anti["version"] is None
+    assert anti["reason"] == "mock: WOPS not configured"
 
 
 def test_publication_findings_are_advisory_and_render_uses_the_audited_manifest(workspace):

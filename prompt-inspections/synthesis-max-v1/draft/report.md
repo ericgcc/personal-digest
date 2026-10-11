@@ -9,7 +9,7 @@
 ## Templates
 
 - `prompts/shared/preamble.j2` — 465 units, sha256 `8f60794abad6`
-- `prompts/stages/draft/user.j2` — 103 units, sha256 `81e0da1c5a99`
+- `prompts/stages/draft/user.j2` — 128 units, sha256 `d5c0e93e345a`
 - `prompts/shared/task.j2` — 595 units, sha256 `97cfa109d8d2`
 
 ## Instruction documents
@@ -29,9 +29,10 @@
 - `source_corpus` — 1949 chars; stage-permitted source evidence; source `{"bytes": 1949, "catalog_provenance_numbers": [1, 2, 3, 5], "declared_source_numbers": [1, 2, 3, 5], "effective_policy": "frame-selection", "kind": "evidence-projection", "missing_source_numbers": [], "recovery": null, "requested_policy": "frame", "source_count": 4, "source_numbers": [1, 2, 3, 5], "units": [{"disposition": "keep", "retained": true, "selected_source_numbers": [1, 2], "unit_id": "T1"}, {"disposition": "keep", "retained": true, "selected_source_numbers": [3, 5], "unit_id": "T2"}], "warning": null}`
 - `approved_frame` — 2190 chars; prior artifact or digest reading instructions; source `{"path": ".digest-runs/synthetic/frame/output/frame.json", "provenance": "runner", "stage": "frame"}`
 - `reading_instructions` — 1882 chars; prior artifact or digest reading instructions; source `{"path": "digests/tech-bi-daily.md", "sections": ["Reader", "Content preferences", "Optional highlights"], "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"}`
+- `anti_pattern_prevention` — 449 chars; stage-specific runtime input; source `{"kind": "executor-derived"}`
 - `stage_task` — 503 chars; immediate task and output contract; source `{"path": "prompts/shared/task.j2"}`
 
 ## Sizes
 
 - System: 19103 units
-- User: 6646 units
+- User: 7150 units

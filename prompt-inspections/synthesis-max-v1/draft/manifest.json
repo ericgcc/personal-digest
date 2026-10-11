@@ -9,8 +9,8 @@
     },
     {
       "path": "prompts/stages/draft/user.j2",
-      "bytes": 103,
-      "sha256": "81e0da1c5a991b16458b79390ce9fa3ab679ac4e9476c6050ec43df1c0ae2108"
+      "bytes": 128,
+      "sha256": "d5c0e93e345a67902104c4020379de2a2294f0d282fa5cfe5a2d698ce6e571f3"
     },
     {
       "path": "prompts/shared/task.j2",
@@ -137,6 +137,14 @@
       "purpose": "prior artifact or digest reading instructions"
     },
     {
+      "tag": "anti_pattern_prevention",
+      "bytes": 449,
+      "source": {
+        "kind": "executor-derived"
+      },
+      "purpose": "stage-specific runtime input"
+    },
+    {
       "tag": "stage_task",
       "bytes": 503,
       "source": {
@@ -147,5 +155,5 @@
   ],
   "omitted": [],
   "system_bytes": 19103,
-  "user_bytes": 6646
+  "user_bytes": 7150
 }

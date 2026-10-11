@@ -43,6 +43,7 @@ BLOCK_TAGS: tuple[str, ...] = (
     "writing_operations",
     "reader_review",
     "reading_instructions",
+    "anti_pattern_prevention",
     "validation_feedback",
     "deterministic_check_findings",
     "approved_frame_citations",

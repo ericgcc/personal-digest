@@ -107,6 +107,15 @@ class OfflineContext:
             "source": {"stage": target, "path": artifact.path.as_posix(), "provenance": artifact.provenance},
         }
 
+    def anti_pattern_prevention_block(self) -> dict[str, Any] | None:
+        """Offline there is no WOPS adapter, so this block source is a no-op.
+
+        The offline anti-pattern guidance is supplied deterministically through
+        ``stage_extra_blocks`` instead, so inspection and baseline capture stay aligned with a
+        real run without depending on a live WOPS checkout.
+        """
+        return None
+
     def rendering_values(self) -> dict[str, Any]:
         return {
             "run_key": self.run_key,
@@ -342,6 +351,49 @@ SYNTHETIC_READER_REVIEW = {
 }
 
 
+#: A deterministic anti-pattern catalogue for offline prompt composition. The names are invented
+#: and carry no real WOPS vocabulary; they exist only so inspection and baseline capture exercise
+#: the same prevention-block code path a real run uses, without a live WOPS checkout.
+SYNTHETIC_ANTI_PATTERNS = [
+    {
+        "id": "fixture-defect-alpha",
+        "name": "Fixture Defect Alpha",
+        "summary": "A synthetic surface defect used only for offline prompt inspection.",
+        "detection": ["a synthetic detection signal"],
+        "false_positives": ["the device is used for a genuine contrast"],
+        "repair": [],
+        "overuse_of": [],
+        "activities": ["drafting"],
+        "status": "active",
+        "version": "0.0.0-fixture",
+    },
+    {
+        "id": "fixture-defect-beta",
+        "name": "Fixture Defect Beta",
+        "summary": "Another synthetic defect carrying the drafting activity tag.",
+        "detection": ["a synthetic detection signal"],
+        "false_positives": ["a required formal conclusion is expected"],
+        "repair": [],
+        "overuse_of": [],
+        "activities": ["drafting"],
+        "status": "active",
+        "version": "0.0.0-fixture",
+    },
+    {
+        "id": "fixture-defect-gamma",
+        "name": "Fixture Defect Gamma",
+        "summary": "A synthetic defect tagged for reviewing rather than drafting.",
+        "detection": ["a synthetic detection signal"],
+        "false_positives": ["a genuine ordinal range is listed"],
+        "repair": [],
+        "overuse_of": [],
+        "activities": ["reviewing"],
+        "status": "active",
+        "version": "0.0.0-fixture",
+    },
+]
+
+
 def _artifact(name: str, text: str, *, parsed: Any = None, suffix: str = ".md") -> OfflineArtifact:
     return OfflineArtifact(path=Path(f".digest-runs/synthetic/{name}/output/{name}{suffix}"), text=text, json=parsed)
 
@@ -420,10 +472,22 @@ def stage_inputs(stage_name: str, context: OfflineContext) -> dict[str, Any]:
 def stage_extra_blocks(stage_name: str, context: OfflineContext) -> dict[str, Any]:
     """The stage-specific blocks the executor computes outside the stage declaration.
 
-    No stage currently needs an extra block. Keep this seam so baseline capture and
-    inspection stay aligned if an executor-derived input is introduced later.
+    Draft's preventive anti-pattern guidance is derived from the run's WOPS adapter in a real
+    run; offline there is no adapter, so the same block is supplied here from a deterministic
+    synthetic catalogue. This keeps baseline capture and inspection aligned with the run path.
     """
-    return {}
+    if stage_name != "draft":
+        return {}
+    from ..anti_patterns import AntiPatternCatalogue, prevention_block
+
+    catalogue = AntiPatternCatalogue(
+        available=True,
+        version="0.0.0-fixture",
+        reason=None,
+        records=SYNTHETIC_ANTI_PATTERNS,
+    )
+    text, _metadata = prevention_block(catalogue)
+    return {"anti_pattern_prevention": text} if text else {}
 
 
 __all__ = [

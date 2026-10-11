@@ -46,4 +46,4 @@ __pycache__/
 .github/skills/openspec-propose/
 .github/skills/openspec-sync-specs/
 .github/skills/openspec-update-change/
-..openspec-go/
+.openspec-go/

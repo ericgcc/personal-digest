@@ -64,6 +64,12 @@ class RunContext:
     #: ``{tag, payload, source}``; ``source`` describes where the payload came from, which
     #: matters when an artifact was carried forward from an earlier stage.
     pending_blocks: list[dict[str, Any]] = field(default_factory=list)
+    #: The run's WOPS adapter, set by the orchestrator. Not a declared dataclass field with a
+    #: real default because the run context is built once and the adapter always exists by then.
+    wops: Any = None
+    #: The anti-pattern catalogue loaded once per run, cached so the Draft block and the
+    #: pipeline record agree on availability and version without re-fetching.
+    anti_pattern_catalogue: Any = None
 
     def stage_excluded_sections(self, stage_name: str) -> list[str]:
         """Convention composition has no withheld style fragments."""
@@ -210,6 +216,37 @@ class RunContext:
                 "stage": target,
                 "path": relative_to_root(artifact.path, self.root),
                 "provenance": artifact.provenance,
+            },
+        }
+
+    def anti_pattern_prevention_block(self) -> dict[str, Any] | None:
+        """The bounded preventive anti-pattern guidance block for Draft, or ``None``.
+
+        Derived at run time from the WOPS anti-pattern catalogue through the run's adapter; when
+        the catalogue is unavailable or empty the block is ``None`` and the prompt is composed
+        without it. The block is inert data, wrapped and printed exactly like every other block.
+        """
+        from .anti_patterns import load_catalogue, prevention_block
+
+        if self.wops is None:
+            return None
+        catalogue = self.anti_pattern_catalogue
+        if catalogue is None:
+            catalogue = load_catalogue(self.wops)
+        text, metadata = prevention_block(catalogue)
+        if text is None:
+            return None
+        return {
+            "tag": "anti_pattern_prevention",
+            "payload": text,
+            "source": {
+                "kind": "wops-anti-pattern-catalogue",
+                "available": catalogue.available,
+                "version": catalogue.version,
+                "reason": catalogue.reason,
+                "selected_ids": metadata["selected_ids"],
+                "omitted_count": metadata["omitted_count"],
+                "omitted_ids": metadata["omitted_ids"],
             },
         }
 

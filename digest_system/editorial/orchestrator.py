@@ -39,6 +39,7 @@ from ..runtime.artifacts import (
     write_json,
 )
 from .context import Artifact, RunContext
+from .anti_patterns import load_catalogue
 from .executor import execute_stage
 from .rendering.values import resolve_run_key
 from .stages import PIPELINE_ID, PIPELINE_VERSION, STAGES_V2, stage_names_v2
@@ -97,6 +98,7 @@ def execute_pipeline_v2(
 
     wops = wops if wops is not None else create_wops_adapter(config=config)
     evaluation = evaluation if evaluation is not None else create_evaluation_adapter(config=config)
+    anti_pattern_catalogue = load_catalogue(wops)
 
     corpus = json.loads(read_text_raw(source_path))
     # The style's interface declaration is the runtime owner of the `## Style interface`
@@ -138,6 +140,8 @@ def execute_pipeline_v2(
         root=base,
     )
     ctx._preflight_cache = preflight  # noqa: SLF001 - the context caches its own preflight
+    ctx.wops = wops
+    ctx.anti_pattern_catalogue = anti_pattern_catalogue
 
     # Seed the artifact map with the corpus.
     ctx.artifacts["source-acquisition"] = Artifact(
@@ -177,7 +181,14 @@ def execute_pipeline_v2(
             },
         },
         "runtime": {
-            "wops": wops.describe(),
+            "wops": {
+                **wops.describe(),
+                "anti_patterns": {
+                    "available": anti_pattern_catalogue.available,
+                    "version": anti_pattern_catalogue.version,
+                    "reason": anti_pattern_catalogue.reason,
+                },
+            },
             "evaluation": {"python": evaluation.python, "python_source": evaluation.python_source},
             "pipeline_selection": (config or {}).get("pipeline", {}).get("active") if isinstance(config, Mapping) else None,
             "pipeline_selection_source": "system/runtime.json",

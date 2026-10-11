@@ -136,6 +136,7 @@ STAGES_V2: tuple[Stage, ...] = (
         blocks=lambda ctx: (
             ctx.artifact_block("frame", "approved_frame"),
             ctx.reading_instructions_block("draft"),
+            ctx.anti_pattern_prevention_block(),
         ),
     ),
     Stage(

@@ -23,6 +23,7 @@ from evaluation.adapters.taxonomy import (
 from evaluation.config import JudgeConfig
 from evaluation.semantic.developmental import (
     BUILTIN_PROBLEM_TYPES,
+    AntiPatternFinding,
     DevelopmentalReview,
     coerce_problem_types,
     developmental_prompt,
@@ -288,11 +289,15 @@ def test_developmental_review_never_carries_a_rewrite() -> None:
         "revision_priorities",
         "dimensions",
         "validation_notes",
+        "anti_pattern_findings",
     }
     from evaluation.semantic.developmental import DevelopmentalIssue
 
     assert "text" not in DevelopmentalIssue.model_fields
     assert "replacement" not in DevelopmentalIssue.model_fields
+    # The findings schema stays prose-free too: diagnosis with a location, not a rewrite.
+    assert "text" not in AntiPatternFinding.model_fields
+    assert "replacement" not in AntiPatternFinding.model_fields
 
 
 def test_a_missed_frame_obligation_is_reported_separately() -> None:
@@ -344,6 +349,141 @@ def test_the_vocabulary_source_is_stamped_on_the_artifact(tmp_path: Path) -> Non
     payload = result.to_dict()
     assert payload["problem_type_vocabulary_source"] == "wops"
     assert payload["problem_type_vocabulary"] == ["missing_context"]
+
+
+# --------------------------------------------------------------------------- #
+# Anti-pattern findings
+# --------------------------------------------------------------------------- #
+
+
+def _finding(**overrides) -> dict:
+    return {
+        "anti_pattern_id": "formulaic-closers",
+        "section_id": "02",
+        "severity": "major",
+        "evidence": "The closing sentence repeats the pattern the frame reserved for the payoff.",
+        "false_positive_considered": False,
+        **overrides,
+    }
+
+
+def test_an_anti_pattern_finding_is_parsed_and_located() -> None:
+    judge, _calls = _judge([_review(anti_pattern_findings=[_finding()])])
+    result = evaluate_developmental_review(
+        DRAFT,
+        judge=judge,
+        problem_types=BUILTIN_PROBLEM_TYPES,
+        anti_patterns=[{"id": "formulaic-closers", "summary": "", "detection": [], "false_positives": []}],
+    )
+    assert result.ok
+    payload = result.to_dict()
+    findings = payload["anti_pattern_findings"]
+    assert len(findings) == 1
+    assert findings[0]["finding_id"] == "ap-formulaic-closers-1"
+    assert findings[0]["anti_pattern_id"] == "formulaic-closers"
+    assert findings[0]["section_id"] == "02"
+    assert findings[0]["severity"] == "major"
+    assert findings[0]["evidence"]
+    assert findings[0]["false_positive_considered"] is False
+    # The existing diagnoses are untouched: the findings are additive.
+    assert payload["issues"]
+
+
+def test_anti_pattern_finding_ids_are_stable_and_deterministic() -> None:
+    review_payload = _review(
+        anti_pattern_findings=[
+            _finding(finding_id="supplied-by-the-judge"),
+            _finding(
+                anti_pattern_id="structural-uniformity",
+                section_id=None,
+                severity="minor",
+                evidence="Every section opens with the same sentence shape.",
+            ),
+            _finding(evidence="The payoff repeats the closer pattern again."),
+        ]
+    )
+    catalogue = [{"id": "formulaic-closers"}, {"id": "structural-uniformity"}]
+    first = evaluate_developmental_review(
+        DRAFT, judge=_judge([review_payload])[0], problem_types=BUILTIN_PROBLEM_TYPES, anti_patterns=catalogue
+    )
+    second = evaluate_developmental_review(
+        DRAFT, judge=_judge([review_payload])[0], problem_types=BUILTIN_PROBLEM_TYPES, anti_patterns=catalogue
+    )
+    ids = [finding["finding_id"] for finding in first.to_dict()["anti_pattern_findings"]]
+    assert ids == [
+        "ap-formulaic-closers-1",
+        "ap-structural-uniformity-1",
+        "ap-formulaic-closers-2",
+    ]
+    assert [finding["finding_id"] for finding in second.to_dict()["anti_pattern_findings"]] == ids
+    # A whole-digest pattern carries no section.
+    assert first.to_dict()["anti_pattern_findings"][1]["section_id"] is None
+
+
+def test_an_unknown_anti_pattern_id_is_kept_with_a_note() -> None:
+    judge, _calls = _judge(
+        [_review(anti_pattern_findings=[_finding(anti_pattern_id="mystery-device")])]
+    )
+    result = evaluate_developmental_review(
+        DRAFT,
+        judge=judge,
+        problem_types=BUILTIN_PROBLEM_TYPES,
+        anti_patterns=[{"id": "formulaic-closers"}],
+    )
+    payload = result.to_dict()
+    assert payload["anti_pattern_findings"][0]["anti_pattern_id"] == "mystery-device"
+    assert payload["anti_pattern_findings"][0]["finding_id"] == "ap-mystery-device-1"
+    assert any(
+        "mystery-device" in note and "kept as written" in note
+        for note in payload["validation_notes"]
+    )
+
+
+def test_a_near_miss_anti_pattern_id_is_read_as_its_catalogue_id() -> None:
+    judge, _calls = _judge(
+        [_review(anti_pattern_findings=[_finding(anti_pattern_id="formulaic")])]
+    )
+    result = evaluate_developmental_review(
+        DRAFT,
+        judge=judge,
+        problem_types=BUILTIN_PROBLEM_TYPES,
+        anti_patterns=[{"id": "formulaic-closers"}],
+    )
+    payload = result.to_dict()
+    assert payload["anti_pattern_findings"][0]["anti_pattern_id"] == "formulaic-closers"
+    assert any("read as" in note for note in payload["validation_notes"])
+
+
+def test_findings_that_arrive_without_a_catalogue_are_kept_unverified() -> None:
+    judge, _calls = _judge([_review(anti_pattern_findings=[_finding()])])
+    result = evaluate_developmental_review(DRAFT, judge=judge, problem_types=BUILTIN_PROBLEM_TYPES)
+    payload = result.to_dict()
+    assert payload["anti_pattern_findings"][0]["anti_pattern_id"] == "formulaic-closers"
+    assert any("could not be verified" in note for note in payload["validation_notes"])
+
+
+def test_the_detection_payload_records_included_and_omitted_ids() -> None:
+    # MAX_DETECTION_PAYLOAD is 8: a larger catalogue drops whole trailing entries.
+    catalogue = [{"id": f"catalogue-{index}"} for index in range(10)]
+    judge, _calls = _judge([_review()])
+    result = evaluate_developmental_review(
+        DRAFT, judge=judge, problem_types=BUILTIN_PROBLEM_TYPES, anti_patterns=catalogue
+    )
+    payload = result.to_dict()
+    detection = payload["anti_pattern_detection"]
+    assert detection["included_ids"] == [f"catalogue-{index}" for index in range(8)]
+    assert detection["omitted_ids"] == ["catalogue-8", "catalogue-9"]
+    assert any("not evaluated" in note for note in payload["validation_notes"])
+
+
+def test_an_empty_catalogue_leaves_findings_empty_and_the_prompt_unchanged() -> None:
+    judge, calls = _judge([_review()])
+    result = evaluate_developmental_review(DRAFT, judge=judge, problem_types=BUILTIN_PROBLEM_TYPES)
+    payload = result.to_dict()
+    assert payload["anti_pattern_findings"] == []
+    assert payload["anti_pattern_detection"] == {"included_ids": [], "omitted_ids": []}
+    # No detection section exists yet: the prompt is exactly today's shape.
+    assert "anti-pattern" not in calls[0].lower()
 
 
 # --------------------------------------------------------------------------- #

@@ -45,6 +45,8 @@ MAX_ISSUES = 12
 MAX_PROBLEM_TYPES = 4
 MAX_OBLIGATIONS = 8
 MAX_PRIORITIES = 5
+MAX_ANTI_PATTERN_FINDINGS = 8
+MAX_DETECTION_PAYLOAD = 8
 
 #: The review discipline text. The prompt migration moved the prompt *text* into
 #: ``prompts/evaluation/shared/developmental_discipline.j2``; this constant is retained because
@@ -134,6 +136,27 @@ class DevelopmentalIssue(BaseModel):
         return value.strip() if isinstance(value, str) else value
 
 
+class AntiPatternFinding(BaseModel):
+    """One located anti-pattern diagnosis. Deliberately has no prose field.
+
+    ``finding_id`` is assigned by coercion, never by the judge, so repeated
+    occurrences of the same anti-pattern stay trackable across later stages
+    even when sections are reordered or renamed.
+    """
+
+    finding_id: str = ""
+    anti_pattern_id: str = ""
+    section_id: str | None = None
+    severity: Severity = Severity.MAJOR
+    evidence: str = ""
+    false_positive_considered: bool = False
+
+    @field_validator("finding_id", "anti_pattern_id", "section_id", "evidence")
+    @classmethod
+    def _trim(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
+
 class DevelopmentalReview(BaseModel):
     """The whole structured review of one draft."""
 
@@ -142,6 +165,7 @@ class DevelopmentalReview(BaseModel):
     revision_priorities: list[str] = Field(default_factory=list)
     dimensions: dict[str, float] = Field(default_factory=dict)
     validation_notes: list[str] = Field(default_factory=list)
+    anti_pattern_findings: list[AntiPatternFinding] = Field(default_factory=list)
 
     def problem_types(self) -> list[str]:
         """Return the distinct problem types in first-seen order."""
@@ -189,6 +213,7 @@ class DevelopmentalResult:
     readsight_version: str | None = None
     evaluation_id: str = DEVELOPMENTAL_REVIEW_ID
     validation_notes: tuple[str, ...] = ()
+    detection_payload: Mapping[str, Any] = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:
@@ -210,6 +235,7 @@ class DevelopmentalResult:
             "problem_type_vocabulary": list(self.vocabulary),
             "sections": list(self.sections),
             "validation_notes": list(self.validation_notes),
+            "anti_pattern_detection": dict(self.detection_payload),
             **self.usage,
             **developmental_definition(),
         }
@@ -228,6 +254,10 @@ class DevelopmentalResult:
                     ],
                     "revision_priorities": list(review.revision_priorities),
                     "dimensions": dict(review.dimensions),
+                    "anti_pattern_findings": [
+                        finding.model_dump(mode="json")
+                        for finding in review.anti_pattern_findings
+                    ],
                 }
             )
         else:
@@ -241,6 +271,7 @@ class DevelopmentalResult:
                     "frame_obligations_missed": [],
                     "revision_priorities": [],
                     "dimensions": {},
+                    "anti_pattern_findings": [],
                 }
             )
         return payload
@@ -291,6 +322,101 @@ def coerce_problem_types(
     if not coerced:
         coerced.append(DEFAULT_FALLBACK_TYPE)
     return coerced[:MAX_PROBLEM_TYPES], notes
+
+
+def coerce_anti_pattern_ids(
+    values: Sequence[str], catalogue_ids: Sequence[str] | None
+) -> tuple[list[str], list[str]]:
+    """Map raw anti-pattern ids onto the supplied catalogue ids.
+
+    Near misses are accepted when they are unambiguous — a truncated variant of
+    exactly one catalogue id. Unlike problem types, an id matching nothing is
+    kept as written (never silently dropped) and the note names it, because
+    dropping it would silently erase the judge's diagnosis. With no catalogue
+    ids supplied, ids are kept and recorded as unverifiable.
+    """
+    allowed = {
+        value.strip().lower()
+        for value in (catalogue_ids or ())
+        if isinstance(value, str) and value.strip()
+    }
+    coerced: list[str] = []
+    notes: list[str] = []
+    for raw in values:
+        text = raw.strip() if isinstance(raw, str) else ""
+        if not text:
+            coerced.append("")
+            continue
+        lowered = text.lower()
+        if lowered in allowed:
+            coerced.append(lowered)
+            continue
+        matches = [
+            candidate
+            for candidate in allowed
+            if candidate.startswith(lowered) or lowered.startswith(candidate)
+        ]
+        if len(matches) == 1:
+            coerced.append(matches[0])
+            notes.append(f"anti-pattern id {text!r} read as {matches[0]!r}")
+            continue
+        coerced.append(lowered)
+        if allowed:
+            notes.append(
+                f"anti-pattern id {text!r} is not in the catalogue; kept as written"
+            )
+        else:
+            notes.append(
+                f"anti-pattern id {text!r} could not be verified "
+                "(no catalogue ids supplied); kept as written"
+            )
+    return coerced, notes
+
+
+def _assign_finding_ids(
+    findings: Sequence[AntiPatternFinding],
+) -> list[AntiPatternFinding]:
+    """Assign stable finding ids: ``ap-<anti-pattern-id>-<n>`` in first-seen order.
+
+    ``n`` counts from 1 per anti-pattern id, so repeated occurrences of the same
+    anti-pattern stay trackable across later stages. A judge-supplied
+    ``finding_id`` is overwritten.
+    """
+    counters: dict[str, int] = {}
+    assigned: list[AntiPatternFinding] = []
+    for finding in findings:
+        key = finding.anti_pattern_id or "unidentified"
+        counters[key] = counters.get(key, 0) + 1
+        assigned.append(
+            finding.model_copy(update={"finding_id": f"ap-{key}-{counters[key]}"})
+        )
+    return assigned
+
+
+def select_detection_payload(
+    anti_patterns: Sequence[Mapping[str, Any]] | None,
+) -> tuple[list[Mapping[str, Any]], list[str], list[str]]:
+    """Select a size-bounded detection payload from the catalogue.
+
+    Whole records in, whole records out: when the catalogue exceeds the bound,
+    trailing entries are dropped whole and their ids recorded as omitted. An
+    omitted anti-pattern is treated as not evaluated — never absent or clean.
+    """
+    records = list(anti_patterns or ())
+    included = [
+        record for record in records[:MAX_DETECTION_PAYLOAD] if isinstance(record, Mapping)
+    ]
+    included_ids = [
+        str(record["id"])
+        for record in included
+        if record.get("id") not in (None, "")
+    ]
+    omitted_ids = [
+        str(record["id"])
+        for record in records[MAX_DETECTION_PAYLOAD:]
+        if isinstance(record, Mapping) and record.get("id") not in (None, "")
+    ]
+    return included, included_ids, omitted_ids
 
 
 # --------------------------------------------------------------------------- #
@@ -446,12 +572,23 @@ def evaluate_developmental_review(
     role_contract: str | None = None,
     reader_contract: str | None = None,
     review_contract: str | None = None,
+    anti_patterns: Sequence[Mapping[str, Any]] | None = None,
     judge: DeepSeekJudge | None = None,
     section_options: SectionOptions | None = None,
 ) -> DevelopmentalResult:
     """Diagnose one draft against its frame with exactly one judge request."""
     active_judge = judge or DeepSeekJudge(load_judge_config())
     vocabulary = tuple(problem_types or BUILTIN_PROBLEM_TYPES)
+    _included_records, included_ids, omitted_ids = select_detection_payload(anti_patterns)
+    detection_payload: dict[str, Any] = {
+        "included_ids": included_ids,
+        "omitted_ids": omitted_ids,
+    }
+    anti_pattern_ids = tuple(
+        str(record["id"])
+        for record in (anti_patterns or ())
+        if isinstance(record, Mapping) and record.get("id") not in (None, "")
+    )
     parsed: ParsedDigest = parse_sections(
         draft_text, style=style, options=section_options, prepare=True
     )
@@ -466,6 +603,7 @@ def evaluate_developmental_review(
             vocabulary=vocabulary,
             vocabulary_source=problem_types_source,
             usage=_usage(active_judge),
+            detection_payload=detection_payload,
             **_descriptor(active_judge),
         )
 
@@ -494,7 +632,13 @@ def evaluate_developmental_review(
     if not isinstance(raw, DevelopmentalReview):  # pragma: no cover - defensive
         raw = DevelopmentalReview.model_validate(raw)
 
-    review, notes = _coerce_review(raw, vocabulary)
+    review, notes = _coerce_review(raw, vocabulary, anti_pattern_ids)
+    if omitted_ids:
+        notes.append(
+            "anti-pattern detection: "
+            f"{len(omitted_ids)} catalogue entries omitted from the payload "
+            f"({', '.join(omitted_ids)}); treated as not evaluated"
+        )
     return DevelopmentalResult(
         review=review,
         prompt=prompt,
@@ -503,14 +647,17 @@ def evaluate_developmental_review(
         vocabulary_source=problem_types_source,
         usage=_usage(active_judge),
         validation_notes=tuple(notes),
+        detection_payload=detection_payload,
         **_descriptor(active_judge),
     )
 
 
 def _coerce_review(
-    review: DevelopmentalReview, vocabulary: Sequence[str]
+    review: DevelopmentalReview,
+    vocabulary: Sequence[str],
+    anti_pattern_ids: Sequence[str] | None = None,
 ) -> tuple[DevelopmentalReview, list[str]]:
-    """Fold the judge's problem types onto the canonical vocabulary in place."""
+    """Fold the judge's values onto the canonical vocabularies in place."""
     notes: list[str] = []
     issues: list[DevelopmentalIssue] = []
     for issue in review.issues[:MAX_ISSUES]:
@@ -533,12 +680,31 @@ def _coerce_review(
             f"{MAX_OBLIGATIONS} of {len(review.frame_obligations_missed)} returned by the judge"
         )
     priorities = review.revision_priorities[:MAX_PRIORITIES]
+    findings: list[AntiPatternFinding] = []
+    if review.anti_pattern_findings:
+        kept = review.anti_pattern_findings[:MAX_ANTI_PATTERN_FINDINGS]
+        coerced_ids, id_notes = coerce_anti_pattern_ids(
+            [finding.anti_pattern_id for finding in kept], anti_pattern_ids
+        )
+        notes.extend(id_notes)
+        findings = _assign_finding_ids(
+            [
+                finding.model_copy(update={"anti_pattern_id": coerced_ids[index]})
+                for index, finding in enumerate(kept)
+            ]
+        )
+    if len(review.anti_pattern_findings) > MAX_ANTI_PATTERN_FINDINGS:
+        notes.append(
+            "anti_pattern_findings: kept "
+            f"{MAX_ANTI_PATTERN_FINDINGS} of {len(review.anti_pattern_findings)} returned by the judge"
+        )
     cleaned = review.model_copy(
         update={
             "issues": issues,
             "frame_obligations_missed": obligations,
             "revision_priorities": [str(item).strip() for item in priorities if str(item).strip()],
             "validation_notes": list(review.validation_notes) + notes,
+            "anti_pattern_findings": findings,
         }
     )
     return cleaned, notes
@@ -556,6 +722,7 @@ def parse_json_document(text: str) -> dict[str, Any] | None:
 __all__ = [
     "BUILTIN_PROBLEM_TYPES",
     "DEFAULT_FALLBACK_TYPE",
+    "AntiPatternFinding",
     "DevelopmentalIssue",
     "DevelopmentalResult",
     "DevelopmentalReview",

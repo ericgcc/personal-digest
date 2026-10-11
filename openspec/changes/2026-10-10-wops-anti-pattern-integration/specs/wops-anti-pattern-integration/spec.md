@@ -65,7 +65,7 @@ No guidance line SHALL prohibit a rhetorical device outright: every line must be
 
 ### Requirement: Prevention selection rotates fairly across runs
 
-Draft's prevention subset SHALL be selected by a deterministic, history-aware strategy: stage applicability (WOPS `activities[]` metadata) is the primary eligibility criterion; among eligible anti-patterns, those least recently supplied to Draft for the same digest and style profile SHALL be preferred, with a deterministic tie-breaker. Selection SHALL consider previous digest runs recorded in existing run artifacts (the Draft prompt manifests' prevention-selection records, scoped by digest and style profile); when history is missing, corrupted, or unavailable, selection SHALL fall back deterministically without interrupting the pipeline. The entry cap and byte budget SHALL bound prompt size only: an entry that does not fit SHALL be skipped and the next eligible entry considered; no entry SHALL be truncated, and no inapplicable anti-pattern SHALL be selected merely for fairness. Entries never previously supplied (including new catalogue entries) SHALL receive priority over recently supplied ones. The selection record SHALL list selected ids, omitted ids with the omission reason distinguished (inapplicable, item cap, byte budget), per-entry selection reasons, and the previous-run history used in the decision.
+Draft's prevention subset SHALL be selected by a deterministic, history-aware strategy: stage applicability (WOPS `activities[]` metadata) is the primary eligibility criterion; among eligible anti-patterns, those least recently supplied to Draft for the same digest and style profile SHALL be preferred, with a deterministic tie-breaker. Selection SHALL consider previous digest runs recorded in existing run artifacts — specifically each prior run's most recent successfully composed Draft attempt (a run that never reached Draft contributes no history; recency is established from the Draft attempt itself, not solely from the run's start time; the current run is excluded) — scoped by digest and style profile; when history is missing, corrupted, or unavailable, selection SHALL fall back deterministically without interrupting the pipeline. The entry cap and byte budget SHALL bound prompt size only: an entry that does not fit SHALL be skipped and the next eligible entry considered; no entry SHALL be truncated, and no inapplicable anti-pattern SHALL be selected merely for fairness. Entries never previously supplied (including new catalogue entries) SHALL receive priority over recently supplied ones. The selection record SHALL list selected ids, omitted ids with the omission reason distinguished (inapplicable, item cap, byte budget), per-entry selection reasons, and the previous-run history used in the decision.
 
 #### Scenario: Consecutive runs rotate the subset
 
@@ -233,7 +233,12 @@ The run SHALL maintain a structured WOPS history derived from existing artifacts
 #### Scenario: Every recorded supply corresponds to a composed prompt
 
 - **WHEN** the history records a prevention guideline or operation as supplied
-- **THEN** the corresponding stage's composed prompt (its prompt manifest) actually contained it
+- **THEN** the corresponding stage's composed prompt (its prompt manifest) actually contained it — for operations, the `writing_operations` block's manifest record names the exact operation ids supplied
+
+#### Scenario: A run that never reached Draft contributes no rotation history
+
+- **WHEN** a prior run started but has no successfully composed Draft attempt
+- **THEN** it contributes nothing to the rotation history, and recency is established from the Draft attempt itself rather than the run's start time
 
 #### Scenario: Findings and operations stay traceable across stages
 

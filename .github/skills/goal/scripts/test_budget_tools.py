@@ -27,11 +27,11 @@ class BudgetTests(unittest.TestCase):
     def test_profile_estimate_is_the_only_cost_source(self):
         labels=["DeepSeek V4.1 Flash (opencodego)","GLM-5.2 (opencodego)"]
         result=s.rank_models(healthy(),"go","builder",labels,empty(),expected_requests=200)
-        self.assertEqual(result["selected"]["canonical"],"GLM-5.2")
+        self.assertEqual(result["selected"]["canonical"],"DeepSeek V4.1 Flash")
         self.assertEqual(result["selected"]["usd_per_request"],
-            b.estimate("GLM-5.2","go")["cost_usd"])
+            b.estimate("DeepSeek V4.1 Flash","go",b.CONSERVATIVE_PROFILE)["cost_usd"])
         self.assertEqual([m["canonical"] for m in result["ranked"]],
-            ["GLM-5.2","DeepSeek V4.1 Flash"])
+            ["DeepSeek V4.1 Flash"])
         for item in result["ranked"]:
             self.assertNotIn("cost_source",item)
             self.assertNotIn("observed_requests",item)
@@ -61,11 +61,16 @@ class BudgetTests(unittest.TestCase):
             s.rank_models(healthy(),"go","builder",["GLM-5.2 (opencodego)"],empty(),expected_requests=0)
 
     def test_normal_pressure_keeps_precedence_order(self):
-        names=["GLM-5.2 (opencodego)","DeepSeek V4 Pro (opencodego)"]
+        # Conservative default profile: only GLM-5.3-Flash fits 50 requests in
+        # the Go 5h window, so it leads despite lower precedence position.
+        names=["GLM-5.2 (opencodego)","DeepSeek V4 Pro (opencodego)","GLM-5.3-Flash (opencodego)"]
         r=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=50)
         self.assertEqual(r["selection_mode"],"normal")
-        self.assertEqual(r["selected"]["canonical"],"DeepSeek V4 Pro")
-        self.assertEqual(r["selection_reason"],"DeepSeek V4 Pro selected: first eligible model in Builder precedence.")
+        self.assertEqual(r["selected"]["canonical"],"GLM-5.3-Flash")
+        self.assertIn("first eligible model in Builder precedence",r["selection_reason"])
+        # With a single-request estimate the full precedence order applies.
+        r1=s.rank_models(healthy(),"go","builder",names,empty())
+        self.assertEqual(r1["selected"]["canonical"],"DeepSeek V4 Pro")
 
     def test_high_pressure_conserve_reranks_within_quality_floor(self):
         # DeepSeek V4 Pro (q5, expensive) vs GLM-5.3-Flash (q4, cheap): under
@@ -93,15 +98,15 @@ class BudgetTests(unittest.TestCase):
 
     def test_precedence_order_and_dynamic_rerank(self):
         names=["GLM-5.2 (opencodego)","GLM-5.3-Flash (opencodego)","DeepSeek V4 Pro (opencodego)"]
-        r=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=50)
+        r=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=5)
         self.assertEqual(r["selected"]["canonical"],"DeepSeek V4 Pro")
         self.assertEqual([m["canonical"] for m in r["ranked"]],
             ["DeepSeek V4 Pro","GLM-5.3-Flash","GLM-5.2"])
 
     def test_pressure_changes_choice_before_exhaustion(self):
         names=["DeepSeek V4 Pro (opencodego)","GLM-5.3-Flash (opencodego)"]
-        low=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=50)
-        high=s.rank_models(healthy(75),"go","builder",names,empty(),expected_requests=50)
+        low=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=5)
+        high=s.rank_models(healthy(75),"go","builder",names,empty(),expected_requests=5)
         self.assertEqual(low["selected"]["canonical"],"DeepSeek V4 Pro")
         self.assertEqual(high["selected"]["canonical"],"GLM-5.3-Flash")
 
@@ -112,9 +117,9 @@ class BudgetTests(unittest.TestCase):
 
     def test_premium_requires_explicit_opt_in_and_goes_first(self):
         names=["GLM-5.3-Flash (opencodego)","GLM-5.3 (opencodego)"]
-        base=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=50)
+        base=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=5)
         self.assertEqual(base["selected"]["canonical"],"GLM-5.3-Flash")
-        r=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=50,allow_premium=True)
+        r=s.rank_models(healthy(),"go","builder",names,empty(),expected_requests=5,allow_premium=True)
         self.assertEqual(r["selected"]["canonical"],"GLM-5.3")
 
     def test_inspector_default_min_quality_four_blocks_hy3(self):
@@ -172,11 +177,11 @@ class BudgetTests(unittest.TestCase):
         # A model-specific failure recorded in the tracker must prevent the
         # selector from choosing that model again, even with healthy usage.
         labels=["DeepSeek V4 Pro (opencodego)","GLM-5.2 (opencodego)"]
-        base=s.rank_models(healthy(),"go","builder",labels,empty(),expected_requests=50)
+        base=s.rank_models(healthy(),"go","builder",labels,empty())
         self.assertEqual(base["selected"]["canonical"],"DeepSeek V4 Pro")
         data=empty()
         data["models"][t.model_key("DeepSeek V4 Pro (opencodego)")]=t.make_record("unknown")
-        r=s.rank_models(healthy(),"go","builder",labels,data,expected_requests=50)
+        r=s.rank_models(healthy(),"go","builder",labels,data)
         self.assertEqual(r["selected"]["canonical"],"GLM-5.2")
         self.assertEqual(r["rejected"][0]["reason"],"tracker block")
 
@@ -207,6 +212,40 @@ class BudgetTests(unittest.TestCase):
             allow_free=True,allow_low_quality_free=True,min_quality=2)["selected"])
         self.assertIsNone(s.rank_models(usage,"go","builder",labels,empty(),
             allow_free=True,allow_low_quality_free=True,min_quality=4)["selected"])
+
+    def test_cli_free_fallback_and_conservative_default_profile(self):
+        # CLI-level: the documented free-model fallback works end to end, and
+        # the runtime default profile assumes zero cache reads.
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            snap=root/"usage.json"; avail=root/"models.json"
+            usage=healthy(100); usage["rolling"].update(status="rate-limited",percent=100)
+            snap.write_text(json.dumps({"timestamp":t.now().isoformat(),"plan":"go","usage":usage}))
+            avail.write_text(json.dumps(["LongCat 2.5 Preview Free (opencodego)"]))
+            out=io.StringIO()
+            with contextlib.redirect_stdout(out):
+                code=s.main(["--plan","go","--role","builder","--available",str(avail),
+                    "--usage-file",str(snap),"--tracker",str(root/"tracker.json"),
+                    "--allow-free","--allow-low-quality-free","--min-quality","2"])
+            result=json.loads(out.getvalue())
+            self.assertEqual(code,0)
+            self.assertEqual(result["selected"]["provider"],"free")
+            self.assertEqual(result["profile"],list(b.CONSERVATIVE_PROFILE))
+            # Without both free flags, --min-quality 2 is refused (exit 3).
+            out2=io.StringIO(); err2=io.StringIO()
+            with contextlib.redirect_stdout(out2), contextlib.redirect_stderr(err2):
+                code2=s.main(["--plan","go","--role","builder","--available",str(avail),
+                    "--usage-file",str(snap),"--tracker",str(root/"tracker2.json"),
+                    "--min-quality","2"])
+            self.assertEqual(code2,3)
+            # The default Builder minimum (3) cannot select quality-2 free models.
+            out3=io.StringIO()
+            with contextlib.redirect_stdout(out3):
+                code3=s.main(["--plan","go","--role","builder","--available",str(avail),
+                    "--usage-file",str(snap),"--tracker",str(root/"tracker3.json"),
+                    "--allow-free","--allow-low-quality-free"])
+            self.assertEqual(code3,2)
+            self.assertIsNone(json.loads(out3.getvalue())["selected"])
 
     def test_openrouter_requires_explicit_authorization(self):
         labels=["Z.ai: GLM 5.3 Flash (openrouter)","GLM-5.2 (opencodego)"]

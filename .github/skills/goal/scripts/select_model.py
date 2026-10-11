@@ -8,8 +8,8 @@ import re
 import sys
 from pathlib import Path
 from budget_models import (
-    CATALOG, EXCLUDED, PROFILE, WINDOWS, BUILDER_PRECEDENCE, INSPECTOR_PRECEDENCE,
-    PREMIUM_BUILDER_MODELS, OPENROUTER_BUILDER_PRECEDENCE,
+    CATALOG, EXCLUDED, PROFILE, CONSERVATIVE_PROFILE, WINDOWS, BUILDER_PRECEDENCE,
+    INSPECTOR_PRECEDENCE, PREMIUM_BUILDER_MODELS, OPENROUTER_BUILDER_PRECEDENCE,
     OPENROUTER_INSPECTOR_PRECEDENCE, canonical, provider, estimate,
 )
 from model_tracker import DEFAULT_TRACKER_PATH, blocked, load_tracker, now, save_tracker, sync_usage
@@ -31,7 +31,8 @@ def high_pressure(usage):
         or usage["monthly"]["percent"] >= MONTHLY_PRESSURE_THRESHOLD)
 
 
-def rank_models(usage, plan, role, available, tracker, profile=PROFILE, expected_requests=1,
+def rank_models(usage, plan, role, available, tracker, profile=CONSERVATIVE_PROFILE,
+                expected_requests=1,
                 reserve=None, builder="", allow_training=False, allow_free=False,
                 allow_low_quality_free=False, allow_openrouter=False, off_peak=False,
                 min_quality=None, allow_premium=False):
@@ -203,9 +204,9 @@ def main(argv=None):
     p.add_argument("--builder-model",default="")
     p.add_argument("--expected-requests",type=int,default=1,help="planned request count; default 1 = single-request feasibility estimate")
     p.add_argument("--reserve",type=float,default=None,help="fraction of window reserved; Builder default .15, Inspector .02")
-    p.add_argument("--profile",nargs=4,type=int,default=PROFILE)
+    p.add_argument("--profile",nargs=4,type=int,default=CONSERVATIVE_PROFILE,help="input/cached/output/write tokens per request; default assumes zero cache reads")
     p.add_argument("--off-peak",action="store_true")
-    p.add_argument("--min-quality",type=int,choices=(3,4,5),default=None,help="default: Builder 3, Inspector 4")
+    p.add_argument("--min-quality",type=int,choices=(2,3,4,5),default=None,help="default: Builder 3, Inspector 4; 2 requires free-model authorization")
     p.add_argument("--allow-premium",action="store_true",help="explicit run-level decision to place premium Builder models first")
     p.add_argument("--allow-training",action="store_true")
     p.add_argument("--allow-free",action="store_true")
@@ -225,6 +226,9 @@ def main(argv=None):
         tracker=load_tracker(args.tracker)
         sync_usage(tracker,usage)
         save_tracker(args.tracker,tracker)
+        # Quality 2 is only meaningful for authorized low-quality free models.
+        if args.min_quality == 2 and not (args.role == "builder" and args.allow_free and args.allow_low_quality_free):
+            raise ValueError("--min-quality 2 requires Builder role plus --allow-free and --allow-low-quality-free")
         # Validate profile even if all candidates are rejected.
         estimate("GLM-5.2",args.plan,args.profile,args.off_peak)
         result=rank_models(usage,args.plan,args.role,json.loads(args.available.read_text(encoding="utf-8")),

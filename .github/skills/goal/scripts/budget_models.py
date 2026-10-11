@@ -8,9 +8,13 @@ import re
 SOURCE = "https://docs.opencode.ai/docs/go/"
 CHECKED = "2026-10-11"
 WINDOWS = {"rolling": .2, "weekly": .5, "monthly": 1.0}
-# Input, cached read, output, cache-write tokens: a common comparison workload,
-# not OpenCode's model-specific request estimates or a promised quota.
+# Input, cached read, output, cache-write tokens: a common comparison workload
+# for the reference tables, not OpenCode's model-specific request estimates or
+# a promised quota. Runtime selection defaults to CONSERVATIVE_PROFILE instead.
 PROFILE = (8000, 60000, 2000, 0)
+# Conservative runtime default: zero assumed cache reads. Use it whenever cache
+# reuse is not supported by reliable runtime information.
+CONSERVATIVE_PROFILE = (68000, 0, 2000, 0)
 CATALOG = json.loads(r'''{
   "GLM-5.3-Flash": {
     "name": "GLM-5.3-Flash",

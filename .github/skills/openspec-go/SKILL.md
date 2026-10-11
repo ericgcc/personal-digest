@@ -61,13 +61,20 @@ usage and tracker state. The result records `selection_mode` (`normal` or
 `conserve`), `usage_percent`, and a specific `selection_reason`.
 
 Default minimum quality is **3 for Builder** and **4 for Inspector**; pass
-`--min-quality 5` for demanding work. Hy3 sits below the default Inspector
-minimum and is only selectable when a lower minimum is explicitly requested.
-Kimi K2.6 and Kimi K2.7 Code remain excluded from all dispatch, including
-OpenRouter aliases. Kimi K3 stays eligible for Inspector subject to
-availability, compatibility and budget checks; no live Copilot integration
-test is assumed. Muse Contributor models stay disabled unless training-data
-consent and regional eligibility are explicitly established.
+`--min-quality 5` for demanding work. `--min-quality 2` is accepted only for a
+Builder with both free-model authorization flags (`--allow-free` and
+`--allow-low-quality-free`); otherwise the CLI refuses it. Hy3 sits below the
+default Inspector minimum and is only selectable when a lower minimum is
+explicitly requested. Kimi K2.6 and Kimi K2.7 Code remain excluded from all
+dispatch, including OpenRouter aliases. Kimi K3 stays eligible for Inspector
+subject to availability, compatibility and budget checks; no live Copilot
+integration test is assumed. Muse Contributor models stay disabled unless
+training-data consent and regional eligibility are explicitly established.
+Both configured OpenRouter Inspector candidates are Inspector quality 3, so an
+exhausted Go account does **not** automatically fall back to them at the
+default minimum; continuing with them requires explicit `--min-quality 3`
+authorization, or a qualified 4/5-or-higher external Inspector must be added to
+`OPENROUTER_INSPECTOR_PRECEDENCE` in a separate model-precedence decision.
 
 **Premium escalation** (`--allow-premium`, default off) places
 `PREMIUM_BUILDER_MODELS` ahead of the normal Builder precedence when explicitly
@@ -88,12 +95,13 @@ model was unavailable.
   a forecast of the whole run — pass a larger justified estimate for a bounded
   task). Predicted request costs come only from `budget_models.estimate()` over
   the published catalog prices; no historical billing numbers from past
-  sessions are used as inputs. Without reliable evidence of cache reuse, use a
-  conservative profile with zero assumed cache reads (e.g. 68K/0/2K/0 for a
-  Builder request of that size); pass a warmer profile only when cache reuse is
-  supported by reliable runtime information. For a fresh Inspector always start
-  with a cold-cache estimate such as 68K/0/2K/0; do not copy Builder cache
-  assumptions or session state.
+  sessions are used as inputs. The runtime default profile is conservative:
+  **zero assumed cache reads** (`CONSERVATIVE_PROFILE`, 68K/0/2K/0). Pass an
+  explicit `--profile` with warmer cache assumptions only when cache reuse is
+  supported by reliable runtime information. For a fresh Inspector always keep
+  the cold-cache default; do not copy Builder cache assumptions or session
+  state. The comparison profile (8K/60K/2K/0) is used only for the reference
+  document's estimate tables.
 - Builder reserves **15 percentage points** of every window; Inspector keeps a
   **2-percentage-point** margin and may consume the Builder's reserved
   capacity. A candidate passes only when the planned batch fits **all three

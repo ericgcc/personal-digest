@@ -22,12 +22,22 @@ The system SHALL obtain anti-pattern definitions exclusively through the existin
 
 ### Requirement: Draft receives bounded preventive anti-pattern guidance
 
-The Draft stage SHALL receive a compact preventive guidance block derived from the WOPS anti-pattern catalogue, bounded by a fixed maximum item count and byte size enforced in code, with the block's size recorded in the prompt manifest. The block SHALL carry each anti-pattern's name, one-sentence summary, and false-positive conditions, and SHALL NOT contain complete detection-signal lists, examples, or provenance.
+The Draft stage SHALL receive a compact preventive guidance block derived from the WOPS anti-pattern catalogue. The block SHALL contain a small, relevant subset selected using WOPS record metadata (including `activities[]`), bounded by a fixed maximum entry count and a configurable byte budget enforced in code, with the block's size recorded in the prompt manifest. Each included entry SHALL be complete (name, one-sentence summary, and false-positive conditions) and SHALL NOT be truncated mid-entry; when the budget is exhausted, lower-priority entries SHALL be omitted whole and the omitted count SHALL be recorded. The block SHALL NOT contain complete detection-signal lists, examples, or provenance.
 
 #### Scenario: Guidance is compact and measured
 
 - **WHEN** a Draft prompt is composed with WOPS available
 - **THEN** the prompt manifest records the anti-pattern guidance block with its byte size, and the block stays within the enforced bound
+
+#### Scenario: Selection uses WOPS metadata
+
+- **WHEN** the prevention subset is selected from the catalogue
+- **THEN** entries relevant to drafting (per WOPS `activities[]` metadata) are preferred, and the selection is recorded
+
+#### Scenario: Budget exhaustion omits whole entries
+
+- **WHEN** the byte budget is exhausted before all selected entries fit
+- **THEN** the remaining entries are omitted whole, no entry is cut mid-sentence, and the omitted count is recorded
 
 #### Scenario: Guidance preserves legitimate devices
 
@@ -50,7 +60,12 @@ No guidance line SHALL prohibit a rhetorical device outright: every line must be
 
 ### Requirement: Developmental Review detects anti-patterns in the draft
 
-The developmental-review evaluation SHALL, in its existing single judge call, additionally report anti-pattern findings, each carrying the canonical WOPS anti-pattern id, the section it occurs in, a severity, and a one-sentence evidence statement. The judge SHALL receive the anti-pattern summaries and false-positive conditions. Findings are additive; the existing developmental assessment SHALL be unchanged in shape and meaning.
+The developmental-review evaluation SHALL, in its existing single judge call, additionally report anti-pattern findings, each carrying the canonical WOPS anti-pattern id, the section it occurs in, a severity, and a one-sentence evidence statement. The judge SHALL receive a bounded projection of each anti-pattern's id, summary, detection signals, and false-positive conditions, so detection is grounded in WOPS's own definitions rather than the judge's general interpretation. Findings are additive; the existing developmental assessment SHALL be unchanged in shape and meaning.
+
+#### Scenario: The judge receives detection signals
+
+- **WHEN** the catalogue is available at review time
+- **THEN** the judge's prompt carries each anti-pattern's id, summary, detection signals, and false-positive conditions, bounded in size and recorded in the prompt audit
 
 #### Scenario: A located finding is reported
 
@@ -126,7 +141,12 @@ The Writer Revision stage SHALL receive the anti-pattern findings and the select
 
 ### Requirement: Reader Review verifies anti-pattern outcomes
 
-The reader-review evaluation SHALL, in its existing single absolute judge call, check each previously diagnosed anti-pattern finding against the revised prose and report its outcome as resolved, partially resolved, or still present with location and evidence, applying the same false-positive conditions. The existing absolute assessment SHALL be unchanged in shape and meaning.
+The reader-review evaluation SHALL, in its existing single absolute judge call, receive both the previously diagnosed findings and the compact WOPS detection catalogue (detection signals and false-positive conditions), independently assess the revised prose for anti-pattern occurrences, and report each previously diagnosed finding's outcome as resolved, partially resolved, or still present with location and evidence. The existing absolute assessment SHALL be unchanged in shape and meaning.
+
+#### Scenario: The judge receives the detection catalogue
+
+- **WHEN** the catalogue is available at review time
+- **THEN** the judge's prompt carries the compact detection catalogue with false-positive conditions in addition to the prior findings
 
 #### Scenario: A resolved finding is recorded
 
@@ -143,6 +163,11 @@ The reader-review evaluation SHALL, in its existing single absolute judge call, 
 - **WHEN** the revision introduced a new anti-pattern occurrence consistent with overusing a supplied operation
 - **THEN** the review reports it as a new finding with the anti-pattern id and evidence
 
+#### Scenario: A new defect not previously diagnosed is detected
+
+- **WHEN** the revised prose contains an anti-pattern occurrence that was not among the previously diagnosed findings
+- **THEN** the review reports it as a new finding with the anti-pattern id, location, and evidence, detected by the same signals and false-positive conditions
+
 ### Requirement: Verification preserves the existing review and repair behavior
 
 The reader-review verification SHALL NOT add a judge call, and the existing conditional Targeted Repair behavior SHALL be unchanged: it remains optional, at most once, and limited to actionable major/critical problems.
@@ -157,16 +182,44 @@ The reader-review verification SHALL NOT add a judge call, and the existing cond
 - **WHEN** the review reports anti-pattern outcomes
 - **THEN** Targeted Repair still runs only for an actionable major/critical problem and at most once, and anti-pattern bookkeeping alone never triggers it
 
-### Requirement: Anti-pattern integration is auditable in run artifacts
+### Requirement: Score comparability is demonstrated, not assumed
 
-The run artifacts SHALL record, without introducing a new artifact family: the catalogue's availability and version; the detected anti-pattern ids with affected sections, severity, and evidence; the selected repair operation ids with the diagnoses that selected them; and the Reader Review outcomes for previously diagnosed findings. An operation supplied to Writer Revision SHALL NOT be recorded as effective unless the Reader Review outcome or a deterministic check supports it.
+The reader-quality evaluation identity SHALL be preserved across the change only if the scored rubric remains materially equivalent after the verification instructions are added; the equivalence SHALL be validated with representative cases before any historical comparison is used as evidence. If the new instructions materially change score behavior, the evaluation SHALL use a new identity or cross-version scores SHALL be explicitly marked incomparable, and no replay comparison SHALL claim improvement across an incomparable pair.
 
-#### Scenario: The trail is complete for a run
+#### Scenario: Equivalence is validated before comparison
+
+- **WHEN** the verification instructions are added to the reader review
+- **THEN** representative cases are evaluated before and after the change, and the recorded evidence shows whether scores remain materially equivalent
+
+#### Scenario: Incomparable scores are never compared
+
+- **WHEN** the validation shows the score behavior materially changed
+- **THEN** the evaluation identity changes or the cross-version pair is marked incomparable, and replay comparisons refuse to compute a delta across it
+
+### Requirement: Anti-pattern findings are traceable by stable identifier
+
+Every anti-pattern finding SHALL carry a stable `finding_id`, assigned when the finding is first reported and reused by later stages, so repeated occurrences of the same anti-pattern remain trackable across revision even when sections are reordered or renamed. An anti-pattern id plus section id alone SHALL NOT be relied on as a unique key.
+
+#### Scenario: A finding keeps its identity across revision
+
+- **WHEN** a finding diagnosed in the draft is rechecked in the revised prose after sections were reordered
+- **THEN** the outcome record references the same `finding_id` as the original diagnosis
+
+### Requirement: The application audit uses explicit observation states
+
+The run artifacts SHALL record, without introducing a new artifact family, an explicit audit vocabulary for each selected operation: `selected` (WOPS recommended it), `supplied` (Writer Revision received its instructions), `application` (applied, not applied, or unknown — recorded only when supported by evidence), and `outcome` (Reader Review's assessment of the resulting text). Application SHALL NOT be inferred automatically from a resolved anti-pattern, because the model may have corrected the defect another way.
+
+#### Scenario: The audit vocabulary is recorded
 
 - **WHEN** a run completes with WOPS available and findings detected
-- **THEN** the run's existing artifacts contain the catalogue status, the detected findings, the selected operations with their diagnoses, and the verification outcomes, each traceable by anti-pattern id
+- **THEN** each selected operation's record states its `selected`, `supplied`, `application`, and `outcome` observations, keyed by `finding_id`
 
 #### Scenario: Application is not claimed without evidence
 
-- **WHEN** an operation was supplied to Writer Revision but the Reader Review outcome shows the anti-pattern still present
-- **THEN** the record shows the outcome as still present and does not describe the operation as applied or effective
+- **WHEN** an operation was supplied to Writer Revision but no evidence establishes that it was applied
+- **THEN** the record states `application: unknown` rather than applied, even if the anti-pattern was later reported resolved
+
+#### Scenario: A resolved anti-pattern does not imply the operation was used
+
+- **WHEN** the Reader Review outcome shows an anti-pattern resolved after an operation was supplied for it
+- **THEN** the record shows the outcome as resolved and the application as whatever the evidence supports, without equating resolution with application

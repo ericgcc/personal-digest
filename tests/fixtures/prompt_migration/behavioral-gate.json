@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
-  "approved_candidate_sha256": "b374e639bfaa9f30840eb29ed71edb62917ca848f411b1bf6e9573ca9f634818",
+  "approved_candidate_sha256": "aecd9dfcc464c5f1d9d8d0aacbf620dee21aab47ef6b5c68ed3441901e4ba036",
   "categories": [
     "packaging-only",
     "deduplication-without-semantic-loss",

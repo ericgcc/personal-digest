@@ -228,8 +228,19 @@ class RunContext:
         Derived at run time from the WOPS anti-pattern catalogue through the run's adapter; when
         the catalogue is unavailable or empty the block is ``None`` and the prompt is composed
         without it. The block is inert data, wrapped and printed exactly like every other block.
+
+        Fair rotation (Phase 2): the selection consults the least-recently-supplied history from
+        prior runs' Draft prompt manifests, scoped to this run's digest and style profile and
+        excluding the current run. Missing or corrupted history degrades to the Phase 1
+        selection (all eligible entries treated as never supplied, catalogue order) without
+        interrupting the run.
         """
-        from .anti_patterns import DEFAULT_PREVENTION_BYTES, load_catalogue, prevention_block
+        from .anti_patterns import (
+            DEFAULT_PREVENTION_BYTES,
+            load_catalogue,
+            load_prevention_history,
+            prevention_block,
+        )
 
         if self.wops is None:
             return None
@@ -237,7 +248,21 @@ class RunContext:
         if catalogue is None:
             catalogue = load_catalogue(self.wops)
         budget = self.anti_pattern_budget_bytes or DEFAULT_PREVENTION_BYTES
-        text, metadata = prevention_block(catalogue, max_bytes=budget)
+        history = load_prevention_history(
+            self.root,
+            self.digest_id,
+            self.style_profile_id,
+            exclude_run_id=self.run_id,
+        )
+        text, metadata = prevention_block(
+            catalogue,
+            max_bytes=budget,
+            history=history["supplied_at"],
+            history_used={
+                "runs_consulted": history["runs_consulted"],
+                "runs_skipped": history["runs_skipped"],
+            },
+        )
         if text is None:
             return None
         return {
@@ -249,12 +274,15 @@ class RunContext:
                 "version": catalogue.version,
                 "reason": catalogue.reason,
                 "selected_ids": metadata["selected_ids"],
+                "selection_reasons": metadata["selection_reasons"],
                 "omitted_count": metadata["omitted_count"],
                 "omitted_ids": metadata["omitted_ids"],
+                "omitted_by_inapplicable": metadata["omitted_by_inapplicable"],
                 "omitted_by_item_cap": metadata["omitted_by_item_cap"],
                 "omitted_by_budget": metadata["omitted_by_budget"],
                 "bytes": metadata["bytes"],
                 "max_bytes": metadata["max_bytes"],
+                "history_used": metadata["history_used"],
             },
         }
 

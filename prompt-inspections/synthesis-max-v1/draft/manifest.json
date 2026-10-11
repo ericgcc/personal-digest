@@ -138,7 +138,7 @@
     },
     {
       "tag": "anti_pattern_prevention",
-      "bytes": 449,
+      "bytes": 305,
       "source": {
         "kind": "executor-derived"
       },
@@ -155,5 +155,5 @@
   ],
   "omitted": [],
   "system_bytes": 19538,
-  "user_bytes": 7150
+  "user_bytes": 7006
 }

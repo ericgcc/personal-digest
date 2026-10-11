@@ -195,9 +195,6 @@ It is not a defect when the device is used for a genuine contrast
 
 Fixture Defect Beta — Another synthetic defect carrying the drafting activity tag.
 It is not a defect when a required formal conclusion is expected
-
-Fixture Defect Gamma — A synthetic defect tagged for reviewing rather than drafting.
-It is not a defect when a genuine ordinal range is listed
 </anti_pattern_prevention>
 
 <stage_task>

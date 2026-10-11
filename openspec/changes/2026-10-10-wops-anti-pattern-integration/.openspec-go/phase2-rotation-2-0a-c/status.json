@@ -1,0 +1,99 @@
+﻿{
+    "run_id":  "phase2-rotation-2-0a-c",
+    "created":  "2026-10-11",
+    "status":  "completed",
+    "iteration":  1,
+    "repository_root":  "C:\\Users\\ericg\\OneDrive\\Documents\\GitHub\\digy",
+    "change_name":  "2026-10-10-wops-anti-pattern-integration",
+    "change_dir":  "openspec/changes/2026-10-10-wops-anti-pattern-integration",
+    "schema":  "spec-driven",
+    "scope_mode":  "selected-slice",
+    "selection":  {
+                      "task_ids":  [
+                                       "2.0a",
+                                       "2.0b",
+                                       "2.0c"
+                                   ],
+                      "phase":  "Phase 2 â€” Detection and repair integration (fair-rotation extension slice)",
+                      "requirement_refs":  [
+                                               "Prevention selection rotates fairly across runs",
+                                               "Stage-specific WOPS history within a run (rotation-history half: a run that never reached Draft contributes no history; recency from the Draft attempt itself)"
+                                           ]
+                  },
+    "context_files":  {
+                          "proposal":  "openspec/changes/2026-10-10-wops-anti-pattern-integration/proposal.md",
+                          "specs":  "openspec/changes/2026-10-10-wops-anti-pattern-integration/specs/wops-anti-pattern-integration/spec.md",
+                          "design":  "openspec/changes/2026-10-10-wops-anti-pattern-integration/design.md",
+                          "tasks":  "openspec/changes/2026-10-10-wops-anti-pattern-integration/tasks.md"
+                      },
+    "execution_conventions":  {
+                                  "instructions":  [
+                                                       ".github/copilot-instructions.md",
+                                                       "AGENTS.md"
+                                                   ],
+                                  "test_interpreter":  "C:\\Users\\ericg\\.conda\\envs\\digest-eval\\python.exe (conda env \u0027digest-eval\u0027; system python lacks yaml/jinja2/pytest)",
+                                  "test_command":  "C:\\Users\\ericg\\.conda\\envs\\digest-eval\\python.exe -m pytest",
+                                  "pytest_parallel":  "pytest.ini addopts include -n auto --dist loadfile (pytest-xdist)",
+                                  "prompt_gate":  "python scripts/prompt_migration_gate.py --json (run with conda env python)",
+                                  "context_measure":  "python scripts/measure_context.py (run with conda env python)",
+                                  "windows":  "PowerShell; never use \u0026\u0026; console is cp1252; never bulk-edit with Set-Content/Get-Content -Raw",
+                                  "commit_convention":  "type(scope): [B]/[I] description with Assisted-by trailer (NOT USED: no-commit mode)"
+                              },
+    "commit_mode":  "none",
+    "models":  {
+                   "builder":  {
+                                   "requested":  "DeepSeek V4 Pro",
+                                   "provider":  "go",
+                                   "agent_path":  ".github/agents/budget-openspec-go-builder.agent.md",
+                                   "agent_name":  "Budget openspec-go: Builder",
+                                   "actual":  null,
+                                   "selection_reason":  "DeepSeek V4 Pro selected: first eligible model in Builder precedence.",
+                                   "selection_mode":  "normal",
+                                   "profile":  [
+                                                   68000,
+                                                   0,
+                                                   2000,
+                                                   0
+                                               ],
+                                   "usage_percent":  {
+                                                         "rolling":  6,
+                                                         "weekly":  56,
+                                                         "monthly":  32
+                                                     },
+                                   "projected_burn_pp":  {
+                                                             "rolling":  3.256,
+                                                             "weekly":  1.3024,
+                                                             "monthly":  0.6512
+                                                         }
+                               },
+                   "inspector":  {
+                                     "requested":  "Hy4 preview",
+                                     "provider":  "go",
+                                     "agent_path":  ".github/agents/budget-openspec-go-inspector.agent.md",
+                                     "agent_name":  "Budget openspec-go: Inspector",
+                                     "actual":  null,
+                                     "selection_reason":  "Hy4 preview selected: first eligible Inspector model with family independence from DeepSeek V4 Pro (Builder).",
+                                     "profile":  [
+                                                     68000,
+                                                     0,
+                                                     2000,
+                                                     0
+                                                 ]
+                                 },
+                   "selection_basis":  "usage-aware precedence; gauge 2026-10-11T18:30Z: rolling 6%, weekly 56%, monthly 32%; tracker check exit 0 for GLM-5.3 (Go) and Hy4 preview (Go)"
+               },
+    "wops":  {
+                 "root_source":  ".env WOPS_ROOT (local Google Drive checkout, valid filesystem path)",
+                 "live_contract_test":  "authorized (user approved 2026-10-11, Phase 1 run); skips when unconfigured"
+             },
+    "artifact_baseline":  {
+                              "proposal.md":  "f63bd8c861b77be8d8c22154a909cbb08777b5ba",
+                              "specs/wops-anti-pattern-integration/spec.md":  "7e0c79a2b3db7a6b4ac20f8c3371dae33ed42033",
+                              "design.md":  "80ebe89c92fdd09d1fb8efc46bfb37848fa4c0fe"
+                          },
+    "initial_sha":  "cd9d12bfd9953e3b8e1541956410c6cbee0c3ccf",
+    "builder_sha":  null,
+    "pre_existing_changes":  "worktree clean at run start (git status --short empty)",
+    "final_verdict":  "PASS (iteration 1, inspector-feedback-1.md)",
+    "completed":  "2026-10-11"
+}

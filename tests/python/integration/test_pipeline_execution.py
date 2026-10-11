@@ -140,6 +140,31 @@ class MockWopsWithAntiPatterns:
         }
 
 
+class MockWopsWithLargeAntiPatternCatalogue(MockWopsWithAntiPatterns):
+    """An available mock adapter whose catalogue exceeds the prevention item cap.
+
+    Seven drafting-tagged entries against ``MAX_PREVENTION_ITEMS = 5`` makes rotation visible:
+    the first run supplies five ids, and the second run must prefer the two never-supplied ones.
+    """
+
+    def __init__(self) -> None:
+        self._records = [
+            {
+                "id": f"mock-defect-{chr(ord('a') + index)}",
+                "name": f"Mock Defect {chr(ord('a') + index).upper()}",
+                "summary": f"A mock surface defect, number {index}.",
+                "detection": ["a mock detection signal"],
+                "false_positives": ["a genuine contrast exists"],
+                "repair": [],
+                "overuse_of": [],
+                "activities": ["drafting"],
+                "status": "active",
+                "version": "9.9.9-mock",
+            }
+            for index in range(7)
+        ]
+
+
 class MockEvaluation:
     python = "mock"
     python_source = "mock"
@@ -337,6 +362,70 @@ def test_draft_receives_the_anti_pattern_prevention_block_when_available(workspa
     assert anti["available"] is True
     assert anti["version"] == "9.9.9-mock"
     assert anti["reason"] is None
+
+
+def test_consecutive_runs_rotate_the_prevention_subset(workspace):
+    """Two consecutive mocked runs with a catalogue larger than the cap select different subsets.
+
+    The second run's Draft prompt manifest records the rotation decision: the first run's
+    supplied ids, the per-entry selection reasons, and the consulted history. No additional
+    model calls are introduced — the same stage sequence runs both times.
+    """
+    provider = MockProvider(_responses())
+    first = _run(workspace, run_id="mock-rotate-1", provider=provider, wops=MockWopsWithLargeAntiPatternCatalogue())
+    assert first["degraded"] == []
+
+    provider2 = MockProvider(_responses())
+    second = _run(workspace, run_id="mock-rotate-2", provider=provider2, wops=MockWopsWithLargeAntiPatternCatalogue())
+    assert second["degraded"] == []
+
+    first_manifest = read_json(
+        workspace / ".digest-runs" / "mock-rotate-1" / "draft" / "attempts" / "attempt-1" / "prompt-manifest.json"
+    )
+    second_manifest = read_json(
+        workspace / ".digest-runs" / "mock-rotate-2" / "draft" / "attempts" / "attempt-1" / "prompt-manifest.json"
+    )
+    first_block = next(
+        block for block in first_manifest["blocks"] if block["tag"] == "anti_pattern_prevention"
+    )
+    second_block = next(
+        block for block in second_manifest["blocks"] if block["tag"] == "anti_pattern_prevention"
+    )
+
+    first_ids = first_block["source"]["selected_ids"]
+    second_ids = second_block["source"]["selected_ids"]
+    assert len(first_ids) == 5
+    assert first_ids == [f"mock-defect-{chr(ord('a') + i)}" for i in range(5)]
+    # The second run prefers the two never-supplied entries, then the least recently supplied.
+    assert second_ids[:2] == ["mock-defect-f", "mock-defect-g"]
+    assert set(second_ids) != set(first_ids)
+
+    # The rotation decision is recorded in the second run's manifest.
+    assert second_block["source"]["history_used"]["runs_consulted"], "the second run consulted no history"
+    assert second_block["source"]["history_used"]["runs_consulted"][0]["run"] == "mock-rotate-1"
+    assert second_block["source"]["selection_reasons"]["mock-defect-f"] == "never supplied (catalogue order)"
+    assert "least recently supplied" in second_block["source"]["selection_reasons"][first_ids[0]]
+    assert second_block["source"]["omitted_by_inapplicable"] == {"count": 0, "ids": []}
+
+    # No additional model calls: both runs execute the same stage sequence.
+    assert provider.calls == provider2.calls
+
+
+def test_a_run_with_no_prior_history_records_the_fallback(workspace):
+    """A first run with no prior history completes normally with the fallback recorded."""
+    provider = MockProvider(_responses())
+    result = _run(workspace, run_id="mock-rotate-first", provider=provider, wops=MockWopsWithLargeAntiPatternCatalogue())
+
+    assert result["degraded"] == []
+    manifest = read_json(
+        workspace / ".digest-runs" / "mock-rotate-first" / "draft" / "attempts" / "attempt-1" / "prompt-manifest.json"
+    )
+    block = next(block for block in manifest["blocks"] if block["tag"] == "anti_pattern_prevention")
+    assert block["source"]["history_used"] == {"runs_consulted": [], "runs_skipped": 0}
+    assert all(
+        reason == "never supplied (catalogue order)"
+        for reason in block["source"]["selection_reasons"].values()
+    )
 
 
 def test_a_configured_anti_pattern_budget_changes_the_draft_prompt(workspace):

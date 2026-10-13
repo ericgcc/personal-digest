@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from ..config.runtime import load_runtime_config, resolve_adapter_timeout, resolve_python
 from ..runtime.artifacts import ROOT, relative_to_root, write_artifact, write_json
@@ -150,22 +150,36 @@ class EvaluationAdapter:
         contracts: Mapping[str, str] | None = None,
         wops_root: str | None = None,
         wops_python: str | None = None,
+        anti_patterns: Sequence[Mapping[str, Any]] | None = None,
+        prevention_supplied: Mapping[str, Any] | None = None,
         work_dir: Path,
     ) -> dict[str, Any]:
-        """Diagnose a draft against its frame."""
+        """Diagnose a draft against its frame.
+
+        ``anti_patterns`` is the size-bounded detection payload (per anti-pattern:
+        id, summary, detection signals, false-positive conditions). ``prevention_supplied``
+        is the compact prevention-selection record (supplied ids + omission reasons) for
+        traceability only; the judge diagnoses the prose independently and the supplied
+        guidance never suppresses or biases a finding.
+        """
+        request: dict[str, Any] = {
+            "stage": "developmental-review",
+            "digest_id": digest_id,
+            "run_id": run_id,
+            "style": style,
+            "language": language,
+            "wops_root": wops_root,
+            "wops_python": wops_python,
+            "contracts": dict(contracts or {}),
+            "artifacts": {"draft": str(_absolute(draft_path, self.root)), "frame": str(_absolute(frame_path, self.root))},
+        }
+        if anti_patterns is not None:
+            request["anti_patterns"] = list(anti_patterns)
+        if prevention_supplied is not None:
+            request["prevention_supplied"] = dict(prevention_supplied)
         return self._invoke(
             command="evaluate-developmental-review",
-            request={
-                "stage": "developmental-review",
-                "digest_id": digest_id,
-                "run_id": run_id,
-                "style": style,
-                "language": language,
-                "wops_root": wops_root,
-                "wops_python": wops_python,
-                "contracts": dict(contracts or {}),
-                "artifacts": {"draft": str(_absolute(draft_path, self.root)), "frame": str(_absolute(frame_path, self.root))},
-            },
+            request=request,
             work_dir=work_dir,
             label="developmental-review",
         )

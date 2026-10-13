@@ -173,6 +173,34 @@ The result contradicts the mechanism [3], and the scope is narrower than it appe
 }
 </approved_frame>
 
+<writing_operations>
+{
+  "adapter": {
+    "kind": "fixture"
+  },
+  "available": true,
+  "queries": [],
+  "candidates": [],
+  "selected": [
+    {
+      "id": "op-1",
+      "version": "1.0.0",
+      "name": "Establish context first"
+    }
+  ],
+  "operations": [
+    {
+      "id": "op-1",
+      "version": "1.0.0",
+      "name": "Establish context first",
+      "summary": "Introduce a mechanism before relying on it."
+    }
+  ],
+  "warnings": [],
+  "limit": 5
+}
+</writing_operations>
+
 <reading_instructions>
 Digest reading instructions for `tech-bi-daily`.
 Routed to this stage: Reader.

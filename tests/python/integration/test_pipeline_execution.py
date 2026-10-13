@@ -165,15 +165,43 @@ class MockWopsWithLargeAntiPatternCatalogue(MockWopsWithAntiPatterns):
         ]
 
 
+class MockWopsWithRepair(MockWopsWithAntiPatterns):
+    """An available mock adapter whose anti-pattern records carry repair operations.
+
+    ``mock-defect-a`` repairs via ``op-a``; ``mock-defect-b`` has an empty repair list (deletion).
+    ``get_writing_operations`` returns the full operation records so the retrieval can select them.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._records[0]["repair"] = ["op-a"]
+        self._operations = {
+            "op-a": {"id": "op-a", "version": "1.0.0", "name": "Establish context first", "summary": "Introduce a mechanism before relying on it."},
+        }
+
+    def get_writing_operations(self, ids=()):
+        wanted = set(ids)
+        return {
+            "ok": True,
+            "error": None,
+            "operations": [self._operations[operation_id] for operation_id in ids if operation_id in self._operations],
+            "failures": [],
+        }
+
+
 class MockEvaluation:
     python = "mock"
     python_source = "mock"
 
-    def __init__(self, *, ok: bool = True, major_issue: bool = False) -> None:
+    def __init__(self, *, ok: bool = True, major_issue: bool = False, findings: list | None = None) -> None:
         self.ok = ok
         self.major_issue = major_issue
+        self.findings = findings or []
+        # The last developmental-review request kwargs, captured for assertion.
+        self.last_developmental_request: dict = {}
 
     def evaluate_developmental_review(self, **kwargs):
+        self.last_developmental_request = dict(kwargs)
         return {
             "ok": self.ok,
             "degraded": not self.ok,
@@ -191,6 +219,7 @@ class MockEvaluation:
                 ],
                 "problem_types": ["clarity"],
                 "problem_type_vocabulary_source": "mock",
+                "anti_pattern_findings": list(self.findings),
             },
             "versions": {"evaluation": {"evaluation_id": "reader_quality_v4"}},
             "usage": {"judge_prompt_tokens": 100, "judge_completion_tokens": 20},
@@ -461,6 +490,124 @@ def test_draft_omits_the_block_and_completes_when_wops_is_unavailable(workspace)
     assert anti["available"] is False
     assert anti["version"] is None
     assert anti["reason"] == "mock: WOPS not configured"
+
+
+def test_the_developmental_request_carries_the_detection_payload_and_prevention_record(workspace):
+    """The developmental-review request records the detection payload (signals + false positives)
+    and the compact prevention-selection record, without biasing diagnosis."""
+    provider = MockProvider(_responses())
+    evaluation = MockEvaluation()
+    result = _run(
+        workspace,
+        run_id="mock-detection-payload",
+        provider=provider,
+        wops=MockWopsWithAntiPatterns(),
+        evaluation=evaluation,
+    )
+
+    assert result["degraded"] == []
+
+    request = evaluation.last_developmental_request
+    # The detection payload carries each anti-pattern's id, summary, detection and false positives.
+    assert "anti_patterns" in request
+    records = {record["id"]: record for record in request["anti_patterns"]}
+    assert set(records) == {"mock-defect-a", "mock-defect-b"}
+    assert records["mock-defect-a"]["detection"] == ["a mock detection signal"]
+    assert records["mock-defect-a"]["false_positives"] == ["a genuine contrast exists"]
+    # The prevention record is supplied for traceability.
+    assert "prevention_supplied" in request
+    assert "selected_ids" in request["prevention_supplied"]
+
+
+def test_a_supplied_but_present_anti_pattern_is_still_reported(workspace):
+    """A finding for a supplied-but-present anti-pattern is reported (no suppression)."""
+    provider = MockProvider(_responses())
+    evaluation = MockEvaluation(
+        findings=[
+            {
+                "finding_id": "ap-mock-defect-a-1",
+                "anti_pattern_id": "mock-defect-a",
+                "section_id": "S1",
+                "severity": "major",
+                "evidence": "the defect is present",
+                "false_positive_considered": False,
+            }
+        ]
+    )
+    result = _run(
+        workspace,
+        run_id="mock-no-suppression",
+        provider=provider,
+        wops=MockWopsWithRepair(),
+        evaluation=evaluation,
+    )
+
+    assert result["degraded"] == []
+    run_dir = workspace / ".digest-runs" / "mock-no-suppression"
+    wops = read_json(run_dir / "developmental-review" / "output" / "wops.json")
+    # The finding is recorded and its repair operation selected — not suppressed.
+    assert wops["anti_pattern_findings"][0]["anti_pattern_id"] == "mock-defect-a"
+    assert [item["id"] for item in wops["selected"]] == ["op-a"]
+
+
+def test_an_unavailable_catalogue_yields_an_empty_payload_and_completes(workspace):
+    """With the unavailable mock, the developmental request carries no payload and the stage completes."""
+    provider = MockProvider(_responses())
+    evaluation = MockEvaluation()
+    result = _run(
+        workspace,
+        run_id="mock-no-catalogue",
+        provider=provider,
+        wops=MockWops(),
+        evaluation=evaluation,
+    )
+
+    assert result["degraded"] == []
+    # The payload is empty (None) when the catalogue is unavailable; the stage still completes.
+    assert not evaluation.last_developmental_request.get("anti_patterns")
+
+
+def test_writer_revision_receives_the_prevention_context_and_operation_ids(workspace):
+    """Writer Revision's prompt carries the compact prevention-context block, and its manifest's
+    ``writing_operations`` entry lists the exact operation ids supplied."""
+    provider = MockProvider(_responses())
+    evaluation = MockEvaluation(
+        findings=[
+            {
+                "finding_id": "ap-mock-defect-a-1",
+                "anti_pattern_id": "mock-defect-a",
+                "section_id": "S1",
+                "severity": "major",
+                "evidence": "the defect is present",
+                "false_positive_considered": False,
+            }
+        ]
+    )
+    result = _run(
+        workspace,
+        run_id="mock-writer-revision-context",
+        provider=provider,
+        wops=MockWopsWithRepair(),
+        evaluation=evaluation,
+    )
+
+    assert result["degraded"] == []
+
+    revision_request = next(request for request in provider.requests if request.stage_name == "writer-revision")
+    # The compact prevention-context block reaches the prompt.
+    assert "<anti_pattern_prevention_context>" in revision_request.user_text
+    assert "Mock Defect A" in revision_request.user_text
+    # The writing-operations block reaches the prompt too.
+    assert "<writing_operations>" in revision_request.user_text
+
+    run_dir = workspace / ".digest-runs" / "mock-writer-revision-context"
+    manifest = read_json(
+        run_dir / "writer-revision" / "attempts" / "attempt-1" / "prompt-manifest.json"
+    )
+    writing_operations = next(
+        block for block in manifest["blocks"] if block["tag"] == "writing_operations"
+    )
+    assert writing_operations["operation_ids"] == ["op-a"]
 
 
 def test_publication_findings_are_advisory_and_render_uses_the_audited_manifest(workspace):

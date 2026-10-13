@@ -165,6 +165,7 @@ STAGES_V2: tuple[Stage, ...] = (
             ctx.artifact_block("frame", "approved_frame"),
             ctx.artifact_block("developmental-review", "developmental_review", "review.json"),
             ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),
+            ctx.prevention_context_block(),
             ctx.reading_instructions_block("writer-revision"),
         ),
     ),

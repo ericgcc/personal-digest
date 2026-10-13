@@ -51,8 +51,8 @@ DETERMINISTIC_VERSION = "v2"
 SUPERSEDED_EVALUATION_IDS: tuple[str, ...] = ("reader_quality_v3", "reader_quality_v2", "reader_quality_v1")
 
 DEVELOPMENTAL_REVIEW_ID = "developmental_review_v1"
-DEVELOPMENTAL_STEPS_VERSION = "v1"
-DEVELOPMENTAL_SCHEMA_VERSION = "v1"
+DEVELOPMENTAL_STEPS_VERSION = "v2"
+DEVELOPMENTAL_SCHEMA_VERSION = "v2"
 
 #: Decimal places the judge is asked to use for its 0-10 scores. v1 asked for an
 #: integer, which after DeepEval's normalization gave a resolution of 0.10 equal

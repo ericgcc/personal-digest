@@ -21,6 +21,7 @@ Rules this module enforces:
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -44,6 +45,7 @@ BLOCK_TAGS: tuple[str, ...] = (
     "reader_review",
     "reading_instructions",
     "anti_pattern_prevention",
+    "anti_pattern_prevention_context",
     "validation_feedback",
     "deterministic_check_findings",
     "approved_frame_citations",
@@ -115,6 +117,32 @@ class ComposedPrompt:
 def _join_blocks(values: Sequence[Any]) -> str:
     """Join the non-empty block strings with a blank line."""
     return "\n\n".join(str(value) for value in values if value)
+
+
+def _operation_ids(payload: Any) -> list[str] | None:
+    """The operation ids actually included in a writing-operations block, or ``None``.
+
+    The block's payload is the retrieval record (``wops.json``) as a JSON string; the ids are
+    the ``selected`` entries' ``id`` values. ``None`` when the payload is not a readable
+    retrieval record, so the manifest simply omits the field rather than asserting a false
+    supply.
+    """
+    if not isinstance(payload, str):
+        return None
+    try:
+        record = json.loads(payload)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(record, Mapping):
+        return None
+    selected = record.get("selected")
+    if not isinstance(selected, list):
+        return None
+    ids: list[str] = []
+    for entry in selected:
+        if isinstance(entry, Mapping) and entry.get("id") not in (None, ""):
+            ids.append(str(entry["id"]))
+    return ids
 
 
 class DocumentResolver:
@@ -301,14 +329,20 @@ def compose_stage_prompt(
         if not entry or entry.get("payload") is None:
             continue
         block_values[entry["tag"]] = wrap_block(entry["tag"], entry["payload"])
-        block_records.append(
-            {
-                "tag": entry["tag"],
-                "bytes": js_length(entry["payload"]),
-                "source": entry.get("source") or {"kind": "runtime-stage-input"},
-                "purpose": "prior artifact or digest reading instructions",
-            }
-        )
+        block_record: dict[str, Any] = {
+            "tag": entry["tag"],
+            "bytes": js_length(entry["payload"]),
+            "source": entry.get("source") or {"kind": "runtime-stage-input"},
+            "purpose": "prior artifact or digest reading instructions",
+        }
+        # The writing-operations block carries the retrieval record (wops.json) verbatim; its
+        # manifest record names the exact operation ids actually included, so supply is
+        # verifiable from the prompt manifest alone without duplicating the full operations.
+        if entry["tag"] == "writing_operations":
+            operation_ids = _operation_ids(entry["payload"])
+            if operation_ids is not None:
+                block_record["operation_ids"] = operation_ids
+        block_records.append(block_record)
     for tag, payload in (extra_blocks or {}).items():
         if payload is None:
             continue

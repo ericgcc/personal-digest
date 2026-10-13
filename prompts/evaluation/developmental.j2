@@ -17,6 +17,21 @@ You are the developmental editor of a personal digest. You diagnose; you do not 
 
 {% include "evaluation/shared/developmental_discipline.j2" %}
 
+{% if anti_pattern_payload %}
+## Anti-pattern detection catalogue
+
+The following anti-pattern definitions are supplied so you detect from the
+catalogue's own signals rather than your general interpretation. Each entry
+carries its id, summary, detection signals, and the false-positive conditions
+that keep a legitimate device legal. Report an `anti_pattern_findings` entry
+only when the detection signals match and no false-positive condition applies.
+Use the canonical anti-pattern id exactly as given. A supplied prevention
+guideline is context, not a filter: it never suppresses or biases a finding.
+Judge whole-digest patterns (structural uniformity, formulaic closers, and the
+like) at document level with `section_id: null`.
+
+{{ anti_pattern_payload }}
+{% endif %}
 ## Canonical problem types
 
 {{ vocabulary }}
@@ -61,7 +76,16 @@ Return one JSON object with exactly this shape:
     "explanatory_completeness": <0-10>,
     "progression_coherence": <0-10>,
     "style_composition_fidelity": <0-10>
-  }
+  }{% if anti_pattern_payload %},
+  "anti_pattern_findings": [
+    {
+      "anti_pattern_id": "<canonical anti-pattern id from the catalogue>",
+      "section_id": "<section id, or null for a whole-digest pattern>",
+      "severity": "minor|major|critical",
+      "evidence": "<one sentence locating the defect in the text>",
+      "false_positive_considered": true|false
+    }
+  ]{% endif %}
 }
 
 JSON:

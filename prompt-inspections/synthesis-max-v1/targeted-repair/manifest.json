@@ -105,6 +105,19 @@
       "purpose": "prior artifact or digest reading instructions"
     },
     {
+      "tag": "writing_operations",
+      "bytes": 438,
+      "source": {
+        "stage": "developmental-review",
+        "path": ".digest-runs/synthetic/developmental-review/output/wops.json",
+        "provenance": "developmental-review"
+      },
+      "purpose": "prior artifact or digest reading instructions",
+      "operation_ids": [
+        "op-1"
+      ]
+    },
+    {
       "tag": "reading_instructions",
       "bytes": 1030,
       "source": {
@@ -127,5 +140,5 @@
   ],
   "omitted": [],
   "system_bytes": 7462,
-  "user_bytes": 3877
+  "user_bytes": 4360
 }

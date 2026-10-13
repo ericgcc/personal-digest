@@ -100,7 +100,17 @@ class OfflineContext:
         if artifact is None:
             return None
         if artifact_name and artifact.path.name != artifact_name:
-            return None
+            # A stage may declare an extra artifact (e.g. ``wops.json``) that lives beside its
+            # primary artifact. Offline it is registered under its own key (``wops``) with a
+            # sibling path; resolve it so the block reaches the stage instead of silently dropping.
+            sibling = self.artifacts.get("wops")
+            if sibling is None or sibling.path.name != artifact_name:
+                return None
+            return {
+                "tag": tag,
+                "payload": sibling.text,
+                "source": {"stage": target, "path": sibling.path.as_posix(), "provenance": sibling.provenance},
+            }
         return {
             "tag": tag,
             "payload": artifact.text,
@@ -114,6 +124,10 @@ class OfflineContext:
         ``stage_extra_blocks`` instead, so inspection and baseline capture stay aligned with a
         real run without depending on a live WOPS checkout.
         """
+        return None
+
+    def prevention_context_block(self) -> dict[str, Any] | None:
+        """Offline there is no Draft prevention record, so the compact context is a no-op."""
         return None
 
     def rendering_values(self) -> dict[str, Any]:
@@ -447,6 +461,12 @@ def seed_artifacts(context: OfflineContext, *, stages: list[str] | None = None) 
     )
     # The writing-operations artifact shares the developmental-review stage directory, so it is
     # registered under its own name for the stages that read it as `wops.json`.
+    context.artifacts["wops"] = OfflineArtifact(
+        path=Path(".digest-runs/synthetic/developmental-review/output/wops.json"),
+        text=json.dumps(SYNTHETIC_WOPS, ensure_ascii=False, indent=2),
+        json=SYNTHETIC_WOPS,
+        provenance="developmental-review",
+    )
     context.artifacts["publication-verify"] = _artifact("publication-verify", SYNTHETIC_PROSE)
     return context
 

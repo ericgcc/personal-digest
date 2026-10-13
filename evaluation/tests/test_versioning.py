@@ -63,3 +63,16 @@ def test_the_deterministic_version_moved_with_the_new_metrics() -> None:
     from evaluation.version import DETERMINISTIC_VERSION
 
     assert DETERMINISTIC_VERSION == "v2"
+
+
+def test_the_developmental_definition_moved_to_v2() -> None:
+    """Anti-pattern detection extends the developmental prompt and schema."""
+    from evaluation.version import (
+        DEVELOPMENTAL_REVIEW_ID,
+        DEVELOPMENTAL_SCHEMA_VERSION,
+        DEVELOPMENTAL_STEPS_VERSION,
+    )
+
+    assert DEVELOPMENTAL_REVIEW_ID == "developmental_review_v1"
+    assert DEVELOPMENTAL_STEPS_VERSION == "v2"
+    assert DEVELOPMENTAL_SCHEMA_VERSION == "v2"

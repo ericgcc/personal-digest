@@ -236,6 +236,7 @@ Diagnose only. Do not write replacement language, prescribe prose, or perform th
 - **Output the JSON object only** — no commentary, no code fence, no reasoning.
 
 
+
 ## Canonical problem types
 
 

@@ -73,6 +73,10 @@ class RunContext:
     #: The prevention block's byte budget, resolved from the runtime configuration by the
     #: orchestrator (environment wins, then runtime.json, then the module default).
     anti_pattern_budget_bytes: int | None = None
+    #: The Draft prevention-selection record (the ``anti_pattern_prevention`` block's
+    #: ``source``), set by the executor after Draft so Writer Revision can supply the compact
+    #: prevention context without re-reading the manifest.
+    prevention_record: Mapping[str, Any] | None = None
 
     def stage_excluded_sections(self, stage_name: str) -> list[str]:
         """Convention composition has no withheld style fragments."""
@@ -211,7 +215,25 @@ class RunContext:
         if artifact is None:
             return None
         if artifact_name and artifact.path.name != artifact_name:
-            return None
+            # A stage may declare an extra artifact (e.g. ``wops.json``) that lives beside its
+            # primary artifact (``review.json``) in the same output directory. Resolve it by
+            # sibling path so the block actually reaches the stage instead of silently dropping.
+            sibling = artifact.path.parent / artifact_name
+            if not sibling.is_file():
+                return None
+            try:
+                text = sibling.read_text(encoding="utf-8")
+            except OSError:
+                return None
+            return {
+                "tag": tag,
+                "payload": text,
+                "source": {
+                    "stage": target,
+                    "path": relative_to_root(sibling, self.root),
+                    "provenance": artifact.provenance,
+                },
+            }
         return {
             "tag": tag,
             "payload": artifact.text,
@@ -283,6 +305,52 @@ class RunContext:
                 "bytes": metadata["bytes"],
                 "max_bytes": metadata["max_bytes"],
                 "history_used": metadata["history_used"],
+            },
+        }
+
+    def prevention_context_block(self) -> dict[str, Any] | None:
+        """The compact prevention-context block for Writer Revision, or ``None``.
+
+        The anti-pattern ids and one-line summaries previously supplied to Draft, read from the
+        run's Draft prevention record — not the full definitions. It is background context, not
+        a checklist: Writer Revision repairs diagnosed problems, never mechanically applies a
+        previously supplied rule. ``None`` when no prevention record exists.
+        """
+        from .anti_patterns import load_catalogue
+
+        if self.wops is None:
+            return None
+        catalogue = self.anti_pattern_catalogue
+        if catalogue is None:
+            catalogue = load_catalogue(self.wops)
+        if not getattr(catalogue, "available", False):
+            return None
+        # The prevention record is the Draft attempt's manifest block source; the executor
+        # reads it and stores it on the context for reuse across stages.
+        record = getattr(self, "prevention_record", None)
+        if not isinstance(record, Mapping):
+            return None
+        selected_ids = record.get("selected_ids")
+        if not isinstance(selected_ids, list) or not selected_ids:
+            return None
+        lines: list[str] = []
+        for anti_pattern_id in selected_ids:
+            entry = catalogue.by_id(str(anti_pattern_id))
+            if entry is None:
+                continue
+            name = str(entry.get("name") or entry.get("id") or "").strip()
+            summary = str(entry.get("summary") or "").strip()
+            lines.append(f"{name} — {summary}".rstrip(" —"))
+        if not lines:
+            return None
+        return {
+            "tag": "anti_pattern_prevention_context",
+            "payload": "\n".join(lines),
+            "source": {
+                "kind": "wops-anti-pattern-prevention-context",
+                "selected_ids": [str(item) for item in selected_ids],
+                "available": catalogue.available,
+                "version": catalogue.version,
             },
         }
 

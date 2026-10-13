@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "note": "Every difference between the frozen pre-migration baseline and the candidate prompts, with an explicit classification and justification. The approved_candidate_sha256 binds these categories to the exact complete ordered candidate prompt set, so a broad category cannot approve a later mutation. scripts/prompt_migration_gate.py fails on any unclassified difference or candidate fingerprint mismatch. Patterns use fnmatch globs.",
-  "approved_candidate_sha256": "aecd9dfcc464c5f1d9d8d0aacbf620dee21aab47ef6b5c68ed3441901e4ba036",
+  "approved_candidate_sha256": "c86e534726274fe8b1275682fe2c28f2ca767b07d39e72d9a4c2f352f1f2c741",
   "categories": [
     "packaging-only",
     "deduplication-without-semantic-loss",
@@ -586,6 +586,17 @@
       "stage": "writer-revision",
       "kind": "novel-content",
       "block": "editorial/stages/writer-revision.md",
+      "detail_contains": [
+        "Anti-pattern diagnoses inside the writing-operations record"
+      ],
+      "category": "behavioral-change",
+      "justification": "Writer Revision now receives anti-pattern diagnoses inside the writing-operations record, to be repaired like any diagnosed problem with false-positive conditions respected and never as a prose template; compact prevention context is background, not a checklist. OpenSpec change 2026-10-10-wops-anti-pattern-integration, Phase 2."
+    },
+    {
+      "profile": "*",
+      "stage": "writer-revision",
+      "kind": "novel-content",
+      "block": "editorial/stages/writer-revision.md",
       "category": "behavioral-change",
       "justification": "Writer Revision is now explicitly a substantive revision with structural authority (reorder, expand, cut, split, merge, reframe, rewrite, change headings, redistribute emphasis) bounded by the approved evidence set."
     },
@@ -767,6 +778,38 @@
       ],
       "category": "behavioral-change",
       "justification": "The Draft contract now names the anti-pattern prevention block in 'What you receive' and states its authority: conditional writing guidance, not absolute prohibitions, never overriding factual accuracy, the evidence, or the approved frame. Phase 1 review correction for the same OpenSpec change."
+    },
+    {
+      "profile": "*",
+      "stage": "writer-revision",
+      "kind": "added",
+      "block": "writing_operations",
+      "category": "behavioral-change",
+      "justification": "The writing-operations block now actually reaches Writer Revision: the extra artifact (wops.json) is resolved by sibling path instead of silently dropping, so the retrieved operations and anti-pattern findings are delivered. OpenSpec change 2026-10-10-wops-anti-pattern-integration, Phase 2 (B2 fix)."
+    },
+    {
+      "profile": "*",
+      "stage": "writer-revision",
+      "kind": "novel-content",
+      "block": "writing_operations",
+      "category": "behavioral-change",
+      "justification": "The writing-operations block's synthetic offline content (the fixture operation name and summary) now appears because the block resolves; the vocabulary is fixture data, not embedded instruction text. OpenSpec change 2026-10-10-wops-anti-pattern-integration, Phase 2 (B2 fix)."
+    },
+    {
+      "profile": "*",
+      "stage": "targeted-repair",
+      "kind": "added",
+      "block": "writing_operations",
+      "category": "behavioral-change",
+      "justification": "The writing-operations block now actually reaches Targeted Repair too: the extra artifact (wops.json) is resolved by sibling path instead of silently dropping. OpenSpec change 2026-10-10-wops-anti-pattern-integration, Phase 2 (B2 fix)."
+    },
+    {
+      "profile": "*",
+      "stage": "targeted-repair",
+      "kind": "novel-content",
+      "block": "writing_operations",
+      "category": "behavioral-change",
+      "justification": "The writing-operations block's synthetic offline content now appears in Targeted Repair because the block resolves; the vocabulary is fixture data, not embedded instruction text. OpenSpec change 2026-10-10-wops-anti-pattern-integration, Phase 2 (B2 fix)."
     }
   ]
 }

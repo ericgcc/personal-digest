@@ -165,6 +165,7 @@ def compose_evaluation_prompt(
         "after_label": after_label,
         "frame_block": frame_block,
         "vocabulary": ", ".join(f"`{value}`" for value in problem_types),
+        "anti_pattern_payload": "",
     }
     rendered = render(template, context, environment=environment)
     return EvaluationPrompt(

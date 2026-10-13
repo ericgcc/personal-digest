@@ -9,8 +9,8 @@
     },
     {
       "path": "prompts/stages/writer-revision/user.j2",
-      "bytes": 170,
-      "sha256": "3b3bc7045b7339a73f8beb73a31d34261aad6e56f0a8a5d0e21f7bf36155d945"
+      "bytes": 203,
+      "sha256": "144c99ae284b757526f1fb94838073bf4965abab69e7ef085bcfa21019e699b9"
     },
     {
       "path": "prompts/shared/task.j2",
@@ -21,8 +21,8 @@
   "documents": [
     {
       "path": "editorial/stages/writer-revision.md",
-      "bytes": 7456,
-      "sha256": "06aa9f04c0cc2ddaa53f4b2ec0dca82069edb1ad0b949c1af4f1cd6c955d56eb",
+      "bytes": 7691,
+      "sha256": "47b530b6b1f9a9e84b42eda64a5c0eaaab0e54722ca8559424a16cbd068d6496",
       "owner": "shared stage contract"
     },
     {
@@ -115,6 +115,19 @@
       "purpose": "prior artifact or digest reading instructions"
     },
     {
+      "tag": "writing_operations",
+      "bytes": 438,
+      "source": {
+        "stage": "developmental-review",
+        "path": ".digest-runs/synthetic/developmental-review/output/wops.json",
+        "provenance": "developmental-review"
+      },
+      "purpose": "prior artifact or digest reading instructions",
+      "operation_ids": [
+        "op-1"
+      ]
+    },
+    {
       "tag": "reading_instructions",
       "bytes": 1030,
       "source": {
@@ -136,6 +149,6 @@
     }
   ],
   "omitted": [],
-  "system_bytes": 14201,
-  "user_bytes": 6205
+  "system_bytes": 14436,
+  "user_bytes": 6688
 }

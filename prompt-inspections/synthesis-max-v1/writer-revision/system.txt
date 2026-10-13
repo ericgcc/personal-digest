@@ -27,6 +27,7 @@ The frame is the **best pre-draft plan**, not an immutable final layout. It is t
 * The developmental review: issues with canonical problem types, severity, reasons, and revision goals; missed frame obligations; revision priorities.
 * The evidence for the frame-selected sources, so you can restore context or detail the review says is missing.
 * A small set of retrieved writing operations — reusable, named writing transformations selected for the diagnosed problems. Apply the ones that fit; ignore the ones that do not. They are candidate moves, not a checklist, and they never override the frame's evidence, the sources, or the reader contract.
+* Anti-pattern diagnoses inside the writing-operations record, to be repaired like any diagnosed problem, applying the false-positive conditions and never as a prose template. Compact prevention context is background, not a checklist.
 * The selected style's writing character.
 * The shared Naturalness Contract, including its whole-digest pattern-density audit.
 

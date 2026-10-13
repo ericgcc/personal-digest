@@ -1,0 +1,63 @@
+{
+  "run_id": "phase2-detection-repair-2-2-7",
+  "created": "2026-10-12",
+  "status": "building",
+  "iteration": 1,
+  "repository_root": "C:\\Users\\ericg\\OneDrive\\Documents\\GitHub\\digy",
+  "change_name": "2026-10-10-wops-anti-pattern-integration",
+  "change_dir": "openspec/changes/2026-10-10-wops-anti-pattern-integration",
+  "schema": "spec-driven",
+  "scope_mode": "selected-slice",
+  "selection": {
+    "task_ids": ["2.2", "2.3", "2.4", "2.5", "2.6", "2.7"],
+    "phase": "Phase 2 — Detection and repair integration (tasks 2.2–2.7; 2.0a–2.0c and 2.1 already verified in prior runs)",
+    "requirement_refs": [
+      "Developmental Review detects anti-patterns in the draft (template rendering + adapter/executor wiring half)",
+      "Repair selection honours anti-pattern relationships",
+      "Overuse risks and severity priority are recorded",
+      "Writer Revision applies diagnoses without becoming a template",
+      "Stage-specific WOPS history within a run (Writer Revision supply + operation_ids manifest half)"
+    ]
+  },
+  "context_files": {
+    "proposal": "openspec/changes/2026-10-10-wops-anti-pattern-integration/proposal.md",
+    "specs": "openspec/changes/2026-10-10-wops-anti-pattern-integration/specs/wops-anti-pattern-integration/spec.md",
+    "design": "openspec/changes/2026-10-10-wops-anti-pattern-integration/design.md",
+    "tasks": "openspec/changes/2026-10-10-wops-anti-pattern-integration/tasks.md"
+  },
+  "execution_conventions": {
+    "instructions": [".github/copilot-instructions.md", "AGENTS.md"],
+    "test_interpreter": "C:\\Users\\ericg\\.conda\\envs\\digest-eval\\python.exe (conda env 'digest-eval'; system python lacks yaml/jinja2/pytest)",
+    "test_command": "C:\\Users\\ericg\\.conda\\envs\\digest-eval\\python.exe -m pytest",
+    "pytest_parallel": "pytest.ini addopts include -n auto --dist loadfile (pytest-xdist); use --override-ini=\"addopts=\" for focused serial runs",
+    "prompt_gate": "python scripts/prompt_migration_gate.py --json (run with conda env python)",
+    "context_measure": "python scripts/measure_context.py (run with conda env python)",
+    "windows": "PowerShell; never use &&; console is cp1252; never bulk-edit with Set-Content/Get-Content -Raw",
+    "commit_convention": "type(scope): [B]/[I] description with Assisted-by trailer (NOT USED: no-commit mode)"
+  },
+  "commit_mode": "none",
+  "models": {
+    "builder": {
+      "requested": "DeepSeek V4 Pro (New) (opencodego)",
+      "provider": "go",
+      "agent_path": ".github/agents/openspec-go-builder.agent.md",
+      "agent_name": "OpenSpec Go: Builder",
+      "actual": null,
+      "selection_reason": "DeepSeek V4 Pro selected: first eligible model in Builder precedence (normal mode).",
+      "selection_mode": "normal",
+      "profile": [68000, 0, 2000, 0],
+      "expected_requests": 3,
+      "usage_percent": { "rolling": 0, "weekly": 0, "monthly": 34 },
+      "projected_burn_pp": { "rolling": 9.768, "weekly": 3.9072, "monthly": 1.9536 },
+      "binding_verified": true
+    }
+  },
+  "artifact_baseline": {
+    "proposal.md": "f63bd8c861b77be8d8c22154a909cbb08777b5ba",
+    "specs/wops-anti-pattern-integration/spec.md": "7e0c79a2b3db7a6b4ac20f8c3371dae33ed42033",
+    "design.md": "80ebe89c92fdd09d1fb8efc46bfb37848fa4c0fe"
+  },
+  "initial_sha": "99a9e06b6b032c481ed56e0230ada38416e61408",
+  "builder_sha": null,
+  "pre_existing_changes": "worktree clean at run start (git status --short empty)"
+}

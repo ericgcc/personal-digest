@@ -8,7 +8,7 @@
 
 ## Templates
 
-- `prompts/evaluation/developmental.j2` — 0 units, sha256 `5618e036b8a9`
+- `prompts/evaluation/developmental.j2` — 0 units, sha256 `bde80d6379f3`
 - `prompts/evaluation/shared/developmental_discipline.j2` — 0 units, sha256 `0d74242eb5df`
 
 ## Instruction documents
@@ -25,7 +25,7 @@
 
 ## Data blocks
 
-- `evaluation_input` — 17512 chars; combined judge prompt; source `{"contracts": ["reader", "review", "role", "style"], "kind": "evaluation-adapter"}`
+- `evaluation_input` — 17513 chars; combined judge prompt; source `{"contracts": ["reader", "review", "role", "style"], "kind": "evaluation-adapter"}`
 
 ## Sizes
 

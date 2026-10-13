@@ -516,6 +516,37 @@ def render_frame(frame: Mapping[str, Any] | None, raw_text: str) -> str:
     return "\n\n".join(parts)
 
 
+def render_detection_payload(
+    anti_patterns: Sequence[Mapping[str, Any]] | None,
+) -> str:
+    """Render the size-bounded detection payload for the judge prompt.
+
+    Each included record is rendered whole — id, summary, detection signals, and
+    false-positive conditions — so the judge detects from WOPS's own definitions.
+    The payload is bounded by :data:`MAX_DETECTION_PAYLOAD`; trailing records are
+    dropped whole and their ids recorded as omitted (not evaluated) by the caller.
+    """
+    included, _included_ids, _omitted_ids = select_detection_payload(anti_patterns)
+    if not included:
+        return ""
+    lines: list[str] = []
+    for record in included:
+        anti_pattern_id = str(record.get("id") or "").strip()
+        summary = str(record.get("summary") or "").strip()
+        detection = [str(item).strip() for item in (record.get("detection") or []) if str(item).strip()]
+        false_positives = [str(item).strip() for item in (record.get("false_positives") or []) if str(item).strip()]
+        lines.append(f"### {anti_pattern_id}")
+        if summary:
+            lines.append(f"Summary: {summary}")
+        if detection:
+            lines.append("Detection signals:")
+            lines.extend(f"- {signal}" for signal in detection)
+        if false_positives:
+            lines.append("False positives (do not report when one applies):")
+            lines.extend(f"- {condition}" for condition in false_positives)
+    return "\n".join(lines)
+
+
 def developmental_prompt(
     *,
     draft_text: str,
@@ -528,6 +559,7 @@ def developmental_prompt(
     reader_contract: str | None = None,
     review_contract: str | None = None,
     language: str | None = None,
+    anti_patterns: Sequence[Mapping[str, Any]] | None = None,
 ) -> str:
     """Build the developmental-review prompt from the shared Jinja2 template."""
     from .prompts import _reader_contract, _render, render_sections
@@ -550,6 +582,7 @@ def developmental_prompt(
             "vocabulary": ", ".join(f"`{value}`" for value in problem_types),
             "frame_block": render_frame(frame_json, frame_text),
             "section_block": render_sections(sections),
+            "anti_pattern_payload": render_detection_payload(anti_patterns),
         },
     )
 
@@ -622,6 +655,7 @@ def evaluate_developmental_review(
         reader_contract=reader_contract,
         review_contract=review_contract,
         language=language,
+        anti_patterns=anti_patterns,
     )
 
     try:

@@ -486,6 +486,32 @@ def test_an_empty_catalogue_leaves_findings_empty_and_the_prompt_unchanged() -> 
     assert "anti-pattern" not in calls[0].lower()
 
 
+def test_the_detection_payload_renders_signals_and_false_positives() -> None:
+    """With a catalogue, the judge prompt carries each entry's id, summary, detection
+    signals, and false-positive conditions — the detection rule's own inputs."""
+    catalogue = [
+        {
+            "id": "formulaic-closers",
+            "summary": "Every section ends with the same rhetorical formula.",
+            "detection": ["repeated closing sentence shape", "identical payoff phrasing"],
+            "false_positives": ["a required formal conclusion is expected"],
+        }
+    ]
+    judge, calls = _judge([_review()])
+    result = evaluate_developmental_review(
+        DRAFT, judge=judge, problem_types=BUILTIN_PROBLEM_TYPES, anti_patterns=catalogue
+    )
+    assert result.ok
+    prompt = calls[0]
+    assert "formulaic-closers" in prompt
+    assert "Every section ends with the same rhetorical formula." in prompt
+    assert "repeated closing sentence shape" in prompt
+    assert "identical payoff phrasing" in prompt
+    assert "a required formal conclusion is expected" in prompt
+    # The detection rule is present: signals match and no false positive applies.
+    assert "no false-positive condition applies" in prompt
+
+
 # --------------------------------------------------------------------------- #
 # Prompt neutrality
 # --------------------------------------------------------------------------- #

@@ -149,6 +149,19 @@ def _vocabulary(request: Mapping[str, Any]) -> tuple[tuple[str, ...], str, list[
     return vocabulary, source, warnings
 
 
+def _anti_patterns(request: Mapping[str, Any]) -> list[Mapping[str, Any]] | None:
+    """The anti-pattern detection payload the caller supplied, or ``None``.
+
+    The payload is a list of catalogue records (each carrying at least ``id``,
+    ``summary``, ``detection`` and ``false_positives``). An absent or non-list
+    value means no catalogue was supplied, which leaves the prompt unchanged.
+    """
+    value = request.get("anti_patterns")
+    if not isinstance(value, list):
+        return None
+    return [record for record in value if isinstance(record, Mapping)]
+
+
 # --------------------------------------------------------------------------- #
 # Commands
 # --------------------------------------------------------------------------- #
@@ -201,6 +214,7 @@ def _cmd_developmental(request: Mapping[str, Any], capture: Callable[[str], None
         role_contract=_contract(request, "role"),
         reader_contract=_contract(request, "reader"),
         review_contract=_contract(request, "review"),
+        anti_patterns=_anti_patterns(request),
     )
     if outcome.prompt:
         capture(outcome.prompt)

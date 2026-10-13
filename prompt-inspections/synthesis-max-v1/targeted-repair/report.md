@@ -25,10 +25,11 @@
 
 - `source_corpus` — 1949 chars; stage-permitted source evidence; source `{"bytes": 1949, "catalog_provenance_numbers": [1, 2, 3, 5], "declared_source_numbers": [1, 2, 3, 5], "effective_policy": "frame-selection", "kind": "evidence-projection", "missing_source_numbers": [], "recovery": null, "requested_policy": "frame", "source_count": 4, "source_numbers": [1, 2, 3, 5], "units": [{"disposition": "keep", "retained": true, "selected_source_numbers": [1, 2], "unit_id": "T1"}, {"disposition": "keep", "retained": true, "selected_source_numbers": [3, 5], "unit_id": "T2"}], "warning": null}`
 - `previous_stage_artifact` — 332 chars; prior artifact or digest reading instructions; source `{"path": ".digest-runs/synthetic/writer-revision/output/writer-revision.md", "provenance": "runner", "stage": "writer-revision"}`
+- `writing_operations` — 438 chars; prior artifact or digest reading instructions; source `{"path": ".digest-runs/synthetic/developmental-review/output/wops.json", "provenance": "developmental-review", "stage": "developmental-review"}`
 - `reading_instructions` — 1030 chars; prior artifact or digest reading instructions; source `{"path": "digests/tech-bi-daily.md", "sections": ["Reader"], "version": "75b7b619c4a1f4549473e2655d469850043600df5e6b2720d30d4ab55f70ceff"}`
 - `stage_task` — 426 chars; immediate task and output contract; source `{"path": "prompts/shared/task.j2"}`
 
 ## Sizes
 
 - System: 7462 units
-- User: 3877 units
+- User: 4360 units

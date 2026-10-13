@@ -74,13 +74,66 @@ def _retrieval_query(issue: Mapping[str, Any]) -> str:
     return " ".join(parts)[:600] or "unspecified editorial problem"
 
 
-def retrieve_writing_operations(*, review: Any, wops: Any, limit: int = 5) -> dict[str, Any]:
+def _merge_candidate(
+    pool: dict[str, dict[str, Any]],
+    operation_id: str,
+    *,
+    severity_rank: int,
+    relevance_score: float = 0.0,
+    summary: str = "",
+    retrieval_reasons: Sequence[str] = (),
+    problem_types: Sequence[str] = (),
+    section_ids: Sequence[str] = (),
+    finding_ids: Sequence[str] = (),
+    selection_reason: str | None = None,
+) -> None:
+    """Merge one operation into the candidate pool, preserving the most severe rank and linkage.
+
+    A candidate matched by a more severe issue or finding keeps the more severe ``severity_rank``
+    (lower is more severe), and its accumulated ``matched_problem_types`` / ``matched_section_ids``
+    / ``matched_finding_ids`` linkage is preserved, even when a later, less severe source scores
+    higher and replaces the entry. This is the single place the severity-priority invariant lives,
+    so the issue loop and the findings loop cannot drift apart.
+    """
+    existing = pool.get(operation_id)
+    if existing is None:
+        pool[operation_id] = {
+            "id": operation_id,
+            "relevance_score": relevance_score,
+            "summary": summary,
+            "retrieval_reasons": list(retrieval_reasons),
+            "matched_problem_types": sorted(set(problem_types)),
+            "matched_section_ids": sorted(set(section_ids)),
+            "matched_finding_ids": sorted(set(finding_ids)),
+            "severity_rank": severity_rank,
+        }
+        if selection_reason is not None:
+            pool[operation_id]["selection_reason"] = selection_reason
+        return
+    existing["severity_rank"] = min(existing.get("severity_rank", 3), severity_rank)
+    existing["matched_problem_types"] = sorted({*existing.get("matched_problem_types", []), *problem_types})
+    existing["matched_section_ids"] = sorted({*existing.get("matched_section_ids", []), *section_ids})
+    existing["matched_finding_ids"] = sorted({*existing.get("matched_finding_ids", []), *finding_ids})
+    if relevance_score > existing.get("relevance_score", 0.0):
+        existing["relevance_score"] = relevance_score
+        existing["summary"] = summary
+        existing["retrieval_reasons"] = list(retrieval_reasons)
+    if selection_reason is not None:
+        existing["selection_reason"] = selection_reason
+
+
+def retrieve_writing_operations(
+    *, review: Any, wops: Any, limit: int = 5, anti_patterns: Sequence[Mapping[str, Any]] | None = None
+) -> dict[str, Any]:
     """Turn the developmental review's diagnostics into a small set of retrieved operations.
 
-    One search per issue, merged and capped. The record keeps the query, the full candidate
-    list with its retrieval reasons, the selected operation ids with their versions, and why
-    each was selected, because a retrieval that cannot be audited is indistinguishable from a
-    guess.
+    One search per issue, merged and capped. Anti-pattern findings join the same severity
+    ordering: each finding's anti-pattern ``repair`` list supplies candidate operation ids
+    (fetched through the adapter), an empty ``repair`` list records ``"repair": "deletion"``,
+    and a selected operation named by the anti-pattern's ``overuse_of`` list is flagged as an
+    overuse risk. The record keeps the query, the full candidate list with its retrieval
+    reasons, the selected operation ids with their versions, and why each was selected,
+    because a retrieval that cannot be audited is indistinguishable from a guess.
     """
     record: dict[str, Any] = {
         "adapter": wops.describe(),
@@ -89,6 +142,7 @@ def retrieve_writing_operations(*, review: Any, wops: Any, limit: int = 5) -> di
         "queries": [],
         "candidates": [],
         "selected": [],
+        "anti_pattern_findings": [],
         "warnings": [],
     }
     if not wops.available:
@@ -129,24 +183,65 @@ def retrieve_writing_operations(*, review: Any, wops: Any, limit: int = 5) -> di
             record["warnings"].append(f"Retrieval failed for {', '.join(problems)}: {result.get('error')}")
             continue
         for candidate in result.get("results", []):
-            existing = pool.get(candidate["id"])
-            score = float(candidate.get("relevance_score") or 0)
-            if existing is None or score > existing["relevance_score"]:
-                pool[candidate["id"]] = {
-                    "id": candidate["id"],
-                    "relevance_score": score,
-                    "summary": candidate.get("summary"),
-                    "retrieval_reasons": candidate.get("retrieval_reasons", []),
-                    "matched_problem_types": list(problems),
-                    "matched_section_ids": [issue.get("section_id")] if issue.get("section_id") else [],
-                }
-            else:
-                existing["matched_section_ids"] = sorted(
-                    {*existing["matched_section_ids"], *([issue.get("section_id")] if issue.get("section_id") else [])}
-                )
-                existing["matched_problem_types"] = sorted({*existing["matched_problem_types"], *problems})
+            _merge_candidate(
+                pool,
+                candidate["id"],
+                severity_rank=SEVERITY_RANK.get(issue.get("severity"), 3),
+                relevance_score=float(candidate.get("relevance_score") or 0),
+                summary=candidate.get("summary") or "",
+                retrieval_reasons=candidate.get("retrieval_reasons", []),
+                problem_types=problems,
+                section_ids=[issue.get("section_id")] if issue.get("section_id") else [],
+            )
 
-    record["candidates"] = sorted(pool.values(), key=lambda item: -item["relevance_score"])
+    # Anti-pattern findings join the same severity ordering. Each finding's anti-pattern
+    # ``repair`` list supplies candidate operation ids; an empty list means deletion.
+    findings = (
+        review.get("anti_pattern_findings")
+        if isinstance(review, Mapping) and isinstance(review.get("anti_pattern_findings"), list)
+        else []
+    )
+    catalogue_by_id = {
+        str(record_.get("id")): record_
+        for record_ in (anti_patterns or ())
+        if isinstance(record_, Mapping) and record_.get("id") not in (None, "")
+    }
+    ordered_findings = sorted(
+        findings, key=lambda finding: SEVERITY_RANK.get(finding.get("severity"), 3)
+    )
+    for finding in ordered_findings:
+        anti_pattern_id = str(finding.get("anti_pattern_id") or "")
+        finding_id = str(finding.get("finding_id") or "")
+        anti_pattern = catalogue_by_id.get(anti_pattern_id)
+        repair = list(anti_pattern.get("repair") or []) if anti_pattern else []
+        overuse_of = list(anti_pattern.get("overuse_of") or []) if anti_pattern else []
+        finding_entry: dict[str, Any] = {
+            "finding_id": finding_id,
+            "anti_pattern_id": anti_pattern_id,
+            "section_id": finding.get("section_id"),
+            "severity": finding.get("severity"),
+            "repair": repair if repair else "deletion",
+            "overuse_of": overuse_of,
+        }
+        record["anti_pattern_findings"].append(finding_entry)
+        if not repair:
+            continue
+        for operation_id in repair:
+            _merge_candidate(
+                pool,
+                operation_id,
+                severity_rank=SEVERITY_RANK.get(finding.get("severity"), 3),
+                section_ids=[finding.get("section_id")] if finding.get("section_id") else [],
+                finding_ids=[finding_id] if finding_id else [],
+                selection_reason=f"repair for {anti_pattern_id}",
+            )
+
+    # The cap prefers critical/major findings and issues over minor ones: severity first, then
+    # relevance score within a severity band. Dropped candidates stay visible in ``candidates``.
+    record["candidates"] = sorted(
+        pool.values(),
+        key=lambda item: (item.get("severity_rank", 3), -item["relevance_score"]),
+    )
     chosen = record["candidates"][:limit]
     fetched = wops.get_writing_operations([candidate["id"] for candidate in chosen])
     if not fetched["ok"]:
@@ -156,23 +251,36 @@ def retrieve_writing_operations(*, review: Any, wops: Any, limit: int = 5) -> di
     record["selected"] = []
     for candidate in chosen:
         operation = by_id.get(candidate["id"], {})
-        record["selected"].append(
-            {
-                "id": candidate["id"],
-                "version": operation.get("version"),
-                "name": operation.get("name"),
-                "summary": operation.get("summary"),
-                "relevance_score": candidate["relevance_score"],
-                "selection_reason": (
-                    f"retrieved for {', '.join(candidate['matched_problem_types'])}"
-                    if candidate["matched_problem_types"]
-                    else "retrieved from the free-text query"
-                ),
-                "matched_problem_types": candidate["matched_problem_types"],
-                "matched_section_ids": candidate["matched_section_ids"],
-                "retrieval_reasons": candidate["retrieval_reasons"],
-            }
+        matched_finding_ids = candidate.get("matched_finding_ids") or []
+        selection_reason = candidate.get("selection_reason") or (
+            f"retrieved for {', '.join(candidate['matched_problem_types'])}"
+            if candidate["matched_problem_types"]
+            else "retrieved from the free-text query"
         )
+        selected_entry: dict[str, Any] = {
+            "id": candidate["id"],
+            "version": operation.get("version"),
+            "name": operation.get("name"),
+            "summary": operation.get("summary"),
+            "relevance_score": candidate["relevance_score"],
+            "selection_reason": selection_reason,
+            "matched_problem_types": candidate["matched_problem_types"],
+            "matched_section_ids": candidate["matched_section_ids"],
+            "retrieval_reasons": candidate["retrieval_reasons"],
+            "selected_for": {
+                "problem_types": candidate["matched_problem_types"],
+                "anti_pattern_findings": matched_finding_ids,
+            },
+        }
+        # An operation named by a finding's anti-pattern ``overuse_of`` list is flagged.
+        overuse_risk_for = [
+            finding["finding_id"]
+            for finding in record["anti_pattern_findings"]
+            if candidate["id"] in (finding.get("overuse_of") or [])
+        ]
+        if overuse_risk_for:
+            selected_entry["overuse_risk_for"] = overuse_risk_for
+        record["selected"].append(selected_entry)
     record["operations"] = [by_id[item["id"]] for item in record["selected"] if item["id"] in by_id]
     record["limit"] = limit
     if not record["selected"]:
@@ -780,6 +888,36 @@ def _run_llm_stage(
         record["warnings"].extend(leak_findings(artifact))
 
 
+def _draft_prevention_record(context: RunContext) -> dict[str, Any] | None:
+    """The Draft prevention-selection record, read from the run's Draft attempt manifest.
+
+    The record is the ``anti_pattern_prevention`` block's ``source`` in the most recent
+    successfully composed Draft attempt's ``prompt-manifest.json``. It carries the supplied
+    ids and omission reasons for traceability only. Missing or unreadable artifacts return
+    ``None`` — the pipeline is never interrupted by reading this record.
+    """
+    draft_dir = stage_directory(context.run_id, "draft", context.root)
+    attempts_dir = draft_dir / "attempts"
+    if not attempts_dir.is_dir():
+        return None
+    for attempt_dir in sorted(attempts_dir.iterdir(), reverse=True):
+        if not attempt_dir.is_dir():
+            continue
+        try:
+            manifest = read_json(attempt_dir / "prompt-manifest.json")
+        except (OSError, ValueError):
+            continue
+        if not isinstance(manifest, Mapping):
+            continue
+        for block in manifest.get("blocks") or []:
+            if not isinstance(block, Mapping) or block.get("tag") != "anti_pattern_prevention":
+                continue
+            source = block.get("source")
+            if isinstance(source, Mapping):
+                return dict(source)
+    return None
+
+
 def _run_evaluation_stage(
     *,
     stage: Any,
@@ -804,6 +942,14 @@ def _run_evaluation_stage(
     if stage.name == "developmental-review":
         draft = _require_artifact(context, "draft")
         frame_artifact = context.artifacts.get("frame")
+        catalogue = getattr(context, "anti_pattern_catalogue", None)
+        anti_patterns = (
+            list(catalogue.records)
+            if catalogue is not None and getattr(catalogue, "available", False)
+            else None
+        )
+        prevention_supplied = _draft_prevention_record(context)
+        context.prevention_record = prevention_supplied
         response = evaluation.evaluate_developmental_review(
             draft_path=draft.path,
             frame_path=frame_artifact.path if frame_artifact else draft.path,
@@ -813,6 +959,8 @@ def _run_evaluation_stage(
             run_id=run_id,
             contracts=contracts,
             wops_root=wops.root,
+            anti_patterns=anti_patterns,
+            prevention_supplied=prevention_supplied,
             work_dir=work_dir,
         )
         if not response["ok"]:
@@ -828,7 +976,9 @@ def _run_evaluation_stage(
         }
 
         # Retrieval happens here, not in the reviewer: it diagnoses, WOPS proposes.
-        retrieval = retrieve_writing_operations(review=response["result"], wops=wops)
+        retrieval = retrieve_writing_operations(
+            review=response["result"], wops=wops, anti_patterns=anti_patterns
+        )
         write_json(work_dir / "output" / "wops.json", retrieval)
         record["retrieval"] = {
             "available": retrieval["available"],

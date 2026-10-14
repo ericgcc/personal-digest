@@ -1,185 +1,172 @@
 ---
 name: openspec-go
 description: >-
-  Implement an OpenSpec change with goal-style autonomous orchestration
-  and independent verification. Uses the change artifacts as the source
-  of truth, then loops between Builder and Inspector until the change
-  is verified. Use when the user says "openspec-go", "implement this
-  OpenSpec change until done", or wants verified autonomous completion
-  of an existing OpenSpec change.
+  Implement an OpenSpec change through manually orchestrated Builder and
+  Inspector chat conversations. Invoke as
+  "/openspec-go <builder|inspector> <select|start|continue>". The user
+  plays the orchestrator: they open one chat per role, pick the model the
+  selector recommends, and move between conversations between iterations.
+  Use when the user says "openspec-go", "openspec-go builder", or
+  "openspec-go inspector".
 metadata:
-  compatibility: Requires openspec CLI, git, and subagent support.
+  compatibility: Requires openspec CLI and git. No subagent dispatch.
   selection-policy: "scripts/select_model.py (quality within sustainable budget)"
   excluded-models: ["Kimi K2.6", "Kimi K2.7 Code"]
   inspector-candidate: "Kimi K3 (eligible; budget checked)"
-  # Prefer the "(Go)" provider variants. Plain Zen variants are mostly for free
-  # models and fail with "Insufficient account funds" or "Model access is
-  # disabled" on funded models. If a model name is rejected as "not found",
-  # re-read the available-models list from the error and pick a current one.
 ---
 
-# OpenSpec Go - Verified Change Implementation
+# OpenSpec Go - Manual Builder/Inspector Orchestration
 
-You are an orchestrator. You never implement product changes or judge their quality. You coordinate Builder and Inspector, and maintain the run's process artifacts. This skill implements an existing OpenSpec change; it does not create a replacement proposal or archive the change.
+This skill is a **command dispatcher**, not an orchestrator. The user replaces
+the old orchestrator subagent: they open one chat conversation per role, choose
+the model, and move between conversations between iterations. Each conversation
+plays exactly one role and follows the matching playbook in `assets/`.
 
-## Architecture
+## Command grammar
 
-| Role | Agent Name | Model | Failover Model Precedence | Purpose |
-| --- | --- | --- | --- | --- |
-| Builder | `Budget openspec-go: Builder` | Exact selector result | Re-select and regenerate after error | Implements the scoped brief |
-| Inspector | `Budget openspec-go: Inspector` | Exact selector result, different family | Kimi K3 eligible; K2.6/K2.7 Code excluded | Fresh independent verification |
-
-Role templates are bundled under assets/. Use the generated model-bound agents described below; templates alone do not perform budget-aware dispatch.
-
-## Usage-aware model selection
-
-Use [assets/model-catalog.md](assets/model-catalog.md) for the full allowance,
-pricing, estimate, privacy and selection reference. The executable policy is
-`scripts/select_model.py`. This section governs every Builder/Inspector dispatch.
-
-Selection is restricted to the **curated precedence lists** in
-`budget_models.py` (`BUILDER_PRECEDENCE`, `INSPECTOR_PRECEDENCE`, plus the
-`OPENROUTER_*_PRECEDENCE` lists for OpenRouter labels). These are the
-authoritative baseline preferences; subjective quality ratings in the catalog
-serve a different purpose and never replace them. Models outside the curated
-lists are never selected in normal automatic selection.
-
-The selector runs in one of two modes, decided by account usage:
-
-- **Normal** (rolling < 50%, weekly < 80%, monthly < 80%): candidates are
-  ranked by their position in the curated precedence list; projected five-hour
-  consumption is only a tie-breaker. A cheaper low-quality model never
-  displaces a higher-preference model on cost alone.
-- **Conserve** (any window at or above those thresholds): feasible candidates
-  within a quality floor one tier below the strongest feasible candidate are
-  reranked by lowest projected five-hour allowance consumption, ties broken by
-  higher quality then precedence. Lower-quality candidates remain deferred
-  fallbacks and never jump ahead of the main consideration set.
-
-The full ranking is recomputed on every selection from current availability,
-usage and tracker state. The result records `selection_mode` (`normal` or
-`conserve`), `usage_percent`, and a specific `selection_reason`.
-
-Default minimum quality is **3 for Builder** and **4 for Inspector**; pass
-`--min-quality 5` for demanding work. Hy3 sits below the default Inspector
-minimum and is only selectable when a lower minimum is explicitly requested.
-Kimi K2.6 and Kimi K2.7 Code remain excluded from all dispatch, including
-OpenRouter aliases. Kimi K3 stays eligible for Inspector subject to
-availability, compatibility and budget checks; no live Copilot integration
-test is assumed. Muse Contributor models stay disabled unless training-data
-consent and regional eligibility are explicitly established.
-
-**Premium escalation** (`--allow-premium`, default off) places
-`PREMIUM_BUILDER_MODELS` ahead of the normal Builder precedence when explicitly
-enabled, then applies the same budget checks and dynamic ranking. It is an
-explicit run-level decision — never triggered automatically because a cheaper
-model was unavailable.
-
-### Budget and independence
-
-- Record `plan: go|go-plus` in run status; use the active subscription plan.
-  Do not infer Go Plus from model names or a fixed multiplier.
-- Obtain the current host model inventory and save its exact labels as a JSON
-  list in the run directory, e.g. `available-models.json`. Filter availability,
-  region and privacy constraints before selection; never invent provider labels.
-- Supply estimated uncached input, cached read, output and cache-write tokens
-  **per API request**, and the planned request count for the next brief
-  (`--expected-requests`; default 1 = single-request feasibility estimate, not
-  a forecast of the whole run — pass a larger justified estimate for a bounded
-  task). Predicted request costs come only from `budget_models.estimate()` over
-  the published catalog prices; no historical billing numbers from past
-  sessions are used as inputs. Without reliable evidence of cache reuse, use a
-  conservative profile with zero assumed cache reads (e.g. 68K/0/2K/0 for a
-  Builder request of that size); pass a warmer profile only when cache reuse is
-  supported by reliable runtime information. For a fresh Inspector always start
-  with a cold-cache estimate such as 68K/0/2K/0; do not copy Builder cache
-  assumptions or session state.
-- Builder reserves **15 percentage points** of every window; Inspector keeps a
-  **2-percentage-point** margin and may consume the Builder's reserved
-  capacity. A candidate passes only when the planned batch fits **all three
-  windows**: `projected_burn_pp <= 100 - current_usage_percent - reserve_pp`,
-  with the reserve interpreted as absolute percentage points. If no candidate
-  fits, the selector returns no selection: split the brief, wait, or obtain
-  authorization for a different fallback. It must not dispatch an infeasible
-  batch. Set `--min-quality 4` or `5` for demanding work.
-- Inspector always starts fresh and uses a different family from the actual
-  Builder (`--builder-model`). For Inspector-only runs with no Builder, use
-  `--builder-model none` and record that family independence is unverified.
-- Paid Go has shared normalized rolling/weekly/monthly meters. The published
-  caps are single-model USD equivalents, not additive balances. An account
-  limit blocks every paid-Go candidate, not free models or OpenRouter.
-- Suitable free models require Builder role plus both `--allow-free` and
-  `--allow-low-quality-free`; Inspector never selects them. Muse Contributor candidates require
-  explicit training-data consent and allowed region (`--allow-training`).
-  Existing user consent may be reused; never change provider settings yourself.
-- OpenRouter is last, enabled only by existing spending authorization through
-  `--allow-openrouter`. Consider suitable free work or waiting first. Do not
-  enable paid Zen balance fallback implicitly.
-
-### Gauge, tracker and exact dispatch binding
-
-Run from the repository root before **every** dispatch:
-
-```bash
-python .github/skills/openspec-go/scripts/opencode_usage.py --plan go --record --log
-python .github/skills/openspec-go/scripts/select_model.py --plan go --role builder --available "<run>/available-models.json" --prepare openspec-go
-# Inspector: use actual Builder model and an independent cold-cache profile
-python .github/skills/openspec-go/scripts/select_model.py --plan go --role inspector --available "<run>/available-models.json" --builder-model "<actual Builder model>" --profile 68000 0 2000 0 --prepare openspec-go
+```
+/openspec-go <role> <action> [change-name]
 ```
 
-Change `go` to `go-plus` for that plan. The selector fetches fresh usage;
-`--usage-file` may instead read a timestamped `--json` gauge snapshot
-matching the plan and no older than five minutes. No key or invalid/missing
-usage means exit 3 (unknown): refresh, never interpret it as unused allowance.
-Exit 2 means no eligible model can finish the declared batch; split it, wait,
-or report the concrete constraint. Do not dispatch.
-Exit 0 returns ranked estimates and a selected exact host label.
+- `<role>`: `builder` or `inspector`.
+- `<action>`: `select`, `start`, or `continue`.
+- `[change-name]`: optional OpenSpec change name or directory path.
 
-`--prepare` regenerates the **runtime role agent** under `.github/agents/` —
-`.github/agents/openspec-go-<role>.agent.md` — from this skill's **template**
-in its assets folder,
-`.github/skills/openspec-go/assets/openspec-go-<role>.agent.md`, on **every**
-selection. The assets file is the template: the source of truth for the
-agent's name and instructions, carrying an empty `model: ""` placeholder, and
-is never dispatched directly and never modified by selection. The generated
-copy under `.github/agents/` is the only file the host registers and
-dispatches; it is reset from the template each time before the selected label
-is bound, so no stale binding from a previous run can survive. `--prepare`
-returns the exact `dispatch.agent_name` and `dispatch.agent_path`. It puts
-the selected label into the supported **scalar `model:` frontmatter** of the
-generated copy; the agent keeps its own name and instructions. The selected
-label must be the **exact host label** from the inventory file — provider
-suffix included (e.g. `DeepSeek V4 Pro (New) (opencodego)`); a bare catalog
-name cannot be resolved by the host and silently falls back to the session's
-default chat model. When no selection is active the generated agent's
-`model:` is empty (host default). It refuses to overwrite a file under
-`.github/agents/` that is not a previously generated copy of this skill's
-template (same agent name). Advisory metadata and text in a prompt do not
-override the model.
+Parse the arguments, then follow exactly one section below. Never mix roles in
+one conversation: a Builder chat never verifies, and an Inspector chat never
+implements.
 
-Before dispatching, the orchestrator must verify the generated copy's
-`model:` field carries the exact selected host label (suffix included); an
-empty or bare name means the binding will silently fall back — stop with a
-dispatch-capability blocker rather than dispatch.
+## Role playbooks
 
-1. Load/reload that generated agent in the host and dispatch **the returned
-   agent name**. Verify before dispatching that the generated copy's `model:`
-   field carries the exact selected host label (suffix included); an empty or
-   bare name means the binding will silently fall back — stop with a
-   dispatch-capability blocker rather than dispatch. Where the host exposes a
-   verified model override, that exact override is equivalent. If neither
-   binding nor reload can be verified, stop with a dispatch-capability
-   blocker; do not silently use the parent/default model.
-2. Record requested model, agent path, plan, profile, remaining
-   estimates, and selection reason in run status. Record actual model/provider
-   only from host execution metadata; keep it null if unavailable. A mismatch
-   requires stopping/reselection, not changing the record to claim success.
-3. Run roles sequentially; do not regenerate a role agent while it is
-   executing. Inspector receives files and acceptance criteria with fresh
-   context, never Builder conversation or unchecked conclusions.
-4. For failover, record the precise error and rerun selection/preparation.
-   A `GoUsageLimitError` is always account scoped. Network/schema/region/privacy
-   errors are not evidence of monthly exhaustion.
+- Builder: [assets/openspec-go-builder.agent.md](assets/openspec-go-builder.agent.md)
+- Inspector: [assets/openspec-go-inspector.agent.md](assets/openspec-go-inspector.agent.md)
+
+The playbooks are the source of truth for each role's workflow. This file only
+routes commands and defines the shared `select` action.
+
+## `/openspec-go <role> select` - recommend a model (read-only)
+
+Run this in a **cheap control chat before opening the role chat**, because the
+chat model is fixed when the conversation is created. This action never
+implements anything and never writes product files.
+
+1. Ask the user for the active plan (`go` or `go-plus`) if not already known.
+   Record it in the run's `status.json` when a run exists; otherwise keep it
+   for the role chat to record.
+2. Obtain the host model inventory: ask the user to paste the exact model
+   labels their chat model picker offers, and save them as a JSON list at
+   `<run-dir>/available-models.json` (create the run directory if it does not
+   exist yet; otherwise use a scratch path and move the file in `start`).
+   Never invent provider labels.
+3. Run the gauge and selector from the repository root:
+
+   ```bash
+   python .github/skills/openspec-go/scripts/opencode_usage.py --plan <plan> --record --log
+   python .github/skills/openspec-go/scripts/select_model.py --plan <plan> --role <role> \
+     --available "<run-dir>/available-models.json" \
+     [--builder-model "<actual Builder model>"]   # Inspector only
+   ```
+
+   Notes:
+   - No `--prepare`: there is no generated agent to bind. The user selects the
+     recommended model in the chat model picker themselves.
+   - Keep the default conservative profile (zero assumed cache reads). Pass an
+     explicit `--profile` only with reliable cache-reuse evidence.
+   - Inspector requires the actual Builder model for the family check; use
+     `--builder-model none` only for Inspector-first runs and record that
+     family independence is unverified.
+4. Report to the user:
+   - the **exact host label** to pick in the model picker (suffix included),
+   - `selection_mode`, `selection_reason`, and the ranked list,
+   - the tracker/gauge state and any account-wide block.
+5. Write the full selector JSON to `<run-dir>/model-selection-<role>-<N>.json`
+   (or a scratch path if no run directory exists yet) so the role chat can
+   record it.
+6. Tell the user: open the `<role>` chat with this model selected, name the
+   conversation `[B] <change-id>` (Builder) or `[I] <change-id>` (Inspector),
+   then run `/openspec-go <role> start`.
+
+Exit codes follow the selector: 0 selected, 2 nothing fits (split the brief,
+wait, or authorize a fallback), 3 unknown usage (refresh; never treat unknown
+as unused allowance).
+
+## `/openspec-go <role> start` - first iteration
+
+Hand control to the role playbook. The conversation now **is** the role.
+
+- **Builder `start`**: confirm the model recorded by `select` matches the
+  model of this chat (ask the user to confirm; a mismatch requires stopping or
+  re-running `select`). Then perform Phases 0-2 (select the change, discover
+  the project, initialize the run directory and `status.json`) followed by
+  Builder iteration 1, exactly as written in the Builder playbook.
+- **Inspector `start`**: confirm the model and the Builder model used for the
+  family check, then perform Inspector iteration 1 as written in the
+  Inspector playbook. If no run directory exists yet (Inspector-first run),
+  initialize the minimal run directory first as described in the playbook.
+
+## `/openspec-go <role> continue` - next iteration
+
+- **Builder `continue`**: read the latest `inspector-feedback-<N>.md` in the
+  run directory, address every required finding, and run Builder iteration
+  N+1. Do not re-litigate settled findings; record evidence if a finding is
+  already satisfied.
+- **Inspector `continue`**: re-verify after a Builder fix round as iteration
+  N+1, writing `inspector-feedback-<N+1>.md` and appending exactly one
+  history entry.
+
+Both roles: increment the iteration counter in `status.json`, follow the run's
+commit mode, and keep the role boundaries (Builder never writes feedback;
+Inspector never implements).
+
+## Shared rules (both roles)
+
+### Artifacts are authoritative
+
+The selected change's artifacts are the sole implementation and verification
+contract: proposal defines intent and scope, specs define requirements and
+scenarios, design records decisions, and tasks track implementation. Use the
+actual schema's equivalents. Do not create a separate goal, specification, or
+copied acceptance checklist. Run files contain execution metadata and observed
+evidence only. Checkbox completion alone is not evidence that a requirement
+works.
+
+Builder implements; Inspector verifies with fresh context. Only files and git
+history connect the two conversations; never pass Builder's claims to the
+Inspector chat, and never pass Inspector's reasoning back to the Builder chat
+beyond its written feedback file.
+
+### Chat naming
+
+Name the conversation `[B] <change-id>` for Builder and `[I] <change-id>` for
+Inspector, where `<change-id>` is the OpenSpec change name. Keep one
+conversation per role for the whole run; start a fresh conversation only when
+the context window is exhausted, and re-anchor from `status.json` and the run
+directory afterward.
+
+### Commit convention
+
+Preserve the auditable role markers:
+
+- Builder: `type(scope): [B] description`, one new commit per iteration.
+- Inspector: `chore(scope): [I] description`, feedback/status only, one per
+  iteration.
+- Titles use imperative mood and are at most 72 characters.
+- Follow discovered project conventions, retaining markers and an
+  `Assisted-by: <PROVIDER>:<MODEL>` trailer matching the chat's actual model.
+- Never amend previous iterations, stage unrelated files, or commit without
+  permission. No-commit mode preserves the same file-based loop without
+  commits.
+
+### Provider/model errors are user-actionable
+
+On `Insufficient account funds`, `Model access is disabled`, `requires Global
+regions`, or `trains on request data`, stop and surface the exact error to the
+user. On a `GoUsageLimitError` (5-hour/weekly/monthly), mark the account scope
+in the exhaustion tracker - it blocks **all paid** Go models, so do not retry
+paid Go; consider suitable free work or wait, then authorized OpenRouter last.
+On any other model-specific quota error, mark that model with a known reset or
+a short unknown recheck, then re-run `select` in the control chat and reopen
+the role chat with the recommended model.
 
 ```bash
 python .github/skills/openspec-go/scripts/model_tracker.py mark --scope account --from-error "GoUsageLimitError ... weekly"
@@ -189,188 +176,43 @@ python .github/skills/openspec-go/scripts/model_tracker.py check "<exact model>"
 
 The tracker keeps simultaneous account windows separately and scopes model
 records by provider. Missing/invalid reset timestamps create a **five-minute
-recheck**, never a guessed billing date or infinite block. After it expires,
-refresh usage or allow one controlled probe; it does not prove quota reset.
-A successful gauge `--record` clears only confirmed healthy account windows.
-Malformed tracker state returns exit 3 and is preserved. Both skills share
+recheck**, never a guessed billing date or infinite block. A successful gauge
+`--record` clears only confirmed healthy account windows. Malformed tracker
+state returns exit 3 and is preserved. Both skills share
 `.goals/model-exhaustion.json`; serialize tracker writes within this repo.
 
-Builder implements. Inspector verifies with fresh context. Only files and git history connect them; do not pass Builder's claims to Inspector.
+### Model selection policy (summary)
 
-The selected change's artifacts are authoritative: proposal defines intent and scope, specs define requirements and scenarios, design records decisions, and tasks track implementation. Use the actual schema's equivalents. Both agents read these artifacts directly. Do not create a separate goal, specification, or copied acceptance checklist. Run files contain execution metadata and observed evidence only. Checkbox completion alone is not evidence that a requirement works.
+Use [assets/model-catalog.md](assets/model-catalog.md) for the full allowance,
+pricing, estimate, privacy and selection reference. The executable policy is
+`scripts/select_model.py`; run it in the `select` action, never inside a role
+chat. Selection is restricted to the curated precedence lists in
+`budget_models.py`; the selector runs in `normal` or `conserve` mode based on
+account usage; default minimum quality is 3 for Builder and 4 for Inspector
+(`--min-quality 2` only for an authorized low-quality free Builder fallback);
+premium escalation and OpenRouter require explicit flags. See the catalog and
+`select_model.py --help` for details.
 
-## Phase 0 - Select the Change and Confirm Intent
+### Resumability
 
-*Input:* Optional change name or change-directory path.
+When invoked with `start` but a run already exists, or with `continue` and an
+ambiguous state, read `status.json`, `history`, feedback files, official
+artifacts, and OpenSpec status/apply output first, then offer to resume:
 
-1. Use an explicit name/path or an unambiguous change from conversation. Otherwise list active changes and ask the user to select one. Announce `Using change: <name>` and that `/openspec-go <other-name>` selects another.
-2. Use the repository-root `openspec/` project. Active changes live under `openspec/changes/` and main specs under `openspec/specs/`. Resolve an explicit change path within this project; do not initialize another project.
-3. Run the following from the repository root. Use that same working directory for every OpenSpec command throughout the run:
+- `building`: resume the current Builder iteration; check for an existing
+  Builder commit before creating another.
+- `inspecting`: resume Inspector. If that iteration already has feedback and a
+  history entry, process the verdict instead of duplicating the review.
+- `blocked`: confirm the blocker is resolved, then resume the interrupted role.
+- `completed`: report the recorded result; a changed scope requires a new run.
 
-   ```bash
-   openspec list --json
-   openspec status --change "<name>" --json
-   openspec instructions apply --change "<name>" --json
-   ```
+If scope-defining artifact hashes differ from the recorded baseline, pause for
+reconciliation and a new run against approved official artifacts. Task
+checkbox/evidence updates are expected; unapproved task-scope changes are not.
 
-4. Parse `schemaName`, the returned change directory, `contextFiles`, progress, tasks, state, and dynamic instructions. Read all returned context files, expanding any file patterns. Do not assume filenames or require spec-driven artifacts for another schema. Read relevant main specs referenced by the change, particularly for modified/removed requirements.
-5. If apply is `blocked`, report missing artifacts and direct the user to `openspec-continue-change` or `openspec-ff-change`. Stop before Builder. If apply is `all_done`, still run Inspector: task completion is not verification.
+### Iteration limit
 
-### Interview Rules
-
-Use `vscode_askQuestions` directly for unresolved user decisions; do not delegate the interview. Reuse answers already present in the artifacts. Ask only about ambiguities, scope conflicts, required validation, and commit permission, not facts Explore can discover.
-
-- Ask up to 5 questions per round, numbered globally Q1, Q2, etc.
-- Provide a recommended answer and `allowFreeformInput: true` for each.
-- From round 2 onward, offer "Done - start the change" in the last question.
-- Confirm whether the entire change or an explicitly identified task slice is in scope. Default recommendation: complete the entire change.
-- Obtain explicit permission for per-iteration commits if not already granted. If declined, use no-commit mode and record it in the execution tracker.
-
-Before proceeding, the artifacts must specify a clear objective, verifiable acceptance criteria, and scope boundaries. A contradiction requiring a new business/design decision is BLOCKED, not permission to invent scope. Any approved clarification that changes requirements belongs in the OpenSpec artifacts first, using applicable artifact-writing instructions.
-
-## Phase 1 - Project Discovery
-
-*Dispatch Explore read-only to discover:*
-
-1. Project rules applicable `AGENTS.md`, `CONSTITUTION.md`, instruction files, `.agents/guidelines/`, and `.github/guidelines/`.
-2. Quality gates in `justfile`, `Makefile`, `package.json`, or the project's equivalent. Record exact environment setup, commands, working directories, and expected results; do not invent targets.
-3. Commit conventions and current worktree state. Preserve pre-existing edits and never stage unrelated files.
-4. Relevant OpenSpec conventions, main specs, task slices, required validation evidence, and exclusions in the selected artifacts.
-
-Record execution facts in `status.json`: environment setup, exact gate commands, working directories, applicable instruction paths, commit conventions, and pre-existing changes. Do not copy requirements or scope prose into run files. The official artifacts remain the sole implementation and verification contract. Preserve explicit instructions to run existing tests rather than adding new ones. For a selected slice, record only task identifiers and dependent requirement/scenario references; do not describe the whole change as complete.
-
-## Phase 2 - Initialize Execution Tracking
-
-Create `openspec/changes/<name>/.openspec-go/<id>/`. Use a lowercase, hyphenated run id of at most 40 characters. Do not overwrite another run; offer to resume or use a distinct id. This directory contains process logs, not OpenSpec requirements, design decisions, or a second implementation plan.
-
-Initialize `status.json` from the tracker template. Fill repository root, change name/directory, schema, resolved context file paths, execution conventions, commit permission, model choices (selected via the usage-aware rule and exhaustion tracker), and `initial_sha`. Paths are repository-relative except the repository root. All OpenSpec commands run from that root. Use `scope_mode: "full-change"` by default, with empty selection arrays meaning all change tasks and their requirements/scenarios. For an approved slice use `scope_mode: "selected-slice"` and fill the selection arrays with identifiers/references only, never rewritten requirement text.
-
-Record baseline git blob hashes of scope-defining context files using `git hash-object` in `artifact_baseline`. Exclude the task-progress artifact because its checkboxes/evidence change; task-scope edits remain prohibited. If requirements need revision, stop for user approval, update the official OpenSpec artifacts through the appropriate workflow, and start a new run with the approved baseline. Never weaken specs to make implementation pass.
-
-In no-commit mode set `commit_mode` to `none`; retain `initial_sha` for diff inspection. Both agents independently query the CLI and read its context files; the tracker's paths and references are navigation metadata, not a substitute.
-
-## Phase 3 - Builder / Inspector Loop
-
-### Dispatch discipline (mandatory - prevents doom-loops)
-
-Subagents have a limited tool-call budget per dispatch. An open-ended prompt
-("read the artifacts, understand the codebase, implement") burns that budget
-on comprehension before the first edit. Follow these rules for every
-dispatch:
-
-1. **Verify the return against git, never against the agent's word.**
-   After every subagent returns, run `git log --oneline -3` and
-   `git status --short`, and compare against the returned SHA. Agents have
-   claimed work they never did, and have done real work while returning
-   "no output". The git state is the only source of truth.
-
-2. **Give the Builder a closed task list, not an open mandate.** OpenSpec
-   artifacts already provide one: record the selected task identifiers in
-   `status.json` (`scope_mode` + selection arrays) and reference the exact
-   task IDs in the dispatch prompt, so the Builder's first action is an
-   edit, not a read.
-
-3. **Forbid exploration explicitly.** Include in every Builder dispatch:
-   "Work only on the files named by the selected tasks and the apply
-   instructions. Do NOT search the repository. Do NOT run the full test
-   suite until the end; run it once. Never repeat a failing command
-   without changing something first."
-
-4. **Order the work mechanical-first.** Dispatch mechanical tasks (config
-   edits, pure text changes) before design-heavy ones, so progress is
-   visible early and a budget overrun cannot leave the run empty-handed.
-
-5. **Scope retries narrowly.** If a dispatch fails or stalls, re-dispatch
-   with a smaller slice (e.g. "task 4.2 and 4.3 only"), not the same broad
-   prompt again.
-
-6. **Provider/model errors are user-actionable.** On `Insufficient account
-   funds`, `Model access is disabled`, `requires Global regions`, or
-   `trains on request data`, stop and surface the exact error to the user.
-   On a `GoUsageLimitError` (5-hour/weekly/monthly), `mark --scope account`
-   in the exhaustion tracker - it blocks **all paid** Go models, so do not retry
-   paid Go; consider suitable free work or wait, then authorized OpenRouter last. On any other
-   model-specific quota error, mark that model with a known reset or a short
-   unknown recheck and rerun selection/preparation.
-
-### Step 1 - Dispatch Builder
-
-Before dispatching, run the selector and prepare the exact model-bound Builder as described above. Record requested and host-confirmed actual models separately.
-
-Set status to `building`, then dispatch Builder:
-
-> Read `openspec/changes/<name>/.openspec-go/<id>/status.json` and the official OpenSpec change artifacts. This is iteration `N`. Re-run status/apply instructions from the repository root and read every returned context file. If N > 1, read `inspector-feedback-<N-1>.md` in the run directory and address its findings. Implement the selected tasks and validate them. Mark task checkboxes only after success and record evidence in `validation-<N>.md` in the run directory. Do not alter approved scope, specs, or design. Follow the run's commit mode; in per-iteration mode make one `type(scope): [B] description` commit. Return the summary, validation evidence, and commit SHA, or `BLOCKED: <reason>`.
-
-Display Builder's returned summary as a progress update, not a verification verdict. Its durable evidence is in `validation-<N>.md`; do not forward the return message to Inspector. Record the returned SHA as `builder_sha` (null in no-commit mode). A Builder blocker stops the loop before Inspector; set status to `blocked` and ask the user.
-
-### Step 2 - Dispatch Inspector
-
-Before dispatching, rerun selection for Inspector using the actual Builder model and an independent request profile. Prepare and verify the exact model-bound Inspector.
-
-Set status to `inspecting`, then dispatch a fresh Inspector:
-
-> Read `openspec/changes/<name>/.openspec-go/<id>/status.json`, independently query status/apply from the repository root, and read all returned official OpenSpec artifacts. This is iteration `N`. Previous feedback files may be read to track unresolved findings. Independently verify completeness, correctness, and coherence using the artifacts, cumulative changes since `initial_sha`, and quality gates. Do not rely on Builder summaries or checked boxes. Write `inspector-feedback-<N>.md` in the run directory, append exactly one history entry, and follow the run's commit mode. In per-iteration mode commit only feedback and status as `chore(scope): [I] description`. Return PASS, FAIL, or BLOCKED as your final word.
-
-If tasks were already all done at selection, skip Builder and go directly to Inspector with `builder_sha: null`. Verification still examines the actual implementation, including code predating `initial_sha`.
-
-**After the Inspector returns, verify it actually wrote the feedback file**
-(`inspector-feedback-<N>.md` in the run directory) and appended exactly one
-history entry before reading the verdict. An Inspector that returns no
-output and writes no file has not run - re-dispatch with a different model
-rather than looping.
-
-### Step 3 - Evaluate the Verdict
-
-- **PASS:** Proceed to Phase 4.
-- **FAIL:** Increment iteration, retain feedback/history, and return to Builder.
-- **BLOCKED:** Set status to `blocked`, report the dependency or unresolved decision, and ask the user how to proceed. Do not treat unavailable mandatory evaluation, credentials, or external services as successful validation.
-
-Inspector owns appending verdict history; the orchestrator must not duplicate it. Each entry is a JSON object, for example:
-
-```json
-{"iteration": 1, "verdict": "FAIL", "summary": "Missing enabled-mode scenario"}
-```
-
-After 5 iterations, warn: "5 iterations reached. The loop continues, but consider reviewing the change artifacts if progress has stalled." Continue until verified, blocked, or interrupted by the user. Do not change scope to force a PASS.
-
-## Phase 4 - Conclusion
-
-When Inspector returns PASS:
-
-1. Set `status` to `completed` and write `summary.md` in the run directory.
-2. Map acceptance criteria to artifact requirements/scenarios, implemented tasks, and independently observed evidence. Include iteration history, resolved findings, remaining non-blocking suggestions, and exact commands.
-3. Re-query OpenSpec task progress. State "verified change complete" only for a full-change run with all tasks complete; otherwise state "selected slice verified" and report remaining tasks. Recommend `openspec-archive-change` only when the entire change is verified. Never sync specs or archive here.
-4. In per-iteration mode, include the final summary/status in one process-only `chore(scope): [I] finalize verified run` commit. This final bookkeeping commit is separate from the Inspector's one commit per iteration.
-5. Display the summary. In per-iteration mode, provide, but do not execute, an optional squash command only when the worktree is clean and commits since `initial_sha` belong solely to this run:
-
-   ```bash
-   git reset --soft <initial_sha>
-   git commit -m '<type>(<scope>): <change summary>
-
-   <User-impact description>
-
-   Assisted-by: <actual Builder provider>:<actual Builder model>'
-   ```
-
-If unrelated commits/edits exist, omit the reset command and explain why. Process artifacts and task progress are intentionally included in the squash. In no-commit mode, report uncommitted changes and omit squash instructions.
-
-## Commit Convention
-
-Preserve the goal workflow's auditable role markers:
-
-- Builder: `type(scope): [B] description`, one new commit per iteration.
-- Inspector: `chore(scope): [I] description`, feedback/status only, one per iteration.
-- Titles use imperative mood and are at most 72 characters.
-- Follow discovered project conventions, retaining markers and an `Assisted-by: <PROVIDER>:<MODEL>` trailer matching the actual executing model.
-- Never amend previous iterations, stage unrelated files, or commit without permission. No-commit mode preserves the same file-based loop without commits.
-
-## Resumability
-
-When invoked again, find runs under the selected change's `.openspec-go/` directory and offer to resume. Read status, history, feedback, official artifacts, and OpenSpec status/apply output before dispatching an agent.
-
-- `building`: Resume the current iteration; check for an existing Builder commit before creating another.
-- `inspecting`: Resume Inspector. If that iteration already has feedback and a history entry, process its verdict instead of duplicating the review. If either is missing, rerun Inspector to finish that iteration. Reconcile any partial feedback/history and existing Inspector commit first; do not append a second history entry or duplicate a completed commit.
-- `blocked`: Confirm the blocker is resolved, then resume the interrupted role.
-- `completed`: Report the recorded result; a changed scope requires a new run.
-
-If scope-defining artifact hashes differ from the recorded baseline, pause for reconciliation and a new run against approved official artifacts. Task checkbox/evidence updates are expected; unapproved task-scope changes are not.
+After 5 iterations, warn: "5 iterations reached. The loop continues, but
+consider reviewing the change artifacts if progress has stalled." Continue
+until verified, blocked, or interrupted by the user. Do not change scope to
+force a PASS.

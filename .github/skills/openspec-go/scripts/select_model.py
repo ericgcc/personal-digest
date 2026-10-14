@@ -245,7 +245,7 @@ def main(argv=None):
     p.add_argument("--allow-free",action="store_true")
     p.add_argument("--allow-low-quality-free",action="store_true",help="Builder-only explicit authorization for provisional free models")
     p.add_argument("--allow-openrouter",action="store_true")
-    p.add_argument("--prepare",choices=("openspec-go",))
+    p.add_argument("--prepare",choices=("goal",))
     args=p.parse_args(argv)
     try:
         if args.usage_file:
@@ -269,14 +269,14 @@ def main(argv=None):
             args.allow_free,args.allow_low_quality_free,args.allow_openrouter,args.off_peak,args.min_quality,args.allow_premium)
         if args.prepare and result["selected"]:
             root=Path(__file__).resolve().parents[4]
-            # assets/openspec-go-<role>.agent.md is the TEMPLATE (source of truth,
-            # model placeholder, never dispatched directly). --prepare resets the
-            # runtime copy under .github/agents/ from it on EVERY selection — so no
-            # stale binding survives a re-selection — then binds the selected exact
-            # host label into the copy's scalar model: field. The template is never
+            # assets/goal-<role>.agent.md is the TEMPLATE (source of truth, model
+            # placeholder, never dispatched directly). --prepare resets the runtime
+            # copy under .github/agents/ from it on EVERY selection — so no stale
+            # binding survives a re-selection — then binds the selected exact host
+            # label into the copy's scalar model: field. The template is never
             # modified. The host registers agents from .github/agents/ only.
-            template=root/".github/skills/openspec-go/assets"/f"openspec-go-{args.role}.agent.md"
-            destination=root/".github/agents"/f"openspec-go-{args.role}.agent.md"
+            template=root/".github/skills/goal/assets"/f"goal-{args.role}.agent.md"
+            destination=root/".github/agents"/f"goal-{args.role}.agent.md"
             result["dispatch"]=prepare_agent(template,destination,result["selected"]["model"],args.role,args.prepare)
         print(json.dumps(result,indent=2))
         return 0 if result["selected"] else 2

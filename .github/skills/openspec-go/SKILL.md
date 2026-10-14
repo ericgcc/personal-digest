@@ -8,6 +8,11 @@ description: >-
   selector recommends, and move between conversations between iterations.
   Use when the user says "openspec-go", "openspec-go builder", or
   "openspec-go inspector".
+argument-hint: >-
+  <role> <action> [change-name]
+  - `<role>`: `builder` or `inspector`.
+  - `<action>`: `select`, `start`, or `continue`.
+  - `[change-name]`: optional OpenSpec change name or directory path.
 metadata:
   compatibility: Requires openspec CLI and git. No subagent dispatch.
   selection-policy: "scripts/select_model.py (quality within sustainable budget)"

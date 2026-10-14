@@ -1,0 +1,302 @@
+{
+  "plan": "go",
+  "role": "builder",
+  "selection_mode": "normal",
+  "selected": {
+    "model": "DeepSeek V4 Pro (New) (opencodego)",
+    "canonical": "DeepSeek V4 Pro",
+    "provider": "go",
+    "quality": 5,
+    "usd_per_request": 0.09768,
+    "planned_cost_usd": 0.09768,
+    "projected_burn_pp": {
+      "rolling": 3.2560000000000002,
+      "weekly": 1.3024,
+      "monthly": 0.6512
+    },
+    "remaining_pp": {
+      "rolling": 85.0,
+      "weekly": 39.0,
+      "monthly": 27.0
+    },
+    "fits_expected_requests": true,
+    "rolling_burn_fraction": 0.03256,
+    "projected_usage_percent": {
+      "rolling": 3.2560000000000002,
+      "weekly": 47.3024,
+      "monthly": 58.6512
+    }
+  },
+  "ranked": [
+    {
+      "model": "DeepSeek V4 Pro (New) (opencodego)",
+      "canonical": "DeepSeek V4 Pro",
+      "provider": "go",
+      "quality": 5,
+      "usd_per_request": 0.09768,
+      "planned_cost_usd": 0.09768,
+      "projected_burn_pp": {
+        "rolling": 3.2560000000000002,
+        "weekly": 1.3024,
+        "monthly": 0.6512
+      },
+      "remaining_pp": {
+        "rolling": 85.0,
+        "weekly": 39.0,
+        "monthly": 27.0
+      },
+      "fits_expected_requests": true,
+      "rolling_burn_fraction": 0.03256,
+      "projected_usage_percent": {
+        "rolling": 3.2560000000000002,
+        "weekly": 47.3024,
+        "monthly": 58.6512
+      }
+    },
+    {
+      "model": "GLM-5.3-Flash (opencodego)",
+      "canonical": "GLM-5.3-Flash",
+      "provider": "go",
+      "quality": 4,
+      "usd_per_request": 0.0112,
+      "planned_cost_usd": 0.0112,
+      "projected_burn_pp": {
+        "rolling": 0.09333333333333332,
+        "weekly": 0.03733333333333333,
+        "monthly": 0.018666666666666665
+      },
+      "remaining_pp": {
+        "rolling": 85.0,
+        "weekly": 39.0,
+        "monthly": 27.0
+      },
+      "fits_expected_requests": true,
+      "rolling_burn_fraction": 0.0009333333333333333,
+      "projected_usage_percent": {
+        "rolling": 0.09333333333333332,
+        "weekly": 46.037333333333336,
+        "monthly": 58.01866666666667
+      }
+    },
+    {
+      "model": "GLM-5.2 (opencodego)",
+      "canonical": "GLM-5.2",
+      "provider": "go",
+      "quality": 5,
+      "usd_per_request": 0.104,
+      "planned_cost_usd": 0.104,
+      "projected_burn_pp": {
+        "rolling": 0.8666666666666667,
+        "weekly": 0.3466666666666667,
+        "monthly": 0.17333333333333334
+      },
+      "remaining_pp": {
+        "rolling": 85.0,
+        "weekly": 39.0,
+        "monthly": 27.0
+      },
+      "fits_expected_requests": true,
+      "rolling_burn_fraction": 0.008666666666666666,
+      "projected_usage_percent": {
+        "rolling": 0.8666666666666667,
+        "weekly": 46.346666666666664,
+        "monthly": 58.17333333333333
+      }
+    },
+    {
+      "model": "DeepSeek V4.1 Flash (opencodego)",
+      "canonical": "DeepSeek V4.1 Flash",
+      "provider": "go",
+      "quality": 3,
+      "usd_per_request": 0.0228,
+      "planned_cost_usd": 0.0228,
+      "projected_burn_pp": {
+        "rolling": 0.19000000000000003,
+        "weekly": 0.07600000000000001,
+        "monthly": 0.038000000000000006
+      },
+      "remaining_pp": {
+        "rolling": 85.0,
+        "weekly": 39.0,
+        "monthly": 27.0
+      },
+      "fits_expected_requests": true,
+      "rolling_burn_fraction": 0.0019,
+      "projected_usage_percent": {
+        "rolling": 0.19000000000000003,
+        "weekly": 46.076,
+        "monthly": 58.038
+      }
+    },
+    {
+      "model": "MiMo-V2.6-Flash (opencodego)",
+      "canonical": "MiMo-V2.6-Flash",
+      "provider": "go",
+      "quality": 3,
+      "usd_per_request": 0.01008,
+      "planned_cost_usd": 0.01008,
+      "projected_burn_pp": {
+        "rolling": 0.084,
+        "weekly": 0.0336,
+        "monthly": 0.0168
+      },
+      "remaining_pp": {
+        "rolling": 85.0,
+        "weekly": 39.0,
+        "monthly": 27.0
+      },
+      "fits_expected_requests": true,
+      "rolling_burn_fraction": 0.00084,
+      "projected_usage_percent": {
+        "rolling": 0.084,
+        "weekly": 46.0336,
+        "monthly": 58.0168
+      }
+    }
+  ],
+  "rejected": [
+    {
+      "model": "GLM-5.3 (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "DeepSeek V4 Flash (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "DeepSeek V4 Flash Vision Exp (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "MiMo-V2.6-Pro (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "MiMo V2.5 (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "MiMo V2.5 Pro (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Hy4 preview (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Hy3 (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Kimi K3 (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Kimi K2.7 Code (opencodego)",
+      "reason": "excluded: Kimi tool-schema incompatibility"
+    },
+    {
+      "model": "Kimi K2.6 (opencodego)",
+      "reason": "excluded: Kimi tool-schema incompatibility"
+    },
+    {
+      "model": "Qwen3.8 Max (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Qwen3.8 Flash (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Qwen3.7 Max (opencodego)",
+      "reason": "not in verified catalog"
+    },
+    {
+      "model": "Qwen3.7 Plus (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Qwen3.6 Plus (opencodego)",
+      "reason": "not in verified catalog"
+    },
+    {
+      "model": "GPT-5.6 Luna (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "GPT-6 Luna (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Grok 4.6 (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Grok 4.7 (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "MiniMax-M2.7 (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "MiniMax-M3 (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Muse Spark 1.2 Contributor (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Muse Spark 1.3 Contributor (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Claude Haiku 5.5 (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "Space Bunny (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "LongCat-2.0 (opencodego)",
+      "reason": "outside curated role precedence"
+    },
+    {
+      "model": "LongCat 2.5 Preview Free (opencodego)",
+      "reason": "free models require Builder role plus --allow-free and --allow-low-quality-free"
+    },
+    {
+      "model": "Step 5 Preview Free (opencodego)",
+      "reason": "free models require Builder role plus --allow-free and --allow-low-quality-free"
+    },
+    {
+      "model": "DeepSeek V4.1 Flash (openrouter)",
+      "reason": "outside curated OpenRouter precedence or --allow-openrouter not set"
+    },
+    {
+      "model": "GLM-5.3-Flash (openrouter)",
+      "reason": "outside curated OpenRouter precedence or --allow-openrouter not set"
+    }
+  ],
+  "usage_percent": {
+    "rolling": 0,
+    "weekly": 46,
+    "monthly": 58
+  },
+  "profile": [
+    68000,
+    0,
+    2000,
+    0
+  ],
+  "expected_requests": 1,
+  "selection_reason": "DeepSeek V4 Pro selected: first eligible model in Builder precedence.",
+  "check_scope": "single-request feasibility estimate",
+  "reserve_pp": 15.0,
+  "infeasible_candidates": [],
+  "family_independence": "not applicable",
+  "note": "Planning estimates only: selection never guarantees task completion. No dispatch is permitted without a viable selected model; split the brief or wait when none fits. Free use is Builder-only and requires explicit low-quality authorization; OpenRouter requires existing spending authorization.",
+  "timestamp": "2026-10-14T00:41:09.658320+00:00"
+}

@@ -14,10 +14,10 @@ Analyze → Frame → Draft → Developmental Review → Writer Revision
 | --- | --- | --- | --- |
 | Analyze | `analysis.json` | model | Identify evidence-supported editorial opportunities. |
 | Frame | `frame.json` | model | Approve the evidence-bounded plan and source-status partition. |
-| Draft | `draft.md` | model | Write the first editorial artifact from the approved evidence. |
-| Developmental Review | `review.json`, `wops.json` | evaluation | Diagnose the draft; it does not rewrite it. |
-| Writer Revision | `revision.md` | model | Evidence-bounded substantive revision plus final grammar, clarity, naturalness, rhythm and consistency. |
-| Reader Review | `review.json` | evaluation | Absolute first-read assessment of Writer Revision, including whole-edition naturalness. |
+| Draft | `draft.md` | model | Write the first editorial artifact from the approved evidence. Receives a bounded WOPS anti-pattern prevention block (compact guidance, false-positive-aware). |
+| Developmental Review | `review.json`, `wops.json` | evaluation | Diagnose the draft; it does not rewrite it. Also reports located, typed anti-pattern findings using WOPS detection signals. |
+| Writer Revision | `revision.md` | model | Evidence-bounded substantive revision plus final grammar, clarity, naturalness, rhythm and consistency. Repairs diagnosed anti-patterns via the retrieved operations. |
+| Reader Review | `review.json` | evaluation | Absolute first-read assessment of Writer Revision, including whole-edition naturalness. Also verifies anti-pattern outcomes (resolved / partially resolved / still present / new). |
 | Targeted Repair | `repair.md` | model | Optionally repair one diagnosed, localized problem. |
 | Publication Verify | `final.md`, `verification.json` | deterministic | Audit the final prose without editing it. |
 | Render | `email.html` | model | Transform verified prose and canonical rendering data into HTML without rewriting prose. |

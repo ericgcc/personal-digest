@@ -56,6 +56,8 @@ from .rubric import (
 from .schema import (
     MAX_DOCUMENT_ISSUES,
     MAX_ISSUES_PER_SECTION,
+    MAX_ANTI_PATTERN_OUTCOMES,
+    AntiPatternOutcome,
     DocumentDimensions,
     IssueType,
     ReaderIssue,
@@ -69,12 +71,14 @@ from .schema import (
 __all__ = [
     "CALIBRATION_RULE",
     "DEFAULT_STYLE_RUBRIC",
+    "AntiPatternOutcome",
     "DocumentDimensions",
     "IssueType",
     "JudgeUnavailableError",
     "JudgeUsage",
     "MAX_DOCUMENT_ISSUES",
     "MAX_ISSUES_PER_SECTION",
+    "MAX_ANTI_PATTERN_OUTCOMES",
     "MODE_ABSOLUTE",
     "MODE_COMPARISON",
     "NoiseArtifact",

@@ -844,6 +844,17 @@ def _run_llm_stage(
     user_text = composed.user_text
     _record_prompt_manifest(attempt_dir, composed)
 
+    # The audit vocabulary's ``supplied`` observation: the operation ids actually included in
+    # the composed Writer Revision prompt, read from the manifest the block was built from.
+    # Recorded here (from the prompt actually composed) so supply is provable without
+    # re-parsing the persisted block text.
+    if stage.name == "writer-revision":
+        supplied_operation_ids: list[str] = []
+        for block in composed.manifest.blocks:
+            if block.get("tag") == "writing_operations" and isinstance(block.get("operation_ids"), list):
+                supplied_operation_ids = [str(item) for item in block["operation_ids"]]
+        record["supplied"] = supplied_operation_ids
+
     write_artifact(attempt_dir / "prompt.txt", f"{system_text}\n\n=== USER ===\n\n{user_text}")
     try:
         copy_file(attempt_dir / "prompt.txt", work_dir / "prompt.txt")
@@ -918,6 +929,82 @@ def _draft_prevention_record(context: RunContext) -> dict[str, Any] | None:
     return None
 
 
+def _reader_review_history(context: RunContext) -> dict[str, Any]:
+    """Build the stage-scoped history projection for Reader Review.
+
+    The projection is derived from artifacts that already exist — the developmental review's
+    findings, the WOPS catalogue, and the retrieval record — never persisted as a new artifact
+    family. It carries:
+
+    * ``findings`` — the previously diagnosed anti-pattern findings (with ``finding_id``);
+    * ``anti_patterns`` — the compact detection catalogue (detection signals + false positives);
+    * ``supplied_operation_ids`` — the operation ids actually supplied to Writer Revision;
+    * ``overuse_of`` — the ``overuse_of[]`` relationships for those supplied operations.
+
+    Missing artifacts degrade to empty inputs (the prompt is unchanged) and are never an error.
+    """
+    findings: list[dict[str, Any]] = []
+    review_artifact = context.artifacts.get("developmental-review")
+    if review_artifact is not None and isinstance(review_artifact.json, Mapping):
+        raw_findings = review_artifact.json.get("anti_pattern_findings")
+        if isinstance(raw_findings, list):
+            findings = [
+                dict(item)
+                for item in raw_findings
+                if isinstance(item, Mapping)
+            ]
+
+    catalogue = getattr(context, "anti_pattern_catalogue", None)
+    anti_patterns: list[dict[str, Any]] = []
+    if catalogue is not None and getattr(catalogue, "available", False):
+        anti_patterns = [
+            dict(record)
+            for record in getattr(catalogue, "records", [])
+            if isinstance(record, Mapping)
+        ]
+
+    # The operations actually supplied to Writer Revision are the retrieval record's
+    # ``selected`` ids. The record lives beside the developmental review's primary artifact.
+    supplied_operation_ids: list[str] = []
+    wops_block = context.artifact_block("developmental-review", "writing_operations", "wops.json")
+    if wops_block is not None:
+        try:
+            wops = json.loads(wops_block["payload"])
+        except (json.JSONDecodeError, TypeError):
+            wops = None
+        if isinstance(wops, Mapping):
+            selected = wops.get("selected")
+            if isinstance(selected, list):
+                supplied_operation_ids = [
+                    str(item["id"])
+                    for item in selected
+                    if isinstance(item, Mapping) and item.get("id") not in (None, "")
+                ]
+
+    # The overuse relationships for the supplied operations, read from the catalogue records.
+    overuse_of: dict[str, list[str]] = {}
+    catalogue_by_id = {
+        str(record.get("id")): record
+        for record in anti_patterns
+        if record.get("id") not in (None, "")
+    }
+    for operation_id in supplied_operation_ids:
+        naming = [
+            anti_pattern_id
+            for anti_pattern_id, record in catalogue_by_id.items()
+            if operation_id in (record.get("overuse_of") or [])
+        ]
+        if naming:
+            overuse_of[operation_id] = naming
+
+    return {
+        "findings": findings,
+        "anti_patterns": anti_patterns,
+        "supplied_operation_ids": supplied_operation_ids,
+        "overuse_of": overuse_of,
+    }
+
+
 def _run_evaluation_stage(
     *,
     stage: Any,
@@ -990,12 +1077,17 @@ def _run_evaluation_stage(
         record["warnings"].extend(retrieval["warnings"])
     else:
         revision = _require_artifact(context, "writer-revision")
+        history = _reader_review_history(context)
         response = evaluation.evaluate_reader_quality(
             text_path=revision.path,
             style=style,
             language=language,
             contracts=contracts,
             work_dir=work_dir,
+            findings=history["findings"],
+            anti_patterns=history["anti_patterns"],
+            supplied_operation_ids=history["supplied_operation_ids"],
+            overuse_of=history["overuse_of"],
         )
         if not response["ok"]:
             raise RunnerError(f"Reader review could not be produced: {response.get('error') or 'unknown adapter failure'}")
@@ -1018,12 +1110,22 @@ def _run_evaluation_stage(
         else:
             result["retry_instructions"] = []
         artifact_text = json.dumps(result, ensure_ascii=False, indent=2)
+        # The audit vocabulary's ``application`` observation: recorded only with evidence, never
+        # inferred from a resolved anti-pattern. The reader review reports finding outcomes, not
+        # operation application, so every supplied operation is recorded as ``unknown`` unless a
+        # later evidence source states otherwise.
+        application = {
+            operation_id: "unknown" for operation_id in history["supplied_operation_ids"]
+        }
         record["notes"] = {
             "mode": "absolute",
             "semantic_score": result.get("semantic_overall_score", result.get("semantic_score")),
             "critical_failure_count": result.get("semantic_critical_failure_count"),
             "problem_types": result.get("problem_types", []),
             "targeted_repair_requested": bool(result["retry_instructions"]),
+            "anti_pattern_outcomes": result.get("anti_pattern_outcomes", []),
+            "supplied_operation_ids": history["supplied_operation_ids"],
+            "application": application,
         }
 
     _copy_adapter_audit(response=response, attempt_dir=attempt_dir, root=context.root)

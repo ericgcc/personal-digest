@@ -36,6 +36,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 MAX_ISSUES_PER_SECTION = 3
 MAX_DOCUMENT_ISSUES = 8
 MAX_LIST_ITEMS = 4
+MAX_ANTI_PATTERN_OUTCOMES = 8
 
 #: Score bounds for every 0-10 field.
 MIN_SCORE = 0.0
@@ -146,6 +147,31 @@ class ReaderIssue(BaseModel):
         return coerce_issue_type(value)
 
     @field_validator("description", "revision_hint")
+    @classmethod
+    def _trim(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
+
+class AntiPatternOutcome(BaseModel):
+    """The reader-review verdict on one previously diagnosed anti-pattern finding.
+
+    ``finding_id`` links the outcome back to the developmental-review finding
+    (the stable id assigned at diagnosis), so outcomes stay trackable even when
+    sections are reordered or renamed. ``new`` marks an occurrence the revision
+    introduced rather than one that was diagnosed earlier; ``overuse_of_operation``
+    is set only when the judge can attribute a new occurrence to overusing a
+    supplied operation.
+    """
+
+    finding_id: str = ""
+    anti_pattern_id: str = ""
+    status: Literal["resolved", "partially_resolved", "still_present"] = "still_present"
+    section_id: str | None = None
+    evidence: str = ""
+    new: bool = False
+    overuse_of_operation: str | None = None
+
+    @field_validator("finding_id", "anti_pattern_id", "section_id", "evidence", "overuse_of_operation")
     @classmethod
     def _trim(cls, value: str | None) -> str | None:
         return value.strip() if isinstance(value, str) else value
@@ -355,6 +381,15 @@ class ReaderQualityEvaluation(BaseModel):
         description="The most valuable specific things to fix, in priority order.",
     )
 
+    anti_pattern_outcomes: list[AntiPatternOutcome] = Field(
+        default_factory=list,
+        max_length=MAX_ANTI_PATTERN_OUTCOMES,
+        description=(
+            "The verdict on each previously diagnosed anti-pattern finding, plus any "
+            "new occurrence the revision introduced. Empty when no findings were supplied."
+        ),
+    )
+
     #: Bound violations the judge produced. Never silently dropped: a trimmed
     #: response is still a response, but the trimming is recorded.
     validation_notes: list[str] = Field(default_factory=list)
@@ -366,7 +401,11 @@ class ReaderQualityEvaluation(BaseModel):
             return data
         payload, notes = _truncate(
             data,
-            {"issues": MAX_DOCUMENT_ISSUES, "revision_priorities": MAX_LIST_ITEMS},
+            {
+                "issues": MAX_DOCUMENT_ISSUES,
+                "revision_priorities": MAX_LIST_ITEMS,
+                "anti_pattern_outcomes": MAX_ANTI_PATTERN_OUTCOMES,
+            },
         )
 
         sections = payload.get("section_evaluations")

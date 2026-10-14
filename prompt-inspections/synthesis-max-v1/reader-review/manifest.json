@@ -5,7 +5,7 @@
     {
       "path": "prompts/evaluation/comparison.j2",
       "bytes": 0,
-      "sha256": "3fb32cc06bd82655a22bc0eb8428fbdaaf26ec2c7ff934e4e68b8d3d5d24353a"
+      "sha256": "d1a33b47745bc35afcf0ec722d597a28916e092edfc167e3cd26e9786b6e59cf"
     },
     {
       "path": "prompts/evaluation/shared/anti_leniency.j2",
@@ -80,7 +80,7 @@
   "blocks": [
     {
       "tag": "evaluation_input",
-      "bytes": 24223,
+      "bytes": 24641,
       "purpose": "combined judge prompt",
       "source": {
         "kind": "evaluation-adapter",

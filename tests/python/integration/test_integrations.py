@@ -293,10 +293,12 @@ def test_the_evaluator_retains_its_version_metadata_and_prompt_capture(tmp_path:
     from evaluation.version import evaluation_definition
 
     definition = evaluation_definition()
-    # The editorial evaluation moved the metric identity to v4: the rubric's meaning and the
-    # response schema changed materially, so the version moved with them.
-    assert definition["evaluation_id"] == "reader_quality_v4"
-    assert definition["evaluation_steps_version"] == "v4.0-style-diagnostics"
+    # The WOPS anti-pattern integration moved the metric identity to v5: the reader-review
+    # judge instructions gained verification history inputs and the schema gained
+    # anti_pattern_outcomes. The equivalence experiment was not authorized, so comparability
+    # is conservatively refused and the identity moves.
+    assert definition["evaluation_id"] == "reader_quality_v5"
+    assert definition["evaluation_steps_version"] == "v4.1-anti-pattern-verification"
     assert definition["rubric_version"] == "v4"
 
     adapter = create_evaluation_adapter()

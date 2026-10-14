@@ -245,8 +245,8 @@ def test_the_evaluator_retains_its_prompt_builders_and_schemas():
     from evaluation.version import developmental_definition, evaluation_definition
 
     assert set(COMMANDS) == set(_HANDLERS)
-    # The editorial evaluation moved the reader-quality metric to v4; the developmental review is unchanged.
-    assert evaluation_definition()["evaluation_id"] == "reader_quality_v4"
+    # The WOPS anti-pattern integration moved the reader-quality metric to v5; the developmental review is unchanged.
+    assert evaluation_definition()["evaluation_id"] == "reader_quality_v5"
     assert developmental_definition()["evaluation_id"] == "developmental_review_v1"
 
 

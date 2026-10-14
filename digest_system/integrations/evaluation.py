@@ -192,17 +192,37 @@ class EvaluationAdapter:
         language: str | None = None,
         contracts: Mapping[str, str] | None = None,
         work_dir: Path,
+        findings: Sequence[Mapping[str, Any]] | None = None,
+        anti_patterns: Sequence[Mapping[str, Any]] | None = None,
+        supplied_operation_ids: Sequence[str] | None = None,
+        overuse_of: Mapping[str, Sequence[str]] | None = None,
     ) -> dict[str, Any]:
-        """Absolute reader-quality assessment of one artifact."""
+        """Absolute reader-quality assessment of one artifact.
+
+        ``findings``, ``anti_patterns``, ``supplied_operation_ids`` and ``overuse_of``
+        are the reader-review verification history inputs (Phase 3). All optional;
+        absent inputs leave the prompt unchanged.
+        """
+        request: dict[str, Any] = {
+            "stage": "reader-review",
+            "style": style,
+            "language": language,
+            "contracts": dict(contracts or {}),
+            "artifacts": {"text": str(_absolute(text_path, self.root))},
+        }
+        if findings is not None:
+            request["findings"] = list(findings)
+        if anti_patterns is not None:
+            request["anti_patterns"] = list(anti_patterns)
+        if supplied_operation_ids is not None:
+            request["supplied_operation_ids"] = list(supplied_operation_ids)
+        if overuse_of is not None:
+            request["overuse_of"] = {
+                str(key): list(value) for key, value in overuse_of.items()
+            }
         return self._invoke(
             command="evaluate-reader-quality",
-            request={
-                "stage": "reader-review",
-                "style": style,
-                "language": language,
-                "contracts": dict(contracts or {}),
-                "artifacts": {"text": str(_absolute(text_path, self.root))},
-            },
+            request=request,
             work_dir=work_dir,
             label="reader-quality",
         )

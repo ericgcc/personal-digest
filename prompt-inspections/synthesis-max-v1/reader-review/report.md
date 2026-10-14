@@ -8,7 +8,7 @@
 
 ## Templates
 
-- `prompts/evaluation/comparison.j2` — 0 units, sha256 `3fb32cc06bd8`
+- `prompts/evaluation/comparison.j2` — 0 units, sha256 `d1a33b47745b`
 - `prompts/evaluation/shared/anti_leniency.j2` — 0 units, sha256 `459cfb8e80e6`
 - `prompts/evaluation/shared/dimensions.j2` — 0 units, sha256 `f21d9324ceec`
 - `prompts/evaluation/shared/issue_taxonomy.j2` — 0 units, sha256 `f2e2901a1b06`
@@ -31,7 +31,7 @@
 
 ## Data blocks
 
-- `evaluation_input` — 24223 chars; combined judge prompt; source `{"contracts": ["reader", "review", "role", "style"], "kind": "evaluation-adapter"}`
+- `evaluation_input` — 24641 chars; combined judge prompt; source `{"contracts": ["reader", "review", "role", "style"], "kind": "evaluation-adapter"}`
 
 ## Sizes
 

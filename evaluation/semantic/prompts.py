@@ -157,6 +157,72 @@ def _reader_contract(reader_contract: str | None, *, root: Path | None = None) -
     return _render("evaluation/shared/default_reader.j2", {}, root=root).strip()
 
 
+def render_verification_history(
+    *,
+    findings: list[dict] | None = None,
+    anti_patterns: list[dict] | None = None,
+    supplied_operation_ids: list[str] | None = None,
+    overuse_of: dict[str, list[str]] | None = None,
+) -> str:
+    """Render the reader-review verification history inputs.
+
+    The judge receives (1) the previously diagnosed findings (compact, with
+    ``finding_id``), (2) the compact detection catalogue (detection signals +
+    false positives, size-bounded by the caller), (3) the operation ids actually
+    supplied to Writer Revision, and (4) the relevant ``overuse_of[]``
+    relationships for those operations. Each section is rendered only when its
+    input is non-empty, so an absent payload leaves the prompt unchanged.
+    """
+    blocks: list[str] = []
+
+    if findings:
+        lines = ["### Previously diagnosed anti-pattern findings", ""]
+        for finding in findings:
+            finding_id = str(finding.get("finding_id") or "").strip()
+            anti_pattern_id = str(finding.get("anti_pattern_id") or "").strip()
+            section_id = finding.get("section_id")
+            evidence = str(finding.get("evidence") or "").strip()
+            location = f" (section {section_id})" if section_id else ""
+            lines.append(f"- `{finding_id}` — `{anti_pattern_id}`{location}")
+            if evidence:
+                lines.append(f"  - evidence: {evidence}")
+        blocks.append("\n".join(lines))
+
+    if anti_patterns:
+        lines = ["### Anti-pattern detection catalogue", ""]
+        for record in anti_patterns:
+            anti_pattern_id = str(record.get("id") or "").strip()
+            summary = str(record.get("summary") or "").strip()
+            detection = [str(item).strip() for item in (record.get("detection") or []) if str(item).strip()]
+            false_positives = [str(item).strip() for item in (record.get("false_positives") or []) if str(item).strip()]
+            lines.append(f"#### {anti_pattern_id}")
+            if summary:
+                lines.append(f"Summary: {summary}")
+            if detection:
+                lines.append("Detection signals:")
+                lines.extend(f"- {signal}" for signal in detection)
+            if false_positives:
+                lines.append("False positives (do not report when one applies):")
+                lines.extend(f"- {condition}" for condition in false_positives)
+        blocks.append("\n".join(lines))
+
+    if supplied_operation_ids:
+        lines = ["### Operations supplied to Writer Revision", ""]
+        lines.append(", ".join(f"`{operation_id}`" for operation_id in supplied_operation_ids))
+        blocks.append("\n".join(lines))
+
+    if overuse_of:
+        lines = ["### Overuse relationships for supplied operations", ""]
+        for operation_id, anti_pattern_ids in overuse_of.items():
+            lines.append(
+                f"- `{operation_id}` is named by `overuse_of` for: "
+                + ", ".join(f"`{anti_pattern_id}`" for anti_pattern_id in anti_pattern_ids)
+            )
+        blocks.append("\n".join(lines))
+
+    return "\n\n".join(blocks)
+
+
 def absolute_prompt(
     *,
     digest_text: str,
@@ -167,6 +233,10 @@ def absolute_prompt(
     reader_contract: str | None = None,
     review_contract: str | None = None,
     root: Path | None = None,
+    findings: list[dict] | None = None,
+    anti_patterns: list[dict] | None = None,
+    supplied_operation_ids: list[str] | None = None,
+    overuse_of: dict[str, list[str]] | None = None,
 ) -> str:
     """Build the absolute-mode prompt: assess one artifact."""
     return _render(
@@ -179,6 +249,12 @@ def absolute_prompt(
             "language": language,
             "overall_rubric": OVERALL_RUBRIC,
             "section_block": render_sections(sections),
+            "verification_history": render_verification_history(
+                findings=findings,
+                anti_patterns=anti_patterns,
+                supplied_operation_ids=supplied_operation_ids,
+                overuse_of=overuse_of,
+            ),
         },
         root=root,
     )
@@ -198,6 +274,10 @@ def comparison_prompt(
     reader_contract: str | None = None,
     review_contract: str | None = None,
     root: Path | None = None,
+    findings: list[dict] | None = None,
+    anti_patterns: list[dict] | None = None,
+    supplied_operation_ids: list[str] | None = None,
+    overuse_of: dict[str, list[str]] | None = None,
 ) -> str:
     """Build the comparison-mode prompt: one call, before and after."""
     return _render(
@@ -213,6 +293,12 @@ def comparison_prompt(
             "before_label": before_label,
             "after_label": after_label,
             "section_block": render_sections(after_sections),
+            "verification_history": render_verification_history(
+                findings=findings,
+                anti_patterns=anti_patterns,
+                supplied_operation_ids=supplied_operation_ids,
+                overuse_of=overuse_of,
+            ),
         },
         root=root,
     )

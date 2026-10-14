@@ -279,6 +279,8 @@ Citation markers such as `[12]` are normal reader-facing navigation and are **no
 - Return JSON only, with no surrounding commentary and no Markdown code fence.
 
 
+
+
 ## BEFORE
 
 ## THE BIG PICTURE
@@ -381,7 +383,18 @@ Return one JSON object with exactly this shape:
         "revision_hint": "<one sentence or null>"
       }
     ],
-    "revision_priorities": ["<most valuable fix>", "..."]
+    "revision_priorities": ["<most valuable fix>", "..."],
+    "anti_pattern_outcomes": [
+      {
+        "finding_id": "<finding_id as given, or null for a new occurrence>",
+        "anti_pattern_id": "<canonical anti-pattern id>",
+        "status": "<resolved|partially_resolved|still_present>",
+        "section_id": "<id or null>",
+        "evidence": "<one sentence>",
+        "new": <true|false>,
+        "overuse_of_operation": "<operation id or null>"
+      }
+    ]
   }
 }
 

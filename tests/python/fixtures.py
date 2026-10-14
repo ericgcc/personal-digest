@@ -54,6 +54,15 @@ APPROVED_DIFFERENCES: tuple[tuple[str, Any, Any], ...] = (
         "reader_quality_v4",
     ),
     (
+        # The WOPS anti-pattern integration moved the reader-quality metric to v5: the
+        # reader-review judge instructions gained verification history inputs and the schema
+        # gained anti_pattern_outcomes. The equivalence experiment was not authorized, so
+        # comparability is conservatively refused and the identity moves.
+        "profiles.*.describe.evaluation.metric",
+        "reader_quality_v4",
+        "reader_quality_v5",
+    ),
+    (
         "profiles.*.describe.evaluation.rubric",
         "v3",
         "v4",

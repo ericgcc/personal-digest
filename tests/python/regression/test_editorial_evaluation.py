@@ -276,18 +276,19 @@ def test_a_missing_input_is_unknown_not_pass() -> None:
 
 
 def test_a_material_rubric_change_is_a_new_version() -> None:
-    assert EVALUATION_ID == "reader_quality_v4"
+    assert EVALUATION_ID == "reader_quality_v5"
     assert RUBRIC_VERSION == "v4"
-    assert SCHEMA_VERSION == "v2"
+    assert SCHEMA_VERSION == "v3"
 
 
 def test_incompatible_versions_are_not_compared() -> None:
-    assert not comparable("reader_quality_v3", "reader_quality_v4")
-    assert comparable("reader_quality_v4", "reader_quality_v4")
+    assert not comparable("reader_quality_v4", "reader_quality_v5")
+    assert comparable("reader_quality_v5", "reader_quality_v5")
 
 
 def test_historical_v3_scores_are_preserved() -> None:
     assert "reader_quality_v3" in SUPERSEDED_EVALUATION_IDS
+    assert "reader_quality_v4" in SUPERSEDED_EVALUATION_IDS
     # The archived v3 results are still on disk.
     archive = ROOT / "evaluation-results" / "archive"
     assert archive.is_dir()

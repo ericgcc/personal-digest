@@ -291,6 +291,89 @@ def test_a_clean_payload_records_no_validation_notes() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# Anti-pattern outcomes (Phase 3)
+# --------------------------------------------------------------------------- #
+
+
+def _outcome(**overrides) -> dict:
+    payload = {
+        "finding_id": "ap-mock-defect-a-1",
+        "anti_pattern_id": "mock-defect-a",
+        "status": "resolved",
+        "section_id": "01",
+        "evidence": "the defect is gone",
+        "new": False,
+        "overuse_of_operation": None,
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_anti_pattern_outcomes_are_parsed_and_bounded() -> None:
+    from evaluation.semantic import MAX_ANTI_PATTERN_OUTCOMES
+
+    payload = _evaluation(
+        anti_pattern_outcomes=[_outcome(finding_id=f"ap-x-{n}") for n in range(MAX_ANTI_PATTERN_OUTCOMES + 3)]
+    )
+    evaluation = ReaderQualityEvaluation.model_validate(payload)
+    assert len(evaluation.anti_pattern_outcomes) == MAX_ANTI_PATTERN_OUTCOMES
+    assert evaluation.anti_pattern_outcomes[0].finding_id == "ap-x-0"
+    assert evaluation.anti_pattern_outcomes[0].status == "resolved"
+
+
+def test_anti_pattern_outcome_preserves_finding_id_linkage() -> None:
+    evaluation = ReaderQualityEvaluation.model_validate(
+        _evaluation(anti_pattern_outcomes=[_outcome()])
+    )
+    outcome = evaluation.anti_pattern_outcomes[0]
+    assert outcome.finding_id == "ap-mock-defect-a-1"
+    assert outcome.anti_pattern_id == "mock-defect-a"
+    assert outcome.status == "resolved"
+    assert outcome.new is False
+    assert outcome.overuse_of_operation is None
+
+
+def test_absent_payload_leaves_the_prompt_unchanged() -> None:
+    judge, calls = _judge([_evaluation()])
+    evaluate_reader_quality(DIGEST, style="synthesis-max", judge=judge)
+    assert "Anti-pattern verification history" not in calls[0]
+
+
+def test_supplied_findings_render_the_verification_history() -> None:
+    judge, calls = _judge([_evaluation()])
+    evaluate_reader_quality(
+        DIGEST,
+        style="synthesis-max",
+        judge=judge,
+        findings=[{"finding_id": "ap-x-1", "anti_pattern_id": "x", "section_id": "01", "evidence": "e"}],
+        anti_patterns=[{"id": "x", "summary": "s", "detection": ["d1"], "false_positives": ["fp1"]}],
+        supplied_operation_ids=["op1"],
+        overuse_of={"op1": ["x"]},
+    )
+    prompt = calls[0]
+    assert "Anti-pattern verification history" in prompt
+    assert "ap-x-1" in prompt
+    assert "op1" in prompt
+
+
+def test_verification_history_makes_exactly_one_judge_call() -> None:
+    judge, calls = _judge([_evaluation()])
+    evaluate_reader_quality(
+        DIGEST,
+        style="synthesis-max",
+        judge=judge,
+        findings=[{"finding_id": "ap-x-1", "anti_pattern_id": "x", "section_id": "01", "evidence": "e"}],
+    )
+    assert len(calls) == 1
+
+
+def test_outcomes_are_flattened_into_the_result() -> None:
+    judge, _calls = _judge([_evaluation(anti_pattern_outcomes=[_outcome()])])
+    payload = evaluate_reader_quality(DIGEST, style="synthesis-max", judge=judge).to_dict()
+    assert payload["anti_pattern_outcomes"] == [_outcome()]
+
+
+# --------------------------------------------------------------------------- #
 # Absolute mode
 # --------------------------------------------------------------------------- #
 

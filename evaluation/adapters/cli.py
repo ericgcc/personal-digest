@@ -162,6 +162,41 @@ def _anti_patterns(request: Mapping[str, Any]) -> list[Mapping[str, Any]] | None
     return [record for record in value if isinstance(record, Mapping)]
 
 
+def _findings(request: Mapping[str, Any]) -> list[Mapping[str, Any]] | None:
+    """The previously diagnosed anti-pattern findings the caller supplied, or ``None``.
+
+    Each finding carries at least ``finding_id``, ``anti_pattern_id``, ``section_id``
+    and ``evidence``. An absent or non-list value means no findings were supplied.
+    """
+    value = request.get("findings")
+    if not isinstance(value, list):
+        return None
+    return [record for record in value if isinstance(record, Mapping)]
+
+
+def _string_list(request: Mapping[str, Any], name: str) -> list[str] | None:
+    """A list of strings the caller supplied, or ``None`` when absent or non-list."""
+    value = request.get(name)
+    if not isinstance(value, list):
+        return None
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+def _overuse_of(request: Mapping[str, Any]) -> dict[str, list[str]] | None:
+    """The overuse relationships the caller supplied, or ``None``.
+
+    A mapping of operation id to the anti-pattern ids that name it in ``overuse_of``.
+    """
+    value = request.get("overuse_of")
+    if not isinstance(value, Mapping):
+        return None
+    result: dict[str, list[str]] = {}
+    for key, items in value.items():
+        if isinstance(items, list):
+            result[str(key)] = [str(item).strip() for item in items if str(item).strip()]
+    return result or None
+
+
 # --------------------------------------------------------------------------- #
 # Commands
 # --------------------------------------------------------------------------- #
@@ -256,6 +291,10 @@ def _cmd_reader_quality(request: Mapping[str, Any], capture: Callable[[str], Non
         reader_contract=_contract(request, "reader"),
         review_contract=_contract(request, "review"),
         on_prompt=capture,
+        findings=_findings(request),
+        anti_patterns=_anti_patterns(request),
+        supplied_operation_ids=_string_list(request, "supplied_operation_ids"),
+        overuse_of=_overuse_of(request),
     )
     return _reader_payload(outcome)
 

@@ -46,6 +46,20 @@ Do **not** reward the earlier version merely because it is longer. The goal is t
 
 {% include "evaluation/shared/compactness.j2" %}
 
+{% if verification_history %}
+## Anti-pattern verification history
+
+The `{{ after_label }}` version is a revision. You are given the anti-pattern
+findings diagnosed on the earlier draft, the detection catalogue used to diagnose
+them, the operations supplied to the revision, and the overuse relationships for
+those operations. Assess the revised prose independently first, then use the
+history to determine what remains, what is new, and where an overcorrection is
+consistent with a supplied operation. Report associations without attributing
+causality.
+
+{{ verification_history }}
+{% endif %}
+
 ## {{ before_label }}
 
 {{ before_text }}
@@ -132,7 +146,18 @@ Return one JSON object with exactly this shape:
         "revision_hint": "<one sentence or null>"
       }
     ],
-    "revision_priorities": ["<most valuable fix>", "..."]
+    "revision_priorities": ["<most valuable fix>", "..."],
+    "anti_pattern_outcomes": [
+      {
+        "finding_id": "<finding_id as given, or null for a new occurrence>",
+        "anti_pattern_id": "<canonical anti-pattern id>",
+        "status": "<resolved|partially_resolved|still_present>",
+        "section_id": "<id or null>",
+        "evidence": "<one sentence>",
+        "new": <true|false>,
+        "overuse_of_operation": "<operation id or null>"
+      }
+    ]
   }
 }
 

@@ -166,6 +166,11 @@ def compose_evaluation_prompt(
         "frame_block": frame_block,
         "vocabulary": ", ".join(f"`{value}`" for value in problem_types),
         "anti_pattern_payload": "",
+        # The reader-review verification history inputs (Phase 3). The editorial pipeline's
+        # own composition path renders the templates without them (empty), so the prompt is
+        # unchanged; the evaluator's ``absolute_prompt``/``comparison_prompt`` supply them when
+        # a run has findings to verify.
+        "verification_history": "",
     }
     rendered = render(template, context, environment=environment)
     return EvaluationPrompt(

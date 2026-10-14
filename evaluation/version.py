@@ -31,6 +31,16 @@ identity, rubric and schema versions all move together. Historical
 ``reader_quality_v3`` scores are preserved and are **not** directly comparable
 with v4: :func:`comparable` answers whether two records may be compared, and the
 reporting layer refuses to compute a delta across an incompatible pair.
+
+**The WOPS anti-pattern integration introduces ``reader_quality_v5``.** The
+reader-review judge instructions gained the verification history inputs
+(previously diagnosed findings, the detection catalogue, the supplied operation
+ids, and the overuse relationships) and the response schema gained the
+``anti_pattern_outcomes`` field. The scored rubric dimensions are unchanged, but
+the equivalence experiment that would have demonstrated score comparability was
+**not authorized**, so comparability is conservatively refused rather than
+assumed: the identity moves to ``reader_quality_v5`` and ``reader_quality_v4``
+is recorded as superseded.
 """
 
 from __future__ import annotations
@@ -38,17 +48,30 @@ from __future__ import annotations
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
-EVALUATION_ID = "reader_quality_v4"
-EVALUATION_STEPS_VERSION = "v4.0-style-diagnostics"
+EVALUATION_ID = "reader_quality_v5"
+EVALUATION_STEPS_VERSION = "v4.1-anti-pattern-verification"
 RUBRIC_VERSION = "v4"
-SCHEMA_VERSION = "v2"
+SCHEMA_VERSION = "v3"
 PREPROCESSING_VERSION = "v2"
 DETERMINISTIC_VERSION = "v2"
 
 #: Metric identities that were superseded by a material rubric or schema change.
 #: A record carrying one of these is preserved for history but must never be
 #: compared with a record carrying :data:`EVALUATION_ID`.
-SUPERSEDED_EVALUATION_IDS: tuple[str, ...] = ("reader_quality_v3", "reader_quality_v2", "reader_quality_v1")
+#
+#: ``reader_quality_v4`` is superseded by the anti-pattern verification change
+#: (Phase 3): the reader-review judge instructions gained the verification
+#: history inputs (previously diagnosed findings, the detection catalogue, the
+#: supplied operation ids, and the overuse relationships). The scored rubric
+#: dimensions are unchanged, but the equivalence experiment that would have
+#: demonstrated score comparability was **not authorized**, so comparability is
+#: conservatively refused rather than assumed — the identity moves.
+SUPERSEDED_EVALUATION_IDS: tuple[str, ...] = (
+    "reader_quality_v4",
+    "reader_quality_v3",
+    "reader_quality_v2",
+    "reader_quality_v1",
+)
 
 DEVELOPMENTAL_REVIEW_ID = "developmental_review_v1"
 DEVELOPMENTAL_STEPS_VERSION = "v2"

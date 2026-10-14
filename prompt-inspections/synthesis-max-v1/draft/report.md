@@ -22,7 +22,7 @@
 
 - `styles/synthesis-max/stages/draft.md` — 2715 chars; owner: style-specific stage specialization; sha256 `15b98157371f`
 - `styles/synthesis-max/interface.md` — 2773 chars; owner: style interface declaration; sha256 `19d3e9cfa543`
-- `styles/synthesis-max/style.yaml` — 808 chars; owner: declarative style constraints; sha256 `014041abed22`
+- `styles/synthesis-max/style.yaml` — 808 chars; owner: declarative style constraints; sha256 `cc26e9cef883`
 
 ## Data blocks
 

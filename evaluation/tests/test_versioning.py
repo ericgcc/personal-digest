@@ -19,14 +19,16 @@ from evaluation.version import (
 )
 
 
-def test_the_metric_identity_moved_to_v4() -> None:
-    assert EVALUATION_ID == "reader_quality_v4"
+def test_the_metric_identity_moved_to_v5() -> None:
+    assert EVALUATION_ID == "reader_quality_v5"
     assert RUBRIC_VERSION == "v4"
-    assert SCHEMA_VERSION == "v2"
+    assert SCHEMA_VERSION == "v3"
 
 
-def test_v3_is_recorded_as_superseded() -> None:
+def test_v4_and_v3_are_recorded_as_superseded() -> None:
+    assert "reader_quality_v4" in SUPERSEDED_EVALUATION_IDS
     assert "reader_quality_v3" in SUPERSEDED_EVALUATION_IDS
+    assert is_superseded("reader_quality_v4")
     assert is_superseded("reader_quality_v3")
     assert not is_superseded(EVALUATION_ID)
 
@@ -44,18 +46,19 @@ def test_the_definition_stamps_every_version() -> None:
 
 
 def test_same_identity_is_comparable() -> None:
-    assert comparable("reader_quality_v4", "reader_quality_v4")
+    assert comparable("reader_quality_v5", "reader_quality_v5")
 
 
 def test_a_superseded_identity_is_not_comparable_with_the_current_one() -> None:
-    assert not comparable("reader_quality_v3", "reader_quality_v4")
-    assert not comparable("reader_quality_v4", "reader_quality_v3")
+    assert not comparable("reader_quality_v4", "reader_quality_v5")
+    assert not comparable("reader_quality_v5", "reader_quality_v4")
+    assert not comparable("reader_quality_v3", "reader_quality_v5")
 
 
 def test_a_missing_identity_is_not_comparable() -> None:
     """An unversioned record cannot be shown to belong to the same definition."""
-    assert not comparable(None, "reader_quality_v4")
-    assert not comparable("reader_quality_v4", None)
+    assert not comparable(None, "reader_quality_v5")
+    assert not comparable("reader_quality_v5", None)
     assert not comparable("", "")
 
 

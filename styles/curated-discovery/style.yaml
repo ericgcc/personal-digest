@@ -57,9 +57,9 @@ constraints:
   callouts: {}
   enforced: []
   evaluation:
-    metric: reader_quality_v4
+    metric: reader_quality_v5
     rubric: v4
-    steps_version: v4.0-style-diagnostics
+    steps_version: v4.1-anti-pattern-verification
     developmental: developmental_review_v1
     style_criteria: []
   rendering:

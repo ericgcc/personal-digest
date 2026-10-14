@@ -27,6 +27,7 @@ digest_system/
 │   ├── stages.py               # THE stage table: order, artifacts, corpus policy, validation
 │   ├── orchestrator.py         # run lifecycle: profile resolution, sequencing, records
 │   ├── executor.py             # one stage: attempts, retries, degradation, recovery
+│   ├── anti_patterns.py        # WOPS anti-pattern catalogue loading, prevention selection, rotation history
 │   ├── context.py              # the run context a stage reads and writes
 │   ├── prompts/
 │   │   └── assembler.py        # stage context assembly (the isolation seam)
@@ -109,6 +110,21 @@ writes `final.md` beside `verification.json`; it never edits prose.
   (`evaluation.adapters.invoke`), not a private handler registry. Each call records its duration
   and flags an overrun of its declared timeout. The standalone evaluator CLI remains available
   for independent testing and shares the same handlers.
+
+### WOPS anti-pattern integration
+
+The WOPS anti-pattern catalogue is integrated across the editorial pipeline without adding a
+stage or a judge call. `digest_system/editorial/anti_patterns.py` loads the catalogue through
+the existing `WopsAdapter` (never copied locally, never hardcoded) and selects a bounded,
+false-positive-aware prevention block for Draft, rotating fairly across runs from prior Draft
+prompt manifests. Developmental Review reports located, typed anti-pattern findings using
+WOPS's own detection signals; `retrieve_writing_operations` honours each finding's `repair` and
+`overuse_of` relationships; Writer Revision repairs the diagnosed defects; and Reader Review
+verifies each finding's outcome (resolved / partially resolved / still present / new) in its
+existing single call. The trail — prevention supplied → detected → recommended → supplied →
+application → outcome — is recorded in existing artifacts (`wops.json`, stage records, review
+JSON) keyed by canonical ids, with supply never treated as proof of application or
+effectiveness. WOPS unavailability degrades to the pre-integration behaviour.
 
 ## Entry points
 

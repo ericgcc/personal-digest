@@ -193,12 +193,22 @@ class MockEvaluation:
     python = "mock"
     python_source = "mock"
 
-    def __init__(self, *, ok: bool = True, major_issue: bool = False, findings: list | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        ok: bool = True,
+        major_issue: bool = False,
+        findings: list | None = None,
+        outcomes: list | None = None,
+    ) -> None:
         self.ok = ok
         self.major_issue = major_issue
         self.findings = findings or []
+        self.outcomes = outcomes or []
         # The last developmental-review request kwargs, captured for assertion.
         self.last_developmental_request: dict = {}
+        # The last reader-quality request kwargs, captured for assertion.
+        self.last_reader_request: dict = {}
 
     def evaluate_developmental_review(self, **kwargs):
         self.last_developmental_request = dict(kwargs)
@@ -221,12 +231,13 @@ class MockEvaluation:
                 "problem_type_vocabulary_source": "mock",
                 "anti_pattern_findings": list(self.findings),
             },
-            "versions": {"evaluation": {"evaluation_id": "reader_quality_v4"}},
+            "versions": {"evaluation": {"evaluation_id": "reader_quality_v5"}},
             "usage": {"judge_prompt_tokens": 100, "judge_completion_tokens": 20},
             "adapter": {"python": "mock", "duration_ms": 1},
         }
 
     def evaluate_reader_quality(self, **kwargs):
+        self.last_reader_request = dict(kwargs)
         issue = {
             "section_id": "S1",
             "type": "missing_context",
@@ -244,8 +255,9 @@ class MockEvaluation:
                 "semantic_critical_failure_count": 0,
                 "semantic_issues": [issue] if self.major_issue else [],
                 "problem_types": [],
+                "anti_pattern_outcomes": list(self.outcomes),
             },
-            "versions": {"evaluation": {"evaluation_id": "reader_quality_v4"}},
+            "versions": {"evaluation": {"evaluation_id": "reader_quality_v5"}},
             "usage": {"judge_prompt_tokens": 100, "judge_completion_tokens": 20},
             "adapter": {"python": "mock", "duration_ms": 1},
         }
@@ -608,6 +620,121 @@ def test_writer_revision_receives_the_prevention_context_and_operation_ids(works
         block for block in manifest["blocks"] if block["tag"] == "writing_operations"
     )
     assert writing_operations["operation_ids"] == ["op-a"]
+
+
+def test_the_full_anti_pattern_audit_trail_links_by_canonical_ids(workspace):
+    """The four-state audit contract is test-verified at its correct artifact locations.
+
+    ``selected`` (wops.json) → ``supplied`` (Writer Revision stage record) → ``application``
+    (Reader Review stage record, evidence-gated) → ``outcome`` (Reader Review stage record),
+    all keyed by canonical ids. A supplied-but-unevidenced operation records
+    ``application: unknown``, and a supplied prevention guideline never suppresses a diagnosis.
+    """
+    finding = {
+        "finding_id": "ap-mock-defect-a-1",
+        "anti_pattern_id": "mock-defect-a",
+        "section_id": "S1",
+        "severity": "major",
+        "evidence": "the defect is present",
+        "false_positive_considered": False,
+    }
+    outcome = {
+        "finding_id": "ap-mock-defect-a-1",
+        "anti_pattern_id": "mock-defect-a",
+        "status": "resolved",
+        "section_id": "S1",
+        "evidence": "the defect is gone",
+        "new": False,
+        "overuse_of_operation": None,
+    }
+    provider = MockProvider(_responses())
+    evaluation = MockEvaluation(findings=[finding], outcomes=[outcome])
+    result = _run(
+        workspace,
+        run_id="mock-audit-trail",
+        provider=provider,
+        wops=MockWopsWithRepair(),
+        evaluation=evaluation,
+    )
+
+    assert result["degraded"] == []
+    run_dir = workspace / ".digest-runs" / "mock-audit-trail"
+
+    # ``selected`` — the retrieval record names the operation and its finding linkage.
+    wops = read_json(run_dir / "developmental-review" / "output" / "wops.json")
+    assert wops["anti_pattern_findings"][0]["finding_id"] == "ap-mock-defect-a-1"
+    assert [item["id"] for item in wops["selected"]] == ["op-a"]
+    assert wops["selected"][0]["selected_for"]["anti_pattern_findings"] == ["ap-mock-defect-a-1"]
+
+    # ``supplied`` — the Writer Revision stage record names the operation ids actually composed.
+    stage_records = read_json(run_dir / "stage-records.json")
+    writer_revision = next(
+        record for record in stage_records["stages"] if record["stage"] == "writer-revision"
+    )
+    assert writer_revision["supplied"] == ["op-a"]
+
+    # ``application`` and ``outcome`` — the Reader Review stage record.
+    reader_review = next(
+        record for record in stage_records["stages"] if record["stage"] == "reader-review"
+    )
+    assert reader_review["notes"]["supplied_operation_ids"] == ["op-a"]
+    # A supplied-but-unevidenced operation records ``application: unknown``, never inferred.
+    assert reader_review["notes"]["application"] == {"op-a": "unknown"}
+    assert reader_review["notes"]["anti_pattern_outcomes"] == [outcome]
+
+    # The reader-review request carries the stage-scoped history projection.
+    reader_request = evaluation.last_reader_request
+    assert reader_request["findings"] == [finding]
+    assert reader_request["supplied_operation_ids"] == ["op-a"]
+    assert {record["id"] for record in reader_request["anti_patterns"]} == {
+        "mock-defect-a",
+        "mock-defect-b",
+    }
+
+    # A supplied prevention guideline does not suppress a diagnosis: the finding is still
+    # reported and its repair operation selected.
+    assert wops["anti_pattern_findings"][0]["anti_pattern_id"] == "mock-defect-a"
+
+
+def test_a_still_present_finding_does_not_trigger_targeted_repair_without_an_actionable_issue(workspace):
+    """A still-present finding is recorded as an outcome but does not trigger Targeted Repair
+    unless an actionable major/critical issue exists."""
+    finding = {
+        "finding_id": "ap-mock-defect-a-1",
+        "anti_pattern_id": "mock-defect-a",
+        "section_id": "S1",
+        "severity": "major",
+        "evidence": "the defect is present",
+        "false_positive_considered": False,
+    }
+    outcome = {
+        "finding_id": "ap-mock-defect-a-1",
+        "anti_pattern_id": "mock-defect-a",
+        "status": "still_present",
+        "section_id": "S1",
+        "evidence": "the defect remains",
+        "new": False,
+        "overuse_of_operation": None,
+    }
+    provider = MockProvider(_responses())
+    evaluation = MockEvaluation(findings=[finding], outcomes=[outcome])
+    result = _run(
+        workspace,
+        run_id="mock-still-present",
+        provider=provider,
+        wops=MockWopsWithRepair(),
+        evaluation=evaluation,
+    )
+
+    assert result["degraded"] == []
+    run_dir = workspace / ".digest-runs" / "mock-still-present"
+    stage_records = read_json(run_dir / "stage-records.json")
+    reader_review = next(
+        record for record in stage_records["stages"] if record["stage"] == "reader-review"
+    )
+    assert reader_review["notes"]["anti_pattern_outcomes"] == [outcome]
+    # No actionable issue (major_issue=False), so Targeted Repair is not requested.
+    assert reader_review["notes"]["targeted_repair_requested"] is False
 
 
 def test_publication_findings_are_advisory_and_render_uses_the_audited_manifest(workspace):

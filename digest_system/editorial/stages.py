@@ -194,7 +194,9 @@ STAGES_V2: tuple[Stage, ...] = (
         blocks=lambda ctx: (
             ctx.artifact_block("writer-revision", "previous_stage_artifact"),
             ctx.artifact_block("reader-review", "reader_review", "review.json"),
-            ctx.artifact_block("developmental-review", "writing_operations", "wops.json"),
+            # Only the unresolved findings relevant to the one actionable problem and their
+            # repair history — never the whole retrieval record.
+            ctx.targeted_repair_wops_block(),
             ctx.reading_instructions_block("targeted-repair"),
         ),
     ),

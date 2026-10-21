@@ -417,6 +417,30 @@ def test_prevention_block_locks_the_item_cap():
         assert f"Fixture {omitted_id}" not in text
 
 
+def test_prevention_block_backfills_capacity_after_a_budget_omission():
+    """A budget omission must not waste capacity: later eligible entries are still considered.
+
+    More eligible entries than the cap allows, where the rotation-order-first entry cannot fit
+    the budget: selection continues past it, so the cap is filled by entries that fit and only
+    the genuinely over-cap remainder is omitted by the item cap.
+    """
+    big = _entry("big", false_positives=(" ".join(["an overlong synthetic condition"] * 40),))
+    entries = [big, *[_entry(f"e{index}", false_positives=()) for index in range(1, 7)]]
+    catalogue = _catalogue(entries)
+
+    text, metadata = prevention_block(catalogue, max_bytes=300)
+
+    assert text is not None
+    assert len(metadata["selected_ids"]) == MAX_PREVENTION_ITEMS
+    assert "big" not in metadata["selected_ids"]
+    assert metadata["omitted_by_budget"] == {"count": 1, "ids": ["big"]}
+    assert metadata["omitted_by_item_cap"]["ids"] == ["e6"]
+    assert metadata["omitted_count"] == 2
+    assert metadata["bytes"] <= 300
+    for omitted_id in metadata["omitted_ids"]:
+        assert f"Fixture {omitted_id}" not in text
+
+
 def test_prevention_block_accounts_for_every_catalogue_entry():
     """Selected + cap-omitted + budget-omitted covers the whole catalogue."""
     entries = [_entry(f"e{i}", false_positives=(f"a synthetic condition {i}",)) for i in range(5)]

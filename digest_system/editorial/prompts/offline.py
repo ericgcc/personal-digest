@@ -130,6 +130,16 @@ class OfflineContext:
         """Offline there is no Draft prevention record, so the compact context is a no-op."""
         return None
 
+    def targeted_repair_wops_block(self) -> dict[str, Any] | None:
+        """Offline the retrieval history is delivered whole, matching the no-slice fallback.
+
+        A real Targeted Repair run always records an actionable problem first, so its prompt
+        carries the stage-scoped slice; offline inspection seeds no actionable problem, so the
+        context returns the full synthetic retrieval record — the same shape the run context
+        returns when no slice can be computed.
+        """
+        return self.artifact_block("developmental-review", "writing_operations", "wops.json")
+
     def rendering_values(self) -> dict[str, Any]:
         return {
             "run_key": self.run_key,

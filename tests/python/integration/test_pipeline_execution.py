@@ -8,6 +8,7 @@ production state.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -187,6 +188,58 @@ class MockWopsWithRepair(MockWopsWithAntiPatterns):
             "operations": [self._operations[operation_id] for operation_id in ids if operation_id in self._operations],
             "failures": [],
         }
+
+
+class MockWopsWithTwoRepairs(MockWopsWithAntiPatterns):
+    """An available mock adapter whose two anti-patterns repair through different operations.
+
+    ``mock-defect-a`` repairs via ``op-a`` and ``mock-defect-b`` via ``op-b``, with both full
+    operation records fetchable — so a finding in one section can be distinguished from an
+    unrelated finding in another when the retrieval history is sliced.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._records[0]["repair"] = ["op-a"]
+        self._records[1]["repair"] = ["op-b"]
+        self._operations = {
+            "op-a": {"id": "op-a", "version": "1.0.0", "name": "Repair A instruction", "summary": "The repair instruction for defect A."},
+            "op-b": {"id": "op-b", "version": "1.0.0", "name": "Repair B instruction", "summary": "The repair instruction for defect B."},
+        }
+
+    def get_writing_operations(self, ids=()):
+        wanted = set(ids)
+        return {
+            "ok": True,
+            "error": None,
+            "operations": [self._operations[operation_id] for operation_id in ids if operation_id in self._operations],
+            "failures": [],
+        }
+
+
+class MockWopsWithWideCatalogue(MockWopsWithAntiPatterns):
+    """An available mock adapter whose catalogue exceeds the detection payload bound.
+
+    Ten entries against ``MAX_DETECTION_PAYLOAD = 8`` makes the reader-review payload bound
+    visible: eight entries included, two recorded as omitted and treated as not evaluated.
+    """
+
+    def __init__(self) -> None:
+        self._records = [
+            {
+                "id": f"mock-defect-{chr(ord('a') + index)}",
+                "name": f"Mock Defect {chr(ord('a') + index).upper()}",
+                "summary": f"A mock surface defect, number {index}.",
+                "detection": ["a mock detection signal"],
+                "false_positives": ["a genuine contrast exists"],
+                "repair": [],
+                "overuse_of": [],
+                "activities": ["drafting"],
+                "status": "active",
+                "version": "9.9.9-mock",
+            }
+            for index in range(10)
+        ]
 
 
 class MockEvaluation:
@@ -735,6 +788,209 @@ def test_a_still_present_finding_does_not_trigger_targeted_repair_without_an_act
     assert reader_review["notes"]["anti_pattern_outcomes"] == [outcome]
     # No actionable issue (major_issue=False), so Targeted Repair is not requested.
     assert reader_review["notes"]["targeted_repair_requested"] is False
+
+
+def test_the_reader_review_detection_payload_is_bounded_and_audited(workspace):
+    """The reader-review detection catalogue is size-bounded like Developmental Review's.
+
+    A catalogue wider than the bound is included only up to the bound; the omitted entries are
+    recorded in the reader-review stage record and are treated as not evaluated, never clean.
+    """
+    from evaluation.semantic.developmental import MAX_DETECTION_PAYLOAD
+
+    provider = MockProvider(_responses())
+    evaluation = MockEvaluation()
+    result = _run(
+        workspace,
+        run_id="mock-wide-detection",
+        provider=provider,
+        wops=MockWopsWithWideCatalogue(),
+        evaluation=evaluation,
+    )
+
+    assert result["degraded"] == []
+    request = evaluation.last_reader_request
+    records = request["anti_patterns"]
+    assert len(records) == MAX_DETECTION_PAYLOAD
+    assert {record["id"] for record in records} == {
+        f"mock-defect-{chr(ord('a') + index)}" for index in range(MAX_DETECTION_PAYLOAD)
+    }
+
+    stage_records = read_json(workspace / ".digest-runs" / "mock-wide-detection" / "stage-records.json")
+    reader_review = next(record for record in stage_records["stages"] if record["stage"] == "reader-review")
+    payload = reader_review["notes"]["detection_payload"]
+    assert len(payload["included_ids"]) == MAX_DETECTION_PAYLOAD
+    assert payload["omitted_ids"] == ["mock-defect-i", "mock-defect-j"]
+
+
+def test_targeted_repair_receives_only_the_relevant_history_slice(workspace):
+    """Targeted Repair's writing-operations block carries only the unresolved findings relevant
+    to the one actionable problem and their repair history — not the whole record."""
+    findings = [
+        {
+            "finding_id": "ap-mock-defect-a-1",
+            "anti_pattern_id": "mock-defect-a",
+            "section_id": "S1",
+            "severity": "major",
+            "evidence": "the defect is present in S1",
+            "false_positive_considered": False,
+        },
+        {
+            "finding_id": "ap-mock-defect-b-1",
+            "anti_pattern_id": "mock-defect-b",
+            "section_id": "S2",
+            "severity": "minor",
+            "evidence": "an unrelated defect in S2",
+            "false_positive_considered": False,
+        },
+    ]
+    outcomes = [
+        {
+            "finding_id": "ap-mock-defect-a-1",
+            "anti_pattern_id": "mock-defect-a",
+            "status": "still_present",
+            "section_id": "S1",
+            "evidence": "still there",
+            "new": False,
+            "overuse_of_operation": None,
+        },
+        {
+            "finding_id": "ap-mock-defect-b-1",
+            "anti_pattern_id": "mock-defect-b",
+            "status": "still_present",
+            "section_id": "S2",
+            "evidence": "also still there",
+            "new": False,
+            "overuse_of_operation": None,
+        },
+    ]
+    provider = MockProvider(_responses())
+    evaluation = MockEvaluation(findings=findings, outcomes=outcomes, major_issue=True)
+    result = _run(
+        workspace,
+        run_id="mock-repair-slice",
+        provider=provider,
+        wops=MockWopsWithTwoRepairs(),
+        evaluation=evaluation,
+    )
+
+    assert result["degraded"] == []
+    # Writer Revision received the complete record: both findings and both operations.
+    revision_manifest = read_json(
+        workspace / ".digest-runs" / "mock-repair-slice" / "writer-revision" / "attempts" / "attempt-1" / "prompt-manifest.json"
+    )
+    revision_block = next(block for block in revision_manifest["blocks"] if block["tag"] == "writing_operations")
+    assert revision_block["operation_ids"] == ["op-a", "op-b"]
+
+    # Targeted Repair received only the actionable section's slice.
+    assert "targeted-repair" in provider.calls
+    repair_manifest = read_json(
+        workspace / ".digest-runs" / "mock-repair-slice" / "targeted-repair" / "attempts" / "attempt-1" / "prompt-manifest.json"
+    )
+    repair_block = next(block for block in repair_manifest["blocks"] if block["tag"] == "writing_operations")
+    assert repair_block["source"]["filtered_for"]["actionable_section_id"] == "S1"
+    assert repair_block["source"]["filtered_for"]["kept_finding_ids"] == ["ap-mock-defect-a-1"]
+    # The manifest records metadata only; the delivered payload is read from the prompt itself.
+    repair_prompt = (
+        workspace / ".digest-runs" / "mock-repair-slice" / "targeted-repair" / "attempts" / "attempt-1" / "prompt.txt"
+    ).read_text(encoding="utf-8")
+    match = re.search(r"<writing_operations>\n(.*?)\n</writing_operations>", repair_prompt, re.DOTALL)
+    assert match, "the writing-operations block is missing from the targeted-repair prompt"
+    payload = json.loads(match.group(1))
+    assert [finding["finding_id"] for finding in payload["anti_pattern_findings"]] == ["ap-mock-defect-a-1"]
+    assert [item["id"] for item in payload["selected"]] == ["op-a"]
+    assert [operation["id"] for operation in payload["operations"]] == ["op-a"]
+    # The unrelated operation's instructions are not delivered.
+    assert "Repair B instruction" not in repair_prompt
+    assert payload["history_filter"]["omitted_finding_ids"] == ["ap-mock-defect-b-1"]
+    assert payload["history_filter"]["omitted_operation_ids"] == ["op-b"]
+
+
+def test_supplied_operations_come_from_the_composed_prompt_not_the_recommendation(workspace, tmp_path):
+    """The reader review's supplied-operation slice is read from the Writer Revision supply
+    record, never from the retrieval record: an operation selected at retrieval time but never
+    supplied is not reported as supplied."""
+    from digest_system.config import STYLE_PROFILES
+    from digest_system.editorial.context import Artifact, RunContext
+    from digest_system.editorial.executor import _reader_review_history
+
+    context = RunContext(
+        run_id="mock-supply-source",
+        digest_id="tech-bi-daily",
+        config_path=tmp_path / "digests" / "tech-bi-daily.md",
+        style="synthesis-max",
+        language="English",
+        source_path=tmp_path,
+        timeout_seconds=60,
+        run_key="k",
+        run_key_source="test",
+        digest_name="Tech",
+        profile=STYLE_PROFILES["synthesis-max-v1"],
+        style_profile_id="synthesis-max-v1",
+        style_profile_source="test",
+        style_headings=[],
+        corpus={},
+        style_text="",
+        root=tmp_path,
+    )
+    run_dir = tmp_path / ".digest-runs" / "mock-supply-source"
+    # The retrieval record recommends two operations...
+    output = run_dir / "developmental-review" / "output"
+    output.mkdir(parents=True)
+    (output / "wops.json").write_text(
+        json.dumps({"selected": [{"id": "op-a"}, {"id": "op-b"}]}, ensure_ascii=False), encoding="utf-8"
+    )
+    # ...but the composed Writer Revision prompt supplied only one of them.
+    attempt = run_dir / "writer-revision" / "attempts" / "attempt-1"
+    attempt.mkdir(parents=True)
+    (attempt / "prompt-manifest.json").write_text(
+        json.dumps({"blocks": [{"tag": "writing_operations", "operation_ids": ["op-a"]}]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    context.artifacts["developmental-review"] = Artifact(
+        path=output / "review.json", text="{}", json={"anti_pattern_findings": []}
+    )
+
+    history = _reader_review_history(context)
+
+    assert history["supplied_operation_ids"] == ["op-a"]
+
+
+def test_an_empty_prevention_selection_is_recorded_in_the_stage_record(workspace):
+    """An available catalogue whose budget fits no entry still leaves an auditable selection
+    decision in the draft stage record — the omitted block alone carries nothing."""
+    provider = MockProvider(_responses())
+    result = _run(
+        workspace,
+        run_id="mock-empty-prevention",
+        provider=provider,
+        wops=MockWopsWithAntiPatterns(),
+        runtime_config={"adapters": {"anti_pattern_budget_bytes": 10}},
+    )
+
+    assert result["degraded"] == []
+    stage_records = read_json(workspace / ".digest-runs" / "mock-empty-prevention" / "stage-records.json")
+    draft = next(record for record in stage_records["stages"] if record["stage"] == "draft")
+    prevention = draft["prevention"]
+    assert prevention["available"] is True
+    assert prevention["reason"] is None
+    assert prevention["selected_ids"] == []
+    assert prevention["omitted_by_budget"]["count"] == 2
+    assert set(prevention["omitted_by_budget"]["ids"]) == {"mock-defect-a", "mock-defect-b"}
+
+
+def test_an_unavailable_catalogue_records_the_prevention_decision(workspace):
+    """With no WOPS adapter the draft stage record distinguishes unavailable from supplied."""
+    provider = MockProvider(_responses())
+    result = _run(workspace, run_id="mock-unavailable-prevention", provider=provider)
+
+    assert result["degraded"] == []
+    stage_records = read_json(workspace / ".digest-runs" / "mock-unavailable-prevention" / "stage-records.json")
+    draft = next(record for record in stage_records["stages"] if record["stage"] == "draft")
+    prevention = draft["prevention"]
+    assert prevention["available"] is False
+    assert prevention["reason"] == "mock: WOPS not configured"
+    assert prevention["selected_ids"] == []
 
 
 def test_publication_findings_are_advisory_and_render_uses_the_audited_manifest(workspace):

@@ -77,6 +77,15 @@ class RunContext:
     #: ``source``), set by the executor after Draft so Writer Revision can supply the compact
     #: prevention context without re-reading the manifest.
     prevention_record: Mapping[str, Any] | None = None
+    #: The Draft prevention-selection decision (availability, selected ids, omission reasons),
+    #: stored by ``anti_pattern_prevention_block`` even when the block itself is omitted, so the
+    #: draft stage record can persist the decision and the audit trail can distinguish
+    #: supplied, omitted-with-reason, and unavailable guidance.
+    prevention_selection: dict[str, Any] | None = None
+    #: The one actionable reader-review problem Targeted Repair would address, set by the
+    #: executor's reader-review branch. The targeted-repair stage's history slice is filtered
+    #: against it; ``None`` when the reader review found no actionable problem.
+    actionable_issue: dict[str, Any] | None = None
 
     def stage_excluded_sections(self, stage_name: str) -> list[str]:
         """Convention composition has no withheld style fragments."""
@@ -264,8 +273,6 @@ class RunContext:
             prevention_block,
         )
 
-        if self.wops is None:
-            return None
         catalogue = self.anti_pattern_catalogue
         if catalogue is None:
             catalogue = load_catalogue(self.wops)
@@ -285,27 +292,24 @@ class RunContext:
                 "runs_skipped": history["runs_skipped"],
             },
         )
+        decision = {
+            "kind": "wops-anti-pattern-catalogue",
+            "available": catalogue.available,
+            "version": catalogue.version,
+            "reason": catalogue.reason,
+            **metadata,
+        }
+        # The selection decision is persisted even when the block is omitted (an unavailable
+        # catalogue, or an available one whose budget fits no entry): the audit trail must be
+        # able to distinguish supplied guidance, guidance omitted with a recorded reason, and
+        # unavailable guidance — an absent block alone carries none of that.
+        self.prevention_selection = decision
         if text is None:
             return None
         return {
             "tag": "anti_pattern_prevention",
             "payload": text,
-            "source": {
-                "kind": "wops-anti-pattern-catalogue",
-                "available": catalogue.available,
-                "version": catalogue.version,
-                "reason": catalogue.reason,
-                "selected_ids": metadata["selected_ids"],
-                "selection_reasons": metadata["selection_reasons"],
-                "omitted_count": metadata["omitted_count"],
-                "omitted_ids": metadata["omitted_ids"],
-                "omitted_by_inapplicable": metadata["omitted_by_inapplicable"],
-                "omitted_by_item_cap": metadata["omitted_by_item_cap"],
-                "omitted_by_budget": metadata["omitted_by_budget"],
-                "bytes": metadata["bytes"],
-                "max_bytes": metadata["max_bytes"],
-                "history_used": metadata["history_used"],
-            },
+            "source": decision,
         }
 
     def prevention_context_block(self) -> dict[str, Any] | None:
@@ -353,6 +357,122 @@ class RunContext:
                 "version": catalogue.version,
             },
         }
+
+    def targeted_repair_wops_block(self) -> dict[str, Any] | None:
+        """The stage-scoped writing-operations slice for Targeted Repair, or ``None``.
+
+        Targeted Repair addresses the one actionable problem the reader review named; it must
+        not receive the whole retrieval history. The slice keeps:
+
+        * the unresolved anti-pattern findings relevant to that problem — same section as the
+          actionable issue, or, for a document-level problem, every unresolved finding;
+        * the operations selected for those findings (or for the actionable section);
+        * the retrieval queries for the actionable section.
+
+        A finding with no recorded outcome is treated as unresolved (not evaluated is not
+        resolved). The filter itself is recorded in the block's ``source`` so the slice is
+        auditable, and it is derived from artifacts that already exist — never persisted as a
+        new artifact family. ``None`` when the retrieval record or the actionable problem is
+        unavailable.
+        """
+        raw = self.artifact_block("developmental-review", "writing_operations", "wops.json")
+        if raw is None:
+            return None
+        try:
+            wops = json.loads(raw["payload"])
+        except (json.JSONDecodeError, TypeError):
+            return None
+        if not isinstance(wops, Mapping):
+            return None
+        actionable = self.actionable_issue
+        if not isinstance(actionable, Mapping):
+            # No actionable problem: there is no slice to compute. The full record is returned
+            # so a composition without one (offline inspection, or a caller that never recorded
+            # an actionable problem) does not silently lose the operations; a real Targeted
+            # Repair run always has one, so the filtered slice below is what a repair prompt
+            # actually carries.
+            return raw
+        section_id = actionable.get("section_id") or None
+
+        outcomes: dict[str, str] = {}
+        reader = self.artifacts.get("reader-review")
+        if reader is not None and isinstance(reader.json, Mapping):
+            for outcome in reader.json.get("anti_pattern_outcomes") or []:
+                if isinstance(outcome, Mapping) and outcome.get("finding_id"):
+                    outcomes[str(outcome["finding_id"])] = str(outcome.get("status") or "")
+
+        def _unresolved(finding_id: str) -> bool:
+            return outcomes.get(finding_id) != "resolved"
+
+        findings = [
+            finding
+            for finding in (wops.get("anti_pattern_findings") or [])
+            if isinstance(finding, Mapping)
+            and _unresolved(str(finding.get("finding_id") or ""))
+            and (section_id is None or finding.get("section_id") == section_id)
+        ]
+        kept_finding_ids = {
+            str(finding["finding_id"]) for finding in findings if finding.get("finding_id")
+        }
+
+        kept_selected: list[Mapping[str, Any]] = []
+        kept_operation_ids: set[str] = set()
+        for entry in wops.get("selected") or []:
+            if not isinstance(entry, Mapping):
+                continue
+            linkage = (entry.get("selected_for") or {}).get("anti_pattern_findings") or []
+            linked = {str(item) for item in linkage if item}
+            in_section = section_id is not None and section_id in (entry.get("matched_section_ids") or [])
+            if not ((linked & kept_finding_ids) or in_section):
+                continue
+            kept_selected.append(entry)
+            if entry.get("id") not in (None, ""):
+                kept_operation_ids.add(str(entry["id"]))
+
+        operations = [
+            operation
+            for operation in (wops.get("operations") or [])
+            if isinstance(operation, Mapping) and str(operation.get("id")) in kept_operation_ids
+        ]
+        queries = [
+            query
+            for query in (wops.get("queries") or [])
+            if isinstance(query, Mapping)
+            and (section_id is None or query.get("section_id") == section_id)
+        ]
+
+        all_findings = wops.get("anti_pattern_findings") or []
+        all_operation_ids = {
+            str(entry["id"])
+            for entry in (wops.get("selected") or [])
+            if isinstance(entry, Mapping) and entry.get("id") not in (None, "")
+        }
+        filtered = dict(wops)
+        filtered["anti_pattern_findings"] = findings
+        filtered["selected"] = list(kept_selected)
+        filtered["operations"] = operations
+        filtered["queries"] = queries
+        filtered["history_filter"] = {
+            "stage": "targeted-repair",
+            "actionable_section_id": section_id,
+            "kept_finding_ids": sorted(kept_finding_ids),
+            "omitted_finding_ids": sorted(
+                str(finding["finding_id"])
+                for finding in all_findings
+                if isinstance(finding, Mapping)
+                and finding.get("finding_id")
+                and str(finding["finding_id"]) not in kept_finding_ids
+            ),
+            "kept_operation_ids": sorted(kept_operation_ids),
+            "omitted_operation_ids": sorted(all_operation_ids - kept_operation_ids),
+        }
+        source = dict(raw.get("source") or {})
+        source["filtered_for"] = {
+            "stage": "targeted-repair",
+            "actionable_section_id": section_id,
+            "kept_finding_ids": sorted(kept_finding_ids),
+        }
+        return {"tag": "writing_operations", "payload": json.dumps(filtered, ensure_ascii=False, indent=2), "source": source}
 
 
 __all__ = ["Artifact", "RunContext"]

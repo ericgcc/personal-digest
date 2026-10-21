@@ -198,11 +198,12 @@ def prevention_block(
       (including new catalogue entries) sort before any supplied one, with a deterministic
       tie-break on catalogue order. With no history the ordering is exactly the Phase 1 one
       (all eligible treated as never supplied, catalogue order).
-    * **Bounds, not exclusion.** At most ``max_items`` entries are selected; entries beyond the
-      cap are omitted whole. The byte budget of ``max_bytes`` is measured in UTF-8 bytes over
-      the complete rendered body, including the blank-line separators between entries. An entry
-      that cannot fit whole is skipped and the **next** eligible entry is considered — selection
-      continues rather than stopping, and no entry is ever cut mid-sentence.
+    * **Bounds, not exclusion.** At most ``max_items`` entries are selected. The byte budget of
+      ``max_bytes`` is measured in UTF-8 bytes over the complete rendered body, including the
+      blank-line separators between entries. Every eligible entry is considered in rotation
+      order until the cap is full or the catalogue is exhausted: an entry that cannot fit whole
+      is skipped and the **next** eligible entry is considered — so a budget omission never
+      wastes capacity a later entry could have used. No entry is ever cut mid-sentence.
 
     Returns ``(None, metadata)`` when the catalogue is unavailable or empty, or when no entry
     fits. The metadata records ``selected_ids``, per-entry ``selection_reasons``, the omissions
@@ -231,14 +232,21 @@ def prevention_block(
         if "drafting" not in (record.get("activities") or [])
     ]
     ordered = _order_records(catalogue.records, history=history)
-    considered, cap_omitted = ordered[:max_items], ordered[max_items:]
 
     separator_bytes = len("\n\n".encode("utf-8"))
     selected: list[tuple[dict, str]] = []
     selection_reasons: dict[str, str] = {}
     budget_omitted: list[str] = []
+    cap_omitted: list[str] = []
     used = 0
-    for record in considered:
+    for record in ordered:
+        # The item cap bounds how many entries may be selected, not how many are considered:
+        # every eligible entry is visited until the cap is full or the catalogue is exhausted,
+        # so an entry that cannot fit the budget never wastes capacity a later entry could
+        # have used.
+        if len(selected) >= max_items:
+            cap_omitted.append(record.get("id"))
+            continue
         text = _render_entry(record)
         size = len(text.encode("utf-8"))
         extra = size if not selected else size + separator_bytes
@@ -253,7 +261,7 @@ def prevention_block(
         else:
             selection_reasons[record.get("id")] = f"least recently supplied ({last_supplied})"
 
-    cap_ids = [record.get("id") for record in cap_omitted]
+    cap_ids = cap_omitted
     omitted_ids = [*inapplicable_ids, *cap_ids, *budget_omitted]
     body = "\n\n".join(text for _record, text in selected)
     metadata = {

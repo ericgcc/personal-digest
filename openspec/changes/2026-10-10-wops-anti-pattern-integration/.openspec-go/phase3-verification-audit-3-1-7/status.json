@@ -1,8 +1,8 @@
 {
   "run_id": "phase3-verification-audit-3-1-7",
   "created": "2026-10-13",
-  "status": "completed",
-  "iteration": 2,
+  "status": "building",
+  "iteration": 3,
   "inspector_verdict": "PASS",
   "inspector_model": "Z.ai: GLM 5.3 Flash (GitHub Copilot in-chat)",
   "history": [
@@ -17,6 +17,12 @@
       "role": "inspector",
       "verdict": "PASS",
       "summary": "Override re-verification requested by the user; iteration 1's PASS superseded by fresh independent evidence. Artifact baseline hashes re-verified identical. Implementation re-inspected from source (schema.py AntiPatternOutcome + bounded outcomes; absolute.j2/comparison.j2 verification_history conditional sections; render_verification_history; adapter/CLI/executor wiring incl. _reader_review_history and unchanged retry_instructions; reader_quality_v5 conservative comparability refusal; audit-trail and still-present tests; docs). Gates re-run in-session: pytest 926 passed / 9 skipped (paid smoke skips), prompt gate unclassified:0 ok:true, context bounded (synthesis-max-v1 136515/38469 bytes). No issues found."
+    },
+    {
+      "iteration": 3,
+      "role": "builder",
+      "verdict": "correction-round-complete",
+      "summary": "Builder correction cycle addressing the five findings from the external review of d60a719 (the review arrived after both Inspector iterations). F1: reader-review detection payload routed through the shared select_detection_payload bound (MAX_DETECTION_PAYLOAD=8) with included_ids/omitted_ids persisted in the reader-review stage record. F2: new RunContext.targeted_repair_wops_block delivers Targeted Repair only the unresolved findings relevant to the one actionable problem plus their operations/queries, with the filter recorded (source.filtered_for + payload.history_filter); should_run_optional_stage untouched. F3: supply now read from the composed Writer Revision prompt manifest (operation_ids), never from wops.json recommendations. F4: prevention_block considers every eligible entry until the cap fills or the catalogue is exhausted (budget omission no longer wastes cap capacity). F5: the prevention-selection decision is stored on the context and persisted on the draft stage record even when the block is omitted. Six new integration tests + two new unit tests; one rotation test rewritten for the new cap/budget semantics. Evidence (validation-2.md): full suite exit 0 no failures, gate unclassified:0 ok:true, measure_context unchanged (136515/38469). Awaiting Inspector verification."
     }
   ],
   "repository_root": "C:\\Users\\ericg\\OneDrive\\Documents\\GitHub\\digy",

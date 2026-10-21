@@ -154,10 +154,11 @@ def test_supplied_entries_sort_by_least_recent_timestamp():
 def test_each_omitted_id_carries_exactly_one_reason():
     """The three omission records never overlap, and together they account for every omission."""
     inapplicable = _entry("z-inapplicable", activities=("reviewing",))
-    entries = [_entry(f"z{i}", false_positives=(f"a synthetic condition {i}",)) for i in range(8)]
-    catalogue = _catalogue([inapplicable, *entries])
+    big = _entry("z-big", false_positives=("a very long synthetic condition " * 20,))
+    small = [_entry(f"z{i}", false_positives=()) for i in range(3)]
+    catalogue = _catalogue([inapplicable, big, *small])
 
-    _text, metadata = prevention_block(catalogue, max_items=3, max_bytes=200)
+    _text, metadata = prevention_block(catalogue, max_items=2, max_bytes=400)
 
     reasons = [
         metadata["omitted_by_inapplicable"]["ids"],
@@ -170,8 +171,28 @@ def test_each_omitted_id_carries_exactly_one_reason():
     assert metadata["omitted_count"] == len(flattened)
     assert set(metadata["selected_ids"]).isdisjoint(flattened)
     assert metadata["omitted_by_inapplicable"]["ids"] == ["z-inapplicable"]
-    assert metadata["omitted_by_item_cap"]["count"] > 0
-    assert metadata["omitted_by_budget"]["count"] > 0
+    # The budget omission cannot waste cap capacity: the too-big entry is skipped and both
+    # fitting entries are selected, so the cap fills and only the remainder is cap-omitted.
+    assert metadata["omitted_by_budget"]["ids"] == ["z-big"]
+    assert metadata["omitted_by_item_cap"]["ids"] == ["z2"]
+
+
+def test_a_budget_omission_leaves_no_unused_cap_capacity_when_the_catalogue_is_short():
+    """When the budget omits entries the cap never fills, every considered-but-unselected entry
+    is budget-omitted: the cap record stays empty because nothing was withheld by the cap."""
+    entries = [
+        _entry(f"z{i}", false_positives=("a synthetic condition " * 10,))
+        for i in range(3)
+    ]
+    catalogue = _catalogue(entries)
+
+    _text, metadata = prevention_block(catalogue, max_items=2, max_bytes=300)
+
+    # Only the first entry fits; the others were considered and budget-omitted, so the cap
+    # never filled and nothing was withheld by it.
+    assert metadata["selected_ids"] == ["z0"]
+    assert metadata["omitted_by_item_cap"] == {"count": 0, "ids": []}
+    assert metadata["omitted_by_budget"]["ids"] == ["z1", "z2"]
 
 
 def test_a_budget_skipped_entry_does_not_stop_selection():

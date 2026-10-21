@@ -854,6 +854,12 @@ def _run_llm_stage(
             if block.get("tag") == "writing_operations" and isinstance(block.get("operation_ids"), list):
                 supplied_operation_ids = [str(item) for item in block["operation_ids"]]
         record["supplied"] = supplied_operation_ids
+    elif stage.name == "draft":
+        # The prevention-selection decision is persisted even when the block is omitted, so
+        # the record distinguishes supplied, omitted-with-reason, and unavailable guidance.
+        prevention = context.prevention_selection
+        if isinstance(prevention, Mapping):
+            record["prevention"] = dict(prevention)
 
     write_artifact(attempt_dir / "prompt.txt", f"{system_text}\n\n=== USER ===\n\n{user_text}")
     try:
@@ -929,20 +935,60 @@ def _draft_prevention_record(context: RunContext) -> dict[str, Any] | None:
     return None
 
 
+def _writer_revision_supplied_operations(context: RunContext) -> list[str]:
+    """The operation ids actually supplied to Writer Revision, from the composed prompt.
+
+    Supply is read from the most recent Writer Revision attempt's ``prompt-manifest.json`` —
+    the ``writing_operations`` block's ``operation_ids`` — because that manifest records what
+    the composed prompt actually contained. The retrieval record (``wops.json``) is the
+    *recommendation* record and is deliberately not used here: an operation can be selected at
+    retrieval time yet never supplied (the block omitted from the prompt, or the stage carried
+    forward without a composed prompt). Missing or unreadable manifests return ``[]`` — never
+    an error, and never a silent substitution of the recommendation.
+    """
+    revision_dir = stage_directory(context.run_id, "writer-revision", context.root)
+    attempts_dir = revision_dir / "attempts"
+    if not attempts_dir.is_dir():
+        return []
+    for attempt_dir in sorted(attempts_dir.iterdir(), reverse=True):
+        if not attempt_dir.is_dir():
+            continue
+        try:
+            manifest = read_json(attempt_dir / "prompt-manifest.json")
+        except (OSError, ValueError):
+            continue
+        if not isinstance(manifest, Mapping):
+            continue
+        for block in manifest.get("blocks") or []:
+            if not isinstance(block, Mapping) or block.get("tag") != "writing_operations":
+                continue
+            ids = block.get("operation_ids")
+            # The block present without recorded ids means nothing was supplied; it is not a
+            # reason to fall back to the recommendation record.
+            return [str(item) for item in ids] if isinstance(ids, list) else []
+    return []
+
+
 def _reader_review_history(context: RunContext) -> dict[str, Any]:
     """Build the stage-scoped history projection for Reader Review.
 
     The projection is derived from artifacts that already exist — the developmental review's
-    findings, the WOPS catalogue, and the retrieval record — never persisted as a new artifact
-    family. It carries:
+    findings, the WOPS catalogue, and the composed Writer Revision prompt — never persisted as
+    a new artifact family. It carries:
 
     * ``findings`` — the previously diagnosed anti-pattern findings (with ``finding_id``);
-    * ``anti_patterns`` — the compact detection catalogue (detection signals + false positives);
-    * ``supplied_operation_ids`` — the operation ids actually supplied to Writer Revision;
+    * ``anti_patterns`` — the compact detection catalogue, size-bounded by the same shared
+      selection policy Developmental Review uses, so the payload stays bounded and the
+      ``included_ids``/``omitted_ids`` record makes omitted entries visible as not evaluated;
+    * ``supplied_operation_ids`` — the operation ids actually supplied to Writer Revision,
+      read from the composed revision prompt's manifest (the supply record), never from the
+      retrieval record's recommendations;
     * ``overuse_of`` — the ``overuse_of[]`` relationships for those supplied operations.
 
     Missing artifacts degrade to empty inputs (the prompt is unchanged) and are never an error.
     """
+    from evaluation.semantic.developmental import select_detection_payload
+
     findings: list[dict[str, Any]] = []
     review_artifact = context.artifacts.get("developmental-review")
     if review_artifact is not None and isinstance(review_artifact.json, Mapping):
@@ -955,37 +1001,24 @@ def _reader_review_history(context: RunContext) -> dict[str, Any]:
             ]
 
     catalogue = getattr(context, "anti_pattern_catalogue", None)
-    anti_patterns: list[dict[str, Any]] = []
+    records: list[dict[str, Any]] = []
     if catalogue is not None and getattr(catalogue, "available", False):
-        anti_patterns = [
+        records = [
             dict(record)
             for record in getattr(catalogue, "records", [])
             if isinstance(record, Mapping)
         ]
+    bounded, included_ids, omitted_ids = select_detection_payload(records)
 
-    # The operations actually supplied to Writer Revision are the retrieval record's
-    # ``selected`` ids. The record lives beside the developmental review's primary artifact.
-    supplied_operation_ids: list[str] = []
-    wops_block = context.artifact_block("developmental-review", "writing_operations", "wops.json")
-    if wops_block is not None:
-        try:
-            wops = json.loads(wops_block["payload"])
-        except (json.JSONDecodeError, TypeError):
-            wops = None
-        if isinstance(wops, Mapping):
-            selected = wops.get("selected")
-            if isinstance(selected, list):
-                supplied_operation_ids = [
-                    str(item["id"])
-                    for item in selected
-                    if isinstance(item, Mapping) and item.get("id") not in (None, "")
-                ]
+    # Supply comes from the composed Writer Revision prompt, not from the retrieval record:
+    # ``wops.json`` remains strictly the recommendation record.
+    supplied_operation_ids = _writer_revision_supplied_operations(context)
 
-    # The overuse relationships for the supplied operations, read from the catalogue records.
+    # The overuse relationships for the supplied operations, read from the bounded catalogue.
     overuse_of: dict[str, list[str]] = {}
     catalogue_by_id = {
         str(record.get("id")): record
-        for record in anti_patterns
+        for record in bounded
         if record.get("id") not in (None, "")
     }
     for operation_id in supplied_operation_ids:
@@ -999,7 +1032,8 @@ def _reader_review_history(context: RunContext) -> dict[str, Any]:
 
     return {
         "findings": findings,
-        "anti_patterns": anti_patterns,
+        "anti_patterns": bounded,
+        "detection_payload": {"included_ids": included_ids, "omitted_ids": omitted_ids},
         "supplied_operation_ids": supplied_operation_ids,
         "overuse_of": overuse_of,
     }
@@ -1109,6 +1143,9 @@ def _run_evaluation_stage(
             result["retry_instructions"] = [f"In {location}: {instruction}"]
         else:
             result["retry_instructions"] = []
+        # The one actionable problem Targeted Repair would address; the targeted-repair
+        # stage's history slice is filtered against it.
+        context.actionable_issue = dict(issue) if isinstance(issue, Mapping) else None
         artifact_text = json.dumps(result, ensure_ascii=False, indent=2)
         # The audit vocabulary's ``application`` observation: recorded only with evidence, never
         # inferred from a resolved anti-pattern. The reader review reports finding outcomes, not
@@ -1124,6 +1161,7 @@ def _run_evaluation_stage(
             "problem_types": result.get("problem_types", []),
             "targeted_repair_requested": bool(result["retry_instructions"]),
             "anti_pattern_outcomes": result.get("anti_pattern_outcomes", []),
+            "detection_payload": history["detection_payload"],
             "supplied_operation_ids": history["supplied_operation_ids"],
             "application": application,
         }

@@ -1144,8 +1144,11 @@ def _run_evaluation_stage(
         else:
             result["retry_instructions"] = []
         # The one actionable problem Targeted Repair would address; the targeted-repair
-        # stage's history slice is filtered against it.
+        # stage's history slice is filtered against it. Persisted in the flattened payload so
+        # a run that resumes directly at targeted-repair can recover it from the saved review.
         context.actionable_issue = dict(issue) if isinstance(issue, Mapping) else None
+        if context.actionable_issue is not None:
+            result["actionable_issue"] = context.actionable_issue
         artifact_text = json.dumps(result, ensure_ascii=False, indent=2)
         # The audit vocabulary's ``application`` observation: recorded only with evidence, never
         # inferred from a resolved anti-pattern. The reader review reports finding outcomes, not

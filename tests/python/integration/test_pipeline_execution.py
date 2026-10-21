@@ -242,6 +242,21 @@ class MockWopsWithWideCatalogue(MockWopsWithAntiPatterns):
         ]
 
 
+class MockWopsWithPartialFetch(MockWopsWithTwoRepairs):
+    """An available mock adapter where one selected operation's full record never arrives.
+
+    Both findings select their repair operations, but ``get_writing_operations`` returns only
+    ``op-a``: ``op-b`` stays in ``selected[]`` with no delivered definition — the shape
+    retrieval produces when an operation's full-record fetch fails. Supply must be counted
+    from ``operations[]``, so ``op-b``'s instructions are never reported as supplied.
+    """
+
+    def get_writing_operations(self, ids=()):
+        result = super().get_writing_operations(ids)
+        result["operations"] = [operation for operation in result["operations"] if operation["id"] != "op-b"]
+        return result
+
+
 class MockEvaluation:
     python = "mock"
     python_source = "mock"
@@ -954,6 +969,152 @@ def test_supplied_operations_come_from_the_composed_prompt_not_the_recommendatio
     history = _reader_review_history(context)
 
     assert history["supplied_operation_ids"] == ["op-a"]
+
+
+def test_an_operation_whose_definition_was_never_fetched_is_not_counted_as_supplied(workspace):
+    """Supply is counted from the delivered ``operations[]`` definitions, never from
+    ``selected[]``: a selected-but-unfetched operation's instructions cannot have been sent."""
+    findings = [
+        {
+            "finding_id": "ap-mock-defect-a-1",
+            "anti_pattern_id": "mock-defect-a",
+            "section_id": "S1",
+            "severity": "major",
+            "evidence": "the defect is present in S1",
+            "false_positive_considered": False,
+        },
+        {
+            "finding_id": "ap-mock-defect-b-1",
+            "anti_pattern_id": "mock-defect-b",
+            "section_id": "S2",
+            "severity": "major",
+            "evidence": "the defect is present in S2",
+            "false_positive_considered": False,
+        },
+    ]
+    provider = MockProvider(_responses())
+    evaluation = MockEvaluation(findings=findings)
+    result = _run(
+        workspace,
+        run_id="mock-partial-fetch",
+        provider=provider,
+        wops=MockWopsWithPartialFetch(),
+        evaluation=evaluation,
+    )
+
+    assert result["degraded"] == []
+    revision_manifest = read_json(
+        workspace / ".digest-runs" / "mock-partial-fetch" / "writer-revision" / "attempts" / "attempt-1" / "prompt-manifest.json"
+    )
+    block = next(item for item in revision_manifest["blocks"] if item["tag"] == "writing_operations")
+    # Only the fetched definition was supplied; the unfetched one stays a recommendation.
+    assert block["operation_ids"] == ["op-a"]
+    assert block["recommended_operation_ids"] == ["op-a", "op-b"]
+
+    # The unfetched operation was still selected at retrieval time — the recommendation
+    # record keeps it visible.
+    wops = read_json(workspace / ".digest-runs" / "mock-partial-fetch" / "developmental-review" / "output" / "wops.json")
+    assert [item["id"] for item in wops["selected"]] == ["op-a", "op-b"]
+
+    # Reader Review keys the application record off the supply record, not the recommendations.
+    reader_request = evaluation.last_reader_request
+    assert reader_request["supplied_operation_ids"] == ["op-a"]
+
+
+def test_a_resumed_run_scopes_the_targeted_repair_history_from_the_saved_review(workspace):
+    """Resuming directly at Targeted Repair recovers the actionable problem from the persisted
+    reader review and delivers only the relevant slice — never the whole retrieval record."""
+    findings = [
+        {
+            "finding_id": "ap-mock-defect-a-1",
+            "anti_pattern_id": "mock-defect-a",
+            "section_id": "S1",
+            "severity": "major",
+            "evidence": "the defect is present in S1",
+            "false_positive_considered": False,
+        },
+        {
+            "finding_id": "ap-mock-defect-b-1",
+            "anti_pattern_id": "mock-defect-b",
+            "section_id": "S2",
+            "severity": "major",
+            "evidence": "an unrelated defect in S2",
+            "false_positive_considered": False,
+        },
+    ]
+    outcomes = [
+        {
+            "finding_id": "ap-mock-defect-a-1",
+            "anti_pattern_id": "mock-defect-a",
+            "status": "still_present",
+            "section_id": "S1",
+            "evidence": "still there",
+            "new": False,
+            "overuse_of_operation": None,
+        },
+        {
+            "finding_id": "ap-mock-defect-b-1",
+            "anti_pattern_id": "mock-defect-b",
+            "status": "still_present",
+            "section_id": "S2",
+            "evidence": "also still there",
+            "new": False,
+            "overuse_of_operation": None,
+        },
+    ]
+    provider = MockProvider(_responses())
+    evaluation = MockEvaluation(findings=findings, outcomes=outcomes, major_issue=True)
+    first = _run(
+        workspace,
+        run_id="mock-resume-slice",
+        provider=provider,
+        wops=MockWopsWithTwoRepairs(),
+        evaluation=evaluation,
+        stop_after="reader-review",
+    )
+    assert first["degraded"] == []
+    assert "targeted-repair" not in provider.calls
+
+    # The reader review persisted the actionable problem it selected.
+    review = read_json(workspace / ".digest-runs" / "mock-resume-slice" / "reader-review" / "output" / "review.json")
+    assert review["actionable_issue"]["section_id"] == "S1"
+
+    resumed_provider = MockProvider(_responses())
+    result = _run(
+        workspace,
+        run_id="mock-resume-slice",
+        provider=resumed_provider,
+        wops=MockWopsWithTwoRepairs(),
+        evaluation=MockEvaluation(),
+        start_stage="targeted-repair",
+        mode="resume",
+    )
+    assert result["degraded"] == []
+
+    # Targeted Repair ran; every earlier stage was rehydrated without a model call.
+    assert resumed_provider.calls[0] == "targeted-repair"
+    assert not any(
+        stage in resumed_provider.calls
+        for stage in ("analyze", "frame", "draft", "developmental-review", "writer-revision", "reader-review")
+    )
+
+    repair_prompt = (
+        workspace / ".digest-runs" / "mock-resume-slice" / "targeted-repair" / "attempts" / "attempt-1" / "prompt.txt"
+    ).read_text(encoding="utf-8")
+    match = re.search(r"<writing_operations>\n(.*?)\n</writing_operations>", repair_prompt, re.DOTALL)
+    assert match, "the writing-operations block is missing from the resumed repair prompt"
+    payload = json.loads(match.group(1))
+    # The recovered actionable problem scopes the slice: only S1's unresolved finding and its
+    # operation reach the prompt.
+    assert [finding["finding_id"] for finding in payload["anti_pattern_findings"]] == ["ap-mock-defect-a-1"]
+    assert [item["id"] for item in payload["selected"]] == ["op-a"]
+    assert [operation["id"] for operation in payload["operations"]] == ["op-a"]
+    assert [candidate["id"] for candidate in payload["candidates"]] == ["op-a"]
+    assert "Repair B instruction" not in repair_prompt
+    assert payload["history_filter"]["origin"] == "recovered"
+    assert payload["history_filter"]["omitted_finding_ids"] == ["ap-mock-defect-b-1"]
+    assert payload["history_filter"]["omitted_operation_ids"] == ["op-b"]
+    assert payload["history_filter"]["omitted_candidate_ids"] == ["op-b"]
 
 
 def test_an_empty_prevention_selection_is_recorded_in_the_stage_record(workspace):

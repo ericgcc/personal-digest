@@ -2,7 +2,7 @@
   "run_id": "phase3-verification-audit-3-1-7",
   "created": "2026-10-13",
   "status": "building",
-  "iteration": 3,
+  "iteration": 4,
   "inspector_verdict": "PASS",
   "inspector_model": "Z.ai: GLM 5.3 Flash (GitHub Copilot in-chat)",
   "history": [
@@ -23,6 +23,12 @@
       "role": "builder",
       "verdict": "correction-round-complete",
       "summary": "Builder correction cycle addressing the five findings from the external review of d60a719 (the review arrived after both Inspector iterations). F1: reader-review detection payload routed through the shared select_detection_payload bound (MAX_DETECTION_PAYLOAD=8) with included_ids/omitted_ids persisted in the reader-review stage record. F2: new RunContext.targeted_repair_wops_block delivers Targeted Repair only the unresolved findings relevant to the one actionable problem plus their operations/queries, with the filter recorded (source.filtered_for + payload.history_filter); should_run_optional_stage untouched. F3: supply now read from the composed Writer Revision prompt manifest (operation_ids), never from wops.json recommendations. F4: prevention_block considers every eligible entry until the cap fills or the catalogue is exhausted (budget omission no longer wastes cap capacity). F5: the prevention-selection decision is stored on the context and persisted on the draft stage record even when the block is omitted. Six new integration tests + two new unit tests; one rotation test rewritten for the new cap/budget semantics. Evidence (validation-2.md): full suite exit 0 no failures, gate unclassified:0 ok:true, measure_context unchanged (136515/38469). Awaiting Inspector verification."
+    },
+    {
+      "iteration": 4,
+      "role": "builder",
+      "verdict": "follow-up-correction-complete",
+      "summary": "Builder follow-up cycle addressing the two residual cases from the external review of 5037b97. FU1: compose._operation_ids now counts supply from the delivered operations[] definitions (recommendations preserved beside them as recommended_operation_ids), closing the selected-but-unfetched edge case; test proves Reader Review does not count an unfetched operation's instructions as supplied. FU2: targeted_repair_wops_block also filters the candidates pool (kept/omitted candidate ids recorded); the reader-review branch persists the actionable problem in the flattened review payload and RunContext.actionable_problem() recovers it on direct resume at targeted-repair (from the persisted record, or from the retry_instructions location for older reviews), with the origin recorded rather than silent; provenance cache fix for the double blocks-lambda evaluation. Two new integration tests. Evidence (validation-3.md): full suite exit 0 no failures, gate unclassified:0 ok:true, measure_context unchanged (136515/38469). Awaiting Inspector verification."
     }
   ],
   "repository_root": "C:\\Users\\ericg\\OneDrive\\Documents\\GitHub\\digy",

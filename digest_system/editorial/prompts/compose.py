@@ -119,30 +119,45 @@ def _join_blocks(values: Sequence[Any]) -> str:
     return "\n\n".join(str(value) for value in values if value)
 
 
-def _operation_ids(payload: Any) -> list[str] | None:
-    """The operation ids actually included in a writing-operations block, or ``None``.
+def _operation_ids(payload: Any) -> tuple[list[str] | None, list[str] | None]:
+    """The operations a writing-operations block actually supplied, plus its recommendations.
 
-    The block's payload is the retrieval record (``wops.json``) as a JSON string; the ids are
-    the ``selected`` entries' ``id`` values. ``None`` when the payload is not a readable
-    retrieval record, so the manifest simply omits the field rather than asserting a false
-    supply.
+    Supply means the composed prompt carried the operation's full instructions: the supplied
+    ids are the ``operations[]`` entries' ``id`` values — the definitions that were actually
+    fetched and delivered. An operation present only in ``selected[]`` was recommended but
+    never supplied: the retrieval can select an operation whose full-record fetch then fails,
+    leaving it absent from ``operations[]``, and counting it as supplied would report
+    instructions to Writer Revision that were never sent. The recommendation list is returned
+    separately so the manifest can preserve it for the recommendation audit.
+
+    Returns ``(None, None)`` when the payload is not a readable retrieval record, so the
+    manifest simply omits the fields rather than asserting a false supply.
     """
     if not isinstance(payload, str):
-        return None
+        return None, None
     try:
         record = json.loads(payload)
     except (ValueError, TypeError):
-        return None
+        return None, None
     if not isinstance(record, Mapping):
-        return None
+        return None, None
+    operations = record.get("operations")
     selected = record.get("selected")
-    if not isinstance(selected, list):
-        return None
-    ids: list[str] = []
-    for entry in selected:
-        if isinstance(entry, Mapping) and entry.get("id") not in (None, ""):
-            ids.append(str(entry["id"]))
-    return ids
+    supplied: list[str] | None = None
+    if isinstance(operations, list):
+        supplied = [
+            str(entry["id"])
+            for entry in operations
+            if isinstance(entry, Mapping) and entry.get("id") not in (None, "")
+        ]
+    recommended: list[str] | None = None
+    if isinstance(selected, list):
+        recommended = [
+            str(entry["id"])
+            for entry in selected
+            if isinstance(entry, Mapping) and entry.get("id") not in (None, "")
+        ]
+    return supplied, recommended
 
 
 class DocumentResolver:
@@ -336,12 +351,16 @@ def compose_stage_prompt(
             "purpose": "prior artifact or digest reading instructions",
         }
         # The writing-operations block carries the retrieval record (wops.json) verbatim; its
-        # manifest record names the exact operation ids actually included, so supply is
-        # verifiable from the prompt manifest alone without duplicating the full operations.
+        # manifest record names the exact operation ids actually included — read from the
+        # delivered ``operations[]`` definitions, not from the ``selected[]`` recommendations —
+        # so supply is verifiable from the prompt manifest alone without duplicating the full
+        # operations. The recommendations are preserved beside them for the audit.
         if entry["tag"] == "writing_operations":
-            operation_ids = _operation_ids(entry["payload"])
+            operation_ids, recommended_operation_ids = _operation_ids(entry["payload"])
             if operation_ids is not None:
                 block_record["operation_ids"] = operation_ids
+            if recommended_operation_ids is not None:
+                block_record["recommended_operation_ids"] = recommended_operation_ids
         block_records.append(block_record)
     for tag, payload in (extra_blocks or {}).items():
         if payload is None:

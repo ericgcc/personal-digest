@@ -86,6 +86,11 @@ class RunContext:
     #: executor's reader-review branch. The targeted-repair stage's history slice is filtered
     #: against it; ``None`` when the reader review found no actionable problem.
     actionable_issue: dict[str, Any] | None = None
+    #: Where ``actionable_issue`` came from: ``recorded`` (set during this execution's reader
+    #: review), ``recovered`` (re-read from the persisted review artifact by a resumed run), or
+    #: ``None`` while unset. Kept beside the issue so a repeat block evaluation reports the
+    #: original provenance rather than mistaking its own cache for a live recording.
+    actionable_issue_origin: str | None = None
 
     def stage_excluded_sections(self, stage_name: str) -> list[str]:
         """Convention composition has no withheld style fragments."""
@@ -358,6 +363,40 @@ class RunContext:
             },
         }
 
+    def actionable_problem(self) -> tuple[dict[str, Any] | None, str]:
+        """The one actionable reader-review problem, recovered from disk when needed.
+
+        Returns ``(issue, origin)``. ``origin`` is ``recorded`` when the reader review ran in
+        this execution (the executor set it), ``recovered`` when a resumed run re-reads it from
+        the persisted review artifact — either the flattened ``actionable_issue`` record or,
+        for reviews written before that field existed, the location in the first
+        ``retry_instructions`` entry — and ``absent`` when no repairable problem exists (the
+        normal state for an offline composition or a review that requested no repair).
+        """
+        if isinstance(self.actionable_issue, Mapping):
+            return dict(self.actionable_issue), self.actionable_issue_origin or "recorded"
+        reader = self.artifacts.get("reader-review")
+        review = reader.json if reader is not None and isinstance(reader.json, Mapping) else None
+        if not isinstance(review, Mapping):
+            return None, "absent"
+        recorded = review.get("actionable_issue")
+        if isinstance(recorded, Mapping):
+            self.actionable_issue = dict(recorded)
+            self.actionable_issue_origin = "recovered"
+            return dict(recorded), "recovered"
+        instructions = review.get("retry_instructions")
+        if isinstance(instructions, list) and instructions:
+            text = str(instructions[0]).strip()
+            location = text[3:].split(":", 1)[0].strip() if text.startswith("In ") else ""
+            issue: dict[str, Any] = {
+                "section_id": None if not location or location == "the digest" else location,
+                "instruction": text,
+            }
+            self.actionable_issue = issue
+            self.actionable_issue_origin = "recovered"
+            return issue, "recovered"
+        return None, "absent"
+
     def targeted_repair_wops_block(self) -> dict[str, Any] | None:
         """The stage-scoped writing-operations slice for Targeted Repair, or ``None``.
 
@@ -366,14 +405,17 @@ class RunContext:
 
         * the unresolved anti-pattern findings relevant to that problem — same section as the
           actionable issue, or, for a document-level problem, every unresolved finding;
-        * the operations selected for those findings (or for the actionable section);
+        * the operations selected for those findings (or for the actionable section), their
+          full delivered definitions, and the candidate pool entries behind them;
         * the retrieval queries for the actionable section.
 
         A finding with no recorded outcome is treated as unresolved (not evaluated is not
-        resolved). The filter itself is recorded in the block's ``source`` so the slice is
-        auditable, and it is derived from artifacts that already exist — never persisted as a
-        new artifact family. ``None`` when the retrieval record or the actionable problem is
-        unavailable.
+        resolved). When the run resumes directly at this stage, the actionable problem is
+        recovered from the persisted review artifact; the recovery origin is recorded. The
+        filter itself is recorded in the block's ``source`` so the slice is auditable, and it
+        is derived from artifacts that already exist — never persisted as a new artifact
+        family. With no actionable problem the full record is returned, with the origin
+        recorded rather than assumed.
         """
         raw = self.artifact_block("developmental-review", "writing_operations", "wops.json")
         if raw is None:
@@ -384,14 +426,16 @@ class RunContext:
             return None
         if not isinstance(wops, Mapping):
             return None
-        actionable = self.actionable_issue
+        actionable, origin = self.actionable_problem()
         if not isinstance(actionable, Mapping):
             # No actionable problem: there is no slice to compute. The full record is returned
             # so a composition without one (offline inspection, or a caller that never recorded
             # an actionable problem) does not silently lose the operations; a real Targeted
             # Repair run always has one, so the filtered slice below is what a repair prompt
-            # actually carries.
-            return raw
+            # actually carries. The origin is recorded so the state is visible, not silent.
+            source = dict(raw.get("source") or {})
+            source["history_scope"] = {"stage": "targeted-repair", "origin": origin, "slice": "full"}
+            return {**raw, "source": source}
         section_id = actionable.get("section_id") or None
 
         outcomes: dict[str, str] = {}
@@ -440,6 +484,18 @@ class RunContext:
             if isinstance(query, Mapping)
             and (section_id is None or query.get("section_id") == section_id)
         ]
+        # The candidate pool is filtered by the same rule, so an unrelated retrieval candidate
+        # — including one whose linkage has no kept finding and whose section differs — never
+        # reaches the repair prompt.
+        candidates = [
+            candidate
+            for candidate in (wops.get("candidates") or [])
+            if isinstance(candidate, Mapping)
+            and (
+                {str(item) for item in ((candidate.get("matched_finding_ids") or []) if isinstance(candidate.get("matched_finding_ids"), list) else [])} & kept_finding_ids
+                or (section_id is not None and section_id in (candidate.get("matched_section_ids") or []))
+            )
+        ]
 
         all_findings = wops.get("anti_pattern_findings") or []
         all_operation_ids = {
@@ -447,13 +503,20 @@ class RunContext:
             for entry in (wops.get("selected") or [])
             if isinstance(entry, Mapping) and entry.get("id") not in (None, "")
         }
+        all_candidate_ids = {
+            str(candidate["id"])
+            for candidate in (wops.get("candidates") or [])
+            if isinstance(candidate, Mapping) and candidate.get("id") not in (None, "")
+        }
         filtered = dict(wops)
         filtered["anti_pattern_findings"] = findings
         filtered["selected"] = list(kept_selected)
         filtered["operations"] = operations
         filtered["queries"] = queries
+        filtered["candidates"] = candidates
         filtered["history_filter"] = {
             "stage": "targeted-repair",
+            "origin": origin,
             "actionable_section_id": section_id,
             "kept_finding_ids": sorted(kept_finding_ids),
             "omitted_finding_ids": sorted(
@@ -465,10 +528,20 @@ class RunContext:
             ),
             "kept_operation_ids": sorted(kept_operation_ids),
             "omitted_operation_ids": sorted(all_operation_ids - kept_operation_ids),
+            "kept_candidate_ids": sorted(
+                str(candidate["id"])
+                for candidate in candidates
+                if candidate.get("id") not in (None, "")
+            ),
+            "omitted_candidate_ids": sorted(
+                all_candidate_ids
+                - {str(candidate["id"]) for candidate in candidates if candidate.get("id") not in (None, "")}
+            ),
         }
         source = dict(raw.get("source") or {})
         source["filtered_for"] = {
             "stage": "targeted-repair",
+            "origin": origin,
             "actionable_section_id": section_id,
             "kept_finding_ids": sorted(kept_finding_ids),
         }

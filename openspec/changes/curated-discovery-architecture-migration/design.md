@@ -50,6 +50,18 @@ The style's complete original instructions were recovered from git history (`sty
 
 Two historical hypotheses remain open and must stay open until artifacts or tests resolve them (`docs/history/style-isolation-baseline.md` §7): whether the Medium depth imbalance originated in Frame's allocation or Draft's under-delivery (R2), and whether the model emits well-formed callouts when a semantic representation exists (R4 — since answered affirmatively by the Synthesis MAX callout-survival fixture, but not yet for this style).
 
+### Integration seams requiring adaptation (review findings, verified against the current code)
+
+The review of this design confirmed four seams where the "reuse unchanged" assumption does not hold. Each is a small, style-neutral adaptation; none changes Synthesis MAX behavior.
+
+**I1 — Offline inspection does not resolve the requested digest's configuration.** `build_context` (`digest_system/editorial/prompts/offline.py`) hardcodes `digest_id="tech-bi-daily"` and resolves the digest configuration from `DIGEST_CONFIG_BY_STYLE[style]` — `digests/medium-bi-daily.md` for curated-discovery. `inspect_stage` (`digest_system/editorial/prompts/inspection.py`) reassigns `offline.digest_id` but not `digest_config_relative`, and `OfflineContext.instructions()` caches the parsed reading instructions at first access. Inspecting `photography-weekly` therefore composes prompts from Medium's reading instructions while the report names Photography. Additionally, `command_inspect` (`digest_system/cli.py`) writes evidence to `root / profile.profile_id / stage` — per profile, not per digest — so recorded inspections for two digests of the same profile overwrite each other. Adaptation: resolve the requested digest's own configuration (registry → `digests/<digest-id>.md`) when building the offline context, and write per-digest evidence directories; the `--check` path reads the same layout, and the existing Synthesis MAX recordings are re-recorded under their digest.
+
+**I2 — The selection audit does not recognize this style's outcomes.** `_decisions` (`evaluation/selection.py`) maps every retained unit to `FEATURED` (`DEMOTED` only for `demote`/`cut` dispositions) regardless of `editorial_role`, and when `catalog_only` is a mapping it walks only `catalog_only["selected"]` — the `worth_reading` and `reviewed` partitions are never read. A source the frame correctly recorded as `Reviewed` appears unaccounted, and a Discovery or a normal selection is indistinguishable from a featured one. Adaptation: recognize `editorial_role` (featured → `featured`; selection/discovery → a distinct `selected` decision) and walk all three `catalog_only` partitions; frames without `editorial_role` (Synthesis MAX) keep the current mapping, so existing audit behavior and tests are preserved.
+
+**I3 — The offline fixtures are Synthesis MAX-shaped.** `synthetic_frame()` carries multi-source threads, `explanation_shape`, and a `THE BIG PICTURE` budget — correct for composing Synthesis MAX prompts, not representative of this style, and insufficient to prove that curated decisions and evidence flow Analyze → Frame → Draft → Render. Adaptation: add Curated Discovery fixtures (independent selections, one compact Discovery, no featured treatment, one justified combined-source case) and a stage-survival test over them.
+
+**I4 — The historical frame's schema differs from the current validator's.** The September 22 frame records allocations in `featured_selection_words` / `substantive_selection_words` / `discovery_words` mappings, not in retained units with `depth_target_words` plus a `unit_depth_targets` budget block. Running the current validator directly over it would fail for schema reasons, not demonstrate that the new design catches the specific defects. Adaptation: keep the historical artifact untouched and test against a new-schema fixture reproducing its problematic allocations, asserting the specific expected causes.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -62,7 +74,7 @@ Two historical hypotheses remain open and must stay open until artifacts or test
 **Non-Goals:**
 
 - No new editorial stages, no extra LLM calls, no second pipeline, no style-specific execution path.
-- No changes to shared stage contracts (`editorial/stages/*.md`), shared editorial obligations (`editorial/shared/*.md`), the convention resolver, the WOPS integration, the evaluation adapter, provenance, or the callout registry.
+- No changes to shared stage contracts (`editorial/stages/*.md`), shared editorial obligations (`editorial/shared/*.md`), the convention resolver, the WOPS integration, the evaluation adapter, provenance, or the callout registry — except the two style-neutral adaptations this design names (I1: offline inspection digest resolution; I2: selection audit outcome recognition), each with Synthesis MAX behavior preserved.
 - No changes to Synthesis MAX files, constraints, prompts, or tests.
 - No redesign of the style's interface, structure, depth model, or optional components.
 - No restoration of retired stages (Line Edit, Copy Edit) or of the old heading-extraction composition.
@@ -203,7 +215,7 @@ The validator seam facts that determine these values (`digest_system/config/styl
 | Constraint | Value | Rationale |
 | --- | --- | --- |
 | `profile.status` | `unavailable` → `active` (activation is Phase D, after acceptance) | `RUNNABLE_PROFILE_STATUS` gate |
-| `profile.frame_failure_policy` | `fail` | A failed frame is a real editorial failure: the recovery-frame path would derive a frame without exactly the value-ordering and depth decisions this style exists to make. Synthesis MAX made the same choice. Alternative considered: keep `recovery-frame` — rejected because a derived frame cannot perform yield-based allocation. |
+| `profile.frame_failure_policy` | `recovery-frame` → `fail` (**deliberate failure-policy modification**, confirmed with the user) | The current stub declares `recovery-frame`; this change replaces it. A failed frame is a real editorial failure: the recovery path (`derive_recovery_frame` in `digest_system/editorial/evidence/projection.py`) derives a frame from the analysis's groupings without the value-ordering, yield-based depth, and source-thesis decisions this style exists to make — an edition built on such a frame would not be recognizably Curated Discovery. The agreed behavior: stop the run rather than publish an edition whose frame carries no editorial judgment. Synthesis MAX made the same choice for the same reason. Alternative considered: keep `recovery-frame` — rejected because a derived frame cannot perform yield-based allocation. |
 | `constraints.interface_stages` | `analyze, frame, draft, developmental-review, reader-review` | Adds `analyze` (the style's selection model must reach the only stage that reads the corpus — baseline defect D1: "Analyze never receives the style" was the most consequential finding in `docs/history/style-isolation-baseline.md`). Drops `publication-verify` (deterministic and style-agnostic in the current architecture; the legacy routing reflected the old copy-verify that received style modules). |
 | `composition.relationship` | `independent-by-default` | Interface declaration. |
 | `composition.min_sources_per_unit` | `1` | A mini-essay is normally single-source. |
@@ -226,6 +238,25 @@ The validator seam facts that determine these values (`digest_system/config/styl
 | `evaluation` | `metric: reader_quality_v5`, `rubric: v4`, `steps_version: v4.1-anti-pattern-verification`, `developmental: developmental_review_v1`, `style_criteria: []` | The shared evaluator and the existing `STYLE_RUBRICS["curated-discovery"]` serve unchanged; the shared taxonomy already carries the types the style's review uses. |
 | `rendering` | `rules: styles/curated-discovery/rendering.md`, `template: templates/curated-discovery-email-v1.html` | Existing paths; the profile file is modernized in place. |
 
+### New calibrations versus preserved identity
+
+The numeric values above are **new calibrations introduced by this change**, not part of the style's original identity. The review required this distinction be explicit, together with which constraints are binding and which are targets.
+
+**Preserved identity (stated by the original style or its interface; restructured, not redefined):** the independence default and the combine-only-on-material-improvement test; the elastic, value-driven depth philosophy and the no-equalization rule; the marginal-value stopping rule; the importance ordering; `TODAY'S EDIT`; Discoveries as compact complete units; `FEATURED` as conditional editorial judgment; the `Worth opening for:` cue; permanent numerical citations; selection-level source notes; the catalog statuses and grouping; the ending rules.
+
+**New calibrations (this change; each adjustable in `style.yaml` without code, each recorded with its trade-off):**
+
+| Calibration | Value | Binding or target | Trade-off recorded |
+| --- | --- | --- | --- |
+| `max_sources_per_unit` | 3 | **Binding** (frame gate `sources_per_unit.max`) | Could gate an exceptional valid combination beyond one primary + two complementary sources. Kept because an unbounded combined unit is the D4 failure shape and a declared ceiling is what makes it checkable; if replay evidence shows a legitimate larger combination being blocked, the calibration is adjusted — the flexibility lives in the calibration seam, not in removing the bound. |
+| `min_words_per_source` | 50 | **Binding** (via `unit:evidence_fits_budget`) | Sub-coherent allocations (the historical 35-word discoveries) are gated; a genuinely tiny but complete discovery would need the floor lowered. |
+| `opening_min_words` / `opening_max_words` | 30 / 120 | **Binding** (frame gate `opening_words`) | Calibrated, not historically measured; replay validates the band. |
+| `body.max_words` | 1,350 | **Binding at planning; target at publication** | See below. |
+| `body.min_words` | 700 | **Advisory** (light day) | Deliberately not a gate. |
+| `budget_headroom_ratio` | 0.15 | **Binding** (frame gate `budget:no-headroom`) | Makes the planned ceiling ≈1,148; a rich day that genuinely warrants the exceptional range must record why and still fit under the planned ceiling. |
+
+**Binding versus targets — the published-length clarification.** The frame arithmetic gate is the binding control: a plan above the ceiling minus the reserve cannot reach Draft. The **published** 700–1,350 band is a *target*, not a publication block: Publication Verify's `length:budget` check (`digest_system/editorial/validation/copy_verify.py`) reports `pass` within 0.75×–1.25× of the band and `warn` outside it — it never fails the publication on length. This matches the existing architecture (the writing stages add explanation as they work; a warning records the deviation for audit). The spec states this distinction so no reader mistakes the published ceiling for a hard block.
+
 ## Reused mechanisms (no rebuild)
 
 | Mechanism | Location | Why it serves this style unchanged |
@@ -239,14 +270,19 @@ The validator seam facts that determine these values (`digest_system/config/styl
 | Callout registry and lifecycle | `digest_system/config/callouts.py`, `digest_system/editorial/callouts.py` | Digest-defined vocabulary; frame proposes, Draft writes, checks validate |
 | WOPS anti-pattern integration | `digest_system/editorial/anti_patterns.py` + the Phase 2/3 plumbing | Style-generic: prevention at Draft, detection at Developmental Review, repair selection, verification at Reader Review |
 | Evaluation | `evaluation/` + `digest_system/integrations/evaluation.py` | `STYLE_RUBRICS["curated-discovery"]` exists; the shared taxonomy carries the style's issue types; one judge call per artifact |
-| Selection audit | `evaluation/selection.py` | Reads per-source assessments and the digest's `## Selection` — works for this style's record |
+| Selection audit | `evaluation/selection.py` | Reads per-source assessments and the digest's `## Selection`; needs the I2 adaptation to recognize `editorial_role` and the `worth_reading`/`reviewed` partitions |
 | Rendering primitives | `rendering/shared.md`, template, source-note manifest, callout registry | The template exists; the profile is modernized in place |
 | Replay tooling | `digest_system.cli replay`, `scripts/replay_compare.py` | Digest resolved from the historical corpus; no delivery, no state mutation |
-| Offline inspection | `digest_system/editorial/prompts/offline.py` | Already maps `curated-discovery-v1` → `medium-bi-daily` |
+| Offline inspection | `digest_system/editorial/prompts/offline.py` | Already maps `curated-discovery-v1` → `medium-bi-daily`; needs the I1 adaptation to resolve the requested digest's own configuration and per-digest evidence |
 
 ## Runtime extensions
 
-**None required.** The elastic depth model resolves entirely through declarative configuration: `max_words: 1350` is the published ceiling the gate enforces, the 15% headroom reserve makes the planned ceiling ≈1,148, the advisory floor permits light days, and the frame procedure carries the normal-band discipline and the justification requirement. Discoveries are retained units — the existing unit schema, evidence projection, and budget arithmetic represent them without change. `editorial_role` is a style-specific frame field the shared contract explicitly permits ("added alongside these, never instead of them").
+The editorial model itself requires **no** shared-runtime change: the elastic depth model resolves entirely through declarative configuration (`max_words: 1350` is the published ceiling the gate enforces, the 15% headroom reserve makes the planned ceiling ≈1,148, the advisory floor permits light days, and the frame procedure carries the normal-band discipline and the justification requirement); Discoveries are retained units — the existing unit schema, evidence projection, and budget arithmetic represent them without change; `editorial_role` is a style-specific frame field the shared contract explicitly permits ("added alongside these, never instead of them").
+
+Two **style-neutral shared-code adaptations** are required, per the verified seams I1–I2 above. Both are smallest-change, additive, and gated on Synthesis MAX behavior being preserved:
+
+1. **Offline inspection digest resolution (I1).** `build_context` gains a `digest_id` parameter and resolves `digest_config_relative` from the digest registry (`digests/<digest-id>.md`) instead of `DIGEST_CONFIG_BY_STYLE[style]` (which remains the fallback for a style with no configured digest); `inspect_stage` passes the requested digest through instead of mutating `digest_id` after construction; `command_inspect` writes evidence under `root / profile.profile_id / digest_id / stage` and `_check_inspections` reads the same layout. The existing Synthesis MAX recordings are re-recorded under the new per-digest layout.
+2. **Selection audit outcome recognition (I2).** `_decisions` in `evaluation/selection.py` reads `editorial_role` when present (featured → `featured`; selection/discovery → a distinct `selected` decision added to the audit's accounted set) and walks all three `catalog_only` partitions (`selected`, `worth_reading`, `reviewed`) as omitted-with-reason. Frames without `editorial_role` keep the current mapping, so Synthesis MAX audit output and the existing `evaluation/tests/test_selection.py` guarantees are unchanged.
 
 One optional future extension is recorded but not proposed: an advisory finding when a plan uses the exceptional range without a recorded justification. Rejected for now because the justification requirement is procedure-owned, the replay comparison provides the audit, and the change's value does not justify touching shared validation code.
 
@@ -285,12 +321,14 @@ Condensed rollup of the per-stage mappings above.
 - [The historical fixture ran a ten-stage pipeline with Line Edit] → Stage-by-stage comparison is therefore not like-for-like; the replay comparison uses the established method from `docs/changes/Prompt Restructure/synthesis-max-phase2-steps-1-4-report.md`: re-score historical and new finals with one evaluator configuration and compare equivalent artifacts, never recorded scores across metric versions.
 - [New instruction files change prompt-inspection baselines] → Every addition is classified in `tests/fixtures/prompt_migration/behavioral-gate.json`; the frozen Synthesis MAX baseline is untouched.
 - [Activation before the reading experience is validated] → Activation is Phase D, gated on offline acceptance; the paid replay and manual editorial reading remain the quality gate, per the original roadmap's rule that finished digests, not test suites, demonstrate quality.
+- [The I1/I2 shared-code adaptations regress Synthesis MAX] → Both are additive: I1 keeps `DIGEST_CONFIG_BY_STYLE` as the fallback and re-records the existing Synthesis MAX inspections under the new per-digest layout with the `--check` path updated in the same change; I2 keeps the current decision mapping for frames without `editorial_role`, and the existing `evaluation/tests/test_selection.py` guarantees must keep passing unchanged. A test asserting a test that an instruction exists is not equivalent to a test that the system can satisfy it — the fixture-based stage-survival test (I3) and the new-schema budget fixture (I4) provide the demonstrated-capability half for Discoveries and selection.
+- [The 3-source ceiling blocks an exceptional valid combination] → Recorded as a calibration trade-off; the ceiling is what makes the D4 failure shape checkable, and replay evidence of a legitimate larger combination adjusts the calibration in `style.yaml` without code.
 
 ## Migration Plan
 
 1. **Phase A — behavioral reconstruction (no pipeline changes).** Recover and compare the original instructions with the interface; build the ownership matrix and per-stage rationale (this document); identify gaps; record acceptance criteria.
 2. **Phase B — style procedures and declarative configuration.** Write the seven stage files; complete `style.yaml`; modernize `rendering.md`. No shared files change.
-3. **Phase C — integration, validation, isolation.** Offline inspection for `medium-bi-daily` and `photography-weekly`; frame/evidence/validator verification over synthetic and historical frames; contract and isolation tests; prompt-migration gate classification; full offline suite.
+3. **Phase C — integration, validation, isolation.** The two style-neutral adaptations (I1 inspection digest resolution with per-digest evidence; I2 selection audit outcome recognition); Curated Discovery offline fixtures with a stage-survival test (I3); frame/evidence/validator verification over new-schema fixtures reproducing the historical allocations (I4); offline inspection for `medium-bi-daily` and `photography-weekly`; contract and isolation tests; prompt-migration gate classification; full offline suite.
 4. **Phase D — controlled activation and historical comparison.** Mocked end-to-end pipeline; flip `status` to `active`; update `docs/architecture/editorial-pipeline-v2.md`; prepare the September 22 Medium replay (paid, separately authorized) with one-evaluator re-scoring and manual editorial reading.
 
 Rollback: the style returns to `status: unavailable` (one line in `style.yaml`); no shared code changes need reverting. Git history is the rollback mechanism; no compatibility layers are created.

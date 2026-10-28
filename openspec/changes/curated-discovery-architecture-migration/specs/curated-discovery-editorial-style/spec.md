@@ -92,7 +92,7 @@ The system SHALL represent Discoveries as retained editorial units with `editori
 
 ### Requirement: Body budget is elastically bounded and deterministically enforced
 
-The style SHALL declare a published body budget of 700 to 1,350 words with a 15% editing-headroom reserve, where planning below the floor is recorded as advisory (a light day) and planning above the ceiling is a gate failure. The frame SHALL record the justification when its plan approaches the reserved ceiling because the material warrants the exceptional range.
+The style SHALL declare a published body budget of 700 to 1,350 words with a 15% editing-headroom reserve. The frame gate SHALL be the binding control: planning below the floor is advisory (a light day) and planning above the reserved ceiling is a gate failure. The published band SHALL be a target, not a publication block. The frame SHALL record the justification when its plan approaches the reserved ceiling because the material warrants the exceptional range.
 
 #### Scenario: Normal edition plans inside the band
 
@@ -108,6 +108,20 @@ The style SHALL declare a published body budget of 700 to 1,350 words with a 15%
 
 - **WHEN** a frame plans a body above the declared maximum, or above the ceiling minus the headroom reserve
 - **THEN** the frame validation reports a gate finding and the plan is reduced before Draft runs
+
+#### Scenario: Published length deviation is a warning, not a block
+
+- **WHEN** the finished body lands outside the 700–1,350 band after the writing stages
+- **THEN** Publication Verify records the length against the band as a pass within 0.75×–1.25× and a warning outside it, and the edition remains publishable — the binding control was the frame gate, not the published length
+
+### Requirement: Frame failure stops the run
+
+The style SHALL declare a `fail` frame-failure policy: when the frame stage cannot produce a plan that satisfies the style's validators, the run SHALL stop with a recorded failure, and the system SHALL NOT derive a recovery frame from the analysis's groupings.
+
+#### Scenario: Failed frame halts the edition
+
+- **WHEN** the frame stage exhausts its attempts without a validator-passing plan
+- **THEN** the run stops with the failure recorded, and no derived frame is used to continue the edition
 
 ### Requirement: Opening orientation is short and banded
 
@@ -211,6 +225,39 @@ The system SHALL deliver each style only its own instructions: Curated Discovery
 
 - **WHEN** the offline prompt inspection and contract tests run for Synthesis MAX after this change
 - **THEN** every resolved prompt, validator set, and evaluation configuration matches its recorded baseline
+
+### Requirement: Selection audit recognizes the style's editorial outcomes
+
+The deterministic selection audit SHALL distinguish the frame's real decisions for this style by `editorial_role` and SHALL count sources in every `catalog_only` partition as accounted. A frame without `editorial_role` fields keeps the audit's existing behavior. No reviewed source that the frame explicitly partitioned SHALL be reported as unaccounted.
+
+#### Scenario: Discovery is not confused with a featured selection
+
+- **WHEN** the audit reads a frame whose units carry `editorial_role` values of `featured`, `selection`, and `discovery`
+- **THEN** the featured source is audited as featured and the selection/discovery sources as selected (a distinct accounted decision), not all as featured
+
+#### Scenario: Reviewed sources are accounted
+
+- **WHEN** the frame records sources under `catalog_only.worth_reading` and `catalog_only.reviewed`
+- **THEN** the audit counts them as accounted omitted decisions with the partition as the reason and reports no unaccounted finding for them
+
+#### Scenario: Synthesis MAX audit behavior is preserved
+
+- **WHEN** the audit reads a frame with no `editorial_role` fields
+- **THEN** retained units map to the audit's existing featured decision and the recorded audit guarantees hold unchanged
+
+### Requirement: Offline inspection resolves the requested digest's configuration
+
+Offline prompt inspection SHALL compose its prompts from the requested digest's own configuration — its registry-resolved `digests/<digest-id>.md` reading instructions — rather than a style-level default, and SHALL write its recorded evidence under a per-digest path so two digests of the same profile cannot overwrite each other.
+
+#### Scenario: Photography inspection uses photography instructions
+
+- **WHEN** inspection runs for `photography-weekly` with `curated-discovery-v1`
+- **THEN** the composed prompts carry Photography's `## Selection`, `## Content preferences`, and `## Optional highlights` sections, and no Medium priority text appears
+
+#### Scenario: Per-digest evidence does not collide
+
+- **WHEN** inspections are recorded for both `medium-bi-daily` and `photography-weekly` under the same profile
+- **THEN** each digest's evidence is written to its own directory and both remain intact
 
 ### Requirement: Rendering preserves the magazine presentation on current runtime paths
 
